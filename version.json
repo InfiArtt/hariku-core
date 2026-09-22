@@ -1,0 +1,8 @@
+{
+  "latest_version": "2.0.1",
+  "update_type": "critical",
+  "download_url": "https://hariku.novarealm.cloud/update/latestV2.exe",
+  "release_notes": "2.0.1 critical Update, I suggest you to download this patch because  version 2.0.0 is actually have the broken system when you try to add a new key on an item from input gestures.",
+  "min_version_required": "2.0.0",
+  "force_update": true
+}

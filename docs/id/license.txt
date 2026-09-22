@@ -1,0 +1,487 @@
+Hariku V2 — Lisensi, Privasi & Kebijakan Ekstensi
+Versi 4.0
+Tanggal Berlaku: 12 Juli 2026
+
+================================================================================
+PEMBUKAAN
+================================================================================
+
+Dokumen ini merupakan Lisensi, Privasi, dan Kebijakan Ekstensi ("Perjanjian")
+yang lengkap yang mengatur penggunaan Anda atas aplikasi Hariku V2 ("Perangkat
+Lunak"), yang dikembangkan dan dikelola oleh Rafli ("Pengembang"), beroperasi
+di bawah merek Inflinity dan NovaRealm.
+
+Hariku adalah platform kalender dan produktivitas yang aksesibel dan ramah
+screen reader, dibangun di atas arsitektur ekstensi terbuka. Aplikasi ini
+dirancang terutama untuk pengguna yang bergantung pada teknologi bantu seperti
+NVDA dan JAWS, meskipun dapat digunakan sepenuhnya oleh siapa saja.
+
+DENGAN MENGINSTAL, MENJALANKAN, ATAU MENGGUNAKAN PERANGKAT LUNAK INI DENGAN
+CARA APA PUN, ANDA MENGAKUI BAHWA ANDA TELAH MEMBACA, MEMAHAMI, DAN
+MENYETUJUI UNTUK TERIKAT OLEH SELURUH KETENTUAN DALAM PERJANJIAN INI. Jika
+Anda tidak menyetujui, Anda tidak diperkenankan menggunakan Perangkat Lunak
+ini dan wajib menghapus semua salinannya dari perangkat Anda.
+
+================================================================================
+BAGIAN 1 — PEMBERIAN LISENSI
+================================================================================
+
+1.1  LISENSI PENGGUNAAN PRIBADI
+     Anda diberikan lisensi yang bersifat mendunia, non-eksklusif, tidak dapat
+     dipindahtangankan, dan dapat dicabut untuk menggunakan Perangkat Lunak ini
+     secara gratis untuk keperluan pribadi, pendidikan, dan non-komersial. Anda
+     dapat menginstal Perangkat Lunak ini di perangkat mana pun yang berada di
+     bawah kendali pribadi Anda.
+
+1.2  PENGGUNAAN KOMUNITAS & NIRLABA
+     Sekolah, organisasi advokasi aksesibilitas, lembaga pendukung disabilitas,
+     dan entitas nirlaba terdaftar lainnya dapat menggunakan Perangkat Lunak ini
+     secara gratis dalam operasional mereka tanpa memperoleh lisensi komersial
+     terpisah, dengan ketentuan bahwa Perangkat Lunak tidak dibundel ke dalam
+     produk atau layanan yang dijual untuk keuntungan.
+
+1.3  PENGGUNAAN KOMERSIAL
+     Penggunaan Perangkat Lunak sebagai bagian dari produk komersial, layanan
+     berbayar, atau usaha berorientasi keuntungan memerlukan izin tertulis
+     terlebih dahulu dari Pengembang.
+     Untuk pertanyaan lisensi komersial, hubungi: terabase06@gmail.com
+
+================================================================================
+BAGIAN 2 — PEMBATASAN
+================================================================================
+
+Anda TIDAK diperkenankan:
+
+2.1  Merekayasa balik, mendekompilasi, atau membongkar biner inti terkompilasi
+     dari Perangkat Lunak, kecuali sejauh pembatasan tersebut secara tegas
+     dilarang oleh hukum yang berlaku.
+
+2.2  Menghapus, mengubah, atau mengaburkan pemberitahuan hak milik, label,
+     atau branding yang terkandung dalam Perangkat Lunak.
+
+2.3  Mendistribusikan, menjual, menyewakan, atau mensublisensikan Perangkat
+     Lunak sebagai produk mandiri. Redistribusi salinan yang tidak dimodifikasi
+     untuk berbagi pribadi diperbolehkan dengan syarat file lisensi ini
+     disertakan secara utuh.
+
+2.4  Memalsukan asal-usul Perangkat Lunak atau mengklaim kepengarangan atas
+     aplikasi inti.
+
+2.5  Menggunakan Perangkat Lunak untuk mengembangkan perangkat lunak kalender
+     atau produktivitas pesaing yang secara langsung mereplikasi fungsionalitas
+     inti dan ekosistem ekstensi Hariku.
+
+2.6  Menghindari, menonaktifkan, atau mengganggu mekanisme keamanan apa pun
+     dalam Perangkat Lunak, termasuk namun tidak terbatas pada Registri Hash
+     Ekstensi Terpercaya, verifikasi SHA256, dan dialog persetujuan ekstensi.
+
+================================================================================
+BAGIAN 3 — EKOSISTEM EKSTENSI
+================================================================================
+
+Hariku V2 dibangun di atas platform ekstensi modular. Bagian ini mendefinisikan
+hak dan tanggung jawab yang terkait dengan ekstensi.
+
+3.1  APA ITU EKSTENSI?
+     Ekstensi adalah modul tambahan yang memperluas fungsionalitas Hariku.
+     Ekstensi dapat didistribusikan sebagai folder sumber terbuka atau sebagai
+     paket .hrk terkompilasi (arsip ZIP berisi kode dan manifest.json).
+
+3.2  EKSTENSI RESMI
+     Ekstensi yang dikembangkan oleh Pengembang dan didistribusikan melalui
+     Extension Store resmi Hariku atau dibundel bersama Perangkat Lunak
+     ditetapkan sebagai ekstensi "Resmi". Ini diidentifikasi oleh daftar
+     putih yang dikodekan secara permanen dalam aplikasi dan diverifikasi
+     secara kriptografis melalui hash SHA256. Badge [Resmi] tidak dapat
+     dipalsukan melalui manifest.
+
+3.3  EKSTENSI PIHAK KETIGA
+     Pengembang pihak ketiga dapat membuat, mendistribusikan, dan membagikan
+     ekstensi untuk Hariku V2. Ketentuan berikut berlaku:
+
+     a) PEMBUATAN: Siapa pun dapat membuat ekstensi untuk Hariku menggunakan
+        Extension API yang terdokumentasi (lihat DEVELOPERS.md). Tidak
+        diperlukan biaya, pendaftaran, atau persetujuan untuk mengembangkan
+        ekstensi.
+
+     b) DISTRIBUSI: Ekstensi pihak ketiga dapat didistribusikan secara bebas
+        melalui saluran apa pun (situs web, forum, berbagi langsung).
+        Pengembang berhak mengkurasi Extension Store resmi dan dapat menolak
+        untuk mencantumkan ekstensi yang melanggar Perjanjian ini atau
+        menimbulkan risiko keamanan.
+
+     c) LISENSI: Penulis ekstensi pihak ketiga mempertahankan hak cipta penuh
+        dan hak kekayaan intelektual atas kode ekstensi mereka sendiri. Penulis
+        ekstensi bebas memilih lisensi apa pun untuk ekstensi mereka, termasuk
+        lisensi open-source (MIT, GPL, Apache, dll.) atau lisensi proprietary.
+
+     d) MONETISASI: Penulis ekstensi dapat memonetisasi ekstensi mereka melalui
+        cara legal apa pun (donasi, lisensi berbayar, sponsorship). Pengembang
+        tidak mengklaim bagi hasil dari ekstensi pihak ketiga.
+
+3.4  MODEL KEAMANAN EKSTENSI
+     Ekstensi berjalan dengan akses penuh ke runtime Python dan sistem operasi
+     host. Ekstensi TIDAK di-sandbox. Ini berarti ekstensi yang berbahaya
+     berpotensi mengakses file, jaringan, input keyboard, dan sumber daya
+     sistem Anda lainnya.
+
+     Untuk mengurangi risiko ini, Hariku mengimplementasikan perlindungan
+     berikut:
+
+     a) REGISTRI HASH TERPERCAYA: Saat memuat paket ekstensi .hrk, Perangkat
+        Lunak menghitung hash SHA256-nya dan memverifikasinya terhadap daftar
+        hash terpercaya yang dihosting di server. Ekstensi yang tidak ditemukan
+        dalam registri ini akan memicu dialog persetujuan keamanan.
+
+     b) PERSETUJUAN PENGGUNA: Ekstensi yang tidak terverifikasi TIDAK akan
+        dimuat secara diam-diam. Dialog dengan jelas memperingatkan pengguna
+        tentang risikonya dan memerlukan persetujuan eksplisit sebelum kode
+        apa pun dari ekstensi tersebut dieksekusi.
+
+     c) SAFE MODE: Pengguna dapat menahan tombol Shift saat memulai aplikasi
+        untuk boot ke Safe Mode, yang sepenuhnya melewati Extension Manager.
+        Tidak ada ekstensi — resmi maupun pihak ketiga — yang akan dimuat
+        dalam Safe Mode.
+
+     d) DAFTAR NONAKTIF: Ekstensi individual dapat dinonaktifkan melalui
+        Extension Manager tanpa menghapus instalasinya.
+
+     PENGEMBANG TIDAK BERTANGGUNG JAWAB ATAS KERUSAKAN, KEHILANGAN DATA,
+     ATAU PELANGGARAN KEAMANAN YANG DISEBABKAN OLEH EKSTENSI PIHAK KETIGA.
+     Pengguna menginstal ekstensi pihak ketiga atas risiko mereka sendiri.
+
+3.5  STABILITAS API EKSTENSI
+     Pengembang akan melakukan upaya yang wajar untuk mempertahankan
+     kompatibilitas mundur dari Extension API di seluruh pembaruan versi minor
+     (misalnya, 2.2 ke 2.3). Perubahan yang merusak kompatibilitas pada API
+     akan didokumentasikan dalam catatan rilis dan, jika memungkinkan,
+     diumumkan setidaknya satu versi sebelumnya melalui peringatan depresiasi.
+
+================================================================================
+BAGIAN 4 — PENYIMPANAN DATA & PRIVASI
+================================================================================
+
+Privasi Anda adalah prinsip desain inti Hariku. Bagian ini menjelaskan secara
+detail data apa yang disimpan, dikumpulkan, dan ditransmisikan oleh Perangkat
+Lunak.
+
+4.1  PENYIMPANAN DATA LOKAL
+     Sebagian besar data Anda disimpan SECARA EKSKLUSIF di komputer lokal
+     Anda. Perangkat Lunak membuat dan mengelola file di lokasi berikut:
+
+     a) Direktori Data Aplikasi: %APPDATA%\Hariku2\
+        Ini adalah lokasi penyimpanan utama dan berisi:
+
+        - data\            File konfigurasi dan data JSON per ekstensi.
+                           Contoh: Core.json (pengaturan aplikasi), data
+                           ekstensi.
+        - extensions\      Paket ekstensi yang diinstal pengguna (file .hrk)
+                           dan folder ekstensi yang diekstrak.
+        - reminders\       Pengingat terjadwal Anda, diorganisir berdasarkan
+                           tanggal dalam file JSON individual
+                           (misal: 2026-07-12.json).
+        - locales\         Paket bahasa yang diinstal pengguna (jika ada).
+
+     b) Direktori Aplikasi (hanya-baca):
+        Direktori instalasi berisi file aplikasi inti, ekstensi bawaan,
+        paket bahasa bawaan, dokumentasi, dan aset suara. Tidak ada data
+        pengguna yang ditulis di sini.
+
+     PENGEMBANG TIDAK MEMILIKI AKSES KE DATA LOKAL ANDA. Pengingat,
+     pengaturan, konfigurasi ekstensi, dan semua informasi yang disimpan
+     secara lokal tidak pernah meninggalkan komputer Anda kecuali secara
+     eksplisit dimulai oleh Anda atau oleh ekstensi yang telah Anda instal.
+
+4.2  TELEMETRI ANONIM (OPT-OUT)
+     Untuk membantu meningkatkan Perangkat Lunak, Hariku mengumpulkan
+     statistik penggunaan dasar dan anonim saat startup. Data ini dikirim ke:
+
+        https://sp.novarealm.cloud/api/telemetry
+
+     Poin data berikut ditransmisikan:
+
+        - Versi sistem operasi (misal: "Windows 11 Build 26100")
+        - Versi runtime Python
+        - Versi aplikasi Hariku dan versi core
+        - Screen reader yang aktif (NVDA, JAWS, atau None)
+        - Pengaturan bahasa aplikasi
+        - Daftar ID ekstensi yang aktif
+        - UUID sesi acak persisten (UUID4, bukan berbasis perangkat keras)
+
+     Data berikut TIDAK PERNAH ditransmisikan:
+
+        - Nama, alamat email, atau identitas pribadi Anda
+        - Alamat IP Anda tidak dicatat oleh server telemetri
+        - Konten pengingat, catatan, atau data buatan pengguna apa pun
+        - Konten sistem file, clipboard, atau riwayat browsing Anda
+        - Nama ekstensi, konfigurasi, atau data spesifik ekstensi apa pun
+
+     MENONAKTIFKAN: Anda dapat menonaktifkan telemetri kapan saja melalui:
+     Pengaturan > Umum > "Bagikan data penggunaan anonim saya secara publik"
+     (Hapus centang pada kotak centang)
+
+     Data telemetri dapat dilihat secara publik di:
+     https://sp.novarealm.cloud/stats
+     Transparansi ini memastikan Pengembang tidak dapat diam-diam
+     mengumpulkan data di luar apa yang didokumentasikan di sini.
+
+4.3  PEMERIKSAAN PEMBARUAN
+     Perangkat Lunak secara berkala memeriksa pembaruan aplikasi dengan
+     menghubungi:
+
+        https://hariku.novarealm.cloud/update/version.json
+
+     Permintaan ini hanya mengirimkan header User-Agent ("HarikuV2/2.0").
+     Tidak ada data spesifik pengguna yang disertakan. Respons berisi
+     informasi versi, tingkat keparahan, dan URL unduhan untuk pembaruan
+     yang tersedia.
+
+4.4  EXTENSION STORE
+     Saat menelusuri Extension Store bawaan, Perangkat Lunak menghubungi:
+
+        https://www.novarealm.cloud/dl/registry.json
+
+     Permintaan ini hanya mengirimkan header User-Agent. Tidak ada data
+     spesifik pengguna yang disertakan. Unduhan ekstensi dibatasi pada URL
+     HTTPS dari domain novarealm.cloud saja.
+
+4.5  VERIFIKASI KEAMANAN EKSTENSI
+     Saat memuat paket ekstensi .hrk, Perangkat Lunak dapat menghubungi:
+
+        https://hariku.novarealm.cloud/security/trusted_extensions.json
+
+     untuk mengambil daftar hash ekstensi terpercaya. Permintaan ini hanya
+     mengirimkan header User-Agent. Jika server tidak dapat dijangkau, semua
+     ekstensi .hrk akan memerlukan persetujuan manual pengguna sebelum dimuat.
+
+4.6  LAPORAN KERUSAKAN (CRASH REPORT)
+     Ketika terjadi kesalahan yang tidak tertangani, Perangkat Lunak
+     menampilkan dialog kerusakan dengan detail teknis (stack trace, pesan
+     error). Informasi ini ditampilkan SECARA LOKAL SAJA dan TIDAK secara
+     otomatis ditransmisikan ke server mana pun. Jika Anda memilih untuk
+     mengirim laporan kerusakan, laporan dikirim melalui klien email lokal
+     Anda ke alamat email Pengembang. Mengirim laporan kerusakan sepenuhnya
+     bersifat sukarela.
+
+     Jika Anda memilih untuk mengaktifkan pelaporan kerusakan otomatis
+     (Pengaturan > Umum > Perilaku Laporan Kerusakan > "Otomatis"), data
+     kerusakan akan dikirim ke:
+
+        https://sp.novarealm.cloud/api/crash-report
+
+     Data yang ditransmisikan meliputi: versi aplikasi, versi OS, bahasa,
+     jenis error, pesan error, dan traceback Python. Tidak ada data pribadi,
+     konten file, atau data pengingat yang disertakan dalam laporan kerusakan.
+
+4.7  LAYANAN PIHAK KETIGA MELALUI EKSTENSI
+     Beberapa ekstensi dapat menghubungi layanan pihak ketiga eksternal untuk
+     menyediakan fungsionalitasnya. Misalnya:
+
+        - Ekstensi Google Calendar Reader menghubungi server Google
+          untuk mengambil data kalender melalui URL iCal yang disediakan
+          pengguna.
+        - Data kalender hari libur dapat diambil dari feed hari libur
+          publik Google Calendar.
+
+     Koneksi ini dimulai HANYA oleh ekstensi yang telah Anda instal dan
+     konfigurasi secara eksplisit. Aplikasi inti Hariku tidak menghubungi
+     layanan pihak ketiga apa pun di luar yang tercantum dalam Bagian 4.2
+     hingga 4.5.
+
+     Setiap ekstensi bertanggung jawab atas praktik privasinya sendiri.
+     Pengembang mendorong penulis ekstensi untuk mendokumentasikan praktik
+     data mereka dengan jelas, tetapi tidak dapat menjamin kepatuhan oleh
+     pengembang pihak ketiga.
+
+================================================================================
+BAGIAN 5 — KEKAYAAN INTELEKTUAL
+================================================================================
+
+5.1  APLIKASI INTI
+     Aplikasi inti Hariku V2, termasuk kode sumber, biner terkompilasi,
+     desain antarmuka pengguna, aset suara, dokumentasi, dan branding, adalah
+     kekayaan intelektual tunggal Pengembang. Semua hak yang tidak secara
+     eksplisit diberikan dalam Perjanjian ini dilindungi.
+
+5.2  EKSTENSI RESMI
+     Ekstensi resmi yang dibundel bersama Perangkat Lunak atau didistribusikan
+     melalui Extension Store resmi adalah kekayaan intelektual Pengembang,
+     kecuali dinyatakan lain dalam file lisensi ekstensi tersebut.
+
+5.3  EKSTENSI PIHAK KETIGA
+     Ekstensi pihak ketiga adalah kekayaan intelektual dari masing-masing
+     penulisnya. Pengembang tidak mengklaim kepemilikan atas kode, aset,
+     atau dokumentasi ekstensi pihak ketiga.
+
+5.4  KONTEN BUATAN PENGGUNA
+     Semua konten yang Anda buat menggunakan Perangkat Lunak (pengingat,
+     catatan, acara, konfigurasi) adalah milik Anda. Pengembang tidak
+     mengklaim kepemilikan atau lisensi atas data pribadi Anda.
+
+5.5  KOMPONEN OPEN-SOURCE
+     Perangkat Lunak menggunakan komponen open-source berikut, masing-masing
+     diatur oleh lisensinya sendiri:
+
+        - wxPython (wxWindows Library Licence / LGPL)
+        - Python (PSF License)
+        - packaging (Apache 2.0 / BSD)
+        - cytolk (MIT) — Antarmuka speech screen reader
+        - pyperclip (BSD) — Akses clipboard lintas platform
+
+     Lisensi-lisensi ini kompatibel dengan ketentuan Perjanjian ini. Teks
+     lisensi lengkap untuk komponen ini tersedia di repositori proyek
+     masing-masing.
+
+================================================================================
+BAGIAN 6 — KOMITMEN AKSESIBILITAS
+================================================================================
+
+Hariku dibangun dari dasar untuk sepenuhnya aksesibel bagi pengguna teknologi
+bantu. Pengembang berkomitmen pada hal-hal berikut:
+
+6.1  Semua elemen antarmuka pengguna inti akan diberi label dengan benar dan
+     dapat dinavigasi melalui keyboard dan screen reader.
+
+6.2  Semua kontrol interaktif akan memiliki nama aksesibel yang bermakna yang
+     dibaca dengan benar oleh NVDA, JAWS, dan screen reader kompatibel lainnya.
+
+6.3  Tidak ada fitur inti yang tidak dapat diakses oleh pengguna yang
+     bergantung sepenuhnya pada navigasi keyboard dan output screen reader.
+
+6.4  Regresi aksesibilitas pada aplikasi inti diperlakukan sebagai bug
+     berprioritas tinggi dan akan ditangani dengan segera.
+
+6.5  Pengembang ekstensi sangat dianjurkan (tetapi tidak diwajibkan) untuk
+     mengikuti standar aksesibilitas yang sama. Pengembang dapat menolak
+     untuk menampilkan ekstensi di Store resmi yang tidak cukup aksesibel.
+
+================================================================================
+BAGIAN 7 — PEMBARUAN & PERILAKU OTOMATIS
+================================================================================
+
+7.1  NOTIFIKASI PEMBARUAN
+     Perangkat Lunak memeriksa pembaruan secara otomatis setelah startup.
+     Jika pembaruan tersedia, banner notifikasi non-blocking ditampilkan.
+     Pembaruan TIDAK PERNAH diinstal tanpa tindakan eksplisit Anda.
+
+7.2  PEMBARUAN PAKSA
+     Dalam keadaan luar biasa (kerentanan keamanan kritis, bug kerusakan
+     data), server pembaruan dapat menandai pembaruan sebagai "paksa."
+     Dalam kasus ini, dialog pembaruan tidak dapat ditutup. Mekanisme ini
+     ada semata-mata untuk melindungi pengguna dari risiko parah yang
+     diketahui dan hanya akan digunakan untuk keadaan darurat yang nyata.
+
+7.3  PEMBARUAN EKSTENSI
+     Ekstensi yang diinstal dari Store resmi diperiksa pembaruannya bersamaan
+     dengan pembaruan aplikasi inti. Pembaruan ekstensi diunduh dan diterapkan
+     hanya dengan persetujuan Anda.
+
+================================================================================
+BAGIAN 8 — UMPAN BALIK & KONTRIBUSI
+================================================================================
+
+8.1  Anda dianjurkan untuk mengirimkan umpan balik, laporan bug, dan saran
+     fitur melalui mekanisme umpan balik bawaan atau forum komunitas di:
+     https://sp.novarealm.cloud/forum/hariku
+
+8.2  Semua pengiriman umpan balik bersifat sukarela. Dengan mengirimkan umpan
+     balik, Anda memberikan Pengembang lisensi non-eksklusif, bebas royalti,
+     dan abadi untuk menggunakan, memodifikasi, dan menggabungkan saran Anda
+     ke dalam Perangkat Lunak tanpa kewajiban atau kompensasi.
+
+8.3  Jika Anda menyumbangkan kode (misal: terjemahan bahasa, perbaikan bug)
+     yang dimasukkan ke dalam aplikasi inti, Anda akan dikreditkan dalam
+     dialog Tentang atau dokumentasi aplikasi, kecuali Anda meminta
+     sebaliknya.
+
+================================================================================
+BAGIAN 9 — PENAFIAN GARANSI
+================================================================================
+
+PERANGKAT LUNAK INI DISEDIAKAN "SEBAGAIMANA ADANYA" TANPA JAMINAN DALAM
+BENTUK APA PUN, BAIK TERSURAT MAUPUN TERSIRAT, TERMASUK NAMUN TIDAK TERBATAS
+PADA JAMINAN KELAYAKAN JUAL, KESESUAIAN UNTUK TUJUAN TERTENTU, ATAU
+NON-PELANGGARAN.
+
+PENGEMBANG TIDAK MENJAMIN BAHWA:
+
+- Perangkat Lunak akan berjalan tanpa gangguan, bebas error, atau sepenuhnya
+  aman.
+- Perangkat Lunak akan memenuhi kebutuhan spesifik Anda.
+- Cacat dalam Perangkat Lunak akan diperbaiki dalam jangka waktu tertentu.
+- Ekstensi pihak ketiga akan aman, fungsional, atau kompatibel.
+
+ANDA MENGGUNAKAN PERANGKAT LUNAK INI ATAS RISIKO ANDA SENDIRI.
+
+================================================================================
+BAGIAN 10 — PEMBATASAN TANGGUNG JAWAB
+================================================================================
+
+SEJAUH DIIZINKAN OLEH HUKUM YANG BERLAKU, PENGEMBANG TIDAK BERTANGGUNG JAWAB
+ATAS KERUGIAN TIDAK LANGSUNG, INSIDENTAL, KHUSUS, KONSEKUENSIAL, ATAU PUNITIF
+YANG TIMBUL DARI ATAU TERKAIT DENGAN PENGGUNAAN PERANGKAT LUNAK OLEH ANDA,
+TERMASUK NAMUN TIDAK TERBATAS PADA:
+
+- Kehilangan data, pendapatan, atau peluang bisnis.
+- Kerusakan yang disebabkan oleh ekstensi pihak ketiga.
+- Ketidakstabilan sistem yang disebabkan oleh keyboard hook global atau
+  perangkat teknologi bantu.
+- Gangguan layanan karena ketidaktersediaan server.
+
+TOTAL TANGGUNG JAWAB AGREGAT PENGEMBANG TIDAK AKAN MELEBIHI JUMLAH YANG ANDA
+BAYARKAN UNTUK PERANGKAT LUNAK (YANG, UNTUK PENGGUNAAN PRIBADI, ADALAH NOL).
+
+================================================================================
+BAGIAN 11 — PENGAKHIRAN
+================================================================================
+
+11.1 Lisensi ini berlaku efektif hingga diakhiri. Hak Anda berdasarkan
+     Perjanjian ini akan berakhir secara otomatis dan tanpa pemberitahuan
+     jika Anda melanggar ketentuan mana pun.
+
+11.2 Setelah pengakhiran, Anda wajib menghentikan semua penggunaan Perangkat
+     Lunak dan menghapus semua salinan dari perangkat Anda. Data yang
+     tersimpan secara lokal (pengingat, pengaturan) tetap milik Anda dan
+     tidak terpengaruh oleh pengakhiran lisensi.
+
+11.3 Pengembang berhak mencabut akses ke layanan online (server pembaruan,
+     Extension Store, endpoint telemetri) kapan saja, dengan atau tanpa
+     pemberitahuan. Perangkat Lunak inti akan terus berfungsi secara offline
+     tanpa layanan ini, meskipun tanpa notifikasi pembaruan atau akses Store.
+
+================================================================================
+BAGIAN 12 — PERUBAHAN PERJANJIAN INI
+================================================================================
+
+12.1 Pengembang dapat memperbarui Perjanjian ini dari waktu ke waktu.
+     Perubahan material akan dikomunikasikan melalui dokumen "Apa yang Baru"
+     atau sistem notifikasi pembaruan.
+
+12.2 Penggunaan Perangkat Lunak yang berkelanjutan setelah perubahan
+     dipublikasikan dianggap sebagai penerimaan ketentuan yang direvisi.
+
+12.3 Versi terkini dari Perjanjian ini selalu tersedia dalam Perangkat Lunak
+     di bawah menu Bantuan > Lisensi.
+
+================================================================================
+BAGIAN 13 — HUKUM YANG BERLAKU
+================================================================================
+
+Perjanjian ini akan diatur oleh dan ditafsirkan sesuai dengan hukum Republik
+Indonesia, tanpa memperhatikan ketentuan konflik hukumnya.
+
+================================================================================
+BAGIAN 14 — INFORMASI KONTAK
+================================================================================
+
+Untuk pertanyaan, pertanyaan lisensi, laporan keamanan, atau umpan balik umum:
+
+   Email:   terabase06@gmail.com
+   Forum:   https://sp.novarealm.cloud/forum/hariku
+   Website: https://novarealm.cloud
+
+================================================================================
+
+Terima kasih telah menggunakan Hariku. Dukungan dan umpan balik Anda mendorong
+setiap pembaruan.
+— Rafli / Inflinity / NovaRealm

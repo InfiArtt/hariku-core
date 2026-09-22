@@ -1,0 +1,199 @@
+Hariku V2 — Community Code of Conduct
+Last Updated: July 2026
+
+========================================================================
+1. PURPOSE
+========================================================================
+
+The Hariku community exists to build and share tools that make
+calendar management accessible to everyone, especially screen reader
+users. This Code of Conduct establishes the standards of behavior
+that make our community welcoming, inclusive, and productive for all
+participants.
+
+We are committed to providing a harassment-free experience regardless
+of disability, age, body size, ethnicity, gender identity, level of
+experience, nationality, personal appearance, race, religion, or
+sexual identity and orientation.
+
+
+========================================================================
+2. OUR VALUES
+========================================================================
+
+The Hariku community is guided by these core values:
+
+    Accessibility First
+        Everything we build serves users who rely on assistive
+        technology. Accessibility is not an afterthought — it is our
+        primary design constraint and our reason for existing.
+
+    Inclusivity
+        We welcome contributors of all backgrounds, experience
+        levels, and abilities. Whether you are a seasoned developer
+        or writing your first extension, you belong here.
+
+    Constructive Collaboration
+        We build better software by working together openly, sharing
+        knowledge generously, and approaching disagreements as
+        opportunities to learn.
+
+    Respect and Empathy
+        We treat every community member with dignity. We listen
+        before judging, assume good intent, and remember that behind
+        every username is a real person.
+
+
+========================================================================
+3. EXPECTED BEHAVIOR
+========================================================================
+
+All community members are expected to:
+
+    1. Be respectful and considerate in all interactions, whether on
+       the forum, in code reviews, or in private correspondence.
+
+    2. Provide constructive feedback. Critique ideas and code, not
+       people. Offer suggestions alongside criticism.
+
+    3. Help newcomers. Answer questions patiently, point people to
+       documentation, and remember that everyone starts somewhere.
+
+    4. Give credit where it is due. Acknowledge contributions,
+       attribute code you build upon, and celebrate the work of
+       others.
+
+    5. Focus on accessibility in all work. Test extensions with
+       screen readers, write meaningful labels, and consider the
+       needs of users with diverse disabilities.
+
+    6. Follow the Extension Developer Guidelines and Store Submission
+       Guidelines when publishing extensions.
+
+    7. Report issues and concerns through proper channels rather
+       than resorting to public callouts.
+
+
+========================================================================
+4. UNACCEPTABLE BEHAVIOR
+========================================================================
+
+The following behaviors will not be tolerated:
+
+    - Harassment, intimidation, or discrimination of any kind,
+      including but not limited to offensive comments related to
+      disability, gender, race, religion, or sexual orientation.
+
+    - Trolling, deliberate provocation, or sustained disruption of
+      community discussions.
+
+    - Publishing or threatening to publish another person's private
+      information (addresses, phone numbers, etc.) without their
+      explicit consent.
+
+    - Submitting malicious code disguised as legitimate extensions,
+      including code that exfiltrates data, damages files, or
+      compromises system security.
+
+    - Deliberately breaking accessibility features in extensions or
+      contributions, or releasing updates that remove previously
+      working accessibility support.
+
+    - Spamming the extension store with duplicate, low-effort, or
+      deceptive submissions.
+
+    - Retaliating against anyone who reports a violation of this
+      Code of Conduct.
+
+
+========================================================================
+5. SCOPE
+========================================================================
+
+This Code of Conduct applies to all community spaces and
+interactions, including:
+
+    - The Hariku forum at https://sp.novarealm.cloud/forum/hariku
+    - Extension store submissions and reviews at novarealm.cloud
+    - Code contributions and pull requests
+    - Email correspondence related to Hariku development
+    - Any other space where you represent or participate in the
+      Hariku community
+
+This Code applies equally to all participants: users, extension
+developers, reviewers, and core team members.
+
+
+========================================================================
+6. ENFORCEMENT
+========================================================================
+
+If you experience or witness behavior that violates this Code of
+Conduct, please report it:
+
+    Email:   terabase06@gmail.com
+    Subject: CODE OF CONDUCT — [Brief description]
+
+All reports will be reviewed promptly and handled confidentially. The
+identity of reporters will not be disclosed without their consent.
+
+Consequences for violations are determined by severity and may
+include:
+
+    Warning
+        A private written warning with an explanation of why the
+        behavior was inappropriate and a request to stop.
+
+    Temporary Ban
+        Temporary suspension from community spaces, the extension
+        store, or both. Duration is determined by the severity of
+        the violation.
+
+    Permanent Ban
+        Permanent removal from all community spaces and revocation
+        of store publishing privileges. Reserved for repeated or
+        egregious violations.
+
+The core team reserves the right to remove any extension, comment,
+or contribution that violates this Code of Conduct without prior
+notice.
+
+
+========================================================================
+7. ACCESSIBILITY PLEDGE
+========================================================================
+
+Hariku exists because mainstream tools failed to serve screen reader
+users. Our community is built on the understanding that many of our
+users are blind or visually impaired, and that accessible software
+is not optional — it is essential.
+
+We therefore hold ourselves to a higher standard:
+
+    - Extensions that deliberately harm accessibility — by removing
+      screen reader labels, introducing inaccessible interfaces, or
+      breaking keyboard navigation — are grounds for immediate and
+      permanent ban from the store and community spaces.
+
+    - Developers are expected to test their extensions with at least
+      one screen reader (NVDA or JAWS) before submission.
+
+    - Accessibility regressions in updates will be treated as
+      high-priority issues requiring prompt resolution.
+
+    - Community members who advocate for accessibility improvements
+      are to be supported, not dismissed.
+
+This is not merely a policy. It is a promise to the users who depend
+on Hariku every day.
+
+
+========================================================================
+CONTACT
+========================================================================
+
+For Code of Conduct questions or reports:
+    Email:  terabase06@gmail.com
+    Forum:  https://sp.novarealm.cloud/forum/hariku
+
+Thank you for helping us build a community where everyone belongs.

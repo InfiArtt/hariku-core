@@ -1,0 +1,9 @@
+wxPython>=4.2.1
+cytolk>=0.1.3
+Nuitka>=2.3.11
+packaging>=24.0
+tzdata>=2024.1  # IANA time zone database (World Clock; Windows has none natively)
+cryptography>=42.0  # bundled for extensions (see core/stdlib_includes.py); Fernet etc.
+pyperclip>=1.8  # clipboard API (core.api.set_clipboard / get_clipboard)
+
+pytest>=7.0.0

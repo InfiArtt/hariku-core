@@ -1,0 +1,124 @@
+{
+    "extensions": [
+        {
+            "id": "auto_read_reminders",
+            "name": "Auto Read Reminders",
+            "version": "1.0",
+            "description": "Automatically reads out reminders when navigating dates with arrows.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/auto_read_reminders.hrk"
+        },
+        {
+            "id": "date_calculator",
+            "name": "Date Calculator",
+            "version": "1.2",
+            "description": "Calculates the number of days between the currently selected date and today.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/date_calculator.hrk"
+        },
+        {
+            "id": "developer_news",
+            "name": "Developer News",
+            "version": "1.0",
+            "description": "Stay updated with the latest news and announcements from the developer team.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/developer_news.hrk"
+        },
+        {
+            "id": "diary",
+            "name": "My Diary",
+            "version": "1.0",
+            "description": "Secure diary and notes extension with mood tracking.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/diary.hrk"
+        },
+        {
+            "id": "quotes",
+            "name": "Quotes",
+            "version": "1.0",
+            "description": "Fetches and reads random quotes from Novarealm API.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/quotes.hrk"
+        },
+        {
+            "id": "wikipedia_reader",
+            "name": "Wikipedia Reader",
+            "version": "1.0",
+            "description": "Search and read Wikipedia articles directly from Hariku.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/wikipedia_reader.hrk"
+        },
+        {
+            "id": "developer_toolkit",
+            "name": "Developer Toolkit",
+            "version": "1.0",
+            "description": "Essential tools for building and debugging Hariku extensions.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/developer_toolkit.hrk"
+        },
+        {
+            "id": "ghost_taskbar",
+            "name": "Ghost Taskbar Cleaner",
+            "version": "1.1",
+            "description": "Cleans up ghost icons left behind in the Windows System Tray.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/ghost_taskbar.hrk"
+        },
+        {
+            "id": "key_notifier",
+            "name": "Key Notifier",
+            "version": "1.0",
+            "description": "Announces lock keys like Caps Lock and Num Lock status.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/key_notifier.hrk"
+        },
+        {
+            "id": "smart_launcher",
+            "name": "Smart Launcher",
+            "version": "1.0",
+            "description": "A blazing-fast omnibox to execute tasks, search, or jump to features.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/smart_launcher.hrk"
+        },
+        {
+            "id": "window_teleporter",
+            "name": "Window Teleporter",
+            "version": "1.0",
+            "description": "Jump focus between active windows effortlessly.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/window_teleporter.hrk"
+        },
+        {
+            "id": "lumina",
+            "name": "Lumina",
+            "version": "1.0",
+            "description": "Birthday reminders for friends, family and yourself. Lumina lights up your calendar with the moments that matter most.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/lumina.hrk"
+        },
+        {
+            "id": "project_system",
+            "name": "Project System",
+            "version": "1.0",
+            "description": "Manage complex projects, break them down into tasks, set deadlines, and track progress.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/project_system.hrk"
+        },
+        {
+            "id": "markdown_reader",
+            "name": "Markdown Reader",
+            "version": "1.0",
+            "description": "Open, read, and navigate Markdown (.md) files with full screen reader accessibility.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/markdown_reader.hrk"
+        },
+        {
+            "id": "gcal_integration",
+            "name": "Google Calendar Reader",
+            "version": "1.0",
+            "description": "Read your Google Calendar events inside Hariku. One-way sync: reads from Google, edits stay local.",
+            "author": "Rafli",
+            "download_url": "https://www.novarealm.cloud/dl/gcal_integration.hrk"
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "name": "Lumina",
+    "version": "1.0",
+    "author": "Rafli",
+    "description": "Birthday reminders for friends, family and yourself. Lumina lights up your calendar with the moments that matter most.",
+    "main": "main.py",
+    "language": "EN",
+    "minimum_core_version": "2.1"
+}

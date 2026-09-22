@@ -1,0 +1,3 @@
+Panduan Pengguna Hariku V2
+
+Selamat datang di Hariku! Gunakan tombol panah untuk menavigasi kalender. Tekan Enter untuk mengelola pengingat. Tekan P untuk membuka Pengaturan.

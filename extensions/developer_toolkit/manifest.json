@@ -1,0 +1,9 @@
+{
+    "name": "Developer Toolkit",
+    "version": "1.0",
+    "author": "Rafli",
+    "description": "Heavy-duty developer tools: REPL Console, Event Sniffer, Live Log Viewer, Extension Inspector & Hot-Reloader, HRK Packer.",
+    "main": "main.py",
+    "language": "python",
+    "minimum_core_version": "2.0"
+}

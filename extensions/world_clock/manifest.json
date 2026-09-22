@@ -1,0 +1,10 @@
+{
+    "id": "world_clock",
+    "name": "World Clock",
+    "version": "1.0",
+    "description": "Hear the current time in cities around the world. Press the World Clock hotkey to speak every zone, or open the window to browse them. Manage your cities in Preferences.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.0"
+}

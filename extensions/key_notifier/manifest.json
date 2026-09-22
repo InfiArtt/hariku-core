@@ -1,0 +1,9 @@
+{
+    "name": "Key Notifier",
+    "version": "1.0",
+    "description": "Plays sounds when CapsLock or NumLock state changes.",
+    "main": "main.py",
+    "author": "Rafli",
+    "language": "en",
+    "minimum_core_version": "1.0"
+}

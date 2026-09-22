@@ -1,0 +1,200 @@
+Hariku V2 — Security Policy
+Last Updated: July 2026
+
+========================================================================
+1. OVERVIEW
+========================================================================
+
+The Hariku V2 team takes the security of our platform and its users
+seriously. As an accessible calendar application serving screen reader
+users, we recognize that our community includes people who depend on
+assistive technology for daily computing. A security compromise in
+Hariku could have outsized impact on these users.
+
+This document outlines how to report security vulnerabilities, how we
+respond to reports, and how our extension security model works.
+
+We are committed to addressing security issues promptly and
+transparently, and we appreciate the efforts of researchers and
+community members who help us keep Hariku safe.
+
+
+========================================================================
+2. REPORTING VULNERABILITIES
+========================================================================
+
+If you discover a security vulnerability in Hariku V2, its extension
+store, or any officially distributed extension, please report it by
+email:
+
+    Email:   terabase06@gmail.com
+    Subject: SECURITY — [Brief description of the issue]
+
+Your report should include:
+
+    1. A clear description of the vulnerability.
+    2. Steps to reproduce the issue, including any code or
+       configuration required.
+    3. The affected component (core application, store backend,
+       specific extension, etc.).
+    4. Your assessment of severity (see Section 4 below).
+    5. Any suggested fix or mitigation, if you have one.
+
+IMPORTANT: Please DO NOT publicly disclose the vulnerability — on the
+forum, social media, or elsewhere — until a fix has been released or
+we have coordinated a disclosure timeline with you. Public disclosure
+before a fix is available puts users at risk.
+
+
+========================================================================
+3. RESPONSE TIMELINE
+========================================================================
+
+We will handle your report according to the following timeline:
+
+    - Acknowledgment:  Within 48 hours of receiving your report, we
+                       will confirm receipt and assign a tracking
+                       reference.
+
+    - Assessment:      Within 7 days, we will provide an initial
+                       assessment of the issue, including our severity
+                       classification.
+
+    - Fix timeline:    Depends on severity:
+                         CRITICAL — Patch within 72 hours where possible.
+                         HIGH     — Patch within 14 days.
+                         MEDIUM   — Patch in the next scheduled release.
+                         LOW      — Addressed as resources permit.
+
+    - Notification:    Once a fix is available, we will notify the
+                       reporter before public release so they can
+                       verify the fix.
+
+If we need more time, we will communicate updated timelines and the
+reasons for any delay.
+
+
+========================================================================
+4. SEVERITY LEVELS
+========================================================================
+
+We classify vulnerabilities using four severity levels:
+
+CRITICAL
+    Remote code execution, data exfiltration, full system compromise,
+    or any issue that can be exploited without user interaction to
+    gain control of a user's machine or data.
+
+HIGH
+    Privilege escalation, path traversal attacks, unauthorized access
+    to user data or settings, or bypassing the extension trust system
+    in a way that silently installs unverified code.
+
+MEDIUM
+    Information disclosure (e.g., leaking local file paths or user
+    preferences), denial of service against the application, or
+    issues that require significant user interaction to exploit.
+
+LOW
+    Minor issues with limited security impact, cosmetic security
+    concerns (e.g., verbose error messages exposing internal details),
+    or theoretical vulnerabilities with no practical exploit path.
+
+
+========================================================================
+5. EXTENSION SECURITY
+========================================================================
+
+Hariku V2 extensions are Python modules loaded dynamically into the
+application. By design, extensions run unsandboxed and have full
+access to the Python runtime and the host operating system.
+
+This architecture decision was made to give extension developers
+maximum flexibility, but it means that installing an extension is
+equivalent to running arbitrary code on your machine.
+
+Our security model relies on the following safeguards:
+
+    Trusted Hash Registry
+        Every extension published through the official store at
+        novarealm.cloud is registered with a cryptographic hash.
+        Before loading, Hariku verifies the extension package against
+        its registered hash to detect tampering.
+
+    User Consent for Unverified Extensions
+        Extensions that are sideloaded or whose hash does not match
+        the registry will trigger a warning dialog. The user must
+        explicitly consent before the extension is loaded.
+
+    Safe Mode
+        If a malicious or broken extension compromises Hariku, users
+        can launch in Safe Mode, which disables all extensions and
+        allows removal of the offending package. Safe Mode serves as
+        an escape hatch for recovery.
+
+    Store Review
+        Extensions submitted to the official store undergo review
+        before publication. However, review is not a guarantee of
+        safety — it is one layer of defense among several.
+
+Users are ultimately responsible for evaluating the trustworthiness
+of any extension they install, especially those obtained outside the
+official store.
+
+
+========================================================================
+6. RESPONSIBLE DISCLOSURE
+========================================================================
+
+We believe in recognizing the contributions of security researchers:
+
+    - With your permission, we will credit you by name (or handle) in
+      our release notes and security advisories.
+
+    - We will not pursue legal action against anyone who reports
+      vulnerabilities in good faith, follows this policy, and does not
+      exploit the issue beyond what is necessary to demonstrate it.
+
+    - If you prefer to remain anonymous, we will respect that choice.
+
+We ask that reporters:
+
+    - Act in good faith and avoid actions that harm users or data.
+    - Do not access, modify, or delete data belonging to other users.
+    - Allow reasonable time for a fix before any public disclosure.
+
+
+========================================================================
+7. KNOWN LIMITATIONS
+========================================================================
+
+We are transparent about the following architectural limitations:
+
+    - Extensions have full Python access. There is no sandbox, and
+      there is no capability-based permission system. A malicious
+      extension can do anything the user's operating system account
+      can do.
+
+    - The core security model relies on trust — publisher identity,
+      hash verification, and store review — rather than technical
+      isolation. This is a deliberate tradeoff for flexibility.
+
+    - The hash registry protects against tampering of known packages
+      but cannot prevent a trusted developer from publishing a
+      malicious update. Store review mitigates but does not eliminate
+      this risk.
+
+We are actively evaluating options for additional safeguards in
+future releases. Community input on this topic is welcome on the
+forum at https://sp.novarealm.cloud/forum/hariku.
+
+
+========================================================================
+CONTACT
+========================================================================
+
+For all security-related communications:
+    Email:  terabase06@gmail.com
+    Forum:  https://sp.novarealm.cloud/forum/hariku
+
+Thank you for helping keep Hariku and its community safe.

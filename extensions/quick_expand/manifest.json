@@ -1,0 +1,9 @@
+{
+    "name": "Quick Expand",
+    "version": "1.0",
+    "author": "Antigravity",
+    "description": "Auto-expand custom typed abbreviations (like 'my_email') into full text templates globally across Windows.",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.0"
+}

@@ -1,0 +1,40 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Hariku Community",
+        "email": "community@hariku.local",
+        "version": "1.0",
+        "core_version": "2.0",
+        "rtl": false
+    },
+    "messages": {
+        "project_manager_title": "Project Manager",
+        "btn_new_project": "New Project",
+        "btn_edit": "Edit",
+        "btn_delete": "Delete",
+        "btn_manage_tasks": "Manage Tasks",
+        "lbl_projects": "Your Projects:",
+        "msg_no_projects": "No projects yet. Click New Project to start.",
+        "project_name_prompt": "Enter project name:",
+        "project_name_title": "Project Name",
+        "project_desc_prompt": "Enter short description (optional):",
+        "project_desc_title": "Project Description",
+        "delete_confirm": "Are you sure you want to delete the project '{name}'?",
+        "task_manager_title": "Tasks for: {name}",
+        "btn_add_task": "Add Task",
+        "btn_mark_done": "Toggle Done",
+        "lbl_tasks": "Tasks:",
+        "msg_no_tasks": "No tasks yet. Add one!",
+        "task_name_prompt": "Enter task name:",
+        "task_name_title": "Task Name",
+        "task_date_prompt": "Enter deadline (YYYY-MM-DD):",
+        "task_date_title": "Task Deadline",
+        "invalid_date": "Invalid date format. Please use YYYY-MM-DD.",
+        "announce_due_tasks": "You have {count} project task due today.",
+        "announce_due_tasks_plural": "You have {count} project tasks due today.",
+        "announce_task_item": "Task: {task_name} for project {project_name}.",
+        "task_completed": "Task completed. Project '{name}' is now {percent}% complete.",
+        "project_completed": "Congratulations! You have successfully completed the project '{name}'."
+    }
+}

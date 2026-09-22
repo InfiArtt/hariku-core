@@ -1,0 +1,80 @@
+====================================================================
+PANDUAN KOMPILASI HARIKU V2 MENJADI .EXE DENGAN NUITKA
+====================================================================
+
+Agar aplikasi Hariku V2 milikmu bisa dijalankan di komputer Windows
+manapun secara mandiri tanpa harus menginstal Python terlebih dahulu,
+kita menggunakan alat bernama Nuitka.
+
+Nuitka bekerja dengan menerjemahkan kode Python menjadi bahasa C 
+(C-level code) lalu mengkompilasinya. Ini membuat aplikasinya jauh 
+lebih cepat dan jauh lebih sulit untuk di-reverse-engineer (dibajak).
+
+--------------------------------------------------------------------
+LANGKAH-LANGKAH (Disarankan Menggunakan Virtual Environment)
+--------------------------------------------------------------------
+
+1. AKTIFKAN VIRTUAL ENVIRONMENT
+   (Saya telah membuatkannya untukmu, foldernya bernama "venv")
+   Buka Command Prompt (cmd) di dalam folder hariku2, lalu ketik:
+   
+   venv\Scripts\activate
+   
+   Jika berhasil, di sebelah kiri prompt-mu akan muncul tulisan (venv).
+
+2. PASTIKAN DEPENDENSI SUDAH TERINSTAL
+   (Saya juga sedang menginstalkannya untukmu dari requirements.txt)
+   Perintahnya adalah:
+   
+   pip install -r requirements.txt
+
+3. JALANKAN PERINTAH NUITKA
+   Inilah "mantra sihir" Nuitka untuk mengubah Hariku menjadi .exe.
+   (Pastikan kamu mengetiknya di dalam kondisi venv masih aktif):
+
+nuitka --standalone --windows-console-mode=disable --include-package-data=cytolk --include-package=cryptography --include-data-dir=sounds=sounds --include-data-dir=locales=locales --include-data-dir=docs=docs --include-data-file=nvdaControllerClient64.dll=nvdaControllerClient64.dll --include-data-file=SAAPI64.dll=SAAPI64.dll --lto=yes hariku.py
+
+--------------------------------------------------------------------
+PENJELASAN MANTRA (COMMAND NUITKA)
+--------------------------------------------------------------------
+- `--standalone` 
+  Menggabungkan Python interpreter beserta seluruh DLL Windows yang
+  dibutuhkan ke dalam satu folder aplikasi.
+
+- `--onefile`
+  Membungkus folder standalone tadi menjadi sebuah SATU file `.exe`.
+  File ini akan mengekstrak dirinya ke folder sementara (Temp) saat dijalankan.
+
+- `--windows-console-mode=disable`
+  Menghilangkan jendela hitam Command Prompt di belakang aplikasi.
+  Hariku V2 adalah aplikasi berbasis GUI (Windows), jadi kita tidak
+  ingin jendela hitam jelek itu muncul (sering disebut mode windowed).
+
+- `--windows-icon-from-ico=icon.ico`
+  Menambahkan logo / ikon pada file .exe (opsional, jika kamu punya
+  file icon.ico di folder hariku2).
+
+- `--enable-plugin=wx`
+  Memberi tahu Nuitka untuk mengikutkan DLL khusus milik antarmuka wxPython.
+
+- `--include-package-data=cytolk`
+  Sangat Krusial! Memastikan file DLL murni milik NVDA (seperti 
+  nvdaControllerClient64.dll) yang ada di dalam library cytolk ikut terbungkus 
+  ke dalam .exe. Tanpa ini, suara NVDA akan bisu!
+
+- `--include-data-dir=sounds=sounds`
+  Menyuruh Nuitka memasukkan folder `sounds/` secara utuh ke dalam 
+  exe tersebut, karena kode kita membutuhkannya saat runtime 
+  (seperti saat mencari start.wav).
+
+--------------------------------------------------------------------
+DI MANA HASILNYA?
+--------------------------------------------------------------------
+Setelah proses kompilasinya selesai (biasanya memakan waktu beberapa
+menit karena ia harus mengompilasi C code), kamu akan mendapatkan
+file sakti bernama:
+
+main.exe (atau hariku2.exe jika kamu menambahkan argumen --output-filename)
+
+Kamu tinggal memindahkannya ke komputer lain, klik ganda, dan ia akan 
+menyala sempurna bersuara "Welcome to Hariku version 2.0.0"!

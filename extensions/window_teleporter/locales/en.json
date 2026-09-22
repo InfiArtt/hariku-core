@@ -1,0 +1,27 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Antigravity",
+        "email": "admin@hariku",
+        "version": "1.0"
+    },
+    "messages": {
+        "teleporter_pin": "Pin Window to Slot {slot}",
+        "teleporter_jump": "Teleport to Slot {slot}",
+        "teleporter_check": "Check Window in Slot {slot}",
+        "desktop_jump": "Jump to Virtual Desktop {desktop}",
+        "desktop_prompt": "Jump to Any Desktop",
+        "pinned_success": "Pinned {title} to slot {slot}.",
+        "teleport_success": "Teleporting to {title}.",
+        "check_success": "Slot {slot} contains: {title}.",
+        "slot_empty": "Slot {slot} is empty or the window was closed.",
+        "desktop_success": "Switched to Desktop {desktop}.",
+        "desktop_invalid": "Virtual Desktop {desktop} is not available.",
+        "prompt_title": "Jump Virtual Desktop",
+        "prompt_msg": "Enter target Virtual Desktop number:",
+        "prompt_invalid": "Invalid desktop number.",
+        "pyvda_missing": "Virtual Desktop jumping requires the pyvda module.",
+        "jump_failed": "Failed to jump to desktop {desktop}. Error: {error}"
+    }
+}

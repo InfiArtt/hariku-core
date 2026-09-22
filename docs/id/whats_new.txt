@@ -1,0 +1,202 @@
+Versi 2.2.0 (Pembaruan Inti - 12 Juli 2026)
+================================================================================
+Rilis ini berfokus pada peningkatan inti (core) untuk aksesibilitas, dialog
+Preferensi, dan sistem internasionalisasi (i18n).
+
+================================================================================
+1. AKSESIBILITAS: PENINGKATAN SCREEN READER
+================================================================================
+- Ditambahkan: Injeksi StaticText cerdas untuk NVDA dan screen reader lainnya.
+  Sebelumnya, label teks statis pada dialog (seperti deskripsi di atas kotak
+  centang atau dropdown) diperlakukan sebagai perhentian Tab yang terpisah. 
+  Ini membuat pengguna harus menekan Tab berkali-kali hanya untuk melewati teks
+  deskriptif yang seharusnya dibacakan secara otomatis.
+  Perubahan: Kontrol StaticText di Windows kini secara otomatis menyuntikkan
+  teks mereka ke dalam "Accessible Name" milik kontrol interaktif berikutnya. 
+  Saat pengguna menekan Tab ke kotak centang atau dropdown, NVDA pertama-tama
+  akan membacakan teks deskripsi, lalu membacakan label kontrol tersebut — 
+  semuanya dalam satu ketukan Tab yang mulus.
+
+================================================================================
+2. DIALOG PREFERENSI: OK / TERAPKAN / BATAL
+================================================================================
+- Ditambahkan: Dialog Preferensi kini memiliki tiga tombol aksi: OK, Batal
+  (Cancel), dan Terapkan (Apply).
+  - OK: Menyimpan semua pengaturan dan menutup dialog.
+  - Terapkan: Menyimpan semua pengaturan tetapi tetap membuka dialog.
+  - Batal: Membuang semua perubahan dan menutup dialog tanpa menyimpan.
+- Ditambahkan: Pelacakan status perubahan (Dirty state). Dialog kini memantau 
+  semua kontrol interaktif untuk setiap perubahan. Jika Anda menekan Escape atau
+  menutup jendela setelah melakukan perubahan yang belum disimpan, peringatan
+  akan muncul menanyakan apakah Anda ingin menyimpan sebelum keluar.
+
+================================================================================
+3. CORE EVENT: on_enter_pressed
+================================================================================
+- Ditambahkan: Inti aplikasi kini memancarkan event bus "on_enter_pressed" 
+  saat pengguna menekan Enter di kalender. Ekstensi dapat berlangganan ke event
+  ini dan mengatur payload["handled"] = True untuk menimpa dialog Tambah 
+  Pengingat bawaan dengan dialog kustom mereka sendiri.
+- Lihat DEVELOPERS.md untuk contoh penggunaan.
+
+================================================================================
+4. i18n: PERBAIKAN FALLBACK TERJEMAHAN
+================================================================================
+- Diperbaiki: Sistem terjemahan kini mendeteksi argumen "default" dengan benar. 
+  Saat kunci terjemahan tidak ditemukan di file bahasa mana pun, sistem akan
+  menggunakan string default yang disediakan alih-alih menampilkan nama kunci 
+  mentah (misal, menampilkan "Terapkan" dan bukan "prefs_btn_apply").
+
+================================================================================
+5. DEVELOPER SCRATCHPAD & PENINGKATAN UI
+================================================================================
+- Ditambahkan: "Developer Scratchpad Mode" di menu Preferensi -> Ekstensi. 
+  Pengembang kini dapat menentukan folder khusus untuk memuat ekstensi yang belum
+  dipaketkan (unpacked) untuk pengujian langsung. Ekstensi yang dimuat dari
+  Scratchpad memiliki prioritas mutlak dan akan menimpa versi paket (.hrk) 
+  yang terinstal di AppData dengan aman.
+- Ditambahkan: Layar persetujuan (consent screen) khusus dan peringatan mengenai
+  risiko menjalankan ekstensi yang tidak stabil dari scratchpad.
+- Diubah: Dialog Agenda kini secara native mendukung item "read-only" yang 
+  disuntikkan oleh ekstensi (seperti ulang tahun atau hari libur eksternal). 
+  Item read-only secara otomatis menonaktifkan tombol "Hapus yang Dipilih".
+- Diperbaiki: Menekan tombol 'Delete' pada daftar Agenda kini mencegat aksi 
+  tersebut dengan benar dan memicu peringatan suara untuk item read-only, 
+  bukan gagal secara diam-diam.
+
+================================================================================
+6. PEMBARUAN VERSI CORE
+================================================================================
+- Versi Core diperbarui dari 2.1.0 menjadi 2.2.0.
+
+================================================================================
+
+
+Versi 2.1.0 (Pembaruan Fitur - 20 Juni 2026)
+================================================================================
+Rilis ini memperkenalkan sistem Core Web View API, perbaikan penting pada 
+perilaku fokus antarmuka, pemeriksaan pembaruan otomatis, dan penyelesaian
+keterbatasan lama pada sistem shortcut Input Gestures.
+
+================================================================================
+1. API BARU: SISTEM CORE WEB VIEW
+================================================================================
+- Ditambahkan: Dua fungsi baru di core.api untuk menampilkan konten HTML:
+    core.api.show_html_view(html_string, title, width, height)
+    core.api.show_html_file_view(html_path, title, width, height)
+- Dengan API ini, ekstensi kini dapat merender konten HTML apa pun di jendela
+  Hariku tersendiri yang tetap berada dalam konteks aplikasi. Screen reader 
+  dapat berinteraksi dengan konten secara semantis tanpa pengguna harus 
+  meninggalkan Hariku.
+- Secara teknis, jendela Web View berjalan di subprocess terpisah dari proses
+  utama Hariku untuk mencegah gangguan pada sistem keyboard hook global.
+
+================================================================================
+2. API BARU: CORE EXTENSION HOOKS & NOTIFIKASI
+================================================================================
+- Ditambahkan: Event siklus hidup `on_fetch_agenda`.
+- Ditambahkan: Event `on_before_speak`.
+- Ditambahkan: Event `on_minute_tick` (Heartbeat).
+- Ditambahkan: Event `on_clipboard_changed`.
+- Ditambahkan: Event `on_active_window_changed` (Kesadaran Konteks Dasar).
+- Ditambahkan: Event keadaan OS seperti `on_user_idle`, `on_power_changed`, 
+  dan `on_network_changed`.
+- Ditambahkan: Notifikasi Windows Toast Native via `core.api.show_toast()`.
+- Dokumentasi lengkap tersedia di DEVELOPERS.md.
+
+================================================================================
+3. PENINGKATAN: PEMERIKSA PEMBARUAN CORE OTOMATIS
+================================================================================
+- Ditambahkan: Hariku kini akan secara otomatis memeriksa pembaruan 3 detik 
+  setelah startup di latar belakang. Banner pembaruan (Kritis/Disarankan/Opsional) 
+  kini otomatis muncul tanpa perlu mengklik manual.
+
+================================================================================
+4. PENINGKATAN: KEAMANAN GLOBAL HOTKEY
+================================================================================
+- Ditambahkan: Batasan keamanan yang mencegah shortcut tombol tunggal (tanpa 
+  modifier seperti Ctrl/Shift/Alt/Win) ditandai sebagai Global. Hal ini mencegah 
+  pengguna tidak sengaja "merusak" tombol keyboard (misal tombol "F") di 
+  seluruh sistem Windows.
+
+================================================================================
+5. PERBAIKAN BUG: FOKUS DIALOG MODAL (Z-ORDER)
+================================================================================
+- Diperbaiki: Bug pencurian fokus parah di mana menutup dialog pesan saat Panel 
+  Ekstensi sedang terbuka akan membuat jendela utama melompat ke depan dan 
+  mengubur jendela ekstensi.
+
+================================================================================
+6. PERBAIKAN BUG: INPUT GESTURES — SHORTCUT SATU TOMBOL
+================================================================================
+- Diperbaiki: Keterbatasan dialog "Tambah Tombol" yang sebelumnya mengabaikan 
+  penekanan huruf tunggal tanpa modifier (misal menekan "F" saja). Dialog kini 
+  menggunakan mekanisme "delayed commit" 300md untuk menangani penekanan tombol 
+  tunggal secara elegan.
+
+================================================================================
+- [KRITIS] Ditambahkan: Verifikasi checksum SHA256 untuk installer pembaruan 
+  guna mencegah eksekusi malware yang merusak file installer.
+- [KRITIS] Ditambahkan: Registri Hash Ekstensi Terpercaya. Ekstensi pihak ketiga 
+  kini dicocokkan dengan daftar hash dari server sebelum dimuat.
+- [TINGGI] Diperbaiki: Kerentanan path traversal di get_storage_dir().
+- [TINGGI] Diperbaiki: Kerentanan path traversal melalui field "main" di manifest.
+- [TINGGI] Diperbaiki: Potensi injeksi penyalinan file lokal via URL "file://".
+- [TINGGI] Ditambahkan: Whitelist domain untuk unduhan pembaruan dan ekstensi.
+- [TINGGI] Ditambahkan: Timeout pada semua request jaringan agar aplikasi tidak freeze.
+- [MENENGAH] Diperbaiki: Lencana [Resmi] kini tidak lagi bisa dipalsukan lewat manifest.
+- [RENDAH] Diperbaiki: Detail teknis exception kini hanya masuk ke log, tidak 
+  lagi ditampilkan langsung ke layar pengguna.
+
+================================================================================
+
+
+Versi 2.0.1 (Patch Kritis - 19 Juni 2026)
+--------------------------------------------------------------------------------
+Ini adalah rilis patch kritis yang mengatasi dua bug serius dari Fase Pengujian
+Awal 2.0.0.
+
+--------------------------------------------------------------------------------
+1. KRITIS: INPUT GESTURES — BUG KEYBOARD TERKUNCI
+--------------------------------------------------------------------------------
+- Diperbaiki: Bug di dialog Input Gestures yang menyebabkan seluruh keyboard 
+  menjadi tidak responsif sama sekali setiap kali dialog terbuka.
+
+--------------------------------------------------------------------------------
+2. PENINGKATAN: SISTEM PEMBARUAN LEBIH CERDAS
+--------------------------------------------------------------------------------
+- Ditambahkan: Sistem tingkat keparahan pembaruan bertingkat (Kritis, Disarankan, 
+  Opsional).
+- Ditambahkan: Penegakan versi minimum, memaksa klien usang untuk memperbarui.
+- Ditambahkan: Perbandingan versi semantik (major.minor.patch) yang benar.
+
+
+================================================================================
+
+Versi 2.0.0 (Fase Pengujian Awal - 18 Juni 2026)
+--------------------------------------------------------------------------------
+Selamat datang di Hariku V2! Rilis besar ini menandai perubahan arsitektur 
+yang masif. Seluruh fondasi telah ditulis ulang dari awal menjadi modular.
+
+1. DARI MONOLITH KE MODULAR (PLATFORM EKSTENSI)
+- Aplikasi inti dilucuti hingga minimum absolut. Fungsionalitas ditangani oleh 
+  Extension Manager.
+- Dukungan paket ekstensi terkompilasi (.hrk) dan ekstensi "Unpacked" untuk dev.
+- Hot-Reloading Real-time untuk pengembang.
+- Extension Store terintegrasi di dalam aplikasi.
+
+2. ARSITEKTUR INTI & KOMUNIKASI SISTEM
+- Sistem Event Bus (core.events) menjamin stabilitas. Ekstensi berkomunikasi via 
+  Publish/Subscribe. Jika satu ekstensi crash, aplikasi tidak ikut crash.
+- Mesin Terjemahan i18n Global yang dinamis untuk semua ekstensi.
+
+3. DIAGNOSTIK, PEMECAHAN MASALAH, & STABILITAS
+- Pelapor Crash Lanjutan dengan dialog traceback terperinci.
+- Safe Mode tingkat Hardware (Tahan Shift saat startup untuk mem-bypass ekstensi).
+
+4. ANTARMUKA & PREFERENSI
+- Jendela pengaturan monolitik lama diganti dengan tata letak "Treebook".
+- Injeksi Preferensi Dinamis memungkinkan ekstensi menambah panel pengaturan sendiri.
+
+Terima kasih telah berpartisipasi dalam Fase Pengujian Awal Hariku V2!
+- Tim Pengembang Hariku

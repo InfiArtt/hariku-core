@@ -1,0 +1,9 @@
+{
+    "name": "Google Calendar Reader",
+    "version": "1.0",
+    "author": "Rafli",
+    "description": "Read your Google Calendar events inside Hariku. One-way sync: reads from Google, edits stay local.",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.2"
+}

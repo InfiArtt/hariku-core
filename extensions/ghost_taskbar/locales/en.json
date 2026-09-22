@@ -1,0 +1,15 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Hariku Team",
+        "email": "support@novarealm.cloud",
+        "version": "1.0"
+    },
+    "messages": {
+        "msg_tray_cleared": "System tray cleared.",
+        "msg_tray_not_found": "Failed to find Windows System Tray.",
+        "msg_clear_failed": "Failed to clear ghost icons.",
+        "desc_action_clear": "Clear Ghost Icons from System Tray"
+    }
+}

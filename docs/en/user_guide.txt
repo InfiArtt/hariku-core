@@ -1,0 +1,683 @@
+================================================================================
+HARIKU V2 — USER GUIDE
+Version 2.0.2 | Early Testing Phase
+================================================================================
+
+Welcome to Hariku V2. This guide covers everything you need to know to use
+Hariku effectively, from first launch to advanced customisation. Read it from
+top to bottom once, or jump to the section you need using the headings below.
+
+TABLE OF CONTENTS
+-----------------
+  1.  Getting Started
+  2.  The Calendar — Navigation
+  3.  Reminders
+  4.  Sound & Speech Feedback
+  5.  Preferences
+  6.  The Extension System
+  7.  The Extension Manager
+  8.  Input Gestures (Keyboard Shortcuts)
+  9.  System Tray & Close Behaviour
+  10. Menus at a Glance
+  11. Safe Mode
+  12. Checking for Updates
+  13. Crash Reporter
+  14. Telemetry & Privacy
+  15. Troubleshooting
+
+================================================================================
+1. GETTING STARTED
+================================================================================
+
+When you launch Hariku V2 for the first time, an Onboarding dialog will appear
+and walk you through a short setup. You can re-run the onboarding at any time
+from Help > Show Welcome Screen.
+
+If you hold the Shift key on your keyboard while the application is loading,
+Hariku will start in Safe Mode instead of normal mode. You will hear a soft
+"click" sound the moment Safe Mode is detected, confirming it is active. Safe
+Mode is explained in full in Section 11.
+
+After setup, the main window opens showing the calendar and a menu bar. A
+system tray icon is also placed in the Windows notification area, giving you
+quick access to Hariku even when the main window is hidden.
+
+
+================================================================================
+2. THE CALENDAR — NAVIGATION
+================================================================================
+
+The calendar is the heart of Hariku. When the main window has focus, you can
+navigate it entirely with the keyboard. Every navigation action announces the
+selected date aloud through your screen reader.
+
+If a date has at least one reminder attached to it, a subtle "pen click" sound
+plays as you land on it, giving you an additional audio cue.
+
+DEFAULT KEYBOARD SHORTCUTS
+---------------------------
+All of the shortcuts below can be changed in the Input Gestures dialog
+(Section 8). The keys listed here are the factory defaults.
+
+  Arrow Keys:
+    Left Arrow         Move to the previous day
+    Right Arrow        Move to the next day
+    Up Arrow           Move back one month
+    Down Arrow         Forward one month
+    Page Up            Move back one year
+    Page Down          Forward one year
+
+  Jump Keys (hold Ctrl):
+    Ctrl + Left        Jump to the first day of the current week (Monday)
+    Ctrl + Right       Jump to the last day of the current week (Sunday)
+    Ctrl + Home        Jump to the first day of the current month
+    Ctrl + End         Jump to the last day of the current month
+
+  Today:
+    D                  Return to today's date instantly
+
+  Go to a Specific Date:
+    Ctrl + G           Opens a text prompt. Type a date in either of these
+                       formats and press Enter:
+                         YYYY-MM-DD  (e.g. 2026-12-25)
+                         DD/MM/YYYY  (e.g. 25/12/2026)
+
+
+READING REMINDERS FOR THE SELECTED DATE
+-----------------------------------------
+  Space              Read all reminders for the currently selected date aloud.
+                     If there are no reminders, Hariku will say so.
+                     If there are reminders, the Agenda dialog opens showing
+                     a list of all reminders for that date.
+
+ADDING A REMINDER TO THE SELECTED DATE
+----------------------------------------
+  Enter              Opens the Add Reminder dialog for the currently
+                     selected date. See Section 3 for details.
+
+
+================================================================================
+3. REMINDERS
+================================================================================
+
+ADDING A REMINDER
+------------------
+Navigate to the date you want on the calendar, then press Enter. The
+"Add Reminder" dialog opens. Fill in:
+
+  Title    — A short description of the reminder (e.g. "Doctor appointment").
+  Time     — The time the reminder should fire, in HH:MM 24-hour format
+             (e.g. 14:30 for 2:30 PM).
+
+Press OK to save. The reminder is stored locally on your device.
+
+HOW REMINDERS FIRE
+-------------------
+Hariku runs a background daemon that checks for due reminders every 30 seconds.
+When a reminder's date and time match the current moment, a dialog appears:
+
+  - The reminder title is announced aloud.
+  - A Windows notification sound plays.
+  - The Reminder dialog offers two options:
+      Snooze (5 min)  — Delays the reminder by 5 minutes.
+      Mark as Done    — Dismisses the reminder permanently.
+
+A reminder will only fire once per minute slot. If you have already marked it
+as done, it will never fire again.
+
+VIEWING REMINDERS FOR A DATE
+------------------------------
+Press Space on any date in the calendar to open the Agenda dialog for that
+date. The Agenda lists all reminders with their times and completion status.
+
+IMPORTANT NOTE
+--------------
+In Hariku V2, advanced reminder features (recurring reminders, snooze
+customisation, etc.) are being rebuilt as separate extensions and are not yet
+part of the core application.
+
+
+================================================================================
+4. SOUND & SPEECH FEEDBACK
+================================================================================
+
+Hariku provides rich audio feedback through two channels:
+
+SCREEN READER SPEECH
+---------------------
+If a supported screen reader is running (NVDA, JAWS, or SAPI), Hariku speaks
+date announcements, reminder titles, error messages, and status updates through
+it automatically. No configuration is needed.
+
+INTERNAL SOUNDS
+----------------
+Hariku also plays its own subtle sound effects for navigation and events:
+
+  move.wav       — Plays every time you navigate to a different date.
+  penClick.wav   — Plays when you land on a date that has reminders.
+  start.wav      — Plays once on application startup.
+  history.wav    — Plays when Safe Mode is detected at startup.
+
+ADJUSTING VOLUME
+-----------------
+Hariku's internal sounds have their own volume control, independent of your
+system volume. Two hotkeys let you adjust it without opening any dialog:
+
+  F5   — Decrease Hariku's sound volume.
+  F6   — Increase Hariku's sound volume.
+
+You can also set a precise volume level using the slider in
+Preferences > General (Section 5).
+
+TOGGLING SPEECH INTERRUPTION
+------------------------------
+By default, each new spoken message interrupts the previous one (so navigating
+quickly through dates does not stack up announcements). You can toggle this
+behaviour in Preferences > General using the "Interrupt speech" checkbox. for NVDA this will only work mostly when you use sleep mode on.
+
+
+================================================================================
+5. PREFERENCES
+================================================================================
+
+Open the Preferences dialog from:
+  - Menu: Preferences > Open Preferences
+  - Keyboard: Ctrl + P
+
+The dialog is organised into lists of window. use an arrow to switch between them.
+
+GENERAL Winddow
+------------
+  Play startup sound
+      Whether to play the startup chime when Hariku opens.
+
+  Interrupt speech
+      When checked (default), a new announcement cancels the previous one.
+      Useful when navigating quickly. Uncheck if you want all speech to queue.
+
+  Start Hariku with Windows
+      Adds or removes Hariku from Windows startup via the registry.
+
+  Global Volume  (slider, 0-100)
+      Controls the volume of all internal Hariku sounds (move, click, etc.).
+      This is separate from your system volume.
+
+  Date Format  (dropdown)
+      Controls how dates are announced and displayed. Available formats:
+        Long (Weekday, Day Month Year)  e.g.  Tuesday, 16 June 2026
+        Long (Day Month Year)           e.g.  16 June 2026
+        Medium (Wkdy, Day Mon Year)     e.g.  Tue, 16 Jun 2026
+        Medium (Day Mon Year)           e.g.  16 Jun 2026
+        Short (DD/MM/YYYY)              e.g.  16/06/2026
+        Short (DD-MM-YYYY)              e.g.  16-06-2026
+        International (YYYY-MM-DD)      e.g.  2026-06-16
+
+  Language  (dropdown)
+      Changes the display language of the application interface. A restart is
+      required for the language change to take full effect.
+
+  Window Close Behaviour  (radio buttons)
+      Defines what happens when you press the X button or close the window:
+        Minimize to Tray   — Hides the window; Hariku stays running in the tray.
+        Quit Hariku        — Exits the application completely.
+        Show Exit Options  — Asks you what to do each time.
+
+  Public Telemetry Data
+      Hariku collects fully anonymous usage statistics (OS version, language,
+      active extensions) to help improve the application. This data contains
+      no personal information. You may opt out here at any time. The collected
+      data is publicly viewable at sp.novarealm.cloud/stats.
+
+  Check for Updates  (button)
+      Manually triggers an update check right now.
+
+EXTENSIONS Window
+---------------
+  Controls what Hariku does when a new version of an installed extension is
+  available from the extension store:
+
+    Notify me when updates are available  (default)
+        Hariku shows a notification but does not install anything automatically.
+    Update automatically
+        Extensions are updated silently in the background without asking.
+    Do nothing
+        Extension updates are ignored entirely.
+
+ADVANCED Window
+-------------
+  Log Level  (dropdown)
+      Controls how much detail is written to the debug log file:
+        DISABLED  — No logging at all.
+        INFO      — Normal operational messages (default).
+        DEBUG     — Verbose output; useful for tracking down bugs.
+        WARNING   — Only warnings and errors.
+        ERROR     — Only errors.
+
+  Open Data Folder  (button)
+      Opens the folder where all Hariku data (reminders, extension data,
+      settings) is stored. Useful for manual backup.
+
+  View Log File  (button)
+      Opens the current debug log in your default text editor.
+
+  Clear Cache  (button)
+      Removes cached extension assets and temporary files.
+
+Note: The Advanced Window also shows any additional panels injected by installed
+extensions.
+
+
+================================================================================
+6. THE EXTENSION SYSTEM
+================================================================================
+
+Hariku V2's most important feature is its extension system. Instead of a
+single large application, the core is deliberately minimal. Every major feature
+is a self-contained "extension" that plugs into the core.
+
+WHY EXTENSIONS?
+----------------
+  - If one extension crashes, the rest of Hariku keeps running perfectly.
+  - You only install what you need. Unused features take up no memory.
+  - Extensions can be updated independently, without touching the core app.
+  - Developers can write and share their own extensions.
+
+EXTENSION FILE FORMAT (.hrk)
+------------------------------
+A compiled extension is a single file with the ".hrk" extension. It is
+essentially a zip archive containing the extension's code and metadata.
+
+Extensions can also exist as unpacked folders during development, which
+allows "hot-reloading" — the ability to reload an extension's code on the
+fly without restarting Hariku.
+
+WHAT COMES PRE-INSTALLED?
+--------------------------
+The following extensions ship with Hariku V2 in this early testing phase:
+  date_calculator
+      Provides date arithmetic — calculating the number of days between
+      two dates or adding/subtracting days from a given date.
+
+  developer_news
+      Displays the latest developer news and announcements from the Hariku
+      team inside the application.
+
+  developer_toolkit
+      Tools and utilities aimed at extension developers. Allows hot-reloading
+      of unpacked extensions for rapid iteration.
+
+  diary
+      A private, encrypted diary with mood tracking. Lets you write personal
+      entries linked to specific dates.
+
+  ghost_taskbar
+      Utility that cleans up orphaned taskbar entries from crashed processes.
+
+  quotes
+      Displays a random motivational quote. Can be configured to show a
+      new quote on startup.
+
+  wikipedia_reader
+      Lets you look up and read Wikipedia articles from within Hariku.
+
+Note: Many extensions from Hariku V1 are still being ported and are not
+yet available in this early testing phase. They will appear in the
+extension store as they are completed.
+
+
+================================================================================
+7. THE EXTENSION MANAGER
+================================================================================
+
+Access the Extension Manager from:
+  - Menu: Extensions > Manage Extensions
+  - Keyboard: Ctrl + X
+
+The Extension Manager is where you install, enable, disable, and remove
+extensions. It has two sections: Installed and Store.
+
+INSTALLED TAB
+--------------
+Lists every extension currently installed. For each extension you can:
+  Enable / Disable
+      Disabling an extension unloads it from memory but keeps it installed.
+      Re-enabling it requires a restart of Hariku.
+  Remove
+      Permanently deletes the extension from disk.
+
+When you make changes that require a restart, the Extension Manager will
+prompt you. Choose Yes to restart immediately, or No to restart manually later.
+
+STORE TAB (HARIKU STORE)
+-------------------------
+Browse and download official and community extensions directly from inside
+Hariku. The store connects to the Hariku server to fetch available packages.
+Select an extension and click Install to download and install it.
+
+EXTENSION UPDATES
+------------------
+Hariku checks for extension updates automatically in the background 6 seconds
+after startup (to avoid slowing down the boot process). What happens when an
+update is found depends on your setting in Preferences > Extensions:
+  - Notify: You receive a notification and choose whether to update.
+  - Auto-update: The update is applied silently.
+  - Do nothing: The update check runs but you are never informed.
+
+
+================================================================================
+8. INPUT GESTURES (KEYBOARD SHORTCUTS)
+================================================================================
+
+Every keyboard shortcut in Hariku — including those added by extensions — can
+be viewed and customised in the Input Gestures dialog.
+
+OPENING INPUT GESTURES
+-----------------------
+  - Menu: Preferences > Open Preferences, then navigate to the
+    "Input Gestures" Window inside the dialog.
+  - Keyboard: Ctrl + P, then navigate to Input Gestures.
+
+THE GESTURE TREE
+-----------------
+Shortcuts are organised in a tree:
+
+  Category (e.g. "Calendar Navigation", "Hariku Core", extension names)
+    Action description (e.g. "Move to the next day")
+      Ctrl + Right [LOCAL]
+      Ctrl + Alt + Right [GLOBAL]
+
+A shortcut marked [LOCAL] only works when Hariku's main window has focus.
+A shortcut marked [GLOBAL] works system-wide, even when Hariku is minimised
+or behind other windows.
+
+ADDING A NEW SHORTCUT
+----------------------
+1. Select an action in the tree (click the action description row).
+2. Click "Add Key".
+3. The "Add Key" dialog opens. Hold the modifier keys you want (Ctrl, Shift,
+   Alt, and/or the Windows key), then press the main key.
+   Example: to assign Ctrl + N, press and hold Ctrl, then press N.
+4. The combination is shown as a live preview. Release all keys and the
+   dialog confirms automatically.
+5. Press Escape at any time to cancel without saving.
+
+Tip: A single action can have multiple shortcuts assigned to it. This is
+useful when you want both a local and a global shortcut for the same action.
+
+REMOVING A SHORTCUT
+--------------------
+1. Expand the action in the tree to reveal its assigned shortcuts.
+2. Select the shortcut you want to remove.
+3. Click "Remove Key".
+
+GLOBAL vs. LOCAL
+-----------------
+When a shortcut node is selected, the "Make this shortcut Global" checkbox
+becomes active. Tick it to make the shortcut work system-wide. Untick to
+restrict it to when Hariku is focused.
+
+IMPORTANT: Changes to Input Gestures are saved when you close the Preferences
+dialog.
+
+
+================================================================================
+9. SYSTEM TRAY & CLOSE BEHAVIOUR
+================================================================================
+
+Hariku places an icon in the Windows system tray (notification area) when it
+is running. Right-clicking the tray icon shows a menu with quick actions:
+  - Show / Hide the main window.
+  - Access Preferences.
+  - Exit Hariku.
+
+You can also toggle the main window's visibility at any time using the global
+hotkey:
+  Alt + Ctrl + H  (default, works system-wide)
+
+This is especially useful if Hariku is minimised to the tray and you want to
+bring it back without pressing alt tab.
+
+CLOSE BEHAVIOUR
+----------------
+When you press the X button on the main window, Hariku's behaviour depends on
+what you have configured in Preferences > General > Window Close Behaviour:
+
+  Minimize to Tray  (default)
+      The window hides; Hariku continues running in the background.
+      Reminders will still fire normally.
+
+  Quit Hariku
+      Hariku exits completely.
+
+  Show Exit Options
+      A dialog appears each time offering you a choice:
+        Minimize to Tray / Quit / Restart / Restart in Safe Mode
+
+You can also access exit options at any time with the keyboard shortcut:
+  Ctrl + Q
+
+
+================================================================================
+10. MENUS AT A GLANCE
+================================================================================
+
+FILE MENU
+----------
+  Minimize to Tray             Hide the main window to the system tray.
+  Exit Options > Exit          Close Hariku completely.
+  Exit Options > Restart       Restart the application.
+  Exit Options > Restart in Safe Mode
+                               Restart with all extensions disabled.
+
+PREFERENCES MENU
+-----------------
+  Open Preferences (Ctrl+P)   Open the Preferences dialog.
+
+EXTENSIONS MENU
+----------------
+  Manage Extensions (Ctrl+X)  Open the Extension Manager.
+  [Extension menu items]      Extensions may add their own items here.
+
+HELP MENU
+----------
+  User Guide                  Open this document.
+  What's New                  View the release notes for the current version.
+  Get Support                 Opens the Hariku community discussion page.
+  Report a Bug                Opens the Hariku issue tracker on GitHub.
+  Show Welcome Screen         Re-run the first-launch onboarding wizard.
+  Check for Updates           Manually check if a new version is available.
+  About Hariku                Version information, credits, and license.
+
+
+================================================================================
+11. SAFE MODE
+================================================================================
+
+Safe Mode is a built-in recovery mechanism. When Hariku is in Safe Mode, the
+Extension Manager is completely bypassed. No extensions load. The application
+runs as a pure, stable core.
+
+Use Safe Mode when:
+  - An extension is causing Hariku to crash on every launch (a "boot loop").
+  - You want to test whether a problem is caused by an extension or the core.
+  - You need to uninstall a misbehaving extension without it loading.
+
+HOW TO ENTER SAFE MODE
+-----------------------
+Method 1 — Keyboard at startup:
+  Hold the Shift key on your keyboard before or just as Hariku is launched.
+  Keep holding Shift until you hear a soft "click" sound. That click confirms
+  that Safe Mode has been detected. You can release Shift at that point.
+
+Method 2 — From within Hariku:
+  Go to File > Exit Options > Restart in Safe Mode.
+  Or press Ctrl + Q to open Exit Options and select "Restart in Safe Mode".
+
+Method 3 — Command line:
+  Run hariku.exe --safe-mode from a terminal.
+
+WHAT CHANGES IN SAFE MODE?
+----------------------------
+  - The title bar shows "(Safe Mode)" to remind you of the current state.
+  - All extensions are skipped. Their menus and hotkeys do not appear.
+  - The extension store and update checker do not run.
+  - Everything else (reminders, preferences, the calendar) works normally.
+
+RETURNING TO NORMAL MODE
+-------------------------
+Simply close Hariku and relaunch it without holding Shift, or use
+File > Exit Options > Restart.
+
+
+================================================================================
+12. CHECKING FOR UPDATES
+================================================================================
+
+Hariku checks for updates to the core application and to individual extensions.
+
+CORE APPLICATION UPDATES
+-------------------------
+An automatic check runs in the background shortly after startup. You can also
+trigger a manual check at any time from Help > Check for Updates or from the
+button in Preferences > General.
+
+Updates are delivered in three tiers, each with a different visual style:
+
+  Critical Update  (red banner)
+      Addresses a severe bug, crash, or security issue. If the server marks
+      the update as "forced", the dialog cannot be dismissed and must be
+      installed. If it is not forced, you may still choose to install or skip.
+
+  Recommended Update  (amber banner)
+      An important fix that is not immediately dangerous. You may defer it,
+      but only up to three times. After three deferrals, it escalates to
+      critical behaviour.
+
+  Optional Update  (blue banner)
+      Minor improvements or new features. You may skip it freely.
+
+When you accept an update, Hariku downloads the installer to your system's
+Temp folder and launches it silently. Hariku then closes automatically to allow
+the installer to replace the application files. After installation completes,
+you can relaunch Hariku normally.
+
+EXTENSION UPDATES
+------------------
+Extension updates are checked 6 seconds after startup. The behaviour when an
+update is found is controlled by Preferences > Extensions:
+  - Notify me (default): You receive an in-app notification.
+  - Auto-update: Extensions are updated silently.
+  - Do nothing: Updates are ignored.
+
+
+================================================================================
+13. CRASH REPORTER
+================================================================================
+
+If Hariku encounters an unhandled error, instead of silently closing or
+freezing, the Crash Reporter dialog appears. It shows:
+
+  - A plain-language description of what went wrong.
+  - The technical traceback (error log) for reference.
+  - A "Send Report" button that securely transmits the error details to the
+    development team so the bug can be identified and fixed.
+
+You can also copy the traceback text manually if you prefer to report via
+GitHub Issues (Help > Report a Bug).
+
+The crash log is always saved to the Hariku log file in your system's Temp
+folder regardless of whether you send the report. You can view it from
+Preferences > Advanced > View Log File.
+
+
+================================================================================
+14. TELEMETRY & PRIVACY
+================================================================================
+
+Hariku collects a small amount of anonymous data on startup to help us
+understand how the application is being used and to prioritise improvements.
+
+WHAT IS COLLECTED
+------------------
+  - Your operating system version.
+  - Your Hariku version.
+  - Your display language.
+  - The names of extensions you have installed.
+  - An anonymous session ID (a random number generated fresh each launch;
+    it is not stored or linked to your identity in any way).
+
+WHAT IS NEVER COLLECTED
+------------------------
+  - Your name, email, or any account information.
+  - The content of your reminders or diary entries.
+  - Your calendar data.
+  - Your file system or application activity outside of Hariku.
+
+WHERE THE DATA GOES
+--------------------
+The data is sent to the Hariku analytics service and is viewable publicly by
+anyone at sp.novarealm.cloud/stats. There are no private or hidden metrics.
+
+HOW TO OPT OUT
+---------------
+Go to Preferences > General, scroll to the "Public Telemetry Data" section,
+and uncheck "Share my anonymous usage data publicly". The change takes effect
+immediately. No restart required.
+
+
+================================================================================
+15. TROUBLESHOOTING
+================================================================================
+
+HARIKU CRASHES ON STARTUP / BOOT LOOP
+---------------------------------------
+An extension is most likely the cause. Start Hariku in Safe Mode (hold Shift
+during launch) to bypass all extensions. Once in Safe Mode, go to
+Extensions > Manage Extensions, identify the problematic extension, and
+remove or disable it. Then restart normally.
+
+THE KEYBOARD IS UNRESPONSIVE IN THE "ADD KEY" DIALOG
+------------------------------------------------------
+This was a known bug in version 2.0.0, fixed in version 2.0.1. Please update
+Hariku to the latest version via Help > Check for Updates. In the meantime,
+press Ctrl+Alt+Delete to open Task Manager and end the Hariku process, or
+press Escape to cancel the dialog (2.0.1 and later).
+
+A SHORTCUT I PRESSED DID THE WRONG THING
+------------------------------------------
+Two shortcuts may be conflicting. Open Preferences > Input Gestures and look
+for the action that should have fired. If the key is assigned to a different
+action, remove it from there and re-assign it to the correct one.
+
+HARIKU IS NOT SPEAKING
+------------------------
+Make sure your screen reader (NVDA, JAWS) is running, or check that your
+system audio is not muted. Also verify that the volume in
+Preferences > General is not set to zero.
+
+THE DATE FORMAT SOUNDS WRONG
+------------------------------
+Go to Preferences > General and try a different Date Format option. The format
+controls both the speech output and how dates appear visually.
+
+AN EXTENSION IS NOT APPEARING AFTER INSTALL
+---------------------------------------------
+After installing an extension, Hariku needs to be restarted for it to load.
+If you have already restarted and the extension still does not appear, check
+that it is Enabled in Extensions > Manage Extensions.
+
+I NEED TO FIND MY DATA FILES
+------------------------------
+Go to Preferences > Advanced > Open Data Folder. This opens the folder where
+all your reminders, settings, and extension data are stored. You can copy
+this folder to back up your Hariku data.
+
+I NEED MORE HELP
+-----------------
+  Community support:   Help > Get Support  (opens the GitHub Discussions page)
+  Report a bug:        Help > Report a Bug (opens the GitHub Issues page)
+
+================================================================================
+END OF USER GUIDE
+Hariku V2.0.1 — Developed by Rafli | TechLabs
+================================================================================

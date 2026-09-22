@@ -1,0 +1,27 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Antigravity",
+        "email": "admin@hariku",
+        "version": "1.0"
+    },
+    "messages": {
+        "teleporter_pin": "Paku Jendela ke Slot {slot}",
+        "teleporter_jump": "Teleportasi ke Slot {slot}",
+        "teleporter_check": "Cek Jendela di Slot {slot}",
+        "desktop_jump": "Lompat ke Virtual Desktop {desktop}",
+        "desktop_prompt": "Lompat ke Desktop Manapun",
+        "pinned_success": "{title} dipaku ke slot {slot}.",
+        "teleport_success": "Melompat ke {title}.",
+        "check_success": "Slot {slot} berisi: {title}.",
+        "slot_empty": "Slot {slot} kosong atau jendela sudah ditutup.",
+        "desktop_success": "Berada di Desktop {desktop}.",
+        "desktop_invalid": "Virtual Desktop {desktop} tidak tersedia.",
+        "prompt_title": "Lompat Virtual Desktop",
+        "prompt_msg": "Masukkan nomor Virtual Desktop tujuan:",
+        "prompt_invalid": "Nomor desktop tidak valid.",
+        "pyvda_missing": "Fitur pindah desktop membutuhkan modul pyvda.",
+        "jump_failed": "Gagal melompat ke desktop {desktop}. Error: {error}"
+    }
+}

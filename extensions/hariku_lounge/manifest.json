@@ -1,0 +1,9 @@
+{
+  "name": "Hariku Lounge",
+  "version": "1.0.0",
+  "description": "Global chat room for Hariku users to interact with each other in real-time.",
+  "main": "main.py",
+  "author": "Hariku Core Team",
+  "language": "en",
+  "minimum_core_version": "2.0.0"
+}

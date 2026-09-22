@@ -1,0 +1,9 @@
+{
+    "name": "Project System",
+    "version": "1.0",
+    "author": "Rafli",
+    "description": "Manage complex projects, break them down into tasks, set deadlines, and track progress.",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.0"
+}

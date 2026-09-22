@@ -1,0 +1,15 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Hariku Team",
+        "email": "support@novarealm.cloud",
+        "version": "1.0"
+    },
+    "messages": {
+        "msg_tray_cleared": "System Tray dibersihkan.",
+        "msg_tray_not_found": "Gagal menemukan System Tray Windows.",
+        "msg_clear_failed": "Gagal membersihkan ikon hantu.",
+        "desc_action_clear": "Bersihkan Ikon Hantu di System Tray"
+    }
+}

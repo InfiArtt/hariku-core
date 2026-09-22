@@ -1,0 +1,9 @@
+{
+    "name": "Filter",
+    "version": "1.0",
+    "author": "Rafli",
+    "description": "Search and filter your reminders and events across all dates. Find anything instantly with keyword search.",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.0"
+}

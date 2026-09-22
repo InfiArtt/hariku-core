@@ -1,0 +1,40 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Hariku Community",
+        "email": "community@hariku.local",
+        "version": "1.0",
+        "core_version": "2.0",
+        "rtl": false
+    },
+    "messages": {
+        "project_manager_title": "Manajer Proyek",
+        "btn_new_project": "Proyek Baru",
+        "btn_edit": "Edit",
+        "btn_delete": "Hapus",
+        "btn_manage_tasks": "Kelola Tugas",
+        "lbl_projects": "Proyek Anda:",
+        "msg_no_projects": "Belum ada proyek. Klik Proyek Baru untuk memulai.",
+        "project_name_prompt": "Masukkan nama proyek:",
+        "project_name_title": "Nama Proyek",
+        "project_desc_prompt": "Masukkan deskripsi singkat (opsional):",
+        "project_desc_title": "Deskripsi Proyek",
+        "delete_confirm": "Apakah Anda yakin ingin menghapus proyek '{name}'?",
+        "task_manager_title": "Tugas untuk: {name}",
+        "btn_add_task": "Tambah Tugas",
+        "btn_mark_done": "Tandai Selesai / Belum",
+        "lbl_tasks": "Tugas:",
+        "msg_no_tasks": "Belum ada tugas. Tambahkan satu!",
+        "task_name_prompt": "Masukkan nama tugas:",
+        "task_name_title": "Nama Tugas",
+        "task_date_prompt": "Masukkan tenggat waktu (YYYY-MM-DD):",
+        "task_date_title": "Tenggat Waktu Tugas",
+        "invalid_date": "Format tanggal tidak valid. Gunakan YYYY-MM-DD.",
+        "announce_due_tasks": "Anda memiliki {count} tugas proyek yang jatuh tempo hari ini.",
+        "announce_due_tasks_plural": "Anda memiliki {count} tugas proyek yang jatuh tempo hari ini.",
+        "announce_task_item": "Tugas: {task_name} untuk proyek {project_name}.",
+        "task_completed": "Tugas selesai. Proyek '{name}' sekarang {percent}% selesai.",
+        "project_completed": "Selamat! Anda telah berhasil menyelesaikan proyek '{name}'."
+    }
+}

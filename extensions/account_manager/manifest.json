@@ -1,0 +1,9 @@
+{
+  "name": "Hariku Account Manager",
+  "version": "1.0.0",
+  "description": "Handles authentication with Hariku Cloud (novarealm.cloud). Provides identity for other extensions.",
+  "main": "main.py",
+  "author": "Hariku Core Team",
+  "language": "id",
+  "minimum_core_version": "2.0.0"
+}
