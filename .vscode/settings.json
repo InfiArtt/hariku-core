@@ -1,0 +1,18 @@
+{
+    "python.defaultInterpreterPath": "./venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "hariku.dist": true,
+        "hariku.build": true
+    },
+    "files.associations": {
+        "*.hrk": "zip"
+    },
+    "python.analysis.typeCheckingMode": "off"
+}

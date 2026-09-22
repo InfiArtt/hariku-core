@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Hariku (Dev)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/hariku.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Run Hariku (Safe Mode)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/hariku.py",
+            "args": ["--safe-mode"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Package Extension",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tools/packager.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

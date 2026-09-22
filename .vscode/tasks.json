@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Hariku",
+            "type": "shell",
+            "command": "python",
+            "args": ["hariku.py"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Package Extension (Interactive)",
+            "type": "shell",
+            "command": "python",
+            "args": ["tools/packager.py"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Package Template Extension",
+            "type": "shell",
+            "command": "python",
+            "args": ["tools/packager.py", "template_extension", "--output", "extensions"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Compile with Nuitka",
+            "type": "shell",
+            "command": "nuitka",
+            "args": [
+                "--standalone",
+                "--windows-console-mode=disable",
+                "--include-package=cryptography",
+                "--include-data-dir=venv\\Lib\\site-packages\\cytolk=cytolk",
+                "--include-data-dir=sounds=sounds",
+                "--include-data-dir=locales=locales",
+                "hariku.py"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        }
+    ]
+}

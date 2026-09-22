@@ -1,0 +1,628 @@
+===============================================================================
+  HARIKU V2 EXTENSION STORE — REVIEW GUIDELINES
+  Internal Document for Extension Reviewers
+===============================================================================
+
+  Document Version : 1.0
+  Effective Date   : July 2026
+  Classification   : INTERNAL — Do not distribute to extension developers
+  Contact          : terabase06@gmail.com
+  Store URL        : https://novarealm.cloud
+  Forum            : https://sp.novarealm.cloud/forum/hariku
+
+  This document is intended for authorized reviewers of the Hariku V2
+  Extension Store. It defines the review process, evaluation criteria,
+  and escalation procedures for all extension submissions.
+
+===============================================================================
+  1. OVERVIEW
+===============================================================================
+
+  1.1  Role of a Reviewer
+  -----------------------
+
+  Extension reviewers serve as the last line of defense between submitted
+  code and the end users of Hariku V2. Because extensions are Python
+  modules loaded dynamically with FULL system access and no sandbox,
+  every submission must be treated as potentially harmful until proven
+  otherwise. Reviewers are responsible for verifying that extensions are
+  safe, accessible, functional, and of reasonable quality before they
+  reach users.
+
+  A reviewer's judgment directly impacts the trust users place in the
+  Hariku Extension Store. This responsibility must be taken seriously.
+
+  1.2  Guiding Principles
+  -----------------------
+
+  Reviews are conducted according to three principles, listed in strict
+  priority order:
+
+    1. SECURITY FIRST
+       No extension may be approved if it poses a security risk to the
+       user's system, data, or privacy. Security concerns override all
+       other considerations. A beautifully written, perfectly accessible
+       extension that exfiltrates user data must be rejected.
+
+    2. ACCESSIBILITY SECOND
+       Hariku V2 exists to serve screen reader users. An extension that
+       is not accessible defeats the purpose of the platform. All UI
+       elements must work with NVDA and JAWS. Accessibility issues are
+       blocking unless they are trivial and documented.
+
+    3. QUALITY THIRD
+       Code quality, performance, and polish matter, but they are
+       subordinate to security and accessibility. Minor code quality
+       issues may be noted without blocking approval.
+
+  When principles conflict, the higher-priority principle always wins.
+
+
+===============================================================================
+  2. REVIEWER RESPONSIBILITIES
+===============================================================================
+
+  2.1  Be Thorough but Fair
+  -------------------------
+
+  - Read every line of submitted code. Extensions are typically small
+    enough to review in full. If an extension is too large for a single
+    reviewer to assess, request a second reviewer.
+  - Do not reject extensions for subjective style preferences that are
+    not covered by the coding standards.
+  - Give the developer the benefit of the doubt on ambiguous issues, but
+    never give the benefit of the doubt on security.
+
+  2.2  Provide Constructive Feedback
+  ----------------------------------
+
+  - Every review comment must be actionable. Instead of "this is bad,"
+    write "consider replacing os.system() with subprocess.run() without
+    shell=True to avoid shell injection."
+  - Distinguish between required changes (blocking) and suggestions
+    (non-blocking). Label them clearly.
+  - When rejecting an extension, explain what would need to change for
+    it to be reconsidered.
+
+  2.3  Complete Reviews Within 7 Business Days
+  ---------------------------------------------
+
+  - All submissions must receive an initial review within 7 business
+    days of assignment.
+  - If you cannot meet this deadline, notify the review coordinator
+    immediately so the submission can be reassigned.
+  - Resubmissions (extensions returned for changes) should be reviewed
+    within 3 business days, as most of the review work has already been
+    completed.
+
+  2.4  Escalate Security Concerns Immediately
+  --------------------------------------------
+
+  - If you discover what appears to be malware, data exfiltration, or
+    any deliberate attempt to harm users, stop the review immediately
+    and follow the escalation procedure in Section 6.
+  - Do not wait until the review is complete to report security issues.
+  - Do not contact the developer about security concerns before
+    escalating internally.
+
+
+===============================================================================
+  3. REVIEW CHECKLIST
+===============================================================================
+
+  Use the following checklist for every submission. Mark each item as
+  PASS, FAIL, or N/A. Any FAIL in Sections A or B is an automatic
+  rejection or request for changes.
+
+
+  A. MANIFEST VALIDATION
+  -----------------------
+
+    1.  All required fields are present in manifest.json:
+        - name
+        - version
+        - author
+        - description
+        - main
+        - language
+        - minimum_core_version
+
+    2.  The "name" field is unique within the store and does not
+        impersonate or closely mimic an official Hariku feature or
+        another existing extension.
+
+    3.  The "version" field follows semantic versioning (MAJOR.MINOR.PATCH).
+        For first submissions, version should be 1.0.0 or a pre-release
+        variant (e.g., 0.1.0).
+
+    4.  The "minimum_core_version" field references a valid, released
+        version of Hariku V2. It must not reference unreleased or
+        internal builds.
+
+    5.  The "description" field is accurate, clearly describes what the
+        extension does, and is not misleading or exaggerated. Marketing
+        language is acceptable; false claims are not.
+
+    6.  The "main" field points to a Python file that exists within the
+        extension package.
+
+    7.  The "language" field matches the actual language used in the
+        extension's user-facing strings and documentation.
+
+
+  B. SECURITY AUDIT
+  ------------------
+
+  This is the most critical section. Hariku extensions run with full
+  system privileges. Every item here must be carefully verified.
+
+    8.  Search the entire codebase for uses of eval(), exec(),
+        __import__(), and compile(). If found, verify they are
+        absolutely necessary and do not process user-supplied or
+        network-supplied input. In most cases, these should be flagged
+        as FAIL.
+
+    9.  Check for subprocess calls. Any use of subprocess with
+        shell=True must be rejected unless there is an extraordinary
+        and well-documented justification. Prefer subprocess.run()
+        with a list of arguments.
+
+   10.  Check for os.system() usage. This function should not be used
+        under any circumstances. It must be replaced with subprocess
+        equivalents.
+
+   11.  Verify no data exfiltration. Search for all network-related
+        imports and calls:
+        - urllib, requests, http.client, socket, aiohttp
+        - Any use of smtplib, ftplib, or similar
+        Confirm that all network communication is documented in the
+        extension's description and is essential to its functionality.
+
+   12.  Check all URLs contacted by the extension. Every URL or domain
+        the extension communicates with must be:
+        - Listed in the extension's description or documentation
+        - Necessary for the extension's stated purpose
+        - Using HTTPS where possible
+        Undocumented network endpoints are grounds for rejection.
+
+   13.  Verify no file access outside allowed paths. Extensions should
+        only read/write files within:
+        - Their own data directory (provided via the data storage API)
+        - Paths explicitly chosen by the user via file dialogs
+        Any attempt to access system directories, other applications'
+        data, or the user's documents without explicit user action is
+        a FAIL.
+
+   14.  Check for pickle or deserialization of untrusted data. Uses of
+        pickle.load(), pickle.loads(), marshal, shelve, or yaml.load()
+        (without SafeLoader) on data from network sources or untrusted
+        files must be rejected.
+
+   15.  Check for hardcoded credentials, API keys, tokens, or passwords
+        anywhere in the source code. API keys should be provided by the
+        user through the settings API or environment variables, never
+        embedded in the code.
+
+   16.  Check for attempts to modify Hariku core files, other extensions'
+        files, or system configuration files.
+
+   17.  Verify the extension does not attempt to disable or circumvent
+        security features of the operating system or Hariku itself.
+
+
+  C. FUNCTIONALITY TESTING
+  -------------------------
+
+   18.  The extension loads without errors. Install the .hrk package in
+        a test environment and confirm it activates cleanly with no
+        exceptions in the log.
+
+   19.  Core functionality works as described in the manifest and any
+        accompanying documentation. Test each advertised feature at
+        least once.
+
+   20.  The extension unloads cleanly. Disable or remove the extension
+        and verify:
+        - The teardown/cleanup function executes without errors
+        - No zombie threads or processes remain
+        - Temporary files are cleaned up
+        - Event bus listeners are unregistered
+
+   21.  No memory leaks or runaway threads. For extensions that run
+        background tasks:
+        - Monitor memory usage over several minutes of operation
+        - Verify threads terminate when the extension is disabled
+        - Confirm timers are cancelled on teardown
+
+   22.  Hariku functions correctly in Safe Mode without the extension
+        loaded. The extension must not modify core state in a way that
+        causes errors when it is absent.
+
+   23.  Test with at least two different calendar configurations (e.g.,
+        different date ranges, multiple reminders) to verify the
+        extension handles varied data gracefully.
+
+
+  D. ACCESSIBILITY AUDIT
+  ------------------------
+
+  All testing in this section must be performed with NVDA running. If
+  possible, verify with JAWS as well.
+
+   24.  All dialogs and windows created by the extension are fully
+        navigable using the Tab key. Every interactive control must be
+        reachable without a mouse.
+
+   25.  All controls (buttons, text fields, checkboxes, lists, etc.)
+        have meaningful accessible names. A button labeled "OK" in a
+        context where its action is ambiguous must have a more
+        descriptive label or accessible description.
+
+   26.  NVDA reads all controls correctly. Verify that:
+        - Control types are announced (button, checkbox, edit field, etc.)
+        - Control states are announced (checked, unchecked, selected, etc.)
+        - Labels are read in a logical order
+        - Dynamic content updates are announced when appropriate
+
+   27.  No focus traps exist. The user must be able to Tab or Escape out
+        of every dialog and control. At no point should keyboard
+        navigation become stuck.
+
+   28.  Keyboard shortcuts registered by the extension do not conflict
+        with Hariku core shortcuts or common NVDA/JAWS shortcuts.
+        If a conflict is detected, the extension must use configurable
+        shortcuts or choose non-conflicting defaults.
+
+   29.  Any audio feedback (sounds, tones) used by the extension must
+        also have a text/speech equivalent so that deaf-blind users or
+        users who have muted audio can still access the information.
+
+
+  E. CODE QUALITY
+  ----------------
+
+   30.  Code follows the Hariku coding standards. While style is
+        somewhat subjective, the code should be:
+        - Readable and reasonably well-organized
+        - Free of dead code or commented-out blocks of unused code
+        - Using meaningful variable and function names
+
+   31.  The extension uses Python's logging module or the Hariku speech
+        API for diagnostics — not print() statements. Print calls to
+        stdout are not visible to screen reader users and indicate
+        debug code left in the submission.
+
+   32.  Error handling is present for all I/O and network operations.
+        Functions that access files, make HTTP requests, or interact
+        with external systems must use try/except blocks with
+        appropriate error reporting to the user.
+
+   33.  No hardcoded file paths exist. All paths must be constructed
+        using os.path, pathlib, or the Hariku data storage API.
+        Paths like "C:\\Users\\developer\\..." are an automatic FAIL.
+
+   34.  Dependencies (if any) are documented and reasonable. Extensions
+        should not bundle large libraries that duplicate functionality
+        already available in Hariku's core or the Python standard
+        library.
+
+
+  F. PRIVACY REVIEW
+  ------------------
+
+   35.  All data collection is documented. If the extension collects,
+        stores, or transmits any user data, this must be clearly
+        disclosed in:
+        - The extension's description in the store
+        - A first-run notice shown to the user
+
+   36.  The extension respects Hariku's telemetry opt-out setting. If
+        the user has disabled telemetry in Hariku's core settings, the
+        extension must not send analytics or usage data.
+
+   37.  User data is stored securely. Sensitive data (passwords, tokens,
+        personal information) must not be stored in plain text. Use
+        appropriate encryption or the operating system's credential
+        storage mechanisms.
+
+   38.  The extension does not share user data with third parties unless
+        explicitly documented and consented to by the user.
+
+
+===============================================================================
+  4. DECISION CRITERIA
+===============================================================================
+
+  After completing the checklist, apply one of the following decisions:
+
+  4.1  APPROVE
+  ------------
+  The extension passes all checklist items with no FAIL results. It is
+  safe, accessible, functional, and of acceptable quality. The extension
+  will be published to the store.
+
+  4.2  APPROVE WITH NOTES
+  -----------------------
+  The extension passes all critical checks (Sections A, B, D, F) but has
+  minor, non-blocking issues in functionality or code quality (Sections
+  C, E). Examples:
+    - A variable name could be more descriptive
+    - A minor edge case is not handled but does not cause crashes
+    - Documentation could be improved
+
+  The extension will be published, but the developer receives a note
+  listing the issues. These should be addressed in the next update.
+  Notes must be recorded in the review report.
+
+  4.3  REQUEST CHANGES
+  --------------------
+  The extension has issues that must be fixed before it can be approved,
+  but the issues are correctable and do not indicate malicious intent.
+  Examples:
+    - A dialog is missing Tab navigation
+    - An undocumented network call that appears legitimate
+    - Error handling is missing for a network operation
+    - print() statements need to be replaced with logging
+
+  The developer receives detailed feedback and may resubmit. The
+  resubmission should be reviewed within 3 business days.
+
+  4.4  REJECT
+  -----------
+  The extension is rejected outright and may not be resubmitted in its
+  current form. Grounds for rejection include:
+    - Malware or deliberate security threats
+    - Data exfiltration or undisclosed surveillance
+    - Impersonation of official Hariku features or other extensions
+    - Fundamentally broken functionality that cannot be fixed with
+      minor changes
+    - Violation of store policies or applicable law
+    - Repeated resubmission without addressing requested changes
+
+  Rejections must be documented with clear justification. The developer
+  must be notified unless the escalation procedure (Section 6) dictates
+  otherwise.
+
+
+===============================================================================
+  5. REVIEW REPORT TEMPLATE
+===============================================================================
+
+  Copy and complete this template for every review. Store the completed
+  report in the review tracking system.
+
+  ---------------------------------------------------------------------------
+  HARIKU EXTENSION REVIEW REPORT
+
+  Date of Review     : [YYYY-MM-DD]
+  Reviewer Name      : [Your Name]
+  Reviewer ID        : [Your Reviewer ID]
+
+  EXTENSION DETAILS
+  Extension Name     : [As listed in manifest.json]
+  Extension Version  : [As listed in manifest.json]
+  Developer Name     : [As listed in manifest.json]
+  Submission Date    : [YYYY-MM-DD]
+  Submission Type    : [New / Update / Resubmission]
+  Package Hash (SHA) : [SHA-256 hash of the .hrk file]
+
+  CHECKLIST RESULTS
+  A. Manifest Validation      : [PASS / FAIL — list item numbers if FAIL]
+  B. Security Audit           : [PASS / FAIL — list item numbers if FAIL]
+  C. Functionality Testing    : [PASS / FAIL — list item numbers if FAIL]
+  D. Accessibility Audit      : [PASS / FAIL — list item numbers if FAIL]
+  E. Code Quality             : [PASS / FAIL — list item numbers if FAIL]
+  F. Privacy Review           : [PASS / FAIL — list item numbers if FAIL]
+
+  DETAILED FINDINGS
+  [Describe each FAIL item in detail. For PASS items with observations,
+   note them here as well. Be specific — include file names, line
+   numbers, and code snippets where relevant.]
+
+  Item #[N]: [PASS/FAIL]
+  Description: [What was found]
+  Location: [File name and line number, if applicable]
+  Recommendation: [What the developer should do]
+  Severity: [Critical / Major / Minor / Informational]
+
+  [Repeat for each item with findings]
+
+  SECURITY NOTES
+  [Any security observations, even for items that passed. Document
+   anything that future reviewers should be aware of for updates.]
+
+  TESTING ENVIRONMENT
+  Hariku Version     : [Version used for testing]
+  Python Version     : [Version used for testing]
+  Operating System   : [OS and version]
+  Screen Reader      : [NVDA version / JAWS version]
+
+  DECISION            : [APPROVE / APPROVE WITH NOTES / REQUEST CHANGES / REJECT]
+  JUSTIFICATION       : [Brief summary of why this decision was made]
+
+  NOTES TO DEVELOPER
+  [Feedback to be shared with the developer. Write this as if the
+   developer will read it directly. Be professional and constructive.]
+
+  INTERNAL NOTES
+  [Notes for other reviewers or the review coordinator. These are NOT
+   shared with the developer.]
+
+  Reviewer Signature : [Your Name]
+  Date               : [YYYY-MM-DD]
+  ---------------------------------------------------------------------------
+
+
+===============================================================================
+  6. ESCALATION PROCEDURE
+===============================================================================
+
+  6.1  Malware or Deliberate Security Threats
+  --------------------------------------------
+
+  If you discover what you believe to be malware, intentional data
+  exfiltration, or any deliberately malicious code:
+
+    Step 1:  STOP the review immediately. Do not continue testing the
+             extension on any system that contains real user data.
+
+    Step 2:  Document your findings with specific file names, line
+             numbers, and code snippets. Take screenshots if relevant.
+
+    Step 3:  Email terabase06@gmail.com with the subject line:
+             "[SECURITY ESCALATION] Extension: [extension name]"
+             Include your findings and the .hrk file as an attachment.
+
+    Step 4:  Do NOT contact the developer. Do not inform them that
+             their submission is under security review.
+
+    Step 5:  If the developer has other extensions currently published
+             in the store, note this in your escalation. Those
+             extensions may need to be audited or temporarily removed.
+
+    Step 6:  Preserve all evidence. Do not delete the .hrk file, your
+             test environment, or any logs generated during testing.
+
+    Step 7:  Wait for guidance from the security team before taking
+             any further action on the submission.
+
+  6.2  Impersonation of Official Features or Extensions
+  -----------------------------------------------------
+
+  If a submitted extension appears to mimic or impersonate an official
+  Hariku feature, an official extension, or another developer's
+  published extension:
+
+    Step 1:  Document the similarities. Compare names, descriptions,
+             icons, and functionality.
+
+    Step 2:  Check if the submission could be a legitimate fork or
+             alternative implementation. Not all similar extensions
+             are impersonations.
+
+    Step 3:  If you believe the impersonation is intentional:
+             - Flag the submission in the review tracking system
+             - Email terabase06@gmail.com with subject line:
+               "[IMPERSONATION] Extension: [extension name]"
+             - Include evidence of the similarities
+
+    Step 4:  Do not approve the extension until the impersonation
+             concern has been resolved.
+
+  6.3  Legal or Policy Concerns
+  -----------------------------
+
+  If an extension appears to violate copyright, include pirated content,
+  or raise other legal concerns:
+
+    Step 1:  Document the concern with specific details.
+
+    Step 2:  Email terabase06@gmail.com with subject line:
+             "[LEGAL/POLICY] Extension: [extension name]"
+
+    Step 3:  Do not approve the extension until the concern is resolved.
+
+
+===============================================================================
+  7. CONFLICT OF INTEREST
+===============================================================================
+
+  7.1  Self-Review Prohibition
+  ----------------------------
+
+  Reviewers must NEVER review their own extensions. This includes:
+    - Extensions you authored or co-authored
+    - Extensions developed by your employer or organization
+    - Extensions where you contributed code, documentation, or testing
+    - Extensions you were paid or compensated to develop
+
+  If you are assigned a submission that constitutes a conflict of
+  interest, immediately notify the review coordinator and request
+  reassignment. Do not begin the review.
+
+  7.2  Competing Extensions
+  -------------------------
+
+  If you are the developer of an extension that competes with or
+  provides similar functionality to a submitted extension, you must
+  disclose this conflict before beginning the review. The review
+  coordinator will decide whether to reassign the submission.
+
+  A competing extension is one that:
+    - Serves the same primary purpose
+    - Targets the same user need
+    - Would lose users or visibility if the submitted extension is
+      approved
+
+  When in doubt, disclose. It is better to over-report potential
+  conflicts than to have a review questioned later.
+
+  7.3  Personal Relationships
+  ---------------------------
+
+  If you have a personal or professional relationship with the
+  submitting developer (e.g., friend, colleague, business partner),
+  disclose this to the review coordinator. Depending on the nature
+  of the relationship, the submission may be reassigned.
+
+  7.4  Consequences of Undisclosed Conflicts
+  -------------------------------------------
+
+  Failure to disclose a conflict of interest undermines the integrity
+  of the review process. Consequences may include:
+    - Reversal of the review decision
+    - Removal from the reviewer pool
+    - Re-review of all extensions previously reviewed by the individual
+    - Revocation of store reviewer access
+
+
+===============================================================================
+  APPENDIX A: COMMON RED FLAGS
+===============================================================================
+
+  The following patterns should raise immediate suspicion during review.
+  Their presence does not automatically mean the extension is malicious,
+  but they warrant careful investigation:
+
+    - Obfuscated code (base64-encoded strings executed at runtime,
+      variable names that are random characters, encoded payloads)
+    - Network calls made during module import (before user interaction)
+    - File operations targeting directories outside the extension's
+      data folder
+    - Dynamic code execution (eval/exec) with string concatenation
+    - Attempts to read browser cookies, saved passwords, or SSH keys
+    - Unusually large .hrk files for the stated functionality
+    - Bundled binaries or compiled .pyd/.so files without source code
+    - Code that behaves differently based on the system hostname,
+      username, or IP address
+    - Scheduled tasks or startup entries created without user consent
+
+
+===============================================================================
+  APPENDIX B: TESTING ENVIRONMENT SETUP
+===============================================================================
+
+  Reviewers should maintain a dedicated testing environment:
+
+    1. Use a virtual machine or isolated user account — never test
+       extensions on your primary system with real data.
+    2. Install a clean copy of Hariku V2 (latest stable release).
+    3. Install NVDA (latest stable release) for accessibility testing.
+    4. Keep Python and all dependencies up to date.
+    5. Use network monitoring tools (e.g., Wireshark, Fiddler) to
+       verify network activity during extension testing.
+    6. Snapshot the VM before each test so you can revert cleanly.
+    7. Keep a log of all extensions tested and the environment state.
+
+
+===============================================================================
+  END OF DOCUMENT
+===============================================================================
+
+  This document is reviewed and updated quarterly. If you have
+  suggestions for improvements, contact terabase06@gmail.com or
+  post in the reviewer channel on the Hariku forum:
+  https://sp.novarealm.cloud/forum/hariku
+
+  Last updated: July 2026
+  Next scheduled review: October 2026

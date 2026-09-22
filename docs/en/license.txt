@@ -1,0 +1,467 @@
+Hariku V2 — License, Privacy & Extension Policy
+Version 4.0
+Effective Date: July 12, 2026
+
+================================================================================
+PREAMBLE
+================================================================================
+
+This document is the complete License, Privacy, and Extension Policy
+("Agreement") governing your use of the Hariku V2 application ("Software"),
+developed and maintained by Rafli ("Developer"), operating under the Inflinity
+and NovaRealm brands.
+
+Hariku is an accessible, screen-reader-friendly calendar and productivity
+platform built on an open extension architecture. It is designed primarily for
+users who rely on assistive technologies such as NVDA and JAWS, though it is
+fully usable by all.
+
+BY INSTALLING, RUNNING, OR OTHERWISE USING THE SOFTWARE, YOU ACKNOWLEDGE THAT
+YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY ALL TERMS OF THIS
+AGREEMENT. If you do not agree, you must not use the Software and must delete
+all copies from your device(s).
+
+================================================================================
+SECTION 1 — LICENSE GRANT
+================================================================================
+
+1.1  PERSONAL USE LICENSE
+     You are granted a worldwide, non-exclusive, non-transferable, revocable
+     license to use the Software free of charge for personal, educational, and
+     non-commercial purposes. You may install the Software on any number of
+     devices under your personal control.
+
+1.2  COMMUNITY & NONPROFIT USE
+     Schools, accessibility advocacy groups, disability support organizations,
+     and other registered nonprofit entities may use the Software free of charge
+     in their operations without obtaining a separate commercial license,
+     provided that the Software is not bundled into a product or service that
+     is sold for profit.
+
+1.3  COMMERCIAL USE
+     Use of the Software as part of a commercial product, paid service, or
+     for-profit enterprise requires prior written permission from the Developer.
+     To inquire about commercial licensing, contact: terabase06@gmail.com
+
+================================================================================
+SECTION 2 — RESTRICTIONS
+================================================================================
+
+You may NOT:
+
+2.1  Reverse engineer, decompile, or disassemble the compiled core binary of
+     the Software, except to the extent that such restriction is expressly
+     prohibited by applicable law.
+
+2.2  Remove, alter, or obscure any proprietary notices, labels, or branding
+     contained in the Software.
+
+2.3  Distribute, sell, rent, lease, or sublicense the Software as a standalone
+     product. Redistribution of unmodified copies for personal sharing is
+     permitted provided this license file is included intact.
+
+2.4  Misrepresent the origin of the Software or claim authorship of the core
+     application.
+
+2.5  Use the Software to develop competing calendar or productivity software
+     that directly replicates Hariku's core functionality and extension
+     ecosystem.
+
+2.6  Circumvent, disable, or interfere with any security mechanism in the
+     Software, including but not limited to the Trusted Extension Hash
+     Registry, SHA256 verification, and the extension consent dialog.
+
+================================================================================
+SECTION 3 — EXTENSION ECOSYSTEM
+================================================================================
+
+Hariku V2 is built on a modular extension platform. This section defines the
+rights and responsibilities related to extensions.
+
+3.1  WHAT ARE EXTENSIONS?
+     Extensions are add-on modules that extend the functionality of Hariku.
+     They may be distributed as unpacked source folders or as compiled .hrk
+     packages (ZIP archives containing code and a manifest.json).
+
+3.2  OFFICIAL EXTENSIONS
+     Extensions developed by the Developer and distributed through the
+     official Hariku Extension Store or bundled with the Software are
+     designated as "Official" extensions. These are identified by a hardcoded
+     whitelist within the application and are cryptographically verified via
+     SHA256 hash. The [Official] badge cannot be spoofed through the manifest.
+
+3.3  THIRD-PARTY EXTENSIONS
+     Third-party developers may create, distribute, and share extensions for
+     Hariku V2. The following terms apply:
+
+     a) CREATION: Anyone may create extensions for Hariku using the documented
+        Extension API (see DEVELOPERS.md). No fee, registration, or approval
+        is required to develop extensions.
+
+     b) DISTRIBUTION: Third-party extensions may be freely distributed through
+        any channel (websites, forums, direct sharing). The Developer reserves
+        the right to curate the official Extension Store and may decline to
+        list extensions that violate this Agreement or pose security risks.
+
+     c) LICENSING: Third-party extension authors retain full copyright and
+        intellectual property rights over their own extension code. Extension
+        authors are free to choose any license for their extensions, including
+        open-source licenses (MIT, GPL, Apache, etc.) or proprietary licenses.
+
+     d) MONETIZATION: Extension authors may monetize their extensions through
+        any legal means (donations, paid licenses, sponsorships). The Developer
+        does not claim any revenue share from third-party extensions.
+
+3.4  EXTENSION SECURITY MODEL
+     Extensions run with full access to the Python runtime and the host
+     operating system. They are NOT sandboxed. This means a malicious extension
+     could potentially access your files, network, keyboard input, and other
+     system resources.
+
+     To mitigate this risk, Hariku implements the following protections:
+
+     a) TRUSTED HASH REGISTRY: When loading a .hrk extension package, the
+        Software computes its SHA256 hash and verifies it against a server-
+        hosted list of trusted hashes. Extensions not found in this registry
+        trigger a security consent dialog.
+
+     b) USER CONSENT: Unverified extensions will NOT load silently. A dialog
+        clearly warns the user of the risks and requires explicit approval
+        before any code from the extension is executed.
+
+     c) SAFE MODE: Users can hold the Shift key during application startup to
+        boot into Safe Mode, which completely bypasses the Extension Manager.
+        No extensions — official or third-party — will be loaded in Safe Mode.
+
+     d) DISABLE LIST: Individual extensions can be disabled through the
+        Extension Manager without uninstalling them.
+
+     THE DEVELOPER IS NOT RESPONSIBLE FOR ANY DAMAGE, DATA LOSS, OR SECURITY
+     BREACH CAUSED BY THIRD-PARTY EXTENSIONS. Users install third-party
+     extensions at their own risk.
+
+3.5  EXTENSION API STABILITY
+     The Developer will make reasonable efforts to maintain backward
+     compatibility of the Extension API across minor version updates (e.g.,
+     2.2 to 2.3). Breaking changes to the API will be documented in the
+     release notes and, where possible, announced at least one version in
+     advance through deprecation warnings.
+
+================================================================================
+SECTION 4 — DATA STORAGE & PRIVACY
+================================================================================
+
+Your privacy is a core design principle of Hariku. This section details
+exactly what data the Software stores, collects, and transmits.
+
+4.1  LOCAL DATA STORAGE
+     The vast majority of your data is stored EXCLUSIVELY on your local
+     computer. The Software creates and manages files in the following
+     locations:
+
+     a) Application Data Directory: %APPDATA%\Hariku2\
+        This is the primary storage location and contains:
+
+        - data\            Per-extension JSON configuration and data files.
+                           Examples: Core.json (app settings), extension data.
+        - extensions\      User-installed extension packages (.hrk files) and
+                           unpacked extension folders.
+        - reminders\       Your scheduled reminders, organized by date in
+                           individual JSON files (e.g., 2026-07-12.json).
+        - locales\         User-installed language packs (if any).
+
+     b) Application Directory (read-only):
+        The installation directory contains the core application files,
+        bundled extensions, built-in language packs, documentation, and
+        sound assets. No user data is written here.
+
+     THE DEVELOPER DOES NOT HAVE ACCESS TO YOUR LOCAL DATA. Your reminders,
+     settings, extension configurations, and all other locally stored
+     information never leave your computer unless explicitly initiated by
+     you or by an extension you have installed.
+
+4.2  ANONYMOUS TELEMETRY (OPT-OUT)
+     To help improve the Software, Hariku collects basic, anonymous usage
+     statistics on startup. This data is sent to:
+
+        https://sp.novarealm.cloud/api/telemetry
+
+     The following data points are transmitted:
+
+        - Operating system version (e.g., "Windows 11 Build 26100")
+        - Python runtime version
+        - Hariku application version and core version
+        - Active screen reader (NVDA, JAWS, or None)
+        - Application language setting
+        - Number of loaded extensions
+        - List of active extension IDs
+        - A persistent random session UUID (UUID4, not hardware-based)
+
+     The following data is NEVER transmitted:
+
+        - Your name, email address, or any personal identifier
+        - Your IP address is not logged by the telemetry server
+        - The content of your reminders, notes, or any user-created data
+        - Your file system contents, clipboard content, or browsing history
+        - Extension names, configurations, or any extension-specific data
+
+     OPTING OUT: You may disable telemetry at any time through:
+     Settings > General > "Share my anonymous usage data publicly"
+     (Uncheck the checkbox)
+
+     Telemetry data is publicly viewable at: https://sp.novarealm.cloud/stats
+     This transparency ensures the Developer cannot secretly collect data
+     beyond what is documented here.
+
+4.3  UPDATE CHECKS
+     The Software periodically checks for application updates by contacting:
+
+        https://hariku.novarealm.cloud/update/version.json
+
+     This request transmits only the User-Agent header ("HarikuV2/2.0").
+     No user-specific data is included. The response contains version
+     information, severity level, and download URL for available updates.
+
+4.4  EXTENSION STORE
+     When browsing the built-in Extension Store, the Software contacts:
+
+        https://www.novarealm.cloud/dl/registry.json
+
+     This request transmits only the User-Agent header. No user-specific
+     data is included. Extension downloads are restricted to HTTPS URLs
+     from the novarealm.cloud domain only.
+
+4.5  EXTENSION SECURITY VERIFICATION
+     When loading .hrk extension packages, the Software may contact:
+
+        https://hariku.novarealm.cloud/security/trusted_extensions.json
+
+     to retrieve the list of trusted extension hashes. This request transmits
+     only the User-Agent header. If the server is unreachable, all .hrk
+     extensions will require manual user consent before loading.
+
+4.6  CRASH REPORTS
+     When an unhandled error occurs, the Software displays a crash dialog
+     with technical details (stack trace, error message). This information
+     is displayed LOCALLY ONLY and is NOT automatically transmitted to any
+     server. If you choose to send a crash report, it is sent via your
+     local email client to the Developer's email address. Sending crash
+     reports is entirely voluntary.
+
+     If you choose to enable automatic crash reporting (Settings > General >
+     Crash Report Behavior > "Auto"), crash data will be sent to:
+
+        https://sp.novarealm.cloud/api/crash-report
+
+     Data transmitted includes: app version, OS version, language, error type,
+     error message, and Python traceback. No personal data, file contents,
+     or reminder data is included in crash reports.
+
+4.7  THIRD-PARTY SERVICES VIA EXTENSIONS
+     Some extensions may contact external third-party services to provide
+     their functionality. For example:
+
+        - The Google Calendar Reader extension contacts Google's servers
+          to fetch calendar data via a user-provided iCal URL.
+        - Holiday calendar data may be fetched from Google Calendar's
+          public holiday feeds.
+
+     These connections are initiated ONLY by extensions that you have
+     explicitly installed and configured. The core Hariku application does
+     not contact any third-party services beyond those listed in Sections
+     4.2 through 4.5.
+
+     Each extension is responsible for its own privacy practices. The
+     Developer encourages extension authors to document their data practices
+     clearly, but cannot guarantee compliance by third-party developers.
+
+================================================================================
+SECTION 5 — INTELLECTUAL PROPERTY
+================================================================================
+
+5.1  CORE APPLICATION
+     The Hariku V2 core application, including its source code, compiled
+     binaries, user interface design, sound assets, documentation, and
+     branding, is the sole intellectual property of the Developer. All rights
+     not explicitly granted in this Agreement are reserved.
+
+5.2  OFFICIAL EXTENSIONS
+     Official extensions bundled with the Software or distributed through
+     the official Extension Store are the intellectual property of the
+     Developer, unless otherwise stated in the extension's own license file.
+
+5.3  THIRD-PARTY EXTENSIONS
+     Third-party extensions are the intellectual property of their respective
+     authors. The Developer makes no claim of ownership over third-party
+     extension code, assets, or documentation.
+
+5.4  USER-CREATED CONTENT
+     All content you create using the Software (reminders, notes, events,
+     configurations) is yours. The Developer claims no ownership or license
+     over your personal data.
+
+5.5  OPEN-SOURCE COMPONENTS
+     The Software uses the following open-source components, each governed
+     by their respective licenses:
+
+        - wxPython (wxWindows Library Licence / LGPL)
+        - Python (PSF License)
+        - packaging (Apache 2.0 / BSD)
+        - cytolk (MIT) — Screen reader speech interface
+        - pyperclip (BSD) — Cross-platform clipboard access
+
+     These licenses are compatible with the terms of this Agreement. Full
+     license texts for these components are available in their respective
+     project repositories.
+
+================================================================================
+SECTION 6 — ACCESSIBILITY COMMITMENT
+================================================================================
+
+Hariku is built from the ground up to be fully accessible to users of
+assistive technologies. The Developer commits to the following:
+
+6.1  All core user interface elements will be properly labeled and navigable
+     via keyboard and screen reader.
+
+6.2  All interactive controls will have meaningful accessible names that are
+     read correctly by NVDA, JAWS, and other compatible screen readers.
+
+6.3  No core feature will be inaccessible to users who rely exclusively on
+     keyboard navigation and screen reader output.
+
+6.4  Accessibility regressions in the core application are treated as high-
+     priority bugs and will be addressed promptly.
+
+6.5  Extension developers are strongly encouraged (but not required) to
+     follow the same accessibility standards. The Developer may decline to
+     feature extensions in the official Store that are not reasonably
+     accessible.
+
+================================================================================
+SECTION 7 — UPDATES & AUTOMATIC BEHAVIOR
+================================================================================
+
+7.1  UPDATE NOTIFICATIONS
+     The Software checks for updates automatically after startup. If an
+     update is available, a non-blocking notification banner is displayed.
+     Updates are NEVER installed without your explicit action.
+
+7.2  FORCED UPDATES
+     In exceptional circumstances (critical security vulnerabilities, data
+     corruption bugs), the update server may flag an update as "forced."
+     In this case, the update dialog cannot be dismissed. This mechanism
+     exists solely to protect users from known, severe risks and will only
+     be used for genuine emergencies.
+
+7.3  EXTENSION UPDATES
+     Extensions installed from the official Store are checked for updates
+     alongside core application updates. Extension updates are downloaded
+     and applied only with your consent.
+
+================================================================================
+SECTION 8 — FEEDBACK & CONTRIBUTIONS
+================================================================================
+
+8.1  You are encouraged to submit feedback, bug reports, and feature
+     suggestions through the built-in feedback mechanism or the community
+     forum at: https://sp.novarealm.cloud/forum/hariku
+
+8.2  All feedback submissions are voluntary. By submitting feedback, you
+     grant the Developer a non-exclusive, royalty-free, perpetual license
+     to use, modify, and incorporate your suggestions into the Software
+     without obligation or compensation.
+
+8.3  If you contribute code (e.g., language translations, bug fixes) that
+     is incorporated into the core application, you will be credited in the
+     application's About dialog or documentation, unless you request
+     otherwise.
+
+================================================================================
+SECTION 9 — DISCLAIMER OF WARRANTY
+================================================================================
+
+THE SOFTWARE IS PROVIDED "AS-IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+
+THE DEVELOPER DOES NOT WARRANT THAT:
+
+- The Software will be uninterrupted, error-free, or completely secure.
+- The Software will meet your specific requirements.
+- Any defects in the Software will be corrected within a specific timeframe.
+- Third-party extensions will be safe, functional, or compatible.
+
+YOU USE THE SOFTWARE AT YOUR OWN RISK.
+
+================================================================================
+SECTION 10 — LIMITATION OF LIABILITY
+================================================================================
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE DEVELOPER SHALL NOT
+BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
+DAMAGES ARISING FROM OR RELATED TO YOUR USE OF THE SOFTWARE, INCLUDING BUT
+NOT LIMITED TO:
+
+- Loss of data, revenue, or business opportunities.
+- Damage caused by third-party extensions.
+- System instability caused by global keyboard hooks or accessibility tools.
+- Service interruptions due to server unavailability.
+
+THE DEVELOPER'S TOTAL AGGREGATE LIABILITY SHALL NOT EXCEED THE AMOUNT YOU
+PAID FOR THE SOFTWARE (WHICH, FOR PERSONAL USE, IS ZERO).
+
+================================================================================
+SECTION 11 — TERMINATION
+================================================================================
+
+11.1 This license is effective until terminated. Your rights under this
+     Agreement will terminate automatically and without notice if you
+     violate any term.
+
+11.2 Upon termination, you must cease all use of the Software and delete
+     all copies from your devices. Your locally stored data (reminders,
+     settings) remains yours and is not affected by license termination.
+
+11.3 The Developer reserves the right to revoke access to online services
+     (update server, Extension Store, telemetry endpoint) at any time,
+     with or without notice. The core Software will continue to function
+     offline without these services, albeit without update notifications
+     or Store access.
+
+================================================================================
+SECTION 12 — CHANGES TO THIS AGREEMENT
+================================================================================
+
+12.1 The Developer may update this Agreement from time to time. Material
+     changes will be communicated through the "What's New" document or
+     the update notification system.
+
+12.2 Continued use of the Software after changes are published constitutes
+     acceptance of the revised terms.
+
+12.3 The current version of this Agreement is always available within the
+     Software under Help > License.
+
+================================================================================
+SECTION 13 — GOVERNING LAW
+================================================================================
+
+This Agreement shall be governed by and construed in accordance with the
+laws of the Republic of Indonesia, without regard to its conflict of law
+provisions.
+
+================================================================================
+SECTION 14 — CONTACT INFORMATION
+================================================================================
+
+For questions, licensing inquiries, security reports, or general feedback:
+
+   Email:   terabase06@gmail.com
+   Forum:   https://sp.novarealm.cloud/forum/hariku
+   Website: https://novarealm.cloud
+
+================================================================================
+
+Thank you for using Hariku. Your support and feedback drive every update.
+— Rafli / Inflinity / NovaRealm
