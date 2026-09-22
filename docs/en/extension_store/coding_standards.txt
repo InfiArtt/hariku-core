@@ -1,0 +1,686 @@
+================================================================================
+  HARIKU V2 EXTENSION STORE — CODING STANDARDS
+================================================================================
+
+  Document Version : 1.0
+  Last Updated     : July 2026
+  Applies To       : All extensions submitted to the Hariku Extension Store
+  Contact          : terabase06@gmail.com
+  Forum            : https://sp.novarealm.cloud/forum/hariku
+
+================================================================================
+  1. OVERVIEW
+================================================================================
+
+This document defines the code quality standards that every extension must
+meet before it can be accepted into the official Hariku Extension Store at
+novarealm.cloud.
+
+Hariku V2 is an accessible calendar application built for screen reader users.
+Extensions run with full system access — there is no sandbox. Because of this,
+every extension must be written with care for stability, security, and
+accessibility. A poorly written extension can crash the host application,
+compromise user data, or break the screen reader experience for everyone.
+
+These standards exist to:
+
+  - Protect users from unstable or malicious code.
+  - Ensure a consistent, accessible experience across all extensions.
+  - Make extensions easier to review, maintain, and translate.
+  - Establish clear expectations so developers can submit with confidence.
+
+Extensions that do not meet these standards will be rejected during review.
+Reviewers will provide specific feedback so that issues can be corrected and
+the extension resubmitted.
+
+
+================================================================================
+  2. PROJECT STRUCTURE
+================================================================================
+
+2.1  Required Files
+-------------------
+
+Every extension must contain at minimum:
+
+  1. manifest.json  — Extension metadata (see Section 4).
+  2. main.py        — The entry point module loaded by the Hariku core.
+
+The main.py file must define the functions expected by the extension lifecycle:
+setup(), teardown(), and any registered event handlers or hotkey callbacks.
+
+
+2.2  Recommended Directory Layout
+----------------------------------
+
+  my_extension/
+  ├── manifest.json
+  ├── main.py
+  ├── sounds/          — Audio files (.wav, .ogg) used by the extension
+  ├── locales/         — Translation files for internationalization
+  │   ├── en.json
+  │   └── ar.json
+  └── lib/             — Bundled third-party pure-Python libraries
+
+
+2.3  Naming Conventions
+------------------------
+
+  - The extension folder name must use lowercase_with_underscores.
+      Good : daily_planner, prayer_times
+      Bad  : DailyPlanner, prayer-times, My Extension
+
+  - File names should also use lowercase_with_underscores.
+      Good : event_utils.py, notification_handler.py
+      Bad  : EventUtils.py, notificationHandler.py
+
+  - Sound files should have descriptive names: reminder_alert.wav, not s1.wav.
+
+
+================================================================================
+  3. PYTHON CODE STYLE
+================================================================================
+
+3.1  General Standard
+----------------------
+
+All Python code must follow PEP 8, the official Python style guide. Key rules:
+
+  - Use 4 spaces per indentation level. Never use tabs.
+  - Maximum line length is 120 characters. Prefer 79 for comments/docstrings.
+  - Use blank lines to separate top-level definitions and logical sections.
+  - Use UTF-8 encoding for all source files.
+
+
+3.2  Naming Conventions
+------------------------
+
+  - Functions and variables : snake_case
+      get_next_event(), reminder_count, is_active
+
+  - Classes : PascalCase
+      EventManager, SettingsDialog, ReminderService
+
+  - Constants : UPPER_SNAKE_CASE
+      MAX_RETRIES, DEFAULT_INTERVAL, API_BASE_URL
+
+  - Private/internal names : prefix with a single underscore
+      _parse_response(), _cached_results
+
+
+3.3  Type Hints
+----------------
+
+Use type hints for function signatures where practical. They improve
+readability and help reviewers understand your code:
+
+    def get_events(date: str, limit: int = 10) -> list[dict]:
+        ...
+
+    def format_reminder(event: dict) -> str:
+        ...
+
+Type hints are recommended but not strictly enforced for local variables or
+very simple helper functions.
+
+
+3.4  Docstrings
+----------------
+
+All public functions and classes must have docstrings. Use triple double quotes:
+
+    def schedule_reminder(event_id: str, minutes_before: int) -> bool:
+        """Schedule a reminder notification for a calendar event.
+
+        Args:
+            event_id: The unique identifier of the target event.
+            minutes_before: How many minutes before the event to fire.
+
+        Returns:
+            True if the reminder was successfully scheduled.
+        """
+        ...
+
+Internal helper functions do not require docstrings but should have comments
+if their purpose is not immediately obvious.
+
+
+================================================================================
+  4. MANIFEST REQUIREMENTS
+================================================================================
+
+The manifest.json file must contain accurate, complete metadata.
+
+Required fields:
+
+  name                — Human-readable display name of the extension.
+  version             — Version string following Semantic Versioning (semver).
+  author              — Author or organization name.
+  description         — A clear, meaningful description of what the extension
+                        does. Generic descriptions like "A Hariku extension"
+                        will be rejected.
+  main                — Entry point module name (usually "main").
+  language            — Primary language code (e.g., "en", "ar").
+  minimum_core_version — The minimum Hariku core version required.
+
+Rules:
+
+  1. The "version" field must follow semver: MAJOR.MINOR.PATCH (e.g., 1.0.0).
+     Use MAJOR for breaking changes, MINOR for new features, PATCH for fixes.
+
+  2. The "minimum_core_version" must be set to the oldest Hariku version your
+     extension actually works with. Do not set it to "1.0.0" unless you have
+     verified compatibility. Do not set it to the latest version unless your
+     extension requires features introduced in that version.
+
+  3. The "description" must explain what the extension does in at least one
+     complete sentence. It is displayed to users in the store.
+       Good : "Displays Islamic prayer times based on your location and
+               provides audio reminders before each prayer."
+       Bad  : "Prayer times extension." / "An extension for Hariku."
+
+  4. The "name" must not impersonate or mislead. Do not use names that imply
+     official Hariku branding unless authorized.
+
+
+================================================================================
+  5. ERROR HANDLING
+================================================================================
+
+Extensions must handle errors gracefully. An unhandled exception in your
+extension can crash the entire Hariku application.
+
+5.1  Network Calls
+--------------------
+
+Always wrap network operations in try/except. Network failures are common and
+must never crash the application:
+
+    try:
+        response = requests.get(api_url, timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        logger.error("Failed to fetch data: %s", e)
+        core.speech.speak("Could not connect. Please check your internet.")
+
+Always set a timeout on network requests. Never use indefinite blocking calls.
+
+
+5.2  File I/O
+--------------
+
+Always wrap file operations in try/except:
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.error("Failed to read config: %s", e)
+        data = {}
+
+
+5.3  Logging
+-------------
+
+Use Python's logging module for all diagnostic output:
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    logger.info("Extension loaded successfully")
+    logger.warning("Using fallback configuration")
+    logger.error("Database connection failed: %s", error)
+
+Never use print() for any purpose. Print statements pollute stdout and are
+invisible to the logging infrastructure. They will cause your extension to
+be rejected during review.
+
+
+5.4  Protecting the Host
+-------------------------
+
+Never allow exceptions to propagate uncaught out of your extension's entry
+points (setup, teardown, event handlers, hotkey callbacks). Wrap top-level
+handlers defensively:
+
+    def on_date_changed(event):
+        try:
+            _handle_date_change(event)
+        except Exception as e:
+            logger.error("Error in on_date_changed: %s", e, exc_info=True)
+
+
+================================================================================
+  6. THREADING & PERFORMANCE
+================================================================================
+
+6.1  Never Block the UI Thread
+-------------------------------
+
+Hariku uses wxPython for its interface. Any long-running operation on the main
+thread will freeze the UI and make the application unresponsive to keyboard
+input and screen readers.
+
+Operations that MUST run off the UI thread:
+  - Network requests (API calls, downloads)
+  - Heavy file I/O (parsing large files, database queries)
+  - Complex computations (data processing, encryption)
+
+
+6.2  Use Core Threading APIs
+------------------------------
+
+Use the provided core APIs instead of creating raw threads:
+
+    # Run a function in a background thread
+    core.api.run_thread(fetch_prayer_times)
+
+    # Schedule a delayed action
+    core.api.set_timeout(check_for_updates, delay_ms=60000)
+
+    # Schedule a repeating action
+    timer_id = core.api.set_interval(refresh_data, interval_ms=300000)
+
+These APIs ensure proper integration with the Hariku lifecycle and provide
+safe mechanisms for updating the UI from background threads.
+
+
+6.3  Clean Up in teardown()
+----------------------------
+
+Every timer and background task started by your extension must be stopped in
+your teardown() function. Leaked timers cause resource leaks and can crash the
+application after your extension is unloaded:
+
+    _timers = []
+
+    def setup():
+        _timers.append(core.api.set_interval(refresh, 60000))
+
+    def teardown():
+        for timer_id in _timers:
+            core.api.clear_timer(timer_id)
+        _timers.clear()
+
+
+================================================================================
+  7. DATA STORAGE
+================================================================================
+
+7.1  Configuration Data
+------------------------
+
+Use the core data APIs for storing extension settings and configuration:
+
+    # Save settings
+    core.api.save_data("settings", {"notifications": True, "interval": 30})
+
+    # Load settings
+    settings = core.api.load_data("settings", default={"notifications": True})
+
+These APIs handle serialization, file paths, and error recovery automatically.
+
+
+7.2  File Storage
+------------------
+
+If your extension needs to store files (caches, databases, downloads), use
+the designated storage directory:
+
+    storage = core.api.get_storage_dir()
+    cache_path = os.path.join(storage, "cache.json")
+
+Never write files to arbitrary locations on the user's system. Never write to
+the Hariku installation directory, the user's desktop, or any path outside
+your assigned storage directory.
+
+
+7.3  Sensitive Data
+--------------------
+
+Never store passwords, API keys, tokens, or other sensitive data in plaintext
+files. If your extension handles credentials:
+
+  - Use the operating system's credential store where possible.
+  - At minimum, warn users that credentials are stored locally.
+  - Document exactly what is stored and where (see Section 12).
+
+
+================================================================================
+  8. ACCESSIBILITY REQUIREMENTS
+================================================================================
+
+Accessibility is not optional. Hariku exists specifically for screen reader
+users. Every UI element your extension creates must be fully accessible.
+
+8.1  Control Labels
+---------------------
+
+Every wx control must have an accessible label that the screen reader can
+announce. Never create unlabeled controls:
+
+    # Correct — label is associated with the control
+    wx.StaticText(panel, label="Reminder interval (minutes):")
+    self.interval_spin = wx.SpinCtrl(panel, min=1, max=120, initial=15)
+
+    # Wrong — no label, screen reader announces "edit" or "spin control"
+    self.interval_spin = wx.SpinCtrl(panel, min=1, max=120)
+
+
+8.2  Tab Order
+---------------
+
+Controls must follow a logical tab order that matches the visual layout.
+Screen reader users navigate by pressing Tab, and the order must make sense:
+
+  1. Group related controls together.
+  2. Place labels immediately before their associated controls.
+  3. Place action buttons (OK, Cancel, Apply) at the end.
+  4. Test the tab order by navigating with Tab and Shift+Tab.
+
+
+8.3  Speech Feedback
+---------------------
+
+Use core.speech.speak() to give users feedback for actions that do not
+produce visible UI changes:
+
+    core.speech.speak("Reminder saved successfully.")
+    core.speech.speak("Downloading prayer times, please wait.")
+    core.speech.speak("3 events found for today.")
+
+Do not over-announce. Provide feedback for important state changes and
+action confirmations. Avoid flooding the speech queue.
+
+
+8.4  Keyboard Navigation
+--------------------------
+
+All functionality must be operable with the keyboard alone. Mouse-dependent
+interactions are not accessible to screen reader users:
+
+  - Every interactive element must be reachable via Tab.
+  - Dialogs must support Enter to confirm and Escape to cancel.
+  - Custom controls must handle keyboard events explicitly.
+  - Register hotkeys through the core API for global shortcuts.
+
+
+8.5  RTL Language Support
+--------------------------
+
+If your extension supports right-to-left languages (Arabic, Hebrew, Farsi),
+apply the RTL layout helper:
+
+    from core.ui import apply_rtl_layout
+    apply_rtl_layout(dialog)
+
+This mirrors the control layout for natural RTL reading order.
+
+
+8.6  Testing
+-------------
+
+Before submission, test your extension with at least one screen reader:
+
+  - NVDA (free, recommended for testing): https://www.nvaccess.org
+  - JAWS (commercial alternative)
+
+Verify that:
+  - Every control is announced with a meaningful label.
+  - Tab order is logical and complete.
+  - All actions provide speech feedback.
+  - No information is conveyed only through visual means.
+
+
+================================================================================
+  9. INTERNATIONALIZATION (i18n)
+================================================================================
+
+9.1  Translatable Strings
+---------------------------
+
+All user-facing strings must use the translation system:
+
+    from core.i18n import get_translator
+    _ = get_translator("my_extension")
+
+    core.speech.speak(_("Reminder saved successfully."))
+    wx.StaticText(panel, label=_("Notification interval:"))
+
+Never hardcode user-facing strings directly in your code without wrapping
+them in the translation function.
+
+
+9.2  Locale Files
+------------------
+
+Provide at minimum an English locale file at locales/en.json. Additional
+languages are encouraged:
+
+    locales/
+    ├── en.json
+    ├── ar.json
+    └── fr.json
+
+
+9.3  Date and Time Formatting
+-------------------------------
+
+Use the core formatting utilities for dates and times:
+
+    from core.i18n import format_date
+    display_text = format_date(event_date)
+
+Never format dates manually with hardcoded patterns. Different locales expect
+different date formats, and the core utilities handle this automatically.
+
+
+================================================================================
+  10. SECURITY
+================================================================================
+
+Because extensions run with full system access, security is critical. Unsafe
+extensions endanger every user who installs them.
+
+10.1  Code Injection
+---------------------
+
+Never use eval(), exec(), or compile() with any data that originates from
+outside your source code. This includes user input, API responses, file
+contents, and URL parameters:
+
+    # DANGEROUS — never do this
+    eval(api_response["formula"])
+    exec(user_provided_code)
+
+    # Safe alternative — parse data explicitly
+    result = parse_formula(api_response["formula"])
+
+If your extension has a legitimate need for dynamic code execution, document
+it thoroughly and explain the safeguards in your submission notes.
+
+
+10.2  Input Validation
+-----------------------
+
+Validate and sanitize all external data before use:
+
+  - Check types, lengths, and ranges of API responses.
+  - Sanitize file paths to prevent directory traversal.
+  - Validate URLs before making requests.
+  - Never trust data from external sources without verification.
+
+
+10.3  Network Security
+-----------------------
+
+  - Use HTTPS for all network requests. Plain HTTP is not acceptable.
+  - Validate SSL certificates (do not set verify=False in production code).
+  - Set reasonable timeouts on all network operations.
+  - Handle network errors gracefully (see Section 5.1).
+
+
+10.4  User Privacy
+-------------------
+
+  - Respect the user's telemetry and data-sharing preferences.
+  - Do not collect, transmit, or store user data beyond what is necessary
+    for the extension's stated functionality.
+  - If your extension collects any data, you must disclose this clearly in
+    your extension description and documentation.
+  - Never transmit calendar data, personal information, or usage patterns
+    to external servers without explicit user consent.
+
+
+================================================================================
+  11. DEPENDENCIES
+================================================================================
+
+11.1  Bundling
+---------------
+
+Third-party libraries must be bundled inside your extension's lib/ directory.
+Extensions cannot rely on packages being available on the user's system or
+instruct users to install packages via pip.
+
+    my_extension/
+    └── lib/
+        ├── dateutil/
+        └── requests/
+
+Import bundled libraries by adding the lib/ directory to the path in your
+main.py or by using relative imports.
+
+
+11.2  Platform Compatibility
+-----------------------------
+
+Only pure-Python libraries are permitted. Extensions must not include:
+
+  - Compiled binaries (.pyd, .dll, .so files)
+  - C extensions or libraries requiring compilation
+  - Platform-specific native code
+
+This ensures extensions work across all environments where Hariku runs.
+If your extension requires a compiled dependency, contact the Hariku team
+at terabase06@gmail.com to discuss options.
+
+
+11.3  Dependency Documentation
+-------------------------------
+
+Document all third-party libraries used by your extension:
+
+  - Library name and version
+  - License (must be compatible with distribution)
+  - Purpose (why it is needed)
+
+Include this information in your README or a dedicated DEPENDENCIES file.
+
+
+================================================================================
+  12. DOCUMENTATION
+================================================================================
+
+12.1  README / Description
+---------------------------
+
+Every extension should include documentation that covers:
+
+  - What the extension does and who it is for.
+  - How to use it (basic usage instructions).
+  - Any configuration options available.
+  - Known limitations or compatibility notes.
+
+This can be a README.txt file in the extension root or a thorough description
+in the manifest.json. For complex extensions, a separate README is preferred.
+
+
+12.2  Hotkey Documentation
+---------------------------
+
+If your extension registers any hotkeys, document every one of them:
+
+  - The key combination (e.g., Ctrl+Shift+P)
+  - What it does
+  - Whether it can be customized
+
+Undocumented hotkeys may conflict with other extensions or with Hariku's
+built-in shortcuts and will cause your extension to be rejected.
+
+
+12.3  Data Disclosure
+----------------------
+
+Document all data your extension collects, stores, or transmits:
+
+  - What data is stored locally and where.
+  - What data is sent to external servers and why.
+  - What third-party services are contacted.
+  - How users can delete their data.
+
+
+12.4  Changelog
+----------------
+
+For updates to existing extensions, include a changelog that describes what
+changed in each version:
+
+    ## Changelog
+
+    ### 1.2.0 (2026-07-10)
+    - Added French translation
+    - Fixed reminder not firing for all-day events
+    - Improved error handling for network timeouts
+
+    ### 1.1.0 (2026-06-15)
+    - Added customizable notification sounds
+    - Fixed tab order in settings dialog
+
+    ### 1.0.0 (2026-05-01)
+    - Initial release
+
+A clear changelog helps reviewers understand what changed and speeds up the
+review process for updates.
+
+
+================================================================================
+  SUMMARY CHECKLIST
+================================================================================
+
+Before submitting your extension, verify the following:
+
+  [ ] manifest.json is complete and accurate with valid semver version
+  [ ] Code follows PEP 8 and uses proper naming conventions
+  [ ] All public functions have docstrings
+  [ ] No use of print() — logging module used instead
+  [ ] All network and file I/O operations wrapped in try/except
+  [ ] No unhandled exceptions can escape extension entry points
+  [ ] Long-running operations use core.api.run_thread()
+  [ ] All timers are cleaned up in teardown()
+  [ ] Data stored via core APIs, not arbitrary file paths
+  [ ] No sensitive data stored in plaintext
+  [ ] All wx controls have accessible labels
+  [ ] Tab order is logical; tested with keyboard only
+  [ ] Tested with NVDA or JAWS screen reader
+  [ ] User-facing strings wrapped in translation function
+  [ ] English locale file provided at minimum
+  [ ] No eval()/exec() with external data
+  [ ] All network requests use HTTPS
+  [ ] User data collection disclosed in documentation
+  [ ] Dependencies are pure-Python and bundled in lib/
+  [ ] All dependencies documented with licenses
+  [ ] Hotkeys documented
+  [ ] Changelog included for updates
+
+================================================================================
+  END OF DOCUMENT
+================================================================================
+
+For questions about these standards or help preparing your extension for
+submission, visit the forum or contact the developer:
+
+  Forum : https://sp.novarealm.cloud/forum/hariku
+  Email : terabase06@gmail.com
+
+================================================================================

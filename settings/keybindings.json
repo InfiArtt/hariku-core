@@ -1,0 +1,215 @@
+{
+    "Dummy Extension.say_hello": [
+        {
+            "keycode": 90,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Dummy Extension.check_time": [
+        {
+            "keycode": 77,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.prev_day": [
+        {
+            "keycode": 314,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.next_day": [
+        {
+            "keycode": 316,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.prev_month": [
+        {
+            "keycode": 315,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.next_month": [
+        {
+            "keycode": 317,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.prev_year": [
+        {
+            "keycode": 366,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.next_year": [
+        {
+            "keycode": 367,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.start_of_week": [
+        {
+            "keycode": 314,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.end_of_week": [
+        {
+            "keycode": 316,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.start_of_month": [
+        {
+            "keycode": 313,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.end_of_month": [
+        {
+            "keycode": 312,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Calendar Navigation.today": [
+        {
+            "keycode": 68,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Hariku Core.input_gestures": [
+        {
+            "keycode": 80,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Hariku Core.manage_extensions": [
+        {
+            "keycode": 88,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Hariku Core.go_to_date": [
+        {
+            "keycode": 71,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Hariku Core.quit_app": [
+        {
+            "keycode": 81,
+            "ctrl": true,
+            "global": false
+        }
+    ],
+    "Quotes Extension.speak_random_quote": [
+        {
+            "keycode": 89,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "Developer News.show_news_dialog": [
+        {
+            "keycode": 86,
+            "ctrl": false,
+            "global": false
+        }
+    ],
+    "View Diary.show_diary_dialog": [],
+    "Add Note.add_quick_note": [],
+    "Diary & Notes.show_diary_dialog": [
+        {
+            "keycode": 78,
+            "ctrl": true,
+            "shift": false,
+            "alt": false,
+            "global": false
+        }
+    ],
+    "Diary & Notes.add_quick_note": [
+        {
+            "keycode": 78,
+            "ctrl": false,
+            "global": false
+        },
+        {
+            "keycode": 74,
+            "ctrl": true,
+            "shift": false,
+            "alt": true,
+            "global": true
+        }
+    ],
+    "Wikipedia Reader.show_wikipedia_dialog": [
+        {
+            "keycode": 74,
+            "ctrl": false,
+            "shift": false,
+            "alt": false,
+            "global": false
+        }
+    ],
+    "Hariku Core.volume_down": [
+        {
+            "keycode": 344,
+            "ctrl": false,
+            "shift": false,
+            "alt": false,
+            "global": false
+        }
+    ],
+    "Hariku Core.volume_up": [
+        {
+            "keycode": 345,
+            "ctrl": false,
+            "shift": false,
+            "alt": false,
+            "global": false
+        }
+    ],
+    "Ghost Taskbar.clear_tray": [
+        {
+            "keycode": 67,
+            "ctrl": true,
+            "shift": false,
+            "alt": true,
+            "global": true
+        }
+    ],
+    "Hariku Core.show_app": [
+        {
+            "keycode": 72,
+            "ctrl": true,
+            "shift": false,
+            "alt": true,
+            "global": true
+        }
+    ],
+    "Developer Toolkit.open_toolkit": [
+        {
+            "keycode": 68,
+            "ctrl": true,
+            "shift": false,
+            "alt": true,
+            "win": false,
+            "global": true
+        }
+    ]
+}

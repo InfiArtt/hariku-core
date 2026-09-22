@@ -1,0 +1,407 @@
+Version 2.2.0 (Core Update - July 12, 2026)
+================================================================================
+This release focuses on core improvements to accessibility, the Preferences
+dialog, and the internationalization (i18n) system.
+
+================================================================================
+1. ACCESSIBILITY: SCREEN READER IMPROVEMENTS
+================================================================================
+- Added: Intelligent StaticText injection for NVDA and other screen readers.
+  Previously, static text labels in dialogs (such as descriptions above
+  checkboxes or dropdowns) were treated as separate Tab stops. This meant
+  users had to press Tab many extra times just to navigate past descriptive
+  text that should have been read automatically.
+  What changed: StaticText controls on Windows now automatically inject
+  their text into the Accessible Name of the next interactive sibling
+  control. When a user Tabs to a checkbox or dropdown, NVDA will first
+  read the description text and then the control's own label — all in one
+  smooth Tab press.
+
+================================================================================
+2. PREFERENCES DIALOG: OK / APPLY / CANCEL
+================================================================================
+- Added: The Preferences dialog now has three action buttons: OK, Cancel,
+  and Apply.
+  - OK: Saves all settings and closes the dialog.
+  - Apply: Saves all settings but keeps the dialog open for further changes.
+  - Cancel: Discards all changes and closes the dialog without saving.
+- Added: Dirty state tracking. The dialog now monitors all interactive
+  controls (text fields, checkboxes, radio buttons, dropdowns) for changes.
+  If you press Escape or close the window after making unsaved changes,
+  a prompt will ask whether you want to save before exiting.
+
+================================================================================
+3. CORE EVENT: on_enter_pressed
+================================================================================
+- Added: The core now emits an "on_enter_pressed" bus event when the user
+  presses Enter on the calendar. Extensions can subscribe to this event and
+  set payload["handled"] = True to override the default Add Reminder dialog
+  with their own custom dialog.
+- See DEVELOPERS.md for usage examples.
+
+================================================================================
+4. i18n: TRANSLATION FALLBACK FIX
+================================================================================
+- Fixed: The translation system now properly supports a "default" keyword
+  argument. When a translation key is not found in any language file, the
+  system will use the provided default string instead of displaying the
+  raw key name (e.g., "prefs_btn_apply" instead of "Apply").
+
+================================================================================
+5. DEVELOPER SCRATCHPAD & UI IMPROVEMENTS
+================================================================================
+- Added: "Developer Scratchpad Mode" in Preferences -> Extensions. Developers
+  can now specify a custom folder to load unpacked extensions for live testing.
+  Extensions loaded from the Scratchpad have absolute priority and will safely
+  override packed (.hrk) versions installed in AppData.
+- Added: A dedicated consent screen and warning regarding the risks of running
+  unstable extensions from the scratchpad.
+- Changed: The Agenda Dialog now natively supports "read-only" items injected by
+  extensions (like birthdays or external holidays). Read-only items will
+  automatically disable the "Delete Selected" button.
+- Fixed: Pressing the 'Delete' key in the Agenda list now correctly intercepts
+  the action and triggers a spoken warning for read-only items, instead of
+  failing silently.
+
+================================================================================
+6. CORE VERSION BUMP
+================================================================================
+- Core version updated from 2.1.0 to 2.2.0.
+
+================================================================================
+
+
+Version 2.1.0 (Feature Update - June 20, 2026)
+================================================================================
+This release introduces the Core Web View API, important fixes to the user
+interface focus behavior, automatic update checking at startup, and resolves
+a long-standing limitation in the Input Gestures shortcut system.
+
+================================================================================
+1. NEW API: CORE WEB VIEW SYSTEM
+================================================================================
+- Added: Two new functions in core.api for displaying HTML content:
+    core.api.show_html_view(html_string, title, width, height)
+    core.api.show_html_file_view(html_path, title, width, height)
+- Background: Extensions that need to present structured content — such as
+  help documents, reports, tables, or any rich-formatted information — previously
+  had no good option. Plain text dialogs lose all structure, and opening a
+  browser window breaks the user out of the application entirely.
+- With this API, extensions can now render any HTML content in a dedicated
+  Hariku window that stays within the application context. Screen readers and
+  other assistive technologies can interact with the content semantically,
+  navigating it as they would any web-based document, without the user ever
+  leaving Hariku.
+- Technically, the Web View window runs in an isolated subprocess separate
+  from the main Hariku process. This design prevents the rendering engine from
+  interfering with Hariku's global keyboard hook, which was the root cause of
+  previous stability issues with in-process web rendering. The main Hariku
+  application remains fully stable regardless of what the Web View displays.
+- Full documentation is available in DEVELOPERS.md under the "Web View" section.
+
+================================================================================
+2. NEW API: CORE EXTENSION HOOKS & NOTIFICATIONS
+================================================================================
+- Added: The `on_fetch_agenda` lifecycle event. Extensions can now intercept
+  the agenda building process and dynamically inject virtual, read-only events
+  (like birthdays or holidays) directly into the Agenda dialog without saving
+  them to the user's disk.
+- Added: The `on_before_speak` lifecycle event. Extensions can intercept,
+  modify, or cancel any speech output from Hariku just before it is sent to
+  the screen reader.
+- Added: The `on_minute_tick` (Heartbeat) event. A built-in timer that fires
+  every 60 seconds, allowing extensions to easily run cron jobs or scheduled
+  tasks without needing to manage their own background threads.
+- Added: The `on_clipboard_changed` event. Extensions are now notified instantly
+  whenever the user copies new text to the operating system clipboard.
+- Added: The `on_active_window_changed` event. Provides basic Context Awareness
+  by notifying extensions whenever the user switches to a different application
+  (e.g., opening Word, Notepad, or a Web Browser). Extensions can use this to
+  change their hotkey behavior dynamically based on the active app.
+- Added: System state events `on_user_idle` & `on_user_active` (AFK detection),
+  `on_power_changed` (Battery/AC status), and `on_network_changed` (Internet).
+  These lightweight OS hooks allow extensions to be smarter without heavy polling.
+- Added: Native Toast Notifications via `core.api.show_toast()`. Extensions can
+  now display unobtrusive, auto-hiding Windows Toast notifications in the
+  bottom-right corner of the screen instead of blocking modal dialogs.
+- Full documentation and code examples for all these features are available in
+  DEVELOPERS.md.
+
+================================================================================
+3. IMPROVEMENT: AUTOMATIC CORE UPDATE CHECKER
+================================================================================
+- Added: Hariku will now automatically check for Core Application updates 3 seconds
+  after startup in a silent background thread. Previously, users had to manually
+  click "Check for Updates" in the Preferences or Help menu to trigger the
+  Core Update banners (Critical/Recommended/Optional). Now, if a new core update
+  is found, the relevant colored banner will automatically present itself to the
+  user without requiring manual intervention.
+
+================================================================================
+4. IMPROVEMENT: GLOBAL HOTKEY SAFETY FOR MODIFIER-LESS SHORTCUTS
+================================================================================
+- Added: A safety restriction that prevents single-key shortcuts (those without
+  any modifier such as Ctrl, Shift, Alt, or Win) from being marked as Global.
+
+  Rationale: A global hotkey intercepts the key at the operating system level,
+  meaning it fires regardless of which application has focus. If a user were
+  to accidentally mark the letter "F" as a global hotkey, every press of "F"
+  across the entire system — in browsers, text editors, chat applications —
+  would be silently captured by Hariku, effectively breaking the keyboard
+  for that key everywhere except Hariku. This would be extremely confusing
+  and difficult to diagnose.
+
+  What changed:
+  - When a shortcut without any modifier is selected in the Input Gestures
+    tree, the "Make this shortcut Global" checkbox is now automatically
+    disabled and unchecked.
+  - Shortcuts that include at least one modifier key (e.g., Ctrl+F, Alt+G,
+    Shift+Space) continue to have full access to the Global toggle as before.
+  - A secondary safety net was added in the toggle handler itself: even if the
+    checkbox state is somehow changed programmatically, the system will reject
+    any attempt to set a modifier-less shortcut as global.
+
+================================================================================
+5. BUG FIX: MODAL DIALOG FOCUS (Z-ORDER) DROPPING
+================================================================================
+- Fixed: A severe focus-stealing bug where closing a message dialog (e.g., clicking
+  OK on an error prompt or notification) while an Extension's Control Panel was
+  open would cause the main Hariku Calendar window to jump to the front,
+  burying the active Extension window behind it.
+  Root Cause: The underlying API (`core.api.show_message`, `prompt_yes_no`, etc.)
+  was hardcoded to always attach dialogs to the `main_window_instance`. When
+  the dialog was destroyed, Windows OS naturally returned focus to the hardcoded
+  parent (the Calendar), breaking the user's flow.
+  What changed: The Core API now dynamically polls `wx.GetActiveWindow()`.
+  Message dialogs will now intelligently attach themselves to whichever window
+  or extension panel is currently active, ensuring focus correctly returns to
+  the extension once the dialog is dismissed.
+
+================================================================================
+6. BUG FIX: INPUT GESTURES — SINGLE-KEY SHORTCUT ASSIGNMENT
+================================================================================
+- Fixed: A limitation in the "Add Key" capture dialog (Settings > Input Gestures)
+  that prevented users from assigning single-key shortcuts without a modifier.
+  For example, pressing the letter "F" alone was completely ignored by the
+  capture dialog — only combinations like Ctrl+F or Shift+F were accepted.
+
+  Root Cause: Two separate issues in the key capture system were responsible:
+
+  1. The low-level keyboard hook (`_raw_hook`) was configured to only suppress
+     keystrokes when a modifier key was simultaneously held down. When a user
+     pressed a single letter key without any modifier, the keystroke was passed
+     through the hook unintercepted, meaning the capture dialog never received
+     it. The key would instead leak through to Hariku or the operating system.
+
+  2. The capture dialog's polling loop (`_on_tick`) contained a hard-coded
+     condition: `if non_mod and any_mod`. This explicitly required at least one
+     modifier key (Ctrl, Shift, Alt, or Win) to be held before a trigger key
+     would be accepted. Even if the hook had been fixed alone, the dialog's
+     logic would still have rejected any modifier-less keypress.
+
+  What changed:
+  - The keyboard hook now suppresses all non-modifier, non-Escape keystrokes
+    while the capture dialog is open, regardless of whether a modifier key is
+    being held. This ensures single-key presses are captured cleanly.
+  - The polling loop now handles single-key presses through a new "delayed
+    commit" mechanism. When a key is pressed without a modifier, the dialog
+    waits 300 milliseconds before accepting it. During this brief window, the
+    user can still press a modifier key (e.g., hold Ctrl) to turn the single
+    keypress into a combination. If no modifier is added within the delay, the
+    single key is committed as-is. This design prevents accidental assignments
+    while providing a smooth, intuitive capture experience.
+
+================================================================================
+- [CRITICAL] Added: SHA256 checksum verification for the update installer.
+  After the installer is downloaded, Hariku now verifies its checksum against
+  the value provided by the server before executing it. If the checksum does
+  not match, the file is deleted and the update is aborted to prevent
+  execution of a tampered or corrupted installer.
+  Note: Requires the server's version.json to include a "sha256" field.
+
+- [CRITICAL] Added: Trusted Extension Hash Registry. When loading a third-party
+  .hrk extension, Hariku now computes its SHA256 and checks it against a
+  server-hosted list of trusted hashes. Unrecognized extensions trigger a
+  consent dialog requiring explicit user approval before any code runs.
+  Note: Requires the server to host trusted_extensions.json.
+
+- [HIGH] Fixed: Path traversal vulnerability in get_storage_dir(). An extension
+  with a malicious ID (e.g. "../../Windows") could have accessed directories
+  outside Hariku's storage area. The ext_id is now sanitized and the resulting
+  path verified with realpath() before use.
+
+- [HIGH] Fixed: Path traversal via the "main" field in extension manifest.json.
+  The entry point declared in a manifest is now normalized and checked to
+  ensure it cannot escape the extension's own directory.
+
+- [HIGH] Fixed: Arbitrary local file copy via "file://" URLs in the extension
+  store. A compromised registry response could supply a file:// URL to copy
+  any file from the user's disk into the extensions folder. Downloads now
+  require HTTPS and are restricted to verified domains only.
+
+- [HIGH] Added: Domain whitelist for all extension and update downloads.
+  URLs originating from unrecognized domains are now rejected automatically.
+
+- [HIGH] Added: Network request timeouts on all store and update fetches.
+  Previously, a slow or unresponsive server could cause the application to
+  hang indefinitely.
+
+- [HIGH] Fixed: Predictable installer temp filename ("hariku_updater_latest.exe")
+  replaced with a random name via tempfile.mkstemp(), closing a TOCTOU race
+  window where a local process could have replaced the file during the 3-second
+  sleep before execution.
+
+- [MEDIUM] Fixed: The [Official] badge on extensions was previously based solely
+  on the "author" field in manifest.json, which anyone could spoof by setting
+  "author": "rafli". Official status is now determined by a hardcoded ID
+  whitelist inside the application itself.
+
+- [MEDIUM] Fixed: Unsanitized sys.argv forwarding on app restart. Only
+  explicitly allowed arguments (--safe-mode, --debug) are now passed to the
+  restarted process, preventing argument injection.
+
+- [MEDIUM] Added: Path validation on show_html_file_view(). Extensions can
+  no longer use this API to display arbitrary files from the filesystem;
+  only paths within Hariku's own directories are permitted.
+
+- [MEDIUM] Fixed: Predictable HTML temp filename in the Web View system.
+  File names are now UUID-based and created with O_EXCL (exclusive creation)
+  to prevent race conditions and content injection by other local processes.
+
+- [LOW] Fixed: Raw exception details (system paths, SSL configuration strings)
+  were previously rendered directly into user-facing error dialogs. A generic
+  message is now shown to the user; full details are written to the log only.
+
+================================================================================
+
+
+
+================================================================================
+
+
+
+Version 2.0.1 (Critical Patch - June 19, 2026)
+--------------------------------------------------------------------------------
+This is a critical patch release addressing two serious bugs discovered during
+the 2.0.0 Early Testing Phase. All users on 2.0.0 are strongly encouraged to
+update immediately.
+
+--------------------------------------------------------------------------------
+1. CRITICAL: INPUT GESTURES — KEYBOARD LOCKUP BUG FIXED
+--------------------------------------------------------------------------------
+- Fixed: A severe, system-level bug in the Input Gestures dialog ("Add Key")
+  that caused the entire keyboard to become completely unresponsive whenever
+  the dialog was open. This bug required a forced restart (Ctrl+Alt+Delete)
+  to recover from.
+  Root Cause: The low-level keyboard hook (WH_KEYBOARD_LL) used to capture
+  new shortcut combinations was unconditionally suppressing every single
+  keystroke on the system, including modifier-only presses like Ctrl or Shift
+  alone, and even system shortcuts like Alt+F4. Furthermore, if the dialog
+  closed through any unexpected path, the hook was never unregistered.
+  What changed:
+  - The hook now only suppresses keystrokes when a complete, valid combination
+    (modifier + non-modifier key) has been captured. Pressing Ctrl or Shift
+    alone will never be swallowed by the hook.
+  - Pressing Escape now cleanly cancels the dialog and immediately releases
+    the keyboard hook, providing a safe exit at any time.
+  - A safety net has been added via EVT_WINDOW_DESTROY to guarantee the hook
+    is always unregistered, even through unexpected dialog close paths.
+- Fixed: A second bug within the same dialog where pressing a modifier key
+  like Left Ctrl (VK 0xA2) was immediately recognized as the target shortcut
+  key rather than as a modifier, causing the dialog to close prematurely the
+  moment the user pressed Ctrl, Shift, or Alt.
+
+  Root Cause: The modifier detection set only contained the generic virtual
+  key codes (e.g., 0x11 for Ctrl), but Windows actually sends the left/right
+  specific codes (0xA2 for Left Ctrl, 0xA3 for Right Ctrl) when a physical
+  key is pressed. These specific codes were not in the exclusion set and were
+  therefore misidentified as non-modifier "trigger" keys.
+  What changed:
+  - The modifier set now correctly includes all 12 relevant virtual key codes:
+    the generic codes (0x10, 0x11, 0x12), Win keys (0x5B, 0x5C), and all
+    left/right variants (0xA0–0xA5).
+- Fixed: A third related issue where registered global hotkeys (e.g., Ctrl+N)
+  would fire their associated Hariku action during capture, intercepting the
+  keypress before the dialog's hook could see it. All global hotkeys are now
+  temporarily suspended for the duration the "Add Key" dialog is open and
+  are fully restored upon close.
+
+--------------------------------------------------------------------------------
+2. IMPROVEMENT: SMARTER UPDATE SYSTEM
+--------------------------------------------------------------------------------
+- Added: A new tiered update severity system. The update server now
+  communicates the urgency of each release. The Hariku client responds
+  accordingly with a contextually appropriate experience:
+  Critical Updates (red banner):
+    Delivered when a release addresses a severe bug, a security
+    vulnerability, or a crash-inducing regression. The update dialog
+    displays a prominent red banner. If the server sets force_update to
+    true, the dialog cannot be dismissed and the "Later" button is removed,
+    ensuring the patch reaches all users without exception.
+
+  Recommended Updates (amber banner):
+    Delivered for important fixes that are not immediately dangerous.
+    Users may defer the update, but are limited to three deferrals.
+    After the third deferral, the dialog is automatically escalated to
+    critical severity to ensure the fix is eventually applied.
+
+  Optional Updates (blue banner):
+    Delivered for minor features or low-impact improvements. The dialog
+    is unobtrusive and the user may freely choose to skip the version
+    entirely with no further prompting.
+
+- Added: Minimum version enforcement. The server can now specify a
+  minimum_version_required field. If a user's installed version falls below
+  this threshold, the update is automatically escalated to a forced critical
+  update, regardless of the update_type field, providing a hard floor for
+  the application's supported version range.
+
+- Added: Proper semantic version comparison (major.minor.patch). The previous
+  system parsed versions as floating-point numbers, meaning 2.0.10 would
+  incorrectly compare as less than 2.0.9. The comparison engine now parses
+  each component as an independent integer tuple for correct ordering.
+
+================================================================================
+
+Version 2.0.0 (Early Testing Phase - June 18, 2026)
+
+--------------------------------------------------------------------------------
+Welcome to Hariku V2! This major release marks a massive architectural shift for the platform. At first glance, Hariku V1 and Hariku V2 might look and feel largely similar. However, under the hood, the entire foundation has been completely rewritten.
+
+Please note: Because this is an early testing phase (as of June 18, 2026), many features that were built-in during V1 have been temporarily removed. Our new philosophy is that the "Core" should be as lightweight as possible. Consequently, almost all functionalities are being rewritten and migrated into standalone "Extensions". Many of these extensions are still heavily under development, so you might notice some temporary missing features while we rebuild them for the new ecosystem.
+
+Below is an extensive breakdown of the architectural overhauls, new core features, and system improvements introduced in Hariku V2.
+
+--------------------------------------------------------------------------------
+1. THE TRANSITION FROM MONOLITH TO MODULAR (EXTENSION PLATFORM)
+--------------------------------------------------------------------------------
+- Changed: In Hariku V1, features were hardcoded directly into the application's core. This meant that if one minor feature broke, the entire application could crash, and updates required re-downloading the entire software. In V2, we have stripped the core down to the absolute minimum. All functionality—from routines, reminders, to specific utilities—is now handled by the new Extension Manager.
+- Added: Support for `.hrk` compiled extension packages. Extensions can now be easily shared, downloaded, and installed as a single file, much like browser add-ons.
+- Added: Support for "Unpacked" extensions. Developers can place a folder containing their extension's source code directly into the extensions directory, allowing for rapid local development and testing.
+- Added: Real-time Hot-Reloading. Extension developers can now reload their scripts and test their changes on-the-fly without needing to close and restart the Hariku core application. This drastically cuts down development time.
+- Added: Integrated Extension Store. A built-in repository system allows users to browse, download, install, and update official and community-built extensions directly from within the Hariku interface.
+- Added: Dependency Resolution. The Extension Manager now loads extensions intelligently based on their dependencies, ensuring that shared libraries and cross-extension communications are initialized in the correct order.
+
+--------------------------------------------------------------------------------
+2. CORE ARCHITECTURE & SYSTEM COMMUNICATION
+--------------------------------------------------------------------------------
+- Added: The Event Bus System (`core.events`). This is the true backbone of Hariku V2. Instead of extensions calling each other directly (which causes fatal crashes if an extension is missing), they now communicate via a decoupled Publish/Subscribe system. For example, an extension simply broadcasts an 'on_date_changed' event, and any other extension listening to that event will react independently. This ensures absolute stability; if one extension crashes, the rest of the application remains fully functional.
+- Added: Global i18n Translation Engine. Hariku V2 introduces a completely dynamic translation system. The core application and all extensions can now be translated on the fly. Extensions can bundle their own `locales/` directories containing custom JSON language files. When an extension is loaded, its vocabulary is automatically merged with the core system's vocabulary, allowing for seamless multi-language support across the entire ecosystem.
+
+--------------------------------------------------------------------------------
+3. DIAGNOSTICS, TROUBLESHOOTING, & STABILITY
+--------------------------------------------------------------------------------
+- Added: Advanced Crash Reporter. In V1, uncaught errors would often cause the application to fail silently, leaving users confused. V2 intercepts exceptions globally and presents a detailed traceback dialog. Users can read the error context and click a "Send Report" button to securely transmit the stack trace to the developers for rapid bug fixing.
+- Added: Hardware-Level Safe Mode. Built for maximum resilience, Hariku now features a robust, zero-dependency Safe Mode. By holding down the 'Shift' key on your keyboard while launching the application, you can force Hariku to boot into a diagnostic state. At the exact millisecond Hariku detects the 'Shift' key, it provides instant auditory confirmation—a subtle, satisfying "click", which resembles a very soft, pleasant camera shutter. This sound indicates that Safe Mode is successfully engaged and you can release the key. In this state, the Extension Manager is completely bypassed, and no third-party extensions will be loaded. This allows you to easily troubleshoot the application, isolate misbehaving extensions, and recover from boot loops without any friction.
+- Added: Anonymous Telemetry (Opt-Out). To help us understand how Hariku is being used and to improve stability, V2 sends a silent, asynchronous heartbeat to our servers on startup. This heartbeat tracks non-sensitive environment data, such as your OS version, App Version, and active extensions, using an anonymous session UUID. It contains absolutely zero Personal Identifiable Information (PII) and respects a strict Opt-Out policy accessible directly from the General Preferences menu.
+
+--------------------------------------------------------------------------------
+4. USER INTERFACE & PREFERENCES
+--------------------------------------------------------------------------------
+- Changed: The monolithic, cluttered settings window from V1 has been entirely retired. It has been replaced by a clean, dynamic "Treebook" layout that scales beautifully regardless of how many features are added.
+- Added: Dynamic Preference Injection. Because features are now extensions, the preferences menu had to adapt. Extensions can now dynamically inject their own custom settings panels (e.g., specific settings for the "Smart Launcher" or "Quotes" extension) directly into the Core Preferences dialog without requiring any modifications to the core application files.
+- Changed: Persistent State Management. All configuration states are now unified and managed safely by the `core.api.load_data()` and `core.api.save_data()` functions, ensuring that your settings persist reliably across restarts and extension updates.
+
+--------------------------------------------------------------------------------
+Thank you for participating in the Hariku V2 Early Testing Phase! Your feedback during this transition period is invaluable as we continue to rebuild and port your favorite features into the new extension ecosystem.
+- The Hariku Development Team

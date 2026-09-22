@@ -1,0 +1,557 @@
+===============================================================================
+  HARIKU V2 — EXTENSION STORE SUBMISSION GUIDE
+===============================================================================
+
+  Document Version : 1.0
+  Last Updated     : July 2026
+  Applies To       : Hariku V2 Extension Platform
+  Store URL        : https://novarealm.cloud
+  Contact          : terabase06@gmail.com
+
+===============================================================================
+  1. OVERVIEW
+===============================================================================
+
+The Hariku Extension Store is the official distribution channel for Hariku V2
+extensions, hosted at novarealm.cloud. It provides a curated, trusted catalog
+of extensions that enhance the Hariku calendar experience for screen reader
+users worldwide.
+
+By submitting your extension to the store, you gain:
+
+  - Distribution to the entire Hariku user base through the built-in
+    Extension Manager.
+  - Trust verification — your extension's SHA256 hash is added to the
+    trusted registry, so users can install it without untrusted-source
+    warnings.
+  - Visibility and credit as a Hariku ecosystem contributor.
+  - A feedback channel through the Hariku forum where users can report
+    issues and request features for your extension.
+
+All extensions in the store undergo a security and accessibility review
+before listing. This process exists to protect users, especially those who
+rely on assistive technology, and to maintain the quality and reputation of
+the Hariku platform.
+
+
+===============================================================================
+  2. ELIGIBILITY
+===============================================================================
+
+Anyone may submit an extension to the Hariku Extension Store, provided:
+
+  1. You are the original author of the extension, or you have explicit
+     written permission from the original author to distribute it.
+
+  2. Your extension does not violate any applicable laws or third-party
+     intellectual property rights.
+
+  3. Your extension is compatible with the current stable release of
+     Hariku V2 (or the version declared in your manifest's
+     "minimum_core_version" field).
+
+  4. You agree to the review process described in this guide and accept
+     that the Hariku team may reject or delist your extension at their
+     discretion for reasons of security, quality, or policy.
+
+  5. You provide a working contact method (email or forum account) so the
+     review team can reach you with questions or feedback.
+
+
+===============================================================================
+  3. PRE-SUBMISSION CHECKLIST
+===============================================================================
+
+Before submitting, verify that your extension meets ALL of the following
+requirements. Extensions that fail these checks will be returned for
+revision.
+
+---------------------------------------------------------------------------
+  3.1  Valid manifest.json
+---------------------------------------------------------------------------
+
+Your extension must include a manifest.json at its package root with all
+required fields filled correctly:
+
+  - "name"                 : Human-readable extension name (string).
+  - "version"              : Semantic version string, e.g. "1.0.0".
+  - "author"               : Your name or handle (string).
+  - "description"          : A brief, clear summary of what the extension
+                             does (string, 1–3 sentences).
+  - "main"                 : Entry-point Python file, e.g. "main.py".
+  - "language"             : Primary UI language code, e.g. "en", "th".
+  - "minimum_core_version" : The minimum Hariku version required,
+                             e.g. "2.0.0".
+
+All fields are mandatory. The "name" must not conflict with any existing
+extension in the store. The "version" must follow semantic versioning
+(MAJOR.MINOR.PATCH).
+
+---------------------------------------------------------------------------
+  3.2  Proper Packaging
+---------------------------------------------------------------------------
+
+Your extension must be packaged as a .hrk file using the official packaging
+tool:
+
+    python tools/packager.py <your_extension_directory>
+
+This produces a .hrk file (a renamed ZIP archive) with the correct internal
+structure. Do NOT create .hrk files manually or with generic ZIP tools, as
+the packager performs validation and structure checks.
+
+---------------------------------------------------------------------------
+  3.3  Tested on Latest Hariku Version
+---------------------------------------------------------------------------
+
+Test your extension against the latest stable release of Hariku V2. Ensure
+that:
+
+  - The extension loads without errors.
+  - All features work as documented.
+  - The extension does not interfere with core calendar functionality.
+  - No unhandled exceptions appear in the Hariku log.
+
+Test in BOTH modes:
+  - Unpacked mode (loading from a development directory).
+  - Packed mode (installing the .hrk file through the Extension Manager).
+
+---------------------------------------------------------------------------
+  3.4  No Hardcoded Paths
+---------------------------------------------------------------------------
+
+Your extension must NOT contain hardcoded file system paths such as:
+
+    "C:\\Users\\MyName\\Documents\\data.json"       # WRONG
+    "/home/user/hariku/extensions/myext/config.db"   # WRONG
+
+All paths must be constructed dynamically using the APIs provided by the
+Hariku core. Use core.api functions to determine storage locations at
+runtime.
+
+---------------------------------------------------------------------------
+  3.5  Use core.api for Data Storage
+---------------------------------------------------------------------------
+
+Extensions must use the Hariku data storage API (core.api) for persisting
+settings, caches, and user data. Do NOT write custom files to arbitrary
+locations on the user's system.
+
+    # CORRECT — use the core API
+    from core import api
+    api.data_store.set("my_extension", "setting_key", value)
+
+    # WRONG — writing files directly
+    with open("my_data.json", "w") as f:
+        json.dump(data, f)
+
+This ensures data is stored in the proper Hariku data directory, is
+portable, and is cleaned up correctly when the extension is uninstalled.
+
+---------------------------------------------------------------------------
+  3.6  Proper Error Handling
+---------------------------------------------------------------------------
+
+All network requests, file I/O operations, and external process calls must
+be wrapped in try/except blocks with meaningful error handling:
+
+    try:
+        response = urllib.request.urlopen(url)
+    except urllib.error.URLError as e:
+        api.speech.speak(f"Network error: {e.reason}")
+        return
+
+Do NOT let exceptions propagate silently or crash the application. Use
+speech feedback or logging to inform the user when something goes wrong.
+
+---------------------------------------------------------------------------
+  3.7  teardown() Function Defined
+---------------------------------------------------------------------------
+
+Every extension must define a teardown() function in its main module. This
+function is called when the extension is disabled or Hariku is shutting
+down. Use it to:
+
+  - Cancel any active timers or scheduled tasks.
+  - Stop background threads.
+  - Close open file handles, network connections, or web views.
+  - Unregister any hotkeys or event listeners.
+
+    def teardown():
+        if my_timer:
+            my_timer.cancel()
+        if my_thread and my_thread.is_alive():
+            my_thread.join(timeout=2)
+
+Extensions without a teardown() function will be rejected.
+
+---------------------------------------------------------------------------
+  3.8  No Blocking Operations on UI Thread
+---------------------------------------------------------------------------
+
+Long-running or blocking operations (network requests, heavy computation,
+file downloads) must NOT run on the main UI thread. Use the run_thread
+utility to execute them in a background thread:
+
+    from core import api
+
+    def fetch_data():
+        # This runs in a background thread
+        data = download_from_server()
+        wx.CallAfter(update_ui, data)  # Update UI safely
+
+    api.run_thread(fetch_data)
+
+Blocking the UI thread freezes the entire application, which is especially
+harmful for screen reader users who lose all audio feedback.
+
+---------------------------------------------------------------------------
+  3.9  Accessibility Requirements
+---------------------------------------------------------------------------
+
+Hariku is an accessibility-first application. Your extension MUST meet
+these requirements:
+
+  - All dialogs and windows must be fully keyboard-navigable. Users must
+    be able to reach every control using Tab, Shift+Tab, and arrow keys.
+
+  - All interactive controls (buttons, text fields, checkboxes, lists)
+    must have proper labels that screen readers can announce.
+
+  - Do NOT use unlabeled bitmap buttons or visual-only indicators.
+
+  - Use the Hariku dialog APIs (api.dialogs) whenever possible, as they
+    are pre-configured for accessibility.
+
+  - If you create custom wxPython windows, test them with NVDA and/or
+    JAWS to verify full screen reader compatibility.
+
+  - Provide speech feedback (api.speech.speak) for important state
+    changes that might not otherwise be announced.
+
+---------------------------------------------------------------------------
+  3.10  No Malware, Spyware, or Data Exfiltration
+---------------------------------------------------------------------------
+
+This is an absolute requirement with zero tolerance:
+
+  - Extensions must NOT collect or transmit user data without explicit,
+    informed user consent.
+  - Extensions must NOT install additional software, drivers, or system
+    services.
+  - Extensions must NOT modify files or settings outside their designated
+    storage area.
+  - Extensions must NOT open network connections for tracking, analytics,
+    or advertising purposes.
+  - Extensions must NOT obfuscate their source code to hide functionality.
+
+Hariku extensions run with FULL system access — there is no sandbox.
+This makes trust paramount. Any extension found to contain malicious code
+will be immediately removed, and the developer may be permanently banned
+from the store.
+
+
+===============================================================================
+  4. SUBMISSION PROCESS
+===============================================================================
+
+Follow these steps to submit your extension:
+
+  Step 1 — Package Your Extension
+
+    Run the official packager from the Hariku tools directory:
+
+        python tools/packager.py path/to/your_extension
+
+    This produces a file named your_extension.hrk in the current
+    directory. Verify that it was created successfully.
+
+  Step 2 — Test in Both Modes
+
+    (a) Test the unpacked version by loading your extension directory
+        directly through Hariku's developer/debug mode.
+    (b) Test the packed .hrk version by installing it through the
+        Extension Manager, just as a user would. Confirm that all
+        features work identically in both modes.
+
+  Step 3 — Write a Clear Description and Changelog
+
+    Prepare the following text (plain text or Markdown):
+
+    DESCRIPTION:
+      A clear, concise explanation of what your extension does, who it is
+      for, and what features it provides. Write this from a user's
+      perspective — assume they know nothing about your extension.
+
+    CHANGELOG:
+      A version-by-version list of changes. For first submissions, list
+      the initial feature set. For updates, list what changed since the
+      previous version.
+
+      Example:
+        v1.0.0 (2026-07-12)
+          - Initial release
+          - Added lunar calendar overlay for Thai calendar
+          - Added configurable holiday notifications
+          - Supports Thai and English languages
+
+  Step 4 — Submit Your Extension
+
+    Send your submission to one of these channels:
+
+    (a) Email: terabase06@gmail.com
+        Subject line: [Extension Submission] Your Extension Name v1.0.0
+
+    (b) Forum: https://sp.novarealm.cloud/forum/hariku
+        Create a new post in the Extension Submissions category.
+
+  Step 5 — Include All Required Materials
+
+    Your submission must include:
+
+    REQUIRED:
+      [x] The .hrk package file
+      [x] Extension description (as described in Step 3)
+      [x] Changelog (as described in Step 3)
+
+    OPTIONAL (but recommended):
+      [ ] Screenshots or screen recordings demonstrating the extension
+      [ ] A brief demo walkthrough (text or audio)
+      [ ] Links to source code repository (if publicly hosted)
+      [ ] Any special installation or configuration instructions
+
+
+===============================================================================
+  5. REVIEW PROCESS
+===============================================================================
+
+After you submit your extension, the Hariku review team will evaluate it
+in three areas:
+
+---------------------------------------------------------------------------
+  5.1  Security Review
+---------------------------------------------------------------------------
+
+A team member will inspect your extension's source code for:
+
+  - Malicious or suspicious behavior (data exfiltration, unauthorized
+    network connections, system modification).
+  - Proper use of data storage APIs (no rogue file writes).
+  - Safe handling of user input (no injection vulnerabilities).
+  - Absence of obfuscated or encoded executable code.
+
+Since Hariku extensions have full system access, this review is thorough
+and non-negotiable.
+
+---------------------------------------------------------------------------
+  5.2  Functionality Testing
+---------------------------------------------------------------------------
+
+The review team will install your .hrk package on a clean Hariku
+installation and verify:
+
+  - The extension loads and initializes without errors.
+  - Advertised features work as described.
+  - The extension does not break or interfere with core functionality.
+  - The teardown() function executes cleanly on disable/shutdown.
+  - No unhandled exceptions in normal usage or edge cases.
+
+---------------------------------------------------------------------------
+  5.3  Accessibility Audit
+---------------------------------------------------------------------------
+
+A reviewer will test the extension with a screen reader (NVDA and/or JAWS)
+to confirm:
+
+  - All dialogs and controls are keyboard-accessible.
+  - All controls have proper labels announced by the screen reader.
+  - Speech feedback is provided for important actions and state changes.
+  - The extension does not disrupt the screen reader's interaction with
+    the core Hariku interface.
+
+---------------------------------------------------------------------------
+  5.4  Timeline
+---------------------------------------------------------------------------
+
+The review team aims to complete all reviews within 7 business days of
+submission. Complex extensions may take longer.
+
+You will receive a response at the email address or forum account you used
+to submit, with one of the following outcomes:
+
+  - APPROVED — Your extension will be listed in the store.
+  - REVISION REQUESTED — Specific issues must be addressed before
+    resubmission (see Section 7).
+  - REJECTED — The extension does not meet requirements and cannot be
+    accepted in its current form (see Section 7).
+
+
+===============================================================================
+  6. APPROVAL & LISTING
+===============================================================================
+
+When your extension is approved:
+
+  1. SHA256 Hash Registration
+     The SHA256 hash of your .hrk file is added to the Hariku trusted
+     extension registry. This allows users to install your extension
+     without seeing untrusted-source warnings.
+
+  2. Store Listing
+     Your extension is added to the Hariku Extension Store at
+     novarealm.cloud. Users can browse, search for, and install it
+     directly from Hariku's built-in Extension Manager.
+
+  3. Developer Credit
+     You are credited as the extension author in the store listing,
+     using the author name from your manifest.json. Your contribution
+     to the Hariku ecosystem is recognized and appreciated.
+
+  4. Notification
+     You will receive confirmation via email or forum message with a
+     link to your extension's store page.
+
+
+===============================================================================
+  7. REJECTION & RESUBMISSION
+===============================================================================
+
+---------------------------------------------------------------------------
+  7.1  Common Reasons for Rejection
+---------------------------------------------------------------------------
+
+  - Missing or invalid manifest.json fields.
+  - Extension was not packaged with tools/packager.py.
+  - Hardcoded file paths found in source code.
+  - Data stored outside the core.api data storage system.
+  - Missing teardown() function.
+  - Blocking operations on the UI thread (no use of run_thread).
+  - Inaccessible dialogs — controls not keyboard-navigable or not
+    labeled for screen readers.
+  - Unhandled exceptions in network or file I/O code paths.
+  - Suspicious or malicious code detected during security review.
+  - Extension description is missing, unclear, or misleading.
+  - Extension duplicates core functionality without adding value.
+
+---------------------------------------------------------------------------
+  7.2  How to Resubmit
+---------------------------------------------------------------------------
+
+If your extension receives a "Revision Requested" response:
+
+  1. Read the reviewer's feedback carefully. Each issue will be
+     specifically described.
+  2. Fix all listed issues in your source code.
+  3. Increment the patch version in manifest.json (e.g., 1.0.0 → 1.0.1).
+  4. Re-package with tools/packager.py.
+  5. Re-test in both unpacked and packed modes.
+  6. Reply to the original review email or forum thread with:
+     - The updated .hrk file.
+     - A brief summary of changes made to address each issue.
+
+There is no limit on resubmissions. The review team is happy to work with
+you to get your extension into the store.
+
+
+===============================================================================
+  8. SUBMITTING UPDATES
+===============================================================================
+
+To update an extension that is already listed in the store:
+
+  1. Make your changes to the extension source code.
+
+  2. Update the "version" field in manifest.json. Follow semantic
+     versioning:
+       - PATCH (1.0.0 → 1.0.1): Bug fixes, minor improvements.
+       - MINOR (1.0.0 → 1.1.0): New features, backward-compatible.
+       - MAJOR (1.0.0 → 2.0.0): Breaking changes, major rewrites.
+
+  3. Re-package with tools/packager.py.
+
+  4. Test thoroughly in both unpacked and packed modes.
+
+  5. Submit the update via email or forum, just like the original
+     submission. Use the subject line:
+       [Extension Update] Your Extension Name v1.1.0
+
+  6. Include the updated .hrk file and a changelog entry describing
+     what changed in this version.
+
+Updates go through the same review process as new submissions, but
+reviews for minor updates from established developers are typically
+faster.
+
+When the update is approved:
+  - The store listing is updated with the new version.
+  - The SHA256 hash in the trusted registry is updated.
+  - Users will see the update available in their Extension Manager.
+
+
+===============================================================================
+  9. REMOVAL POLICY
+===============================================================================
+
+The Hariku team reserves the right to remove any extension from the store
+at any time. Extensions may be delisted for the following reasons:
+
+  1. Security Vulnerability Discovered
+     If a vulnerability is found after listing, the extension will be
+     immediately removed. The developer will be notified and given the
+     opportunity to submit a patched version.
+
+  2. Malicious Behavior
+     Any extension found to contain malware, spyware, data exfiltration,
+     or other malicious code will be permanently removed. The developer
+     may be banned from future submissions.
+
+  3. Incompatibility with New Hariku Versions
+     If a Hariku update breaks an extension and the developer does not
+     provide a compatible update within a reasonable timeframe (typically
+     30 days after notification), the extension may be temporarily
+     delisted until updated.
+
+  4. Developer Request
+     Developers may request removal of their own extensions at any time
+     by contacting terabase06@gmail.com.
+
+  5. Policy Violation
+     Extensions that violate any policy described in this guide, or any
+     future policy updates communicated through the forum, may be removed.
+
+  6. Abandonment
+     Extensions that have been non-functional for an extended period
+     (6+ months) with no response from the developer may be delisted to
+     keep the store catalog current and trustworthy.
+
+When an extension is removed from the store:
+  - Its SHA256 hash is removed from the trusted registry.
+  - Existing installations continue to function but will display an
+    untrusted-extension warning.
+  - The extension will no longer appear in store search results.
+
+
+===============================================================================
+  10. CONTACT
+===============================================================================
+
+For questions about the submission process, review status, or any other
+store-related inquiries:
+
+  Email   : terabase06@gmail.com
+  Forum   : https://sp.novarealm.cloud/forum/hariku
+
+When contacting the team, please include:
+  - Your extension name and version.
+  - A clear description of your question or issue.
+  - Any relevant error messages or screenshots.
+
+We aim to respond to all inquiries within 3 business days.
+
+Thank you for contributing to the Hariku extension ecosystem. Your work
+helps make Hariku a more powerful and versatile tool for calendar users
+who rely on screen readers.
+
+===============================================================================
+  END OF DOCUMENT
+===============================================================================
