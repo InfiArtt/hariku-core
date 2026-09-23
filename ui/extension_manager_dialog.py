@@ -1,3 +1,12 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import wx
 import core.extension_manager
 import core.store
@@ -17,7 +26,6 @@ class InstalledPanel(wx.Panel):
     def InitUI(self):
         vbox = wx.BoxSizer(wx.VERTICAL)
         
-        # ListCtrl for extensions
         self.list_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
         self.list_ctrl.InsertColumn(0, _("ext_col_name"),    width=150)
         self.list_ctrl.InsertColumn(1, _("ext_col_version"), width=80)
@@ -29,13 +37,11 @@ class InstalledPanel(wx.Panel):
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected, self.list_ctrl)
         vbox.Add(self.list_ctrl, 1, wx.EXPAND | wx.ALL, 5)
         
-        # Description text area
         self.desc_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 60))
         vbox.Add(self.desc_text, 0, wx.EXPAND | wx.ALL, 5)
-        
-        # Buttons
+
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        
+
         self.btn_toggle = wx.Button(self, label=_("ext_btn_toggle"))
         self.btn_toggle.Disable()
         self.Bind(wx.EVT_BUTTON, self.OnToggle, self.btn_toggle)

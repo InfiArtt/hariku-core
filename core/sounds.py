@@ -1,3 +1,11 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import wx.adv
 import logging
 import os
@@ -46,8 +54,8 @@ def volume_down():
 
 def play_sound(filepath):
     """
-    Memainkan efek suara secara asinkron agar tidak memblokir aplikasi.
-    Menggunakan MCI API Windows agar suara bisa tumpang tindih (overlapping).
+    Play a sound effect asynchronously so it never blocks the app.
+    Uses the Windows MCI API so sounds can overlap.
     """
     if not os.path.exists(filepath):
         logger.warning(f"Sound file not found: {filepath}")
@@ -56,19 +64,17 @@ def play_sound(filepath):
     try:
         import ctypes
         filename = os.path.basename(filepath)
-        # Buat alias unik berdasarkan nama file agar file yang berbeda bisa tumpang tindih
+        # Build a unique alias from the filename so different files can overlap.
         alias = filename.replace(".", "").replace(" ", "")
-        
-        # Hentikan dan tutup jika file yang sama sedang dimainkan
+
+        # Stop and close the same file if it is already playing.
         ctypes.windll.winmm.mciSendStringW(f"close {alias}", None, 0, None)
-        
-        # Terapkan volume setiap kali memutar untuk berjaga-jaga
+
+        # Re-apply the volume on every play, just in case.
         apply_system_volume(get_global_volume())
-        
-        # Buka
+
         ctypes.windll.winmm.mciSendStringW(f"open \"{filepath}\" type waveaudio alias {alias}", None, 0, None)
-        
-        # Mainkan
+
         ctypes.windll.winmm.mciSendStringW(f"play {alias}", None, 0, None)
         
         return True
@@ -78,7 +84,7 @@ def play_sound(filepath):
 
 def play_internal_sound(sound_name):
     """
-    Memainkan file suara dari folder hariku2/sounds/
+    Play a sound file from the hariku2/sounds/ folder.
     """
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sounds_dir = os.path.join(base_dir, "sounds")

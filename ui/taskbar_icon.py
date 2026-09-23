@@ -1,4 +1,12 @@
-# hariku2/ui/taskbar_icon.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import wx
 import wx.adv
 from core.events import bus
@@ -8,7 +16,6 @@ class HarikuTaskBarIcon(wx.adv.TaskBarIcon):
         super().__init__()
         self.frame = frame
         
-        # Gunakan icon bawaan wx
         icon = wx.ArtProvider.GetIcon(wx.ART_INFORMATION, wx.ART_OTHER, (16, 16))
         from core.i18n import get_translator
         _ = get_translator("core")
@@ -16,7 +23,7 @@ class HarikuTaskBarIcon(wx.adv.TaskBarIcon):
         
         self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.OnLeftDClick)
         
-        # Dengarkan event perubahan tanggal untuk memperbarui tooltip
+        # Listen for date-change events to refresh the tooltip
         bus.subscribe("on_date_changed", self.UpdateTooltip)
         
     def UpdateTooltip(self, date_str):
@@ -42,7 +49,7 @@ class HarikuTaskBarIcon(wx.adv.TaskBarIcon):
         if reminders:
             text += f"\n{_('agenda_lbl_has_reminders', count=len(reminders))}"
             
-        # Izinkan ekstensi untuk menyisipkan info mereka sendiri ke dalam tooltip
+        # Let extensions inject their own info into the tooltip
         tooltip_data = {"text": text}
         bus.emit("on_build_tray_tooltip", tooltip_data)
             
@@ -59,10 +66,10 @@ class HarikuTaskBarIcon(wx.adv.TaskBarIcon):
         item_view_log = menu.Append(wx.ID_ANY, _("nav_view_log"))
         menu.AppendSeparator()
         
-        # Izinkan ekstensi menyisipkan menu mereka sendiri
+        # Let extensions inject their own menu items
         bus.emit("on_build_tray_menu", menu, self.frame)
         
-        # Tambahkan separator jika ekstensi menambahkan menu
+        # Add a separator if extensions added menu items
         if menu.GetMenuItemCount() > 3:
             menu.AppendSeparator()
 

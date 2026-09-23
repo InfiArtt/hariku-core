@@ -1,3 +1,11 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import urllib.request
 import urllib.parse
 import json
@@ -26,7 +34,7 @@ def _validate_download_url(url):
 STORE_URL = core.endpoints.STORE_REGISTRY_URL
 
 def fetch_registry():
-    """Mengambil data dari Store URL"""
+    """Fetch data from the Store URL."""
     try:
         req = urllib.request.Request(STORE_URL, headers={'User-Agent': 'HarikuV2/2.0'})
         with urllib.request.urlopen(req, timeout=15) as response:  # [SEC HIGH-4] added timeout
@@ -57,7 +65,7 @@ def _sanitize_ext_id(ext_id):
 
 
 def download_extension(ext_id, download_url):
-    """Mengunduh dan menyimpan ekstensi ke folder /extensions"""
+    """Download and save an extension into the /extensions folder."""
     # [SEC HIGH-3] Validate URL before any download attempt
     try:
         _validate_download_url(download_url)

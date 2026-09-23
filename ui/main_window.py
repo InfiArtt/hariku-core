@@ -1,4 +1,12 @@
-# hariku2/ui/main_window.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import wx
 import wx.adv
 from core.events import bus
@@ -14,19 +22,22 @@ class MainWindow(wx.Frame):
     def __init__(self, parent, title):
         super(MainWindow, self).__init__(parent, title=title, size=(600, 400))
         
-        # Mendaftarkan diri ke API agar ekstensi bisa mengakses tanggal
+        # Register with the API so extensions can access the selected date
         core.api.main_window_instance = self
         self.InitUI()
         self.RegisterCoreHotkeys()
         
-        # Terapkan Global Hotkeys ke sistem OS
+        # Apply global hotkeys to the OS
         core.hotkeys.apply_global_hotkeys(self)
-        
-        # Inisialisasi System Tray Icon
+
         from ui.taskbar_icon import HarikuTaskBarIcon
         self.tb_icon = HarikuTaskBarIcon(self)
         
-        # Beritahu ekstensi bahwa UI sudah siap
+        # Apply low-vision appearance (font scale + high contrast) if configured.
+        import core.ui_scale
+        core.ui_scale.apply_appearance(self)
+
+        # Notify extensions that the UI is ready
         bus.emit("on_ui_ready", self)
         
     def InitUI(self):
@@ -37,13 +48,13 @@ class MainWindow(wx.Frame):
         st.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         vbox.Add(st, flag=wx.ALL | wx.ALIGN_CENTER, border=10)
         
-        # Menggunakan GenericCalendarCtrl alih-alih CalendarCtrl bawaan Windows
-        # agar NVDA tidak mencegat event "SysMonthCal32" secara native dan 
-        # murni mendengarkan perintah Tolk kita.
+        # Use GenericCalendarCtrl instead of the native Windows CalendarCtrl so
+        # NVDA does not intercept the native "SysMonthCal32" events and instead
+        # listens purely to our Tolk output.
         self.calendar = wx.adv.GenericCalendarCtrl(self.panel, wx.ID_ANY, wx.DateTime.Now())
-        
-        # Mencegah kalender mengambil fokus native agar NVDA tidak mencatat 
-        # riwayat pembacaan default (angka) dan membuat log menjadi bersih.
+
+        # Keep the calendar from taking native focus so NVDA does not log the
+        # default (numeric) readings, keeping the log clean.
         self.calendar.Bind(wx.EVT_SET_FOCUS, lambda e: self.panel.SetFocus())
         
         vbox.Add(self.calendar, 1, wx.EXPAND | wx.ALL, 10)
@@ -118,7 +129,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
         self.calendar.Bind(wx.adv.EVT_CALENDAR_SEL_CHANGED, self.OnDateChanged)
         
-        # Bind untuk Global Hotkeys OS-Level
+        # Bind OS-level global hotkeys
         self.Bind(wx.EVT_HOTKEY, self.OnGlobalHotKey)
         
         from core.i18n import apply_rtl_layout
@@ -126,12 +137,12 @@ class MainWindow(wx.Frame):
         
         bus.subscribe("on_open_preferences", self._handle_open_preferences)
         
-        # Setup Heartbeat Timer (setiap 60 detik)
+        # Set up the heartbeat timer (every 60 seconds)
         self.heartbeat_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnHeartbeat, self.heartbeat_timer)
         self.heartbeat_timer.Start(60000)
         
-        # Setup System Monitor Timer (setiap 1 detik untuk Clipboard & Context dll)
+        # Set up the system monitor timer (every 1 second for clipboard, context, etc.)
         self._last_clipboard = ""
         self._last_window_info = {"title": "", "process": ""}
         self._is_idle = False
@@ -161,7 +172,7 @@ class MainWindow(wx.Frame):
             self._last_window_info = win_info
             bus.emit("on_active_window_changed", win_info)
             
-        # 3. Idle Monitor (Threshold 5 menit = 300 detik)
+        # 3. Idle monitor (threshold 5 minutes = 300 seconds)
         idle_time = core.api.get_user_idle_time()
         if idle_time > 300 and not self._is_idle:
             self._is_idle = True
@@ -209,6 +220,11 @@ class MainWindow(wx.Frame):
         core.hotkeys.register_action("Hariku Core", "quit_app",    _("nav_quit_app"),    ord('Q'), True, self.ShowExitOptions)
         core.hotkeys.register_action("Hariku Core", "minimize_tray", _("nav_minimize_tray"), ord('M'), True, self.MinimizeToTray)
         core.hotkeys.register_action("Hariku Core", "show_app",    _("nav_show_app"),    ord('H'), True, self.OnToggleVisibility, default_alt=True, default_global=True)
+        core.hotkeys.register_action("Hariku Core", "show_shortcuts", "Show Keyboard Shortcuts", wx.WXK_F1, False, self.OnShowShortcuts)
+
+    def OnShowShortcuts(self):
+        from ui.shortcuts_dialog import show_shortcuts
+        show_shortcuts(self)
 
     def OnToggleVisibility(self):
         if self.IsShown() and self.IsActive():
@@ -329,7 +345,7 @@ class MainWindow(wx.Frame):
                 
         if keycode == wx.WXK_SPACE and not ctrl_down:
             focus = wx.Window.FindFocus()
-            # Fokus sekarang ada di self.panel (karena trik pengalihan fokus sebelumnya)
+            # Focus now sits on self.panel because of the earlier focus-redirect trick
             if focus == self.panel or focus == self.calendar or focus == self:
                 date_str = self.calendar.GetDate().Format("%Y-%m-%d")
                 from core.reminders import get_reminders_for_date
@@ -342,7 +358,7 @@ class MainWindow(wx.Frame):
                     show_agenda(self, date_str, reminders)
                 return
         
-        # Biarkan Hotkey Manager menangani semuanya (termasuk navigasi panah kalender)
+        # Let the hotkey manager handle everything (including calendar arrow navigation)
         if not core.hotkeys.process_key_event(keycode, ctrl_down, event.ShiftDown(), event.AltDown(), event.MetaDown() or wx.GetKeyState(wx.WXK_WINDOWS_LEFT) or wx.GetKeyState(wx.WXK_WINDOWS_RIGHT)):
             event.Skip()
 
@@ -402,7 +418,7 @@ class MainWindow(wx.Frame):
         elif behavior == "ask":
             self.ShowExitOptions()
         else:
-            # Default: sembunyikan ke System Tray
+            # Default: hide to the system tray
             self.Hide()
 
     # --- Help Menu Handlers ---

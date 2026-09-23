@@ -1,4 +1,11 @@
-# hariku2/core/api.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import wx
 import os
 import json
@@ -7,13 +14,13 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-# Menyimpan referensi ke jendela utama agar bisa diakses oleh fungsi API.
-# Nilai ini akan diisi secara otomatis oleh main_window.py saat aplikasi dimulai.
+# Reference to the main window so API functions can reach it.
+# main_window.py fills this in automatically when the app starts.
 main_window_instance = None
 
 def get_selected_date():
     """
-    Mengembalikan tanggal yang sedang disorot di kalender.
+    Return the date currently highlighted in the calendar.
     Format string: 'YYYY-MM-DD'
     """
     if main_window_instance and hasattr(main_window_instance, 'calendar'):
@@ -23,13 +30,13 @@ def get_selected_date():
 
 def set_selected_date(date_str):
     """
-    Memaksa kalender untuk berpindah ke tanggal tertentu.
-    Format yang diharapkan: 'YYYY-MM-DD'
+    Force the calendar to jump to a specific date.
+    Expected format: 'YYYY-MM-DD'
     """
     if main_window_instance and hasattr(main_window_instance, 'calendar'):
         try:
             new_date = wx.DateTime()
-            # Parse format string ke objek DateTime wx
+            # Parse the format string into a wx.DateTime object.
             success = new_date.ParseFormat(date_str, "%Y-%m-%d")
             
             if success:
@@ -41,17 +48,17 @@ def set_selected_date(date_str):
 
 # --- Storage API ---
 
-# Direktori penyimpanan global
+# Global storage directory.
 _app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
 USER_DATA_DIR = os.path.join(_app_data, "Hariku2")
 DATA_DIR = os.path.join(USER_DATA_DIR, "data")
 
 def get_data_path(extension_name):
-    """Mendapatkan path file JSON untuk ekstensi tertentu."""
+    """Return the JSON file path for a given extension."""
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
-    
-    # Sanitasi nama ekstensi untuk keamanan nama file
+
+    # Sanitize the extension name for filename safety.
     safe_name = "".join(c for c in extension_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
     return os.path.join(DATA_DIR, f"{safe_name}.json")
 
@@ -89,7 +96,7 @@ def atomic_write_json(path, data):
         raise
 
 def load_data(extension_name):
-    """Memuat data JSON milik ekstensi sebagai dictionary.
+    """Load an extension's JSON data as a dictionary.
     [Stability] Only if the main file EXISTS but is corrupt does it fall back to
     the '.bak' backup. A missing main file means 'no data' (return {})."""
     path = get_data_path(extension_name)
@@ -112,7 +119,7 @@ def load_data(extension_name):
     return {}
 
 def save_data(extension_name, data_dict):
-    """Menyimpan dictionary ke dalam file JSON milik ekstensi (atomic)."""
+    """Save a dictionary into the extension's JSON file (atomically)."""
     path = get_data_path(extension_name)
     try:
         atomic_write_json(path, data_dict)
@@ -125,10 +132,10 @@ def save_data(extension_name, data_dict):
 
 def set_timeout(milliseconds, callback, *args, **kwargs):
     """
-    Menjalankan fungsi setelah X milidetik.
-    Mengembalikan objek timer, panggil .Stop() jika ingin dibatalkan.
+    Run a function after X milliseconds.
+    Returns the timer object; call .Stop() to cancel it.
     """
-    # wx.CallLater sangat aman untuk GUI thread
+    # wx.CallLater is safe to use on the GUI thread.
     timer = wx.CallLater(milliseconds, callback, *args, **kwargs)
     return timer
 
@@ -147,8 +154,8 @@ class _IntervalTimer(wx.Timer):
 
 def set_interval(milliseconds, callback, *args, **kwargs):
     """
-    Menjalankan fungsi secara berulang setiap X milidetik.
-    Mengembalikan objek timer, panggil .Stop() jika ingin dihentikan.
+    Run a function repeatedly every X milliseconds.
+    Returns the timer object; call .Stop() to stop it.
     """
     timer = _IntervalTimer(callback, *args, **kwargs)
     timer.Start(milliseconds)
@@ -165,7 +172,7 @@ def _get_parent_window():
     return main_window_instance
 
 def show_message(title, message):
-    """Menampilkan kotak dialog pesan (OK saja)."""
+    """Show a message dialog box (OK only)."""
     parent = _get_parent_window()
     if parent:
         dlg = wx.MessageDialog(parent, message, title, wx.OK | wx.ICON_INFORMATION)
@@ -173,7 +180,7 @@ def show_message(title, message):
         dlg.Destroy()
 
 def prompt_yes_no(title, message):
-    """Menanyakan Yes/No, mengembalikan True/False."""
+    """Ask a Yes/No question, returning True/False."""
     parent = _get_parent_window()
     if parent:
         dlg = wx.MessageDialog(parent, message, title, wx.YES_NO | wx.ICON_QUESTION)
@@ -183,7 +190,7 @@ def prompt_yes_no(title, message):
     return False
 
 def prompt_text(title, message, default_value=""):
-    """Meminta input teks singkat."""
+    """Prompt for a short text input."""
     parent = _get_parent_window()
     if parent:
         dlg = wx.TextEntryDialog(parent, message, title, default_value)
@@ -195,7 +202,7 @@ def prompt_text(title, message, default_value=""):
     return None
 
 def prompt_multiline(title, message, default_value=""):
-    """Meminta input teks panjang (multiline)."""
+    """Prompt for a long (multiline) text input."""
     parent = _get_parent_window()
     if parent:
         dlg = wx.TextEntryDialog(parent, message, title, default_value, style=wx.OK | wx.CANCEL | wx.TE_MULTILINE)
@@ -208,8 +215,8 @@ def prompt_multiline(title, message, default_value=""):
 
 def show_toast(title, message, flags=wx.ICON_INFORMATION):
     """
-    Menampilkan notifikasi sistem bawaan (misal Windows Toast di pojok kanan bawah).
-    flags: wx.ICON_INFORMATION, wx.ICON_WARNING, atau wx.ICON_ERROR
+    Show a native system notification (e.g. a Windows toast in the bottom-right corner).
+    flags: wx.ICON_INFORMATION, wx.ICON_WARNING, or wx.ICON_ERROR
     """
     import wx.adv
     parent = _get_parent_window()
@@ -221,8 +228,8 @@ def show_toast(title, message, flags=wx.ICON_INFORMATION):
 
 def get_active_window_info():
     """
-    Mengambil informasi jendela yang sedang aktif (fokus) di Windows.
-    Mengembalikan dict: {"title": "Judul Jendela", "process": "nama_proses.exe"}
+    Get information about the currently active (focused) window in Windows.
+    Returns a dict: {"title": "Window Title", "process": "process_name.exe"}
     """
     import ctypes
     import ctypes.wintypes
@@ -263,7 +270,7 @@ def get_active_window_info():
         return {"title": "", "process": ""}
 
 def get_user_idle_time():
-    """Mengembalikan waktu (dalam detik) sejak user terakhir kali menyentuh keyboard/mouse."""
+    """Return the time (in seconds) since the user last touched the keyboard/mouse."""
     import ctypes
     import ctypes.wintypes
     class LASTINPUTINFO(ctypes.Structure):
@@ -281,8 +288,8 @@ def get_user_idle_time():
 
 def get_power_status():
     """
-    Mengembalikan dict status daya:
-    {"ac_line_status": 1 (plugged in) atau 0 (battery), "battery_percent": 0-100, "charging": bool}
+    Return a power-status dict:
+    {"ac_line_status": 1 (plugged in) or 0 (battery), "battery_percent": 0-100, "charging": bool}
     """
     import ctypes
     import ctypes.wintypes
@@ -306,7 +313,7 @@ def get_power_status():
     return {"ac_line_status": 255, "battery_percent": 255, "charging": False}
 
 def is_network_online():
-    """Mengembalikan True jika komputer terhubung ke internet."""
+    """Return True if the computer is connected to the internet."""
     import ctypes
     import ctypes.wintypes
     try:
@@ -319,7 +326,7 @@ def is_network_online():
 # --- Clipboard API ---
 
 def set_clipboard(text):
-    """Menyalin teks ke clipboard OS menggunakan pyperclip."""
+    """Copy text to the OS clipboard using pyperclip."""
     try:
         import pyperclip
         pyperclip.copy(text)
@@ -329,7 +336,7 @@ def set_clipboard(text):
         return False
 
 def get_clipboard():
-    """Mengambil teks dari clipboard OS menggunakan pyperclip."""
+    """Get text from the OS clipboard using pyperclip."""
     try:
         import pyperclip
         return pyperclip.paste()
@@ -339,19 +346,19 @@ def get_clipboard():
 
 def restart_app(safe_mode=False):
     """
-    Me-restart aplikasi Hariku secara penuh.
-    Menyimpan semua state (melalui on_unload) lalu menjalankan ulang proses.
-    Jika safe_mode=True, tambahkan flag --safe-mode ke argumen.
+    Fully restart the Hariku application.
+    Saves all state (via on_unload) then relaunches the process.
+    If safe_mode=True, add the --safe-mode flag to the arguments.
     """
     import sys
     import os
     import subprocess
     import wx
     from core.events import bus
-    
+
     logger.info(f"Restarting application... (safe_mode={safe_mode})")
-    
-    # 1. Beritahu semua modul untuk menyimpan state mereka
+
+    # Tell every module to save its state.
     bus.emit("on_unload")
     
     DETACHED_PROCESS = 0x00000008
@@ -383,17 +390,17 @@ def restart_app(safe_mode=False):
     except Exception as e:
         logger.error(f"Gagal melakukan restart: {e}")
     
-    # 3. Matikan proses saat ini
+    # Kill the current process.
     app = wx.GetApp()
     if app:
         app.ExitMainLoop()
-    
-    os._exit(0)  # Gunakan os._exit(0) untuk memastikan proses langsung mati tanpa delay
+
+    os._exit(0)  # os._exit(0) makes the process die immediately without delay.
 
 def get_storage_dir(ext_id):
     """
-    Mengembalikan path absolut ke folder penyimpanan khusus untuk ekstensi tertentu.
-    Aman untuk menyimpan database SQLite, gambar, atau file besar.
+    Return the absolute path to a dedicated storage folder for a given extension.
+    Safe for storing SQLite databases, images, or large files.
     """
     # [SEC HIGH-1] Sanitize ext_id to prevent path traversal (e.g. "../../Windows")
     safe_id = "".join(c for c in ext_id if c.isalnum() or c in ("-", "_")).strip()
@@ -409,13 +416,13 @@ def get_storage_dir(ext_id):
 
 def run_thread(background_func, callback=None):
     """
-    Menjalankan fungsi (background_func) di thread terpisah agar UI tidak macet (freeze).
-    Sangat cocok untuk HTTP Request (NASA/Weather) atau query database.
-    Jika fungsi mengembalikan nilai, hasilnya akan dikirim ke callback.
+    Run a function (background_func) on a separate thread so the UI never freezes.
+    Ideal for HTTP requests (NASA/Weather) or database queries.
+    If the function returns a value, the result is delivered to the callback.
     """
     import wx
     import threading
-    
+
     def thread_target():
         try:
             result = background_func()
@@ -424,7 +431,7 @@ def run_thread(background_func, callback=None):
         except Exception as e:
             logger.error(f"Error in run_thread ({background_func.__name__}): {e}")
             if callback:
-                # Kirim None atau Exception object (bisa disesuaikan)
+                # Pass None (or an Exception object, if preferred).
                 wx.CallAfter(callback, None)
                 
     t = threading.Thread(target=thread_target)
@@ -434,7 +441,7 @@ def run_thread(background_func, callback=None):
 # --- Advanced System API ---
 
 def open_log_viewer():
-    """Membuka file log di text editor default sistem."""
+    """Open the log file in the system's default text editor."""
     import tempfile
     import os
     log_file = os.path.join(tempfile.gettempdir(), "Hariku2", "hariku_debug.log")
@@ -444,13 +451,13 @@ def open_log_viewer():
         logger.warning("Log file not found.")
 
 def open_data_folder():
-    """Membuka folder penyimpan data di Windows Explorer."""
+    """Open the data storage folder in Windows Explorer."""
     import os
     if os.path.exists(USER_DATA_DIR):
         os.startfile(USER_DATA_DIR)
 
 def clear_cache():
-    """Menghapus folder .cache di ekstensi."""
+    """Delete the extensions' .cache folder."""
     import os
     import shutil
     import core.extension_manager
@@ -465,7 +472,7 @@ def clear_cache():
     return True
 
 def set_autostart(enable=True):
-    """Mengatur apakah Hariku berjalan otomatis saat Windows startup."""
+    """Set whether Hariku runs automatically at Windows startup."""
     try:
         import winreg
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
@@ -489,7 +496,7 @@ def set_autostart(enable=True):
         logger.error(f"Failed to set autostart: {e}")
 
 def open_preferences(tab_name=None):
-    """Membuka jendela Preferences. Jika tab_name diberikan, ia akan mencoba langsung memilih tab tersebut."""
+    """Open the Preferences window. If tab_name is given, it tries to select that tab directly."""
     from core.events import bus
     import wx
     wx.CallAfter(lambda: bus.emit("on_open_preferences", tab_name))
@@ -500,19 +507,19 @@ def open_preferences(tab_name=None):
 def show_html_view(html_content: str, title: str = "Hariku Viewer",
                    width: int = 850, height: int = 650) -> bool:
     """
-    Tampilkan HTML content di jendela terpisah yang mendukung NVDA Browse Mode.
+    Show HTML content in a separate window that supports NVDA Browse Mode.
 
-    Jendela berjalan di subprocess terisolasi sehingga tidak bisa crash
-    proses utama Hariku.
+    The window runs in an isolated subprocess so it cannot crash Hariku's
+    main process.
 
     Args:
-        html_content: String HTML lengkap.
-        title: Judul jendela.
-        width: Lebar jendela (pixels).
-        height: Tinggi jendela (pixels).
+        html_content: Complete HTML string.
+        title: Window title.
+        width: Window width (pixels).
+        height: Window height (pixels).
 
     Returns:
-        True jika berhasil diluncurkan.
+        True if launched successfully.
     """
     from core.webview import show_html
     return show_html(html_content, title, width, height)
@@ -521,16 +528,16 @@ def show_html_view(html_content: str, title: str = "Hariku Viewer",
 def show_html_file_view(html_path: str, title: str = "Hariku Viewer",
                         width: int = 850, height: int = 650) -> bool:
     """
-    Tampilkan file HTML di jendela terpisah yang mendukung NVDA Browse Mode.
+    Show an HTML file in a separate window that supports NVDA Browse Mode.
 
     Args:
-        html_path: Path absolut ke file HTML.
-        title: Judul jendela.
-        width: Lebar jendela.
-        height: Tinggi jendela.
+        html_path: Absolute path to the HTML file.
+        title: Window title.
+        width: Window width.
+        height: Window height.
 
     Returns:
-        True jika berhasil diluncurkan.
+        True if launched successfully.
     """
     # [SEC MED-2] Only allow files from trusted directories to prevent
     # extensions from using this to display arbitrary system files.

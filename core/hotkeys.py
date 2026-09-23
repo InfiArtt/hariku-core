@@ -1,4 +1,11 @@
-# hariku2/core/hotkeys.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import os
 import json
 import logging
@@ -60,17 +67,17 @@ def register_action(extension_name, action_name, description, default_keycode, d
 def _rebuild_all_bindings():
     keybindings.clear()
     
-    # Prioritaskan default dulu
+    # Apply the defaults first.
     for action_id, action in actions.items():
         if action_id not in saved_config:
             if action.default_keycode is not None:
                 keybindings[(action.default_keycode, action.default_ctrl, action.default_shift, action.default_alt, action.default_win)] = (action_id, action.default_global)
                 
-    # Timpa dengan saved_config (konfigurasi pengguna)
+    # Override with saved_config (the user's configuration).
     for action_id in actions.keys():
         if action_id in saved_config:
             for b in saved_config[action_id]:
-                # Ini otomatis menimpa jika ada shortcut yang sama dari aksi lain
+                # This automatically overrides the same shortcut from another action.
                 keybindings[(b["keycode"], b.get("ctrl", False), b.get("shift", False), b.get("alt", False), b.get("win", False))] = (action_id, b.get("global", False))
 
     import core.api
@@ -165,11 +172,11 @@ def load_keybindings():
         try:
             with open(KEYBINDINGS_FILE, "r") as f:
                 saved_config = json.load(f)
-                
-            # Migrasi struktur lama ke struktur baru (List)
+
+            # Migrate the old structure to the new one (a list).
             migrated = False
             for k, v in list(saved_config.items()):
-                if isinstance(v, dict): # Format lama
+                if isinstance(v, dict): # Old format
                     saved_config[k] = [v]
                     migrated = True
             if migrated:

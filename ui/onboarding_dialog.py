@@ -1,3 +1,12 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import wx
 import wx.adv
 import core.preferences
@@ -118,17 +127,16 @@ class OnboardingWizard(wx.adv.Wizard):
         
         self.rb_normal.SetValue(True)
         
-        # Sembunyikan opsi setup untuk sementara (paksa "Normal" dengan konfigurasi default)
+        # Temporarily hide the setup options (force "Normal" with the default config)
         self.rb_basic.Hide()
         self.rb_normal.Hide()
         self.rb_advanced.Hide()
         self.rb_super.Hide()
         
-        # Tambahkan teks informasi tambahan (opsional)
         info = wx.StaticText(page, label="Hariku will install the recommended extensions for you automatically.")
         sizer.Add(info, 0, wx.ALL, 10)
         
-        # Opsi Telemetri (Opt-out)
+        # Telemetry option (opt-out)
         tel_box = wx.StaticBox(page, label="Public Telemetry Data (Opt-Out)")
         tel_sizer = wx.StaticBoxSizer(tel_box, wx.VERTICAL)
         
@@ -191,7 +199,7 @@ def run_onboarding():
             
             registry = core.store.fetch_registry()
             
-            # Install semua ekstensi kecuali yang diblacklist
+            # Install every extension except the blacklisted ones
             excluded_extensions = ["developer_toolkit", "wikipedia_reader", "window_teleporter"]
             extensions_to_download = []
             
