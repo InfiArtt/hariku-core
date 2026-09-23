@@ -56,9 +56,10 @@ language, and the error details. The error details include a traceback, which
 can contain file paths from your computer. The crash dialog also lets you
 choose to always send reports or to never send them.
 
-## Accounts and the Lounge
+## Accounts
 
-The Account Manager and Hariku Lounge extensions connect to infiartt.com only
-after you sign in. They send your sign-in details and the chat messages you
-post. The [infiartt.com privacy policy](https://infiartt.com/privacy) covers
-that data.
+The Account Manager extension connects to infiartt.com only when you sign in.
+You enter your password on infiartt.com in your browser, never in Hariku. Hariku
+then receives an access token and your profile (user name and roles) and keeps
+them on your computer. The
+[infiartt.com privacy policy](https://infiartt.com/privacy) covers that data.
