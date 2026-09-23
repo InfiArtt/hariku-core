@@ -67,6 +67,17 @@ aircraft's distance and direction from your exact point itself.
   Use, to find the coordinates it points to.
 - "Listen to ATC" opens a liveatc.net page in your browser. Hariku itself
   sends nothing to LiveATC.
+- Tracking a flight sends only its flight number or registration to adsb.fi
+  (or adsb.lol), about once a minute while you track it, never your location.
+  Tracking stops by itself an hour after landing or after 24 hours.
+
+## Clipboard History
+
+The Clipboard History extension sends nothing over the internet. Copied text
+stays in memory until you close Hariku. If you turn on "Remember history after
+restarting Hariku", it is saved in `%APPDATA%\Hariku2` on your computer; pinned
+items are always saved there. Copies that password managers mark as private
+are never recorded.
 
 ## When you ask for it
 

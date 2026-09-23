@@ -524,8 +524,12 @@ from core.sounds import play_sound, play_internal_sound
 
 | Function | Description |
 |---|---|
-| `play_internal_sound(name)` | Play a `.wav` file from the built-in `sounds/` folder. Example: `play_internal_sound("info")` plays `sounds/info.wav`. |
+| `play_internal_sound(name)` | Play one of Hariku's sounds by file name. Example: `play_internal_sound("info.wav")`. Since core 2.6 it plays the active sound theme's copy when the theme has one, otherwise the built-in `sounds/info.wav`. |
 | `play_sound(filepath)` | Play any `.wav` file from an absolute path. Supports overlapping sounds (multiple sounds can play simultaneously). Returns `True` / `False`. |
+| `set_theme_dir(path_or_None)` | *(core 2.6)* Use a folder of `.wav` files named like Hariku's sounds as the active theme; `None` goes back to the built-in sounds. Only plain file names are looked up in it, never paths. |
+| `get_theme_dir()` | *(core 2.6)* The active theme folder, or `None`. |
+| `get_builtin_sounds_dir()` | *(core 2.6)* Hariku's own `sounds/` folder. |
+| `stop_sound(filepath)` | *(core 2.6)* Stop a sound started with `play_sound` and release its file (Windows keeps a played file open, so call this before replacing or deleting it). |
 
 **Playing Custom Extension Sounds:**
 If your extension has its own `sounds/` folder, you can get the absolute path to your extension using `__file__` and play your own sounds:

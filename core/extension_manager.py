@@ -61,6 +61,8 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "briefing",
     "finance",
     "flight_radar",
+    "clipboard_history",
+    "sound_themes",
 ])
 
 

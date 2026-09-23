@@ -1,3 +1,12 @@
+Version 2.6.0 (Core Update - September 23, 2026)
+================================================================================
+- Sound themes: with the new Sound Themes extension you can replace Hariku's
+  sounds with your own WAV files, import theme packs (including Hariku 1
+  themes) and switch themes with Shift+S.
+- New in the Extension Store: Flight Radar (hear the aircraft near your home,
+  track a flight by its number, emergency alerts, Listen to ATC), Clipboard
+  History (V) and Sound Themes.
+
 Version 2.5.0 (Core Update - September 23, 2026)
 ================================================================================
 This entry covers everything since 2.2.0, including versions 2.3.0 and 2.4.0.
