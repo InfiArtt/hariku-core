@@ -52,6 +52,25 @@ def volume_down():
     set_global_volume(new_vol)
     speak(_("volume_status", percent=new_vol))
 
+def _sound_alias(filepath):
+    # Build a unique alias from the filename so different files can overlap.
+    return os.path.basename(filepath).replace(".", "").replace(" ", "")
+
+def stop_sound(filepath):
+    """
+    Stop a sound started by play_sound() and release its file. Windows keeps a
+    played file open (so it can't be replaced or deleted) until this is called
+    or a file with the same name plays. Sounds share one channel per file name,
+    so this stops whichever file of that name played last. Returns True if one
+    was open.
+    """
+    try:
+        import ctypes
+        return ctypes.windll.winmm.mciSendStringW(f"close {_sound_alias(filepath)}", None, 0, None) == 0
+    except Exception as e:
+        logger.error(f"Error stopping sound {filepath}: {e}")
+        return False
+
 def play_sound(filepath):
     """
     Play a sound effect asynchronously so it never blocks the app.
@@ -63,9 +82,7 @@ def play_sound(filepath):
         
     try:
         import ctypes
-        filename = os.path.basename(filepath)
-        # Build a unique alias from the filename so different files can overlap.
-        alias = filename.replace(".", "").replace(" ", "")
+        alias = _sound_alias(filepath)
 
         # Stop and close the same file if it is already playing.
         ctypes.windll.winmm.mciSendStringW(f"close {alias}", None, 0, None)
@@ -82,10 +99,61 @@ def play_sound(filepath):
         logger.error(f"Error playing sound {filepath}: {e}")
         return False
 
+# --- Sound theme override (since 2.6) ---
+# A sound theme is a folder of .wav files named like the built-in ones. When a
+# theme is set, play_internal_sound() plays the theme's copy of a sound and
+# falls back to the built-in file when the theme doesn't have one.
+_theme_dir = None
+
+
+def get_builtin_sounds_dir():
+    """The folder holding Hariku's own sounds."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_dir, "sounds")
+
+
+def set_theme_dir(path):
+    """Use the sound theme in folder `path`, or pass None for the built-in sounds."""
+    global _theme_dir
+    _theme_dir = os.path.abspath(path) if path else None
+    logger.info(f"Sound theme folder: {_theme_dir or 'built-in sounds'}")
+
+
+def get_theme_dir():
+    """The current sound theme folder, or None when the built-in sounds are used."""
+    return _theme_dir
+
+
+def _is_plain_file_name(name):
+    # Only a bare file name may be looked up in a theme folder, so a theme can
+    # never lead Hariku to a file outside it.
+    return (isinstance(name, str) and name.strip() != "" and ".." not in name
+            and not any(c in name for c in '/\\:\0')
+            and os.path.basename(name) == name)
+
+
+def _theme_sound_path(sound_name):
+    theme_dir = _theme_dir
+    if not theme_dir or not _is_plain_file_name(sound_name):
+        return None
+    candidate = os.path.join(theme_dir, sound_name)
+    if not os.path.isfile(candidate):
+        return None
+    # A link inside the theme must not point outside it either.
+    real_dir = os.path.normcase(os.path.realpath(theme_dir))
+    if not os.path.normcase(os.path.realpath(candidate)).startswith(real_dir + os.sep):
+        return None
+    return candidate
+
+
 def play_internal_sound(sound_name):
     """
-    Play a sound file from the hariku2/sounds/ folder.
+    Play a sound file from the hariku2/sounds/ folder, or the active sound
+    theme's copy of it when the theme has one.
     """
+    theme_path = _theme_sound_path(sound_name)
+    if theme_path:
+        return play_sound(theme_path)
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sounds_dir = os.path.join(base_dir, "sounds")
     filepath = os.path.join(sounds_dir, sound_name)
