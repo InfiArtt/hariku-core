@@ -74,7 +74,7 @@ class AccountSettingsPanel(wx.Panel):
         title.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.sizer.Add(title, 0, wx.ALL, 10)
 
-        info_text = wx.StaticText(self, label="Sign in with your infiartt.com account to use online features such as Hariku Lounge.")
+        info_text = wx.StaticText(self, label="Sign in with your infiartt.com account for Hariku's online features.")
         self.sizer.Add(info_text, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         
         # Status Area
