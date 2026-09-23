@@ -1,15 +1,21 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
-hariku2/core/webview.py
+Core API for displaying HTML content in a WebView window that is isolated from
+Hariku's main process (so it cannot crash the app via the keyboard hook).
 
-Core API untuk menampilkan HTML content di jendela WebView yang terisolasi
-dari proses utama Hariku (sehingga tidak crash karena keyboard hook).
-
-Usage dari extension:
+Usage from an extension:
     import core.webview
-    core.webview.show_html(html_string, title="Judul Jendela")
+    core.webview.show_html(html_string, title="Window Title")
 
-    # Atau jika HTML sudah ada di file:
-    core.webview.show_html_file(filepath, title="Judul Jendela")
+    # Or if the HTML already lives in a file:
+    core.webview.show_html_file(filepath, title="Window Title")
 """
 
 import os
@@ -21,33 +27,33 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Path ke script host
+# Path to the host script.
 _HOST_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webview_host.py")
 
 
 def _get_python_exe():
-    """Dapatkan path Python executable yang sedang berjalan."""
+    """Return the path of the currently running Python executable."""
     return sys.executable
 
 
 def show_html(html_content: str, title: str = "Hariku Viewer",
               width: int = 850, height: int = 650) -> bool:
     """
-    Tampilkan string HTML di jendela WebView yang terisolasi.
+    Show an HTML string in an isolated WebView window.
 
-    Karena berjalan di subprocess terpisah, jendela ini:
-    - Tidak bisa crash proses Hariku
-    - Tidak terpengaruh WH_KEYBOARD_LL hook
-    - Mendukung NVDA Browse Mode penuh (H, T, L, K, I)
+    Because it runs in a separate subprocess, this window:
+    - Cannot crash the Hariku process
+    - Is not affected by the WH_KEYBOARD_LL hook
+    - Fully supports NVDA Browse Mode (H, T, L, K, I)
 
     Args:
-        html_content: String HTML lengkap (termasuk <html> dan <head>).
-        title: Judul jendela yang ditampilkan.
-        width: Lebar jendela awal (pixels).
-        height: Tinggi jendela awal (pixels).
+        html_content: Complete HTML string (including <html> and <head>).
+        title: Window title to display.
+        width: Initial window width (pixels).
+        height: Initial window height (pixels).
 
     Returns:
-        True jika subprocess berhasil diluncurkan.
+        True if the subprocess was launched successfully.
     """
     try:
         # [SEC MED-1] Use UUID-based filename to prevent predictable temp file
@@ -74,21 +80,21 @@ def show_html(html_content: str, title: str = "Hariku Viewer",
 def show_html_file(html_path: str, title: str = "Hariku Viewer",
                    width: int = 850, height: int = 650) -> bool:
     """
-    Tampilkan file HTML di jendela WebView yang terisolasi.
+    Show an HTML file in an isolated WebView window.
 
     Args:
-        html_path: Path absolut ke file HTML.
-        title: Judul jendela.
-        width: Lebar jendela awal.
-        height: Tinggi jendela awal.
+        html_path: Absolute path to the HTML file.
+        title: Window title.
+        width: Initial window width.
+        height: Initial window height.
 
     Returns:
-        True jika subprocess berhasil diluncurkan.
+        True if the subprocess was launched successfully.
     """
     try:
         python_exe = _get_python_exe()
 
-        # CREATE_NO_WINDOW agar tidak muncul konsol hitam
+        # CREATE_NO_WINDOW so no black console window appears.
         flags = 0x08000000  # CREATE_NO_WINDOW
 
         proc = subprocess.Popen(

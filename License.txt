@@ -1,35 +1,22 @@
-Hariku – Personal Use License Agreement
-Version 2.0 (Stable)
-Effective Date: July 4, 2025
-IMPORTANT – READ CAREFULLY:
-This License governs your use of the "Hariku" application ""the Software") starting from its official public release (version 1.0.0 and later). By installing, copying, or otherwise using the Software, you agree to be bound by the terms of this License.
-1. LICENSE GRANT
-You are granted a non-exclusive, non-transferable, revocable license to use the Software for personal and non-commercial purposes only. This Software is intended to support personal productivity, automation, and task organization on individual systems.
-2. SCOPE OF USE
-This license does not permit commercial, institutional, or redistributable use without prior written permission. You may use the Software on multiple devices under your personal control.
-If you wish to deploy Hariku in an organization, school, or company setting, please contact terabase06@gmail.com to discuss commercial or enterprise licensing terms.
-3. RESTRICTIONS
-You may not:
-Reverse engineer, decompile, or disassemble any part of the Software.
-Modify, adapt, or create derivative works based on the Software.
-Distribute, sell, rent, or sublicense the Software to others.
-Use the Software in connection with commercial services or offerings.
-Interfere with license protections or remove proprietary notices.
-4. OWNERSHIP AND INTELLECTUAL PROPERTY
-The Software and its components are the sole property of Inflinity (the developer), and are protected under international copyright laws. All rights not explicitly granted are reserved.
-5. FEEDBACK AND IMPROVEMENTS
-You are encouraged to submit feedback or suggestions via the built-in feedback mechanism. All submissions are voluntary and may be used by the developer to improve the Software without obligation or compensation.
-6. DATA PRIVACY & COMMUNICATION
-Hariku does not collect or transmit personal or sensitive data unless explicitly provided by the user via feedback forms or opt-in settings.
-Some features (e.g., update checking, online routines) may involve network communication with the official Hariku servers.
-For full details, refer to the latest Disclaimer.
-7. TERMINATION
-This license is effective until terminated. Your rights will terminate automatically if you violate any term of this agreement. Upon termination, you must cease all use and delete all copies of the Software.
-8. NO WARRANTY
-This Software is provided “as-is” without warranties of any kind.
-The developer makes no guarantees about its performance, fitness for a specific purpose, or reliability under all conditions.
-Use of the Software is at your own risk.
-9. CONTACT
-If you have questions about this agreement or wish to request an extended license, please contact:
-terabase06@gmail.com
-Thank you for your valuable contribution to the development of Hariku.
+Hariku is free software.
+
+Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+
+Hariku is licensed under the GNU General Public License, version 3 or (at your
+option) any later version, with the Hariku Extension Exception. That exception
+lets a third-party extension built only on Hariku's documented extension API
+ship under any license it likes, including a proprietary or commercial one, the
+same way the NVDA screen reader allows commercial add-ons.
+
+  - Full license text:   see the LICENSE file.
+  - Extension exception: see the LICENSE-EXCEPTION file.
+  - Online:              https://www.gnu.org/licenses/gpl-3.0.html
+
+Hariku is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Earlier versions of Hariku used a "Personal Use License." The copyright holder
+has since released it as free software under the GPL.
+
+SPDX-License-Identifier: GPL-3.0-or-later

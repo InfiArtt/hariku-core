@@ -1,4 +1,11 @@
-# hariku2/core/extension_manager.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import os
 import json
 import zipfile
@@ -19,7 +26,7 @@ USER_EXTENSIONS_DIR = os.path.join(_app_data, "Hariku2", "extensions")
 SYSTEM_EXTENSIONS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "extensions"))
 SCRATCHPAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scratchpad"))
 
-# Alias untuk backward compatibility dan direktori cache
+# Alias kept for backward compatibility and the cache directory.
 EXTENSIONS_DIR = USER_EXTENSIONS_DIR
 
 LOADED_EXTENSIONS = {}
@@ -46,6 +53,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "lumina",
     "account_manager",
     "world_clock",
+    "routines",
 ])
 
 
@@ -216,12 +224,12 @@ def load_all_extensions():
     logger.info(f"Scanning extensions in {SYSTEM_EXTENSIONS_DIR} and {USER_EXTENSIONS_DIR}")
     
     disabled = _get_disabled_extensions()
-    
-    # Kumpulkan apa saja yang harus di-load dengan urutan prioritas
+
+    # Collect everything to load, in priority order.
     # format: to_load[ext_id] = {"type": "folder"|"hrk", "path": "..."}
     to_load = {}
-    
-    # 1. System Extensions (Folders only) - Prioritas Terendah
+
+    # 1. System extensions (folders only) - lowest priority.
     if os.path.exists(SYSTEM_EXTENSIONS_DIR):
         for item in os.listdir(SYSTEM_EXTENSIONS_DIR):
             if item in (".cache", "__pycache__") or item in disabled: continue
@@ -229,7 +237,7 @@ def load_all_extensions():
             if os.path.isdir(full_path) and os.path.exists(os.path.join(full_path, "manifest.json")):
                 to_load[item] = {"type": "folder", "path": full_path}
                 
-    # 2. User Extensions (HRK files) - Prioritas Menengah
+    # 2. User extensions (.hrk files) - medium priority.
     if os.path.exists(USER_EXTENSIONS_DIR):
         for item in os.listdir(USER_EXTENSIONS_DIR):
             if item.endswith(".hrk"):
@@ -237,15 +245,15 @@ def load_all_extensions():
                 if ext_id in disabled: continue
                 to_load[ext_id] = {"type": "hrk", "path": os.path.join(USER_EXTENSIONS_DIR, item)}
                 
-    # 3. User Extensions (Folders) - Prioritas Tinggi (Developer Mode di AppData)
+    # 3. User extensions (folders) - high priority (developer mode in AppData).
     if os.path.exists(USER_EXTENSIONS_DIR):
         for item in os.listdir(USER_EXTENSIONS_DIR):
             if item in (".cache", "__pycache__") or item in disabled: continue
             full_path = os.path.join(USER_EXTENSIONS_DIR, item)
             if os.path.isdir(full_path) and os.path.exists(os.path.join(full_path, "manifest.json")):
                 to_load[item] = {"type": "folder", "path": full_path}
-                
-    # 4. Scratchpad Extensions (Folders) - Prioritas Mutlak (Live Development)
+
+    # 4. Scratchpad extensions (folders) - absolute priority (live development).
     config = core.api.load_data("Core")
     enable_scratchpad = config.get("enable_scratchpad", False)
     scratchpad_path = config.get("scratchpad_dir", "") or SCRATCHPAD_DIR
@@ -302,7 +310,7 @@ def load_all_extensions():
                 logger.warning(f"[Security] Batch rejected: '{ext_id}'")
     # -----------------------------
                 
-    # Sekarang eksekusi load
+    # Now execute the load.
     for ext_id, data in to_load.items():
         if data["type"] == "folder":
             load_unpacked_extension(data["path"])

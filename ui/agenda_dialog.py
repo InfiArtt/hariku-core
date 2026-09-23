@@ -1,3 +1,12 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import wx
 import datetime
 from core.speech import speak
@@ -102,14 +111,14 @@ class AgendaDialog(wx.Dialog):
                 from core.reminders import delete_reminder
                 delete_reminder(rem['id'])
                 
-                # Hapus dari UI
+                # Remove from the UI
                 self.list_ctrl.DeleteItem(sel)
                 del self.reminders[sel]
                 
                 if not self.reminders:
                     self.EndModal(wx.ID_OK)
                 else:
-                    # Select item sebelumnya atau pertama
+                    # Select the previous or first item
                     new_sel = min(sel, len(self.reminders) - 1)
                     if new_sel >= 0:
                         self.list_ctrl.Select(new_sel)

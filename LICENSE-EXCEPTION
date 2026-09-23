@@ -1,0 +1,43 @@
+Hariku Extension Exception to the GNU GPL
+=========================================
+
+As an additional permission under section 7 of the GNU General Public License
+version 3 (GPLv3), the copyright holders of Hariku grant you the following
+exception:
+
+    You may develop, distribute, and license a Hariku "extension" — a separate
+    work that plugs into Hariku exclusively through Hariku's documented public
+    extension API (the interfaces the `core.*` modules expose to extensions,
+    together with the extension manifest and loader mechanism) — under license
+    terms of your own choosing, including proprietary and commercial terms. You
+    are NOT required to license such an extension under the GNU General Public
+    License.
+
+Scope and limits
+----------------
+
+- This exception applies ONLY to extensions that interact with Hariku solely
+  through that documented extension API. It is the same spirit as the NVDA
+  screen reader's add-on ecosystem: the host application stays free software,
+  while independent add-ons/extensions may be commercial.
+
+- This exception does NOT grant permission to copy, modify, or redistribute
+  Hariku's own source code — the core application and its bundled/official
+  extensions — under any terms other than the GNU General Public License.
+  Modifying Hariku itself, or creating a work that incorporates Hariku's source
+  beyond the extension API, remains fully governed by the GPL.
+
+- An extension that copies or derives from Hariku's own source code (rather than
+  only calling the extension API) is a derivative work of Hariku and must be
+  licensed under the GPL like the rest of Hariku.
+
+- If you modify Hariku's GPL-licensed files, you may (but are not required to)
+  keep or remove this exception for your modified version.
+
+This exception is provided in addition to, and not as a replacement for, the
+terms of the GNU General Public License. If the exception is held unenforceable,
+the GPL still applies to Hariku in full.
+
+Note: this text is a plain-language additional permission, not legal advice. If
+you plan to build a commercial extension ecosystem, consider consulting a
+lawyer.
