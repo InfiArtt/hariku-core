@@ -41,6 +41,27 @@ panel.choice_scale.SetSelection(panel._scale_keys.index("large"))
 panel.ApplyChanges()
 print("OK apply_settings")
 
+
+def _descendants(win):
+    for child in win.GetChildren():
+        yield child
+        yield from _descendants(child)
+
+
+# Preferences must honour the large text + high contrast just saved, on every
+# page including extension panels (it used to apply neither).
+from ui.preferences_dialog import PreferencesDialog
+prefs = PreferencesDialog(frame)
+texts = [w for w in _descendants(prefs) if isinstance(w, wx.StaticText)]
+assert texts, "no text found in Preferences"
+for w in texts:
+    base = getattr(w, "_hariku_base_pt", None)
+    assert base is not None, f"Preferences text {w.GetLabel()!r} was not scaled"
+    assert w.GetFont().GetPointSize() == max(6, int(round(base * 1.25))), w.GetLabel()
+    assert w.GetBackgroundColour() == wx.Colour(0, 0, 0), w.GetLabel()
+prefs.Destroy()
+print("OK preferences_appearance")
+
 # Load Routines through the real loader and run its hotkey actions, which open
 # modal dialogs. A timer closes each dialog so the check doesn't block.
 import core.extension_manager as em
