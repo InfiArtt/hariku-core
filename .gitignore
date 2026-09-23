@@ -29,5 +29,14 @@ settings/*.local.json
 Hariku_V2_Developer_SDK.zip
 *.log
 
-# ── Personal notes (kept locally, not part of the project) ──
-how-to.txt
+# ── Personal notes and retired files (kept locally, not part of the project) ──
+/how-to.txt
+/news.txt
+/body.html
+/sdk_release_post.md
+/hariku_v2_journey.md
+# Old novarealm-era update files; CI now generates version.json per release.
+/version.json
+/update.iss
+# Old copy of the store listing; the app reads the live one from GitHub Pages.
+/registry.json
