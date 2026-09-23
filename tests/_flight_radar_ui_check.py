@@ -12,7 +12,8 @@ open its settings page inside the real Preferences dialog and its list dialog,
 run its hotkey actions, and browse every list and choice the way arrow keys
 do, checking focus stays put.
 
-adsb.fi, adsbdb and Open-Meteo are stubbed (nothing leaves the machine), speech
+adsb.fi, adsbdb, Open-Meteo, Nominatim and the Google short-link redirect are
+stubbed (nothing leaves the machine), speech
 is captured through on_before_speak, sounds are recorded instead of played, and
 the browser is never opened: the LiveATC addresses are recorded instead.
 
@@ -22,6 +23,7 @@ temporary folder so the user's real settings are never touched. Prints one "OK"
 line per stage.
 """
 import logging
+import math
 import os
 import sys
 import threading
@@ -126,25 +128,46 @@ sys.path.insert(0, FR_DIR)
 import flight_radar_api
 
 
-def _plane(hex_id, callsign, reg, type_code, dst, direction, lat, lon, alt, rate, **extra):
-    plane = {"hex": hex_id, "flight": callsign + " ", "r": reg, "t": type_code, "dst": dst,
-             "dir": direction, "lat": lat, "lon": lon, "alt_baro": alt, "baro_rate": rate,
+HOME_POINT = (-6.21462, 106.84513)   # the exact point the check sets as "Home"
+
+
+def _at(km, bearing):
+    """The point `km` from HOME_POINT on `bearing` (the same sphere as Hariku)."""
+    d = km / 6371.0
+    lat1, lon1, b = (math.radians(HOME_POINT[0]), math.radians(HOME_POINT[1]),
+                     math.radians(bearing))
+    lat2 = math.asin(math.sin(lat1) * math.cos(d) + math.cos(lat1) * math.sin(d) * math.cos(b))
+    lon2 = lon1 + math.atan2(math.sin(b) * math.sin(d) * math.cos(lat1),
+                             math.cos(d) - math.sin(lat1) * math.sin(lat2))
+    return math.degrees(lat2), math.degrees(lon2)
+
+
+def _plane(hex_id, callsign, reg, type_code, km, bearing, alt, rate, **extra):
+    lat, lon = _at(km, bearing)
+    # dst/dir from the service are relative to the rounded point, so Hariku
+    # ignores them; these deliberately wrong values prove it.
+    plane = {"hex": hex_id, "flight": callsign + " ", "r": reg, "t": type_code, "dst": 99.0,
+             "dir": 0.0, "lat": lat, "lon": lon, "alt_baro": alt, "baro_rate": rate,
              "gs": 240.0, "track": 300.0, "squawk": "2345", "category": "A3", "seen": 0.3}
     plane.update(extra)
     return plane
 
 
-# Synthetic aircraft around central Jakarta.
+# Synthetic aircraft around the home point in central Jakarta.
 AIRCRAFT = {"aircraft": [
-    _plane("abc001", "GIA155", "PK-QQA", "B738", 6.48, 45.0, -6.154, 106.906, 9843, -832),
-    _plane("abc002", "CTV991", "PK-QQB", "A320", 2.43, 180.0, -6.2556, 106.845, 4921, 1500),
-    _plane("abc003", "XQZ357", "PK-QQC", "ZZZ9", 5.97, 90.0, -6.2146, 106.945, 2000, 0,
-           desc="DIAMOND DA-62"),
-    _plane("abc004", "BTK6339", "PK-QQD", "B739", 9.72, 95.0, -6.229, 107.008, 7000, -1200),
-    _plane("abc005", "AWQ531", "PK-QQE", "A20N", 10.8, 270.0, -6.2146, 106.65, "ground", None),
-    _plane("abc006", "XQZ777", "PK-QQF", "B738", 10.8, 265.0, -6.23, 106.665, 3000, -900,
-           squawk="7700"),
+    _plane("abc001", "GIA155", "PK-QQA", "B738", 12, 45, 9843, -832),
+    _plane("abc002", "CTV991", "PK-QQB", "A320", 4.5, 180, 4921, 1500),
+    _plane("abc003", "XQZ357", "PK-QQC", "ZZZ9", 11.05, 90, 2000, 0, desc="DIAMOND DA-62"),
+    _plane("abc004", "BTK6339", "PK-QQD", "B739", 18, 95, 7000, -1200),
+    _plane("abc005", "AWQ531", "PK-QQE", "A20N", 20, 270, "ground", None),
+    _plane("abc006", "XQZ777", "PK-QQF", "B738", 20, 265, 3000, -900, squawk="7700"),
 ], "now": 1790000000000, "resultCount": 6, "ptime": 2}
+ADDRESSES = [
+    {"place_id": 1, "lat": "-6.1753924", "lon": "106.8271528",
+     "display_name": "Monumen Nasional, Jalan Medan Merdeka, Gambir, Jakarta Pusat, Indonesia"},
+    {"place_id": 2, "lat": "-6.9147", "lon": "107.6098",
+     "display_name": "Jalan Merdeka, Bandung, Jawa Barat, Indonesia"},
+]
 PLACES = {"results": [
     {"name": "Jakarta", "admin1": "Jakarta", "country": "Indonesia",
      "latitude": -6.21462, "longitude": 106.84513, "timezone": "Asia/Jakarta"},
@@ -166,12 +189,16 @@ ROUTES = {
         "origin": _airport("Semarang", "WAHS", -6.9727, 110.3752), "destination": JAKARTA_AIRPORT}}},
 }
 stub_requests = []
+nominatim_agents = []
 
 
-def _fake_fetch_json(url, timeout=None):
+def _fake_fetch_json(url, timeout=None, user_agent=None):
     stub_requests.append(url)
     if url.startswith(flight_radar_api.GEOCODING_URL):
         return PLACES
+    if url.startswith("https://nominatim.openstreetmap.org/search?"):
+        nominatim_agents.append(user_agent)
+        return ADDRESSES
     if url.startswith("https://opendata.adsb.fi/api/v2/lat/"):
         return AIRCRAFT
     if url.startswith("https://api.adsbdb.com/v0/callsign/"):
@@ -183,6 +210,21 @@ def _fake_fetch_json(url, timeout=None):
 
 
 flight_radar_api.fetch_json = _fake_fetch_json
+
+# The short-link redirect: Google's answer is only ever read, never fetched.
+import flight_radar_location
+
+short_link_fetches = []
+PIN_URL = ("https://www.google.com/maps/place/Home/@-6.2,106.8,17z/data=!4m6!3m5!1s0x0:0x0"
+           "!8m2!3d-6.21462!4d106.84513")
+
+
+def _fake_open_without_redirects(url, timeout):
+    short_link_fetches.append(url)
+    return 302, PIN_URL
+
+
+flight_radar_location._open_without_redirects = _fake_open_without_redirects
 
 import core.extension_manager as em
 em.load_unpacked_extension(FR_DIR)
@@ -321,6 +363,9 @@ assert not panel.chk_alerts.GetValue() and not panel.chk_ground.GetValue()
 labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
 assert "Aircraft data: adsb.fi and adsb.lol" in labels, labels
 assert "Flight routes: adsbdb.com (route data by David Taylor and Jim Mason)" in labels, labels
+assert "Address search: © OpenStreetMap contributors" in labels, labels
+assert any("rounded to about 1 kilometre" in label for label in labels), labels
+assert panel.txt_name.GetValue() == "Home"
 assert any(label.startswith("Listen to ATC opens LiveATC's website in your browser")
            and "differ by country" in label for label in labels), labels
 assert panel.chk_emergency.GetLabel() == "Watch for emergencies in the background"
@@ -344,18 +389,70 @@ for choice in (panel.choice_radius, panel.choice_units, panel.choice_alert):
     checked = browse(choice, wx.EVT_CHOICE) and checked
 for checkbox in (panel.chk_ground, panel.chk_alerts, panel.chk_emergency):
     checked = toggle(checkbox) and checked
+panel.list_results.SetSelection(0)
+fire(panel.list_results, wx.EVT_LISTBOX, 0)
+assert panel.chosen_location()["name"] == "Jakarta"
+
+# Street address: searched only on Enter or the button, never while typing.
+panel.txt_address.SetValue("Jl")
+wx.Yield()
+fire(panel.txt_address, wx.EVT_TEXT_ENTER)
+assert spoken[-1] == _("address_too_short"), spoken[-1]
+panel.txt_address.SetValue("Jalan Medan Merdeka")
+wx.Yield()
+assert not nominatim_agents, "typing alone must not search"
+panel.txt_address.SetFocus()
+wx.Yield()
+address_focused = wx.Window.FindFocus() is panel.txt_address
+fire(panel.txt_address, wx.EVT_TEXT_ENTER)
+assert pump(lambda: panel.list_addresses.GetCount() == 2), "address results never arrived"
+assert panel.list_addresses.GetString(0).startswith("Monumen Nasional, Jalan Medan Merdeka")
+if address_focused:
+    assert wx.Window.FindFocus() is panel.list_addresses, "focus did not move to the addresses"
+checked = browse(panel.list_addresses, wx.EVT_LISTBOX) and checked
+panel.list_addresses.SetSelection(0)
+fire(panel.list_addresses, wx.EVT_LISTBOX, 0)
+chosen = panel.chosen_location()
+assert chosen["kind"] == "address" and chosen["name"] == "Home", chosen
+assert chosen["detail"].startswith("Monumen Nasional"), chosen
+mark = len(spoken)
+fire(panel.btn_address, wx.EVT_BUTTON)          # the same search again: from memory
+# Focus is on the results list, so the answer is spoken rather than focused.
+assert pump(lambda: any(s.startswith("2 addresses found") for s in spoken[mark:])), spoken
+assert nominatim_agents == [flight_radar_location.NOMINATIM_USER_AGENT], nominatim_agents
+
+# Coordinates or a map link: a wrong paste, then a Google Maps short link.
+panel.txt_coords.SetValue("Monas")
+fire(panel.txt_coords, wx.EVT_TEXT_ENTER)
+assert spoken[-1] == fr_text.location_error_text("not_found"), spoken[-1]
+panel.txt_coords.SetValue("https://maps.app.goo.gl/HarikuTest")
+panel.txt_coords.SetFocus()
+wx.Yield()
+coords_focused = wx.Window.FindFocus() is panel.txt_coords
+fire(panel.btn_use, wx.EVT_BUTTON)
+assert said(_("link_expanding")), spoken
+assert pump(lambda: said("Location found: Home, about ")), spoken
+assert spoken[-1].endswith("from Jakarta Halim Perdanakusuma airport. Press OK to save it."), spoken
+assert short_link_fetches == ["https://maps.app.goo.gl/HarikuTest"], short_link_fetches
+assert panel.lbl_point.GetLabel().startswith("Found -6.21462, 106.84513: about "), \
+    panel.lbl_point.GetLabel()
+if coords_focused:
+    assert wx.Window.FindFocus() is panel.txt_coords, "focus moved after Use"
+assert panel.chosen_location()["kind"] == "coordinates"
 print(f"OK panel_browse ({focus_note(checked)})")
 
-panel.list_results.SetSelection(0)
 panel.choice_radius.SetSelection(1)
 panel.choice_units.SetSelection(0)
 panel.chk_alerts.SetValue(False)
 prefs.OnApply(None)
 saved = core.api.load_data("FlightRadar")
-assert saved["location"]["name"] == "Jakarta" and saved["location"]["country"] == "Indonesia", saved
+# The exact point is stored here, and only here.
+assert saved["location"] == {"name": "Home", "admin1": "", "country": "",
+                             "latitude": -6.21462, "longitude": 106.84513,
+                             "kind": "coordinates", "detail": ""}, saved
 assert saved["radius_km"] == 25 and saved["units"] == "metric" and saved["alerts"] is False, saved
 assert saved["emergency_watch"] is False, saved
-assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
+assert panel.txt_location.GetValue() == "Home: -6.21462, 106.84513"
 assert main._poll_timer is None, "polling must stay off while alerts are off"
 prefs.Destroy()
 wx.Yield()
@@ -380,7 +477,7 @@ assert pump(lambda: opened_urls == [JAKARTA_FEED]), opened_urls
 print("OK actions")
 
 # --- The list: browse, details (button and Enter), a route arriving, refresh ------
-dlg = fr_ui.RadarListDialog(frame, "Jakarta, Indonesia", main.get_settings(), main.list_data,
+dlg = fr_ui.RadarListDialog(frame, "Home", main.get_settings(), main.list_data,
                             main.refresh, main.leg_for, main.with_routes,
                             listen=main.listen_for_aircraft, emergency_intro=main.emergency_intro)
 dlg.Show()
@@ -453,7 +550,7 @@ dlg.Destroy()
 wx.Yield()
 
 # A dialog closed while its refresh is running must not break anything.
-dlg = fr_ui.RadarListDialog(frame, "Jakarta, Indonesia", main.get_settings(), main.list_data,
+dlg = fr_ui.RadarListDialog(frame, "Home", main.get_settings(), main.list_data,
                             main.refresh, main.leg_for, main.with_routes, refresh_now=True,
                             listen=main.listen_for_aircraft, emergency_intro=main.emergency_intro)
 dlg.Destroy()
@@ -494,7 +591,7 @@ prefs = PreferencesDialog(frame, select_tab="Flight Radar")
 prefs.Show()
 wx.Yield()
 panel = main._panel
-assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
+assert panel.txt_location.GetValue() == "Home: -6.21462, 106.84513"
 panel.chk_alerts.SetValue(True)
 prefs.OnApply(None)
 prefs.Destroy()
@@ -572,8 +669,13 @@ print("OK teardown")
 
 assert not network_attempts, f"real network access attempted: {network_attempts}"
 allowed = ("https://opendata.adsb.fi/", "https://api.adsbdb.com/",
-           "https://geocoding-api.open-meteo.com/")
+           "https://geocoding-api.open-meteo.com/", "https://nominatim.openstreetmap.org/")
 assert all(u.startswith(allowed) for u in stub_requests), stub_requests
+# The aircraft service only ever saw the rounded point and the widened radius.
+radar_requests = [u for u in stub_requests if "adsb.fi" in u]
+assert radar_requests and set(radar_requests) == {
+    "https://opendata.adsb.fi/api/v2/lat/-6.21/lon/106.85/dist/15"}, set(radar_requests)
+assert len([u for u in stub_requests if "nominatim" in u]) == 1
 # LiveATC is only ever opened in the browser, never fetched.
 assert opened_urls and all(u.startswith("https://www.liveatc.net/") for u in opened_urls)
 route_requests = [u for u in stub_requests if "adsbdb" in u]

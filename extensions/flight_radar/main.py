@@ -23,9 +23,12 @@ units are chosen in Preferences, Flight Radar.
   flight_radar_names.py    - airline and aircraft type names
   flight_radar_airports.py - airports near Indonesia (OurAirports data)
   flight_radar_atc.py      - which airport to listen to, and its LiveATC page
+  flight_radar_location.py - pasted coordinates and map links, address search
   flight_radar_text.py     - spoken/displayed text in the user's language
   flight_radar_ui.py       - Preferences page and the aircraft list dialog
 
+The user's exact location is stored only in the FlightRadar data key; the
+aircraft services get it rounded to about 1 km (see flight_radar_api.py).
 All network calls run on worker threads; results come back via wx.CallAfter.
 At most one aircraft request is in flight, requests are at least 5 seconds
 apart, answers are reused for 15 seconds, and failures back off.

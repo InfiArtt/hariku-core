@@ -14,6 +14,11 @@ the pure helpers for settings, the cache, units, the request rate limit,
 emergencies and the overhead alerts. No wx and no translated text, so tests can drive it with
 sample responses.
 
+Privacy: the user's exact point never leaves the computer. The aircraft
+services get it rounded to 2 decimals (about 1 km) with the radius widened to
+still cover the user's radius; distances and bearings are then worked out here
+from the exact point to each aircraft's own position.
+
 fetch_json(), fetch_aircraft() and search_places() block on the network: call
 them from a worker thread only.
 """
@@ -47,6 +52,10 @@ DEFAULT_RADIUS_KM = 25
 ALERT_CHOICES_KM = (1, 2, 3, 5, 10)
 DEFAULT_ALERT_KM = 5
 UNITS = ("metric", "aviation")   # metric: km, m, km/h; aviation: nm, ft, kt
+LOCATION_KINDS = ("city", "address", "coordinates")
+
+QUERY_DECIMALS = 2               # the point sent to adsb.fi / adsb.lol: about 1.1 km
+QUERY_MARGIN_NM = 1.0            # rounding moves the point by at most 0.43 nm
 
 MIN_GAP_SECONDS = 5.0            # never two requests closer than this
 RATE_LIMITED_COOLDOWN = 60.0     # after both services answered 429
@@ -76,8 +85,14 @@ class FlightError(Exception):
 # Requests
 # ------------------------------------------------------------
 
+def query_point(latitude, longitude):
+    """The rounded point sent to the aircraft services instead of the exact one."""
+    return round(float(latitude), QUERY_DECIMALS), round(float(longitude), QUERY_DECIMALS)
+
+
 def _coord(value):
-    return f"{float(value):.4f}"
+    # Always rounded here too, so an exact point can never reach a URL.
+    return f"{round(float(value), QUERY_DECIMALS):.{QUERY_DECIMALS}f}"
 
 
 def build_adsbfi_url(latitude, longitude, radius_nm):
@@ -102,9 +117,9 @@ def build_search_url(name, language="en"):
     return GEOCODING_URL + "?" + urllib.parse.urlencode(params)
 
 
-def fetch_json(url, timeout=TIMEOUT_SECONDS):
+def fetch_json(url, timeout=TIMEOUT_SECONDS, user_agent=None):
     """GET `url` and decode its JSON body. Raises FlightError."""
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT,
+    req = urllib.request.Request(url, headers={"User-Agent": user_agent or USER_AGENT,
                                                "Accept": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -137,12 +152,15 @@ def combined_error_kind(kinds):
 
 
 def fetch_aircraft(latitude, longitude, radius_nm):
-    """Aircraft around a point from adsb.fi, or adsb.lol when adsb.fi fails.
-    Returns (aircraft list, source name). Raises FlightError."""
+    """Aircraft around the user's exact point from adsb.fi, or adsb.lol when
+    adsb.fi fails. Only the rounded point is sent; `radius_nm` must already be
+    widened (query_radius_nm). Returns (aircraft list, source name) with
+    distances from the exact point. Raises FlightError."""
     kinds = []
+    sent_lat, sent_lon = query_point(latitude, longitude)
     for name, build_url in SOURCES:
         try:
-            payload = fetch_json(build_url(latitude, longitude, radius_nm))
+            payload = fetch_json(build_url(sent_lat, sent_lon, radius_nm))
             return parse_aircraft_list(payload, latitude, longitude), name
         except FlightError as e:
             logger.info(f"[Flight Radar] {name} failed: {e}")
@@ -179,9 +197,10 @@ def _valid_position(lat, lon):
     return lat is not None and lon is not None and -90 <= lat <= 90 and -180 <= lon <= 180
 
 
-def parse_aircraft_list(payload, latitude=None, longitude=None):
+def parse_aircraft_list(payload, latitude, longitude):
     """adsb.fi ({"aircraft": [...]}) or adsb.lol ({"ac": [...]}) JSON -> list
-    of aircraft dicts. Raises FlightError for anything else."""
+    of aircraft dicts, measured from the exact point (latitude, longitude).
+    Raises FlightError for anything else."""
     if not isinstance(payload, dict):
         raise FlightError("bad_response", "not an object")
     items = payload.get("aircraft") if "aircraft" in payload else payload.get("ac")
@@ -195,9 +214,11 @@ def parse_aircraft_list(payload, latitude=None, longitude=None):
     return aircraft
 
 
-def normalize_aircraft(raw, latitude=None, longitude=None):
-    """One readsb/tar1090 aircraft object -> a plain dict, or None when it has
-    no identity or no known distance from the query point."""
+def normalize_aircraft(raw, latitude, longitude):
+    """One readsb/tar1090 aircraft object -> a plain dict with its distance and
+    bearing from the exact point (latitude, longitude), or None when it has no
+    identity or no position. The services' own dst/dir are relative to the
+    rounded point, so they are not used."""
     if not isinstance(raw, dict):
         return None
     hex_id = _text(raw.get("hex")).lower()
@@ -217,19 +238,10 @@ def normalize_aircraft(raw, latitude=None, longitude=None):
         on_ground = True
 
     lat, lon = to_float(raw.get("lat")), to_float(raw.get("lon"))
-    if not _valid_position(lat, lon):
-        lat = lon = None
-    distance_nm = to_float(raw.get("dst"))
-    bearing = to_float(raw.get("dir"))
-    if (distance_nm is None or bearing is None) and lat is not None \
-            and _valid_position(to_float(latitude), to_float(longitude)):
-        km, degrees = distance_and_bearing(float(latitude), float(longitude), lat, lon)
-        if distance_nm is None:
-            distance_nm = km / KM_PER_NM
-        if bearing is None:
-            bearing = degrees
-    if distance_nm is None or distance_nm < 0:
+    origin_lat, origin_lon = to_float(latitude), to_float(longitude)
+    if not _valid_position(lat, lon) or not _valid_position(origin_lat, origin_lon):
         return None
+    distance_km, bearing = distance_and_bearing(origin_lat, origin_lon, lat, lon)
 
     track = to_float(raw.get("track"))
     if track is None:
@@ -250,8 +262,8 @@ def normalize_aircraft(raw, latitude=None, longitude=None):
         "speed_kt": to_float(raw.get("gs")),
         "track": None if track is None else track % 360,
         "vertical_rate_fpm": rate,
-        "distance_km": distance_nm * KM_PER_NM,
-        "bearing": None if bearing is None else bearing % 360,
+        "distance_km": distance_km,
+        "bearing": bearing % 360,
         "squawk": _text(raw.get("squawk")),
         "emergency": "" if emergency in ("", "none") else emergency,
         "category": category,
@@ -272,7 +284,10 @@ def parse_places(payload):
 
 
 def place_label(place):
-    """'Name, Region, Country', skipping empty or repeated parts."""
+    """'Name, Region, Country' for a city, skipping empty or repeated parts;
+    just the user's name for it ("Home") for an address or coordinates."""
+    if (place or {}).get("kind", "city") != "city":
+        return str(place.get("name") or "").strip()
     parts = []
     for key in ("name", "admin1", "country"):
         value = str((place or {}).get(key) or "").strip()
@@ -318,8 +333,10 @@ def kt_to_kmh(knots):
 
 
 def query_radius_nm(radius_km):
-    """Whole nautical miles covering `radius_km` (the APIs take nm)."""
-    return max(1, int(math.ceil(km_to_nm(radius_km) - 1e-9)))
+    """Whole nautical miles (the APIs take nm) that cover `radius_km` around the
+    exact point when asking around the rounded one: rounding to 2 decimals
+    moves the point by at most about 0.79 km (0.43 nm), so 1 nm is added."""
+    return max(1, int(math.ceil(km_to_nm(radius_km) + QUERY_MARGIN_NM - 1e-9)))
 
 
 def visible_aircraft(aircraft, radius_km, include_ground=False):
@@ -334,20 +351,27 @@ def visible_aircraft(aircraft, radius_km, include_ground=False):
 # ------------------------------------------------------------
 
 def normalize_location(raw):
-    """A clean location dict, or None if `raw` is not a usable place."""
+    """A clean location dict, or None if `raw` is not a usable place. A city
+    has name/admin1/country; an address or coordinates also have "kind" and
+    "detail" (the address found), and the name the user gave the place."""
     if not isinstance(raw, dict):
         return None
     lat, lon = to_float(raw.get("latitude")), to_float(raw.get("longitude"))
-    name = str(raw.get("name") or "").strip()
-    if not name or not _valid_position(lat, lon):
+    name = str(raw.get("name") or "").strip()[:100]
+    if not name or not _valid_position(lat, lon) or (lat == 0 and lon == 0):
         return None
-    return {
+    location = {
         "name": name,
         "admin1": str(raw.get("admin1") or "").strip(),
         "country": str(raw.get("country") or "").strip(),
         "latitude": lat,
         "longitude": lon,
     }
+    kind = raw.get("kind")
+    if kind in LOCATION_KINDS and kind != "city":
+        location["kind"] = kind
+        location["detail"] = str(raw.get("detail") or "").strip()[:500]
+    return location
 
 
 def normalize_settings(raw):

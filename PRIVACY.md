@@ -44,17 +44,29 @@ Briefing extension makes no connections of its own.
 ## Flight Radar
 
 The Flight Radar extension connects only when you use it: when you ask what is
-flying nearby, open the radar list, or turn on overhead alerts (which then
-check about every 30 seconds). Each check sends your chosen location's
-coordinates and the search radius to adsb.fi (`opendata.adsb.fi`), or to
-adsb.lol (`api.adsb.lol`) if adsb.fi doesn't answer. It is the city you picked
-in the Flight Radar settings (or, if you haven't, the one in the Weather
-settings), not your device's location. To say where a flight is
-going, it sends only that flight's callsign to adsbdb (`api.adsbdb.com`);
-routes are kept in memory and never saved. Searching for a city in its
-settings sends the text you typed to Open-Meteo's city search, as described
-for Weather above. "Listen to ATC" opens a liveatc.net page in your browser;
-Hariku itself sends nothing to LiveATC.
+flying nearby, open the radar list, or turn on overhead alerts or the
+emergency watch (which then check every 30 to 60 seconds).
+
+Your location is the place you set in the Flight Radar settings (a city, an
+address, or coordinates you pasted), or the Weather city if you haven't set
+one. It is never your device's location. The exact point stays on your
+computer. Each check sends only that point rounded to about 1 km, with a
+slightly wider radius, to adsb.fi (`opendata.adsb.fi`), or to adsb.lol
+(`api.adsb.lol`) if adsb.fi doesn't answer. Hariku then works out each
+aircraft's distance and direction from your exact point itself.
+
+- To say where a flight is going, it sends only that flight's callsign to
+  adsbdb (`api.adsbdb.com`). Routes are kept in memory and never saved.
+- Searching for a city sends the text you typed to Open-Meteo's city search,
+  as described for Weather above.
+- Searching for an address sends the text you typed to OpenStreetMap's
+  Nominatim service (`nominatim.openstreetmap.org`), covered by the
+  [OpenStreetMap Foundation privacy policy](https://osmfoundation.org/wiki/Privacy_Policy).
+- Pasted coordinates and full map links are read on your computer. A short
+  Google Maps link (`maps.app.goo.gl`) is sent to Google once, when you press
+  Use, to find the coordinates it points to.
+- "Listen to ATC" opens a liveatc.net page in your browser. Hariku itself
+  sends nothing to LiveATC.
 
 ## When you ask for it
 

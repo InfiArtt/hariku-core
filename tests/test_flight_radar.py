@@ -9,12 +9,15 @@
 
 # Tests for the Flight Radar extension: adsb.fi / adsb.lol parsing and fallback,
 # units, names, sentences in both languages, request pacing, overhead alerts,
-# emergencies, adsbdb routes, the airport table, Listen to ATC and the actions.
+# emergencies, adsbdb routes, the airport table, Listen to ATC, exact locations
+# (pasted coordinates, map links, address search, privacy rounding) and the
+# actions.
 # No test touches the network or opens a browser: the fetch functions and the
 # browser call are replaced. All aircraft samples are synthetic.
 
 import importlib.util
 import json
+import math
 import os
 import sys
 import urllib.error
@@ -26,15 +29,31 @@ FR_DIR = os.path.join(ROOT, "extensions", "flight_radar")
 
 JAKARTA = {"name": "Jakarta", "admin1": "Jakarta", "country": "Indonesia",
            "latitude": -6.2, "longitude": 106.8}
+HOME = (JAKARTA["latitude"], JAKARTA["longitude"])
+
+
+def _at(km, bearing, origin=HOME):
+    """{"lat", "lon"} of the point `km` away from `origin` on `bearing` (sphere)."""
+    d = km / 6371.0
+    lat1, lon1, b = math.radians(origin[0]), math.radians(origin[1]), math.radians(bearing)
+    lat2 = math.asin(math.sin(lat1) * math.cos(d) + math.cos(lat1) * math.sin(d) * math.cos(b))
+    lon2 = lon1 + math.atan2(math.sin(b) * math.sin(d) * math.cos(lat1),
+                             math.cos(d) - math.sin(lat1) * math.sin(lat2))
+    return {"lat": math.degrees(lat2), "lon": math.degrees(lon2)}
 
 
 def _plane(**overrides):
+    # dst/dir are what the services send, relative to the rounded point: ignored.
     plane = {"hex": "abc001", "flight": "GIA155  ", "r": "PK-QQA", "t": "B738",
              "alt_baro": 9843, "gs": 250.0, "track": 315.0, "baro_rate": -832,
              "dst": 6.48, "dir": 45.0, "squawk": "2345", "emergency": "none",
-             "category": "A3", "lat": -6.12, "lon": 106.88, "seen": 0.4}
+             "category": "A3", "seen": 0.4, **_at(12, 45)}
     plane.update(overrides)
     return {k: v for k, v in plane.items() if v is not None}
+
+
+def _normalize(api, raw):
+    return api.normalize_aircraft(raw, *HOME)
 
 
 # 12 km northeast, descending; 4.5 km south, climbing; on the ground at 20 km;
@@ -43,9 +62,9 @@ def _plane(**overrides):
 PLANES = [
     _plane(),
     _plane(hex="abc002", flight="CTV991", r="PK-QQB", t="A320", alt_baro=4921, gs=180,
-           track=0, baro_rate=1500, dst=2.43, dir=180.0, squawk="1200", lat=-6.24, lon=106.8),
+           track=0, baro_rate=1500, dst=2.43, dir=180.0, squawk="1200", **_at(4.5, 180)),
     _plane(hex="abc003", flight="AWQ531", r="PK-QQC", t="A20N", alt_baro="ground", gs=3,
-           baro_rate=None, dst=10.8, dir=270.0, squawk=None),
+           baro_rate=None, dst=10.8, dir=270.0, squawk=None, **_at(20, 270)),
     _plane(hex="abc004", flight="XQZ357", r=None, t="ZZZ9", desc="DIAMOND DA-62",
            alt_baro=2000, baro_rate=0, dst=None, dir=None, lat=-6.2, lon=106.9, squawk=None),
     {"alt_baro": 1000, "dst": 1.0},
@@ -162,11 +181,11 @@ def test_parse_adsbfi(api, planes):
     assert gia["type_code"] == "B738" and not gia["on_ground"]
     assert gia["altitude_ft"] == 9843 and gia["speed_kt"] == 250 and gia["track"] == 315
     assert gia["vertical_rate_fpm"] == -832 and gia["squawk"] == "2345"
-    assert gia["emergency"] == "" and gia["bearing"] == 45
+    assert gia["emergency"] == "" and gia["bearing"] == pytest.approx(45)
     assert gia["distance_km"] == pytest.approx(12.0, abs=0.01)
     ground = planes[2]
     assert ground["on_ground"] and ground["altitude_ft"] is None
-    # No dst/dir in the sample: worked out from its position, about 11 km east.
+    # Worked out from its own position, about 11 km east.
     unknown = planes[3]
     assert unknown["distance_km"] == pytest.approx(11.05, abs=0.1)
     assert unknown["bearing"] == pytest.approx(90, abs=1)
@@ -182,25 +201,34 @@ def test_parse_adsblol(api):
                                      {"msg": "error"}])
 def test_parse_rejects_unusable_data(api, payload):
     with pytest.raises(api.FlightError) as info:
-        api.parse_aircraft_list(payload)
+        api.parse_aircraft_list(payload, *HOME)
     assert info.value.kind == "bad_response"
 
 
-def test_parse_skips_aircraft_without_a_distance(api):
-    assert api.parse_aircraft_list({"aircraft": [_plane(dst=None, lat=None, lon=None)]}, 1, 2) == []
-    assert api.parse_aircraft_list({"aircraft": [_plane(dst=None)]}) == []  # no query point
+def test_aircraft_without_a_position_are_dropped(api):
+    # The services' own distance is from the rounded point, so it is not enough.
+    assert api.parse_aircraft_list({"aircraft": [_plane(lat=None, lon=None)]}, *HOME) == []
+    assert api.parse_aircraft_list({"aircraft": [_plane(lat=95.0)]}, *HOME) == []
+    assert api.parse_aircraft_list({"aircraft": [_plane()]}, None, None) == []
+
+
+def test_distance_comes_from_the_exact_point_not_the_service(api):
+    plane = _normalize(api, _plane(dst=100.0, dir=270.0, **_at(3.2, 200)))
+    assert plane["distance_km"] == pytest.approx(3.2, abs=0.001)
+    assert plane["bearing"] == pytest.approx(200, abs=0.01)
 
 
 def test_surface_vehicles_count_as_ground(api):
-    plane = api.normalize_aircraft(_plane(category="C2", alt_baro=0))
+    plane = _normalize(api, _plane(category="C2", alt_baro=0))
     assert plane["on_ground"]
 
 
 def test_request_urls(api):
+    # Never more than 2 decimals (about 1.1 km), whatever the caller passes.
     assert api.build_adsbfi_url(-6.214621, 106.84513, 14) == (
-        "https://opendata.adsb.fi/api/v2/lat/-6.2146/lon/106.8451/dist/14")
+        "https://opendata.adsb.fi/api/v2/lat/-6.21/lon/106.85/dist/14")
     assert api.build_adsblol_url(-6.214621, 106.84513, 14) == (
-        "https://api.adsb.lol/v2/point/-6.2146/106.8451/14")
+        "https://api.adsb.lol/v2/point/-6.21/106.85/14")
     url = api.build_search_url("  Jakarta ", "id")
     assert url.startswith("https://geocoding-api.open-meteo.com/v1/search?")
     assert "name=Jakarta&" in url and "count=10" in url and "language=id" in url
@@ -293,14 +321,14 @@ def test_adsbfi_is_used_first(api, monkeypatch):
     calls = _fake_sources(monkeypatch, api, fi=ADSBFI_JSON, lol=ADSBLOL_JSON)
     aircraft, source = api.fetch_aircraft(-6.2, 106.8, 14)
     assert source == "adsb.fi" and len(aircraft) == 4
-    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.2000/lon/106.8000/dist/14"]
+    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.20/lon/106.80/dist/14"]
 
 
 def test_adsblol_is_the_fallback(api, monkeypatch):
     calls = _fake_sources(monkeypatch, api, fi="service", lol=ADSBLOL_JSON)
     aircraft, source = api.fetch_aircraft(-6.2, 106.8, 14)
     assert source == "adsb.lol" and len(aircraft) == 2
-    assert calls[1] == "https://api.adsb.lol/v2/point/-6.2000/106.8000/14"
+    assert calls[1] == "https://api.adsb.lol/v2/point/-6.20/106.80/14"
 
     calls = _fake_sources(monkeypatch, api, fi={"unexpected": True}, lol=ADSBLOL_JSON)
     assert api.fetch_aircraft(-6.2, 106.8, 14)[1] == "adsb.lol"
@@ -337,7 +365,8 @@ def test_unit_conversion(api):
     assert api.km_to_nm(1.852) == pytest.approx(1)
     assert api.ft_to_m(1000) == pytest.approx(304.8)
     assert api.kt_to_kmh(100) == pytest.approx(185.2)
-    assert [api.query_radius_nm(km) for km in api.RADIUS_CHOICES_KM] == [6, 14, 27]
+    # Widened by 1 nm so the rounded point still covers the radius (see below).
+    assert [api.query_radius_nm(km) for km in api.RADIUS_CHOICES_KM] == [7, 15, 28]
 
 
 @pytest.mark.parametrize("degrees, index", [
@@ -500,8 +529,8 @@ def test_sentence_with_route(text, lang, planes):
 
 
 def test_sentence_skips_missing_values(text, lang, api):
-    plane = api.normalize_aircraft({"hex": "abc009", "dst": 1.0})
-    assert text.aircraft_sentence(plane, "metric") == "Unidentified aircraft, 1.9 kilometres."
+    plane = _normalize(api, {"hex": "abc009", **_at(1.852, 180)})
+    assert text.aircraft_sentence(plane, "metric") == "Unidentified aircraft, 1.9 kilometres south."
 
 
 @pytest.mark.parametrize("squawk, status, emergency", [
@@ -512,41 +541,41 @@ def test_sentence_skips_missing_values(text, lang, api):
     ("7000", "none", False), ("", "", False),
 ])
 def test_what_counts_as_an_emergency(api, squawk, status, emergency):
-    plane = api.normalize_aircraft(_plane(squawk=squawk or None, emergency=status or None))
+    plane = _normalize(api, _plane(squawk=squawk or None, emergency=status or None))
     assert api.is_emergency(plane) is emergency
     assert (api.emergencies([plane]) == [plane]) is emergency
 
 
 def test_emergency_rows_are_marked(text, lang, api):
-    plane = api.normalize_aircraft(_plane(squawk="7700"))
+    plane = _normalize(api, _plane(squawk="7700"))
     assert text.aircraft_sentence(plane, "metric") == (
         "Emergency: Garuda Indonesia 155, Boeing 737-800, 12 kilometres northeast, "
         "3,000 metres, descending.")
-    lifeguard = api.normalize_aircraft(_plane(emergency="lifeguard"))
+    lifeguard = _normalize(api, _plane(emergency="lifeguard"))
     assert text.aircraft_sentence(lifeguard, "metric").startswith("Garuda Indonesia 155")
     lang("id")
     assert text.aircraft_sentence(plane, "metric").startswith("Darurat: Garuda Indonesia 155,")
 
 
 def test_emergency_text(text, lang, api):
-    plane = api.normalize_aircraft(_plane(squawk="7700", dst=10.8, dir=270.0))
+    plane = _normalize(api, _plane(squawk="7700", **_at(20, 270)))
     assert text.emergency_text([plane], "metric") == (
         "Attention: Garuda Indonesia 155 is squawking 7 7 0 0, general emergency, "
         "20 kilometres west.")
-    hijack = api.normalize_aircraft(_plane(squawk="7500"))
+    hijack = _normalize(api, _plane(squawk="7500"))
     assert text.emergency_text([hijack], "metric") == (
         "Attention: Garuda Indonesia 155 is squawking 7 5 0 0, unlawful interference "
         "(hijack code), 12 kilometres northeast.")
-    fuel = api.normalize_aircraft(_plane(emergency="minfuel", alt_baro="ground"))
+    fuel = _normalize(api, _plane(emergency="minfuel", alt_baro="ground"))
     assert text.emergency_text([fuel], "metric") == (
         "Attention: Garuda Indonesia 155 reports low fuel, 12 kilometres northeast, "
         "on the ground.")
-    both = api.normalize_aircraft(_plane(squawk="7600", emergency="minfuel"))
+    both = _normalize(api, _plane(squawk="7600", emergency="minfuel"))
     assert "is squawking 7 6 0 0, radio failure (lost communications), and reports low fuel," \
         in text.emergency_text([both], "metric")
-    same = api.normalize_aircraft(_plane(squawk="7700", emergency="general"))
+    same = _normalize(api, _plane(squawk="7700", emergency="general"))
     assert "reports" not in text.emergency_text([same], "metric")
-    normal = api.normalize_aircraft(_plane(emergency="lifeguard"))
+    normal = _normalize(api, _plane(emergency="lifeguard"))
     assert text.emergency_text([normal], "metric") == ""
     assert text.emergency_text([plane, hijack], "metric").count("Attention:") == 2
     lang("id")
@@ -588,22 +617,22 @@ def test_status_meanings(text, lang, status, en):
 
 
 def test_details_explain_the_squawk_and_status(text, lang, api):
-    plane = api.normalize_aircraft(_plane(squawk="7000", emergency="lifeguard"))
+    plane = _normalize(api, _plane(squawk="7000", emergency="lifeguard"))
     details = text.details_text(plane, "metric")
     assert ("Squawk 7 0 0 0, visual flight, no code assigned (used in many countries). "
             "Reported status: medical or priority flight.") in details
-    plane = api.normalize_aircraft(_plane(squawk="7700", emergency="general"))
+    plane = _normalize(api, _plane(squawk="7700", emergency="general"))
     details = text.details_text(plane, "metric")
     assert "Squawk 7 7 0 0, general emergency." in details and "Reported status" not in details
-    plane = api.normalize_aircraft(_plane(squawk="2000", emergency="minfuel"))
+    plane = _normalize(api, _plane(squawk="2000", emergency="minfuel"))
     assert "Reported status: low fuel." in text.details_text(plane, "metric")
-    plane = api.normalize_aircraft(_plane(squawk=None, emergency="reserved"))
+    plane = _normalize(api, _plane(squawk=None, emergency="reserved"))
     details = text.details_text(plane, "metric")
     assert "Squawk" not in details and "status" not in details
 
 
 def test_nearby_report(text, lang, api, planes):
-    extra = [api.normalize_aircraft(_plane(hex=f"abd{i}", flight=f"LNI{i}0", dst=10 + i))
+    extra = [_normalize(api, _plane(hex=f"abd{i}", flight=f"LNI{i}0", **_at(18 + i, 90)))
              for i in range(2)]
     visible = api.visible_aircraft(planes + extra, 50)
     report = text.nearby_report(visible, 50, "metric", False)
@@ -651,8 +680,10 @@ def test_details_text(text, lang, planes):
 
 
 def test_details_with_nothing_known(text, lang, api):
-    plane = api.normalize_aircraft({"hex": "abc009", "dst": 1.0})
-    assert text.details_text(plane, "metric") == "Unidentified aircraft. No other details available."
+    plane = _normalize(api, {"hex": "abc009", **_at(1.852, 180)})
+    assert text.details_text(plane, "metric") == (
+        "Unidentified aircraft. No other details available. "
+        "Listen to ATC opens Jakarta Soekarno-Hatta.")
 
 
 def test_alert_text(text, lang, planes):
@@ -727,8 +758,8 @@ def test_alert_tracker(api, planes):
 
 
 def test_emergency_tracker(api):
-    mayday = api.normalize_aircraft(_plane(squawk="7700"))
-    quiet = api.normalize_aircraft(_plane(hex="abc009", squawk="2345"))
+    mayday = _normalize(api, _plane(squawk="7700"))
+    quiet = _normalize(api, _plane(hex="abc009", squawk="2345"))
     tracker = api.EmergencyTracker(cooldown=1800)
     assert tracker.check([quiet, mayday], now=0) == [mayday]
     assert tracker.check([quiet, mayday], now=60) == []          # once
@@ -738,7 +769,7 @@ def test_emergency_tracker(api):
     radio = dict(mayday, squawk="7600")
     assert tracker.check([radio], now=1801) == [radio]
     # Emergencies the user already heard are not repeated.
-    fuel = api.normalize_aircraft(_plane(hex="abc010", emergency="minfuel"))
+    fuel = _normalize(api, _plane(hex="abc010", emergency="minfuel"))
     tracker.mark([fuel, quiet], now=1802)
     assert tracker.check([fuel], now=1803) == []
     tracker.reset()
@@ -963,7 +994,7 @@ def test_nearest_prefers_a_known_feed(atc):
 
 
 def _atc_plane(api, rate, lat=-3.0, lon=105.5):
-    return api.normalize_aircraft(_plane(baro_rate=rate, lat=lat, lon=lon))
+    return _normalize(api, _plane(baro_rate=rate, lat=lat, lon=lon))
 
 
 def test_atc_airport_for_aircraft(atc, api):
@@ -1063,7 +1094,7 @@ def test_weather_city_is_the_default(frmain, api, lang, monkeypatch):
     assert frmain.get_location()["name"] == "Bandung"
     calls = _fake_sources(monkeypatch, api, fi=ADSBFI_JSON)
     frmain.speak_nearby()
-    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.9000/lon/107.6000/dist/14"]
+    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.90/lon/107.60/dist/15"]
     # A radar city of its own wins.
     _set(frmain, api)
     assert frmain.get_location()["name"] == "Jakarta"
@@ -1073,7 +1104,7 @@ def test_nearby_fetches_then_speaks(frmain, api, lang, monkeypatch):
     calls = _fake_sources(monkeypatch, api, fi=ADSBFI_JSON)
     _set(frmain, api)
     frmain.speak_nearby()
-    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.2000/lon/106.8000/dist/14"]
+    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.20/lon/106.80/dist/15"]
     assert frmain.spoken[0] == "Checking the radar..."
     assert frmain.spoken[1] == (
         "Citilink 991, Airbus A320, 4.5 kilometres south, 1,500 metres, climbing. "
@@ -1188,9 +1219,12 @@ def test_nearby_waits_for_routes(frmain, api, routes, lang, monkeypatch):
 
 
 def test_implausible_routes_are_not_spoken(frmain, api, routes, lang, monkeypatch):
-    far = {"aircraft": [_plane(lat=-7.25, lon=112.75)]}  # over Surabaya, route says BTH-CGK
-    _fake_sources(monkeypatch, api, fi=far)
-    frmain._routes = routes.RouteLookup(fetch=lambda cs: routes.parse_route(ROUTE_JSON),
+    # Over Jakarta, but adsbdb says Surabaya to Makassar: a stale route.
+    _fake_sources(monkeypatch, api, fi={"aircraft": [_plane()]})
+    stale = json.loads(json.dumps(ROUTE_JSON))
+    stale["response"]["flightroute"]["origin"].update(latitude=-7.3798, longitude=112.787)
+    stale["response"]["flightroute"]["destination"].update(latitude=-5.0755, longitude=119.5537)
+    frmain._routes = routes.RouteLookup(fetch=lambda cs: routes.parse_route(stale),
                                         clock=frmain.clock, sleep=frmain.clock.sleep)
     _set(frmain, api)
     frmain.speak_nearby()
@@ -1285,8 +1319,8 @@ def test_polling_backs_off_and_stops(frmain, api, lang, monkeypatch):
     assert _poll_timers(frmain) == []
 
 
-EMERGENCY_PLANE = _plane(hex="abc007", flight="XQZ777", r="PK-QQG", squawk="7700", dst=10.8,
-                         dir=270.0, lat=-6.2, lon=106.6)
+EMERGENCY_PLANE = _plane(hex="abc007", flight="XQZ777", r="PK-QQG", squawk="7700",
+                         **_at(20, 270))
 EMERGENCY_JSON = {"aircraft": PLANES[:4] + [EMERGENCY_PLANE]}
 MAYDAY = ("Attention: X Q Z 777 is squawking 7 7 0 0, general emergency, "
           "20 kilometres west.")
@@ -1417,7 +1451,7 @@ def test_listen_for_an_aircraft(frmain, api, routes, lang, monkeypatch):
                                  "You'll hear the whole frequency, not just this aircraft.")
     assert frmain.opened == ["https://www.liveatc.net/hlisten.php?mount=wiii"]
     # No route: the airport nearest to the aircraft.
-    bandung = api.normalize_aircraft(_plane(hex="abc011", flight="", lat=-6.95, lon=107.55))
+    bandung = _normalize(api, _plane(hex="abc011", flight="", lat=-6.95, lon=107.55))
     frmain.listen_for_aircraft(bandung)
     assert frmain.opened[-1] == "https://www.liveatc.net/search/?icao=WICC"
     assert "Bandung Husein Sastranegara" in frmain.spoken[-1]
@@ -1436,7 +1470,7 @@ def test_changing_settings_saves_them(frmain, api, monkeypatch):
     assert saved["location"]["name"] == "Jakarta" and saved["radius_km"] == 50
     assert saved["units"] == "aviation" and saved["alerts"] is True and saved["alert_km"] == 3
     assert saved["emergency_watch"] is True
-    assert frmain.query_radius_nm() == 27
+    assert frmain.query_radius_nm() == 28
     assert len(_poll_timers(frmain)) == 1
 
 
@@ -1477,3 +1511,395 @@ def test_register_and_teardown(frmain, fresh_event_bus, monkeypatch, tmp_data_di
     for event_name, handler in frmain._SUBSCRIPTIONS:
         assert handler not in fresh_event_bus._listeners.get(event_name, [])
     assert not frmain._active and frmain.refresh() is False
+
+
+# ------------------------------------------------------------
+# Exact locations (1.2): maths, privacy, pasted coordinates, links, addresses
+# ------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def loc():
+    _import_helpers()
+    import flight_radar_location
+    return flight_radar_location
+
+
+def test_distance_and_bearing_against_known_values(api, airports):
+    cgk, halim = airports.by_icao("WIII"), airports.by_icao("WIHH")
+    km, bearing = api.distance_and_bearing(cgk["latitude"], cgk["longitude"],
+                                           halim["latitude"], halim["longitude"])
+    assert km == pytest.approx(30.3, abs=0.2) and bearing == pytest.approx(121.3, abs=0.5)
+    back = api.distance_and_bearing(halim["latitude"], halim["longitude"],
+                                    cgk["latitude"], cgk["longitude"])
+    assert back[0] == pytest.approx(km) and back[1] == pytest.approx(301.2, abs=0.5)
+    changi = airports.by_icao("WSSS")
+    km, bearing = api.distance_and_bearing(cgk["latitude"], cgk["longitude"],
+                                           changi["latitude"], changi["longitude"])
+    assert km == pytest.approx(882, abs=3) and bearing == pytest.approx(340.3, abs=0.5)
+    # One degree along the equator and along a meridian.
+    assert api.distance_and_bearing(0, 100, 0, 101) == (pytest.approx(111.19, abs=0.01),
+                                                        pytest.approx(90))
+    assert api.distance_and_bearing(-7, 110, -6, 110) == (pytest.approx(111.19, abs=0.01),
+                                                          pytest.approx(0))
+
+
+def test_the_query_point_is_rounded_and_the_radius_still_covers_it(api):
+    assert api.query_point(-6.208812, 106.845613) == (-6.21, 106.85)
+    import random
+    rng = random.Random(7)
+    for _ in range(500):
+        lat, lon = rng.uniform(-60, 60), rng.uniform(-179, 179)
+        sent = api.query_point(lat, lon)
+        offset = api.distance_and_bearing(lat, lon, *sent)[0]
+        assert offset < 0.8
+        for km in api.RADIUS_CHOICES_KM:
+            # Everything within `km` of the exact point is within the widened
+            # radius around the rounded one.
+            assert api.nm_to_km(api.query_radius_nm(km)) >= km + offset
+
+
+def test_only_the_rounded_point_is_sent(api, monkeypatch):
+    calls = _fake_sources(monkeypatch, api, fi="offline", lol=ADSBLOL_JSON)
+    exact = (-6.208812, 106.845613)
+    aircraft, source = api.fetch_aircraft(*exact, 15)
+    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.21/lon/106.85/dist/15",
+                     "https://api.adsb.lol/v2/point/-6.21/106.85/15"]
+    assert all("6.2088" not in url and "106.8456" not in url for url in calls)
+    # Distances are measured from the exact point, not the rounded one.
+    ctv = next(p for p in aircraft if p["callsign"] == "CTV991")
+    expected = api.distance_and_bearing(*exact, PLANES[1]["lat"], PLANES[1]["lon"])[0]
+    assert ctv["distance_km"] == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("pasted, lat, lon", [
+    ("-6.2088, 106.8456", -6.2088, 106.8456),
+    ("-6.2088,106.8456", -6.2088, 106.8456),
+    ("-6.2088 106.8456", -6.2088, 106.8456),
+    ("-6.2088;106.8456", -6.2088, 106.8456),
+    ("  -6.2088 ,  106.8456  ", -6.2088, 106.8456),
+    ("−6.2088, 106.8456", -6.2088, 106.8456),
+    ("-6,2088; 106,8456", -6.2088, 106.8456),
+    ("-6,2088 106,8456", -6.2088, 106.8456),
+    ("-6,2088, 106,8456", -6.2088, 106.8456),
+    ("-6.2088°, 106.8456°", -6.2088, 106.8456),
+    ("6.2088° S, 106.8456° E", -6.2088, 106.8456),
+    ("6.2088°S 106.8456°E", -6.2088, 106.8456),
+    ("S 6.2088 E 106.8456", -6.2088, 106.8456),
+    ("106.8456 E, 6.2088 S", -6.2088, 106.8456),
+    ("6,2088 LS 106,8456 BT", -6.2088, 106.8456),
+    ("6°12'31.7\"S 106°50'44.2\"E", -6.208806, 106.845611),
+    ("6°12′31.7″ LS 106°50′44.2″ BT", -6.208806, 106.845611),
+    ("6° 12.5' S, 106° 50.7' E", -6.208333, 106.845),
+    ("lat: -6.2088, lng: 106.8456", -6.2088, 106.8456),
+    ("Latitude -6.2088 Longitude 106.8456", -6.2088, 106.8456),
+    ("40.7128, -74.0060", 40.7128, -74.006),
+    ("1.3521 N, 103.8198 E", 1.3521, 103.8198),
+])
+def test_pasted_coordinates(loc, pasted, lat, lon):
+    found = loc.parse_location_text(pasted)
+    assert found["kind"] == "coordinates"
+    assert found["latitude"] == pytest.approx(lat, abs=1e-5)
+    assert found["longitude"] == pytest.approx(lon, abs=1e-5)
+
+
+@pytest.mark.parametrize("pasted, kind", [
+    ("", "empty"), ("   ", "empty"), ("Monas, Jakarta", "not_found"), ("-6.2088", "not_found"),
+    ("1, 2, 3", "not_found"), ("95, 10", "out_of_range"), ("10, 200", "out_of_range"),
+    ("106.8456, -6.2088, 5", "not_found"), ("0, 0", "zero"), ("0.0; 0.0", "zero"),
+    ("S 6.2 S 106.8", "not_found"),
+])
+def test_pasted_text_that_is_not_a_location(loc, pasted, kind):
+    with pytest.raises(loc.LocationError) as info:
+        loc.parse_location_text(pasted)
+    assert info.value.kind == kind
+
+
+@pytest.mark.parametrize("link, lat, lon", [
+    # Google Maps place: the pin (!3d/!4d) wins over the map view (@).
+    ("https://www.google.com/maps/place/Monumen+Nasional/@-6.1753924,106.8249641,17z/"
+     "data=!3m1!4b1!4m6!3m5!1s0x2e69f5d2e764b12d:0x3d2ad6e1e0e9bcc8!8m2!3d-6.1753924"
+     "!4d106.8271528!16zL20vMDJzNXg1?entry=ttu", -6.1753924, 106.8271528),
+    ("https://www.google.com/maps/@-6.2088,106.8456,15z", -6.2088, 106.8456),
+    ("https://www.google.com/maps/search/?api=1&query=-6.2088%2C106.8456", -6.2088, 106.8456),
+    ("https://maps.google.com/?q=-6.2088,106.8456", -6.2088, 106.8456),
+    ("https://maps.google.com/maps?q=loc:-6.2088+106.8456", -6.2088, 106.8456),
+    ("https://maps.google.com/?ll=-6.2088,106.8456&z=16", -6.2088, 106.8456),
+    ("https://www.google.com/maps/dir/?api=1&destination=-6.2088%2C106.8456", -6.2088, 106.8456),
+    ("https://maps.apple.com/?ll=-6.2088,106.8456&q=Dropped%20Pin", -6.2088, 106.8456),
+    ("https://maps.apple.com/?q=Monas&ll=-6.2088,106.8456", -6.2088, 106.8456),
+    ("https://maps.apple.com/place?coordinate=-6.2088,106.8456&name=Marked%20Location",
+     -6.2088, 106.8456),
+    ("https://www.openstreetmap.org/?mlat=-6.2088&mlon=106.8456#map=17/-6.20000/106.80000",
+     -6.2088, 106.8456),
+    ("https://www.openstreetmap.org/#map=17/-6.20880/106.84560", -6.2088, 106.8456),
+    ("www.openstreetmap.org/?mlat=-6.2088&mlon=106.8456", -6.2088, 106.8456),
+    ("https://consent.google.com/ml?continue=https://www.google.com/maps/place/X/%40-6.2,106.8,17z"
+     "/data%3D!3m1!4b1!4m5!3m4!1s0x0:0x0!8m2!3d-6.2088!4d106.8456&gl=ID", -6.2088, 106.8456),
+    ("Monumen Nasional\nhttps://www.google.com/maps/@-6.2088,106.8456,15z", -6.2088, 106.8456),
+])
+def test_map_links(loc, link, lat, lon):
+    found = loc.parse_location_text(link)
+    assert (found["kind"], found["latitude"], found["longitude"]) == (
+        "coordinates", pytest.approx(lat), pytest.approx(lon))
+
+
+def test_map_links_without_coordinates(loc):
+    for link in ("https://www.google.com/maps/place/Monumen+Nasional/data=!4m2!3m1"
+                 "!1s0x2e69f5d2e764b12d:0x3d2ad6e1e0e9bcc8",
+                 "https://goo.gl/AbCdEf", "https://maps.apple.com/?q=Monas"):
+        with pytest.raises(loc.LocationError) as info:
+            loc.parse_location_text(link)
+        assert info.value.kind == "link_no_coordinates", link
+    with pytest.raises(loc.LocationError) as info:
+        loc.parse_location_text("https://www.google.com/maps/@95.1,10.2,15z")
+    assert info.value.kind == "out_of_range"
+
+
+@pytest.mark.parametrize("pasted, url", [
+    ("https://maps.app.goo.gl/AbCdEf123", "https://maps.app.goo.gl/AbCdEf123"),
+    ("maps.app.goo.gl/AbCdEf123", "https://maps.app.goo.gl/AbCdEf123"),
+    ("http://maps.app.goo.gl/AbCdEf123?g_st=ic", "https://maps.app.goo.gl/AbCdEf123?g_st=ic"),
+    ("https://goo.gl/maps/AbCdEf123", "https://goo.gl/maps/AbCdEf123"),
+    ("Monas https://maps.app.goo.gl/AbCdEf123", "https://maps.app.goo.gl/AbCdEf123"),
+])
+def test_short_links_are_recognised(loc, pasted, url):
+    assert loc.parse_location_text(pasted) == {"kind": "short_link", "url": url}
+
+
+@pytest.mark.parametrize("link", [
+    "https://goo.gl/AbCdEf", "https://maps.app.goo.gl.example.com/x",
+    "https://example.com/maps.app.goo.gl/x", "https://maps.app.goo.gl:8443/x",
+    "https://user@maps.app.goo.gl/x", "https://maps.app.goo.gl/", "ftp://maps.app.goo.gl/x",
+])
+def test_other_links_are_not_short_links(loc, link):
+    assert loc.short_link(link) is None
+
+
+PIN_URL = ("https://www.google.com/maps/place/Monas/@-6.17,106.82,17z/data=!4m6!3m5!1s0x0:0x0"
+           "!8m2!3d-6.2088!4d106.8456")
+
+
+def _redirects(loc, monkeypatch, answers):
+    """Replace the single-request helper: answers maps URL -> (status, Location)."""
+    fetched = []
+
+    def fake(url, timeout):
+        fetched.append(url)
+        answer = answers[url]
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setattr(loc, "_open_without_redirects", fake)
+    return fetched
+
+
+def test_short_link_expansion_stops_at_other_hosts(loc, monkeypatch):
+    fetched = _redirects(loc, monkeypatch, {
+        "https://maps.app.goo.gl/AbC": (302, "https://maps.app.goo.gl/Next"),
+        "https://maps.app.goo.gl/Next": (301, PIN_URL),
+    })
+    assert loc.resolve_short_link("https://maps.app.goo.gl/AbC") == (-6.2088, 106.8456)
+    # google.com was never fetched: its address was only read from the Location header.
+    assert fetched == ["https://maps.app.goo.gl/AbC", "https://maps.app.goo.gl/Next"]
+
+
+def test_short_link_expansion_reads_nested_and_relative_redirects(loc, monkeypatch):
+    consent = ("https://consent.google.com/ml?continue=" +
+               PIN_URL.replace("@", "%40").replace("!", "%21") + "&gl=ID")
+    fetched = _redirects(loc, monkeypatch, {
+        "https://goo.gl/maps/AbC": (302, "/maps/Next"),
+        "https://goo.gl/maps/Next": (302, consent),
+    })
+    assert loc.resolve_short_link("https://goo.gl/maps/AbC") == (-6.2088, 106.8456)
+    assert all(url.startswith("https://goo.gl/maps/") for url in fetched)
+
+
+@pytest.mark.parametrize("answer, kind", [
+    ((302, "https://www.google.com/maps/place/Monas/data=!4m2!3m1!1s0x0:0x0"),
+     "link_no_coordinates"),
+    ((200, None), "link_no_coordinates"),
+    ((404, None), "link_failed"),
+    ((302, None), "link_failed"),
+    (OSError("offline"), "link_failed"),
+])
+def test_short_link_failures(loc, monkeypatch, answer, kind):
+    _redirects(loc, monkeypatch, {"https://maps.app.goo.gl/AbC": answer})
+    with pytest.raises(loc.LocationError) as info:
+        loc.resolve_short_link("https://maps.app.goo.gl/AbC")
+    assert info.value.kind == kind
+
+
+def test_short_link_redirect_loops_end(loc, monkeypatch):
+    fetched = _redirects(loc, monkeypatch, {
+        "https://maps.app.goo.gl/A": (302, "https://maps.app.goo.gl/B"),
+        "https://maps.app.goo.gl/B": (302, "https://maps.app.goo.gl/A"),
+    })
+    with pytest.raises(loc.LocationError) as info:
+        loc.resolve_short_link("https://maps.app.goo.gl/A")
+    assert info.value.kind == "link_failed" and len(fetched) == loc.MAX_REDIRECTS
+    with pytest.raises(loc.LocationError):
+        loc.expand_short_link("https://example.com/x")   # never fetched at all
+
+
+def test_redirects_are_reported_not_followed(loc, monkeypatch):
+    seen = {}
+
+    class Opener:
+        def open(self, req, timeout=None):
+            seen.update(url=req.full_url, agent=req.get_header("User-agent"), timeout=timeout)
+            raise urllib.error.HTTPError(req.full_url, 302, "Found",
+                                         {"Location": PIN_URL}, None)
+
+    def build_opener(*handlers):
+        seen["handlers"] = handlers
+        return Opener()
+
+    monkeypatch.setattr(loc.urllib.request, "build_opener", build_opener)
+    assert loc._open_without_redirects("https://maps.app.goo.gl/AbC", 8) == (302, PIN_URL)
+    assert seen["handlers"] == (loc._NoRedirect,) and seen["timeout"] == 8
+    assert seen["agent"].startswith("HarikuV2/")
+    assert loc._NoRedirect().redirect_request(None, None, 302, "", {}, PIN_URL) is None
+
+
+NOMINATIM_JSON = [
+    {"place_id": 1, "lat": "-6.1753924", "lon": "106.8271528",
+     "display_name": "Monumen Nasional, Jalan Medan Merdeka, Gambir, Jakarta Pusat, Indonesia"},
+    {"place_id": 2, "lat": "north", "lon": "106.8", "display_name": "Broken"},
+    {"place_id": 3, "lat": "-6.2", "lon": "106.8", "display_name": ""},
+    {"place_id": 4, "lat": "-6.2", "lon": "106.8", "display_name": "Jalan Merdeka, Bandung"},
+]
+
+
+def test_address_url_and_results(loc):
+    url = loc.build_address_url("  Jalan  Merdeka   Barat ", "id")
+    assert url.startswith("https://nominatim.openstreetmap.org/search?")
+    assert "q=Jalan+Merdeka+Barat&" in url and "format=jsonv2" in url
+    assert "limit=10" in url and "accept-language=id" in url
+    assert "accept-language=en" in loc.build_address_url("x", "fr")
+    places = loc.parse_addresses(NOMINATIM_JSON)
+    assert [p["detail"] for p in places] == [NOMINATIM_JSON[0]["display_name"],
+                                             "Jalan Merdeka, Bandung"]
+    assert places[0]["kind"] == "address" and places[0]["latitude"] == -6.1753924
+    assert loc.parse_addresses({"error": "x"}) == []
+
+
+def test_address_search_is_paced_and_cached(loc, api):
+    clock = _Clock()
+    urls = []
+
+    def fetch(url):
+        urls.append(url)
+        return NOMINATIM_JSON
+
+    search = loc.AddressSearch(fetch=fetch, clock=clock, sleep=clock.sleep)
+    assert len(search.search("Jalan Merdeka", "en")) == 2
+    assert len(search.search("  jalan   MERDEKA ", "en")) == 2      # identical: from memory
+    assert len(urls) == 1 and clock.slept == []
+    search.search("Jalan Thamrin", "en")
+    search.search("Jalan Sudirman", "en")
+    assert len(urls) == 3 and clock.slept == [pytest.approx(1.1), pytest.approx(1.1)]
+    search.search("Jalan Merdeka", "id")                            # another language
+    assert len(urls) == 4
+
+
+def test_address_search_errors_are_not_cached(loc, api):
+    clock = _Clock()
+    answers = [api.FlightError("rate_limited", status=429), api.FlightError("offline"),
+               NOMINATIM_JSON]
+
+    def fetch(url):
+        answer = answers.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    search = loc.AddressSearch(fetch=fetch, clock=clock, sleep=clock.sleep)
+    for kind in ("address_busy", "address_failed"):
+        with pytest.raises(loc.LocationError) as info:
+            search.search("Monas", "en")
+        assert info.value.kind == kind
+    assert len(search.search("Monas", "en")) == 2
+
+
+def test_address_search_identifies_hariku(loc, api, monkeypatch):
+    seen = {}
+
+    def fake_fetch_json(url, timeout=None, user_agent=None):
+        seen.update(url=url, agent=user_agent)
+        return []
+
+    monkeypatch.setattr(api, "fetch_json", fake_fetch_json)
+    loc.AddressSearch().search("Monas", "en")
+    assert seen["agent"] == loc.NOMINATIM_USER_AGENT
+    assert seen["agent"].startswith("HarikuV2/") and "Flight Radar" in seen["agent"]
+    assert "github.com" in seen["agent"]
+
+
+def test_fetch_json_can_send_another_user_agent(api, monkeypatch):
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["agent"] = req.get_header("User-agent")
+        return _Response(b"[]")
+
+    monkeypatch.setattr(api.urllib.request, "urlopen", fake_urlopen)
+    api.fetch_json("https://example.invalid/", user_agent="Test/1")
+    assert seen["agent"] == "Test/1"
+
+
+def test_exact_locations_are_kept_with_their_name(api, text, lang):
+    home = {"name": "Home", "latitude": -6.208812, "longitude": 106.845613,
+            "kind": "coordinates", "detail": "", "extra": 1}
+    saved = api.normalize_location(home)
+    assert saved == {"name": "Home", "admin1": "", "country": "", "latitude": -6.208812,
+                     "longitude": 106.845613, "kind": "coordinates", "detail": ""}
+    assert api.place_label(saved) == "Home"
+    assert text.location_text(saved) == "Home: -6.20881, 106.84561"
+    office = api.normalize_location({"name": "Office", "latitude": -6.17, "longitude": 106.82,
+                                     "kind": "address", "detail": "Jalan Medan Merdeka, Gambir"})
+    assert api.place_label(office) == "Office"
+    assert text.location_text(office) == "Office: Jalan Medan Merdeka, Gambir"
+    assert text.location_text(JAKARTA) == "Jakarta, Indonesia"
+    assert api.normalize_location(dict(home, latitude=0, longitude=0)) is None
+    assert api.normalize_location(dict(home, kind="satellite"))["name"] == "Home"
+    assert "kind" not in api.normalize_location(dict(home, kind="satellite"))
+
+
+def test_near_airport_hint(text, lang, airports):
+    widd = airports.by_icao("WIDD")
+    point = _at(12, 135, origin=(widd["latitude"], widd["longitude"]))
+    assert text.near_airport_hint(point["lat"], point["lon"], "metric") == (
+        "about 12 kilometres from Batam Hang Nadim airport")
+    assert text.near_airport_hint(point["lat"], point["lon"], "aviation") == (
+        "about 6.5 nautical miles from Batam Hang Nadim airport")
+    lang("id")
+    assert text.near_airport_hint(point["lat"], point["lon"], "metric") == (
+        "sekitar 12 kilometer dari bandara Batam Hang Nadim")
+
+
+@pytest.mark.parametrize("kind, words", [
+    ("empty", "Paste coordinates"), ("not_found", "could not find coordinates"),
+    ("out_of_range", "out of range"), ("zero", "not a real place"),
+    ("link_no_coordinates", "does not contain coordinates"),
+    ("link_failed", "short link"), ("address_busy", "busy"),
+    ("address_failed", "Could not search for addresses"),
+])
+def test_location_error_texts(text, lang, kind, words):
+    assert words in text.location_error_text(kind)
+
+
+def test_exact_home_end_to_end(frmain, api, lang, monkeypatch):
+    import core.api
+    calls = _fake_sources(monkeypatch, api, fi={"aircraft": [
+        _plane(**_at(3.0, 90, origin=(-6.208812, 106.845613)))]})
+    home = {"name": "Home", "admin1": "", "country": "", "latitude": -6.208812,
+            "longitude": 106.845613, "kind": "coordinates", "detail": ""}
+    frmain._save_settings({"location": home})
+    # Stored exactly, on this computer only.
+    assert core.api.load_data(frmain.DATA_KEY)["location"]["latitude"] == -6.208812
+    frmain.speak_nearby()
+    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.21/lon/106.85/dist/15"]
+    assert frmain.spoken[-1].startswith("Garuda Indonesia 155, Boeing 737-800, "
+                                        "3 kilometres east,")
+    assert api.place_label(frmain.get_location()) == "Home"

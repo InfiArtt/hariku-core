@@ -9,9 +9,10 @@
 
 """
 Windows for the Flight Radar extension:
-  * FlightRadarPanel - the Preferences page: city search, radius, units,
-                       ground traffic, overhead alerts, the emergency watch,
-                       a note on Listen to ATC, attribution.
+  * FlightRadarPanel - the Preferences page: the location (city search,
+                       street-address search, or pasted coordinates / map
+                       link, with a name), radius, units, ground traffic,
+                       overhead alerts, the emergency watch, notes, credits.
   * RadarListDialog  - every aircraft in range, one sentence per row, nearest
                        first, with Details (Enter), Refresh and Listen to ATC.
 Selection changes never move keyboard focus. Focus only moves after the user
@@ -29,6 +30,7 @@ from core.i18n import apply_rtl_layout, get_current_language
 from core.speech import speak
 
 import flight_radar_api as api
+import flight_radar_location as location
 import flight_radar_text as text
 from flight_radar_text import _
 
@@ -47,6 +49,35 @@ def _search_worker(done, search_id, query, language):
     wx.CallAfter(done, search_id, query, places, error)
 
 
+def _address_worker(done, search_id, query, language):
+    # Worker thread: Nominatim, paced and cached by flight_radar_location.
+    try:
+        places, error = location.search_addresses(query, language), None
+    except location.LocationError as e:
+        places, error = [], e.kind
+    except Exception:
+        logger.exception("[Flight Radar] Address search failed")
+        places, error = [], "address_failed"
+    wx.CallAfter(done, search_id, query, places, error)
+
+
+def _link_worker(done, link_id, url):
+    # Worker thread: expands a Google Maps short link (those hosts only).
+    point, error = None, None
+    try:
+        point = location.resolve_short_link(url)
+    except location.LocationError as e:
+        error = e.kind
+    except Exception:
+        logger.exception("[Flight Radar] Short link failed")
+        error = "link_failed"
+    wx.CallAfter(done, link_id, point, error)
+
+
+def _start(target, *args):
+    threading.Thread(target=target, args=args, daemon=True, name="flight-radar-settings").start()
+
+
 def _labelled(parent, sizer, label, make_control):
     """A StaticText created right before the control (screen readers take the
     label from the previous window), which also gets the label as its name."""
@@ -56,13 +87,24 @@ def _labelled(parent, sizer, label, make_control):
     return control
 
 
-class FlightRadarPanel(wx.Panel):
+# The page is taller than the Preferences dialog, so it scrolls (and scrolls
+# the focused control into view). A plain panel where wx is not the real one.
+_PageBase = wx.ScrolledWindow if isinstance(getattr(wx, "ScrolledWindow", None), type) else wx.Panel
+
+
+class FlightRadarPanel(_PageBase):
+    """What OK saves as the location is whatever the user chose last: a city
+    or address result (the one selected in its list) or pasted coordinates."""
+
     def __init__(self, parent, settings, weather_location=None):
         super().__init__(parent)
         self._location = settings.get("location")
         self._weather_location = weather_location
-        self._results = []
-        self._search_id = 0
+        self._results = []       # cities
+        self._addresses = []
+        self._point = None       # (latitude, longitude) from the last Use
+        self._pending = None     # "city", "address" or "coordinates"
+        self._search_id = self._address_id = self._link_id = 0
 
         vbox = wx.BoxSizer(wx.VERTICAL)
 
@@ -70,6 +112,7 @@ class FlightRadarPanel(wx.Panel):
                                       lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
         vbox.Add(self.txt_location, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
+        # 1. City search (Open-Meteo)
         row = wx.BoxSizer(wx.HORIZONTAL)
         self.txt_search = _labelled(self, vbox, _("lbl_search"),
                                     lambda: wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER))
@@ -77,12 +120,42 @@ class FlightRadarPanel(wx.Panel):
         self.btn_search = wx.Button(self, label=_("btn_search"))
         row.Add(self.btn_search, 0)
         vbox.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
-
         self.lbl_results = wx.StaticText(self, label=_("lbl_results"))
         vbox.Add(self.lbl_results, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-        self.list_results = wx.ListBox(self, style=wx.LB_SINGLE)
+        self.list_results = wx.ListBox(self, size=(-1, 70), style=wx.LB_SINGLE)
         self.list_results.SetName(_("lbl_results").rstrip(":"))
-        vbox.Add(self.list_results, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        vbox.Add(self.list_results, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+
+        # 2. Street address search (Nominatim)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        self.txt_address = _labelled(self, vbox, _("lbl_address"),
+                                     lambda: wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER))
+        row.Add(self.txt_address, 1, wx.RIGHT, 6)
+        self.btn_address = wx.Button(self, label=_("btn_address"))
+        row.Add(self.btn_address, 0)
+        vbox.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        self.lbl_addresses = wx.StaticText(self, label=_("lbl_addresses"))
+        vbox.Add(self.lbl_addresses, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        self.list_addresses = wx.ListBox(self, size=(-1, 70), style=wx.LB_SINGLE)
+        self.list_addresses.SetName(_("lbl_addresses").rstrip(":"))
+        vbox.Add(self.list_addresses, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+
+        # 3. Coordinates or a map link
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        self.txt_coords = _labelled(self, vbox, _("lbl_coordinates"),
+                                    lambda: wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER))
+        row.Add(self.txt_coords, 1, wx.RIGHT, 6)
+        self.btn_use = wx.Button(self, label=_("btn_use"))
+        row.Add(self.btn_use, 0)
+        vbox.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        self.lbl_point = wx.StaticText(self, label="")
+        vbox.Add(self.lbl_point, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        exact = self._location and self._location.get("kind", "city") != "city"
+        self.txt_name = _labelled(self, vbox, _("lbl_place_name"), lambda: wx.TextCtrl(
+            self, value=self._location["name"] if exact else _("default_place_name")))
+        vbox.Add(self.txt_name, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        vbox.Add(wx.StaticText(self, label=_("privacy_note")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
         self.choice_radius = _labelled(self, vbox, _("lbl_radius"), lambda: wx.Choice(
             self, choices=[text.distance_choice(km) for km in api.RADIUS_CHOICES_KM]))
@@ -113,43 +186,80 @@ class FlightRadarPanel(wx.Panel):
         vbox.Add(wx.StaticText(self, label=_("alerts_note")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
         vbox.Add(wx.StaticText(self, label=_("atc_note")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
-        # Credits the data sources (adsbdb's terms ask for the route credit).
-        vbox.Add(wx.StaticText(self, label=_("attribution")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-        vbox.Add(wx.StaticText(self, label=_("attribution_routes")), 0, wx.ALL, 10)
+        # Credits the data sources (adsbdb's terms and OpenStreetMap's licence ask for it).
+        for credit in (_("attribution"), _("attribution_routes"), _("attribution_address")):
+            vbox.Add(wx.StaticText(self, label=credit), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        vbox.AddSpacer(10)
 
         self.SetSizer(vbox)
+        if hasattr(self, "SetScrollRate"):
+            self.SetScrollRate(0, 20)
 
         self.txt_search.Bind(wx.EVT_TEXT_ENTER, self._on_search)
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search)
+        self.list_results.Bind(wx.EVT_LISTBOX, self._on_city_selected)
+        self.txt_address.Bind(wx.EVT_TEXT_ENTER, self._on_address_search)
+        self.btn_address.Bind(wx.EVT_BUTTON, self._on_address_search)
+        self.list_addresses.Bind(wx.EVT_LISTBOX, self._on_address_selected)
+        self.txt_coords.Bind(wx.EVT_TEXT_ENTER, self._on_use)
+        self.btn_use.Bind(wx.EVT_BUTTON, self._on_use)
         self.set_location(self._location, weather_location)
         core.ui_scale.apply_appearance(self)
+        if hasattr(self, "FitInside"):
+            self.FitInside()  # after scaling, so large text can still be scrolled to
 
-    def set_location(self, location, weather_location=None):
-        self._location = location
+    def set_location(self, place, weather_location=None):
+        self._location = place
         self._weather_location = weather_location
-        if location:
-            value = api.place_label(location)
+        if place:
+            value = text.location_text(place)
         elif weather_location:
             value = _("location_from_weather", place=api.place_label(weather_location))
         else:
             value = _("location_not_set")
         self.txt_location.ChangeValue(value)
 
+    def _place_name(self):
+        return self.txt_name.GetValue().strip()[:100] or _("default_place_name")
+
+    def _units(self):
+        return "aviation" if self.choice_units.GetSelection() == 1 else "metric"
+
+    def chosen_location(self):
+        """The location OK would save."""
+        if self._pending == "city":
+            sel = self.list_results.GetSelection()
+            if 0 <= sel < len(self._results):
+                return self._results[sel]
+        elif self._pending == "address":
+            sel = self.list_addresses.GetSelection()
+            if 0 <= sel < len(self._addresses):
+                return dict(self._addresses[sel], name=self._place_name())
+        elif self._pending == "coordinates" and self._point:
+            return {"name": self._place_name(), "admin1": "", "country": "",
+                    "latitude": self._point[0], "longitude": self._point[1],
+                    "kind": "coordinates", "detail": ""}
+        if self._location and self._location.get("kind", "city") != "city":
+            return dict(self._location, name=self._place_name())  # renamed, perhaps
+        return self._location
+
     def get_settings(self):
-        """Settings to save: the selected search result (if any) becomes the location."""
-        location = self._location
-        sel = self.list_results.GetSelection()
-        if 0 <= sel < len(self._results):
-            location = self._results[sel]
+        """Settings to save."""
         return {
-            "location": location,
+            "location": self.chosen_location(),
             "radius_km": api.RADIUS_CHOICES_KM[max(0, self.choice_radius.GetSelection())],
-            "units": "aviation" if self.choice_units.GetSelection() == 1 else "metric",
+            "units": self._units(),
             "include_ground": self.chk_ground.GetValue(),
             "alerts": self.chk_alerts.GetValue(),
             "alert_km": api.ALERT_CHOICES_KM[max(0, self.choice_alert.GetSelection())],
             "emergency_watch": self.chk_emergency.GetValue(),
         }
+
+    # --- city search --------------------------------------------------------
+
+    def _on_city_selected(self, event):
+        self._pending = "city"   # state only; focus stays where it is
+        event.Skip()
 
     def _on_search(self, event):
         query = self.txt_search.GetValue().strip()
@@ -159,9 +269,7 @@ class FlightRadarPanel(wx.Panel):
         self._search_id += 1
         language = "id" if get_current_language() == "id" else "en"
         speak(_("searching", query=query), interrupt=True)
-        threading.Thread(target=_search_worker,
-                         args=(self._on_search_done, self._search_id, query, language),
-                         daemon=True, name="flight-radar-search").start()
+        _start(_search_worker, self._on_search_done, self._search_id, query, language)
 
     def _on_search_done(self, search_id, query, places, error):
         if not self or search_id != self._search_id:
@@ -179,6 +287,7 @@ class FlightRadarPanel(wx.Panel):
         self.lbl_results.SetLabel(_("lbl_results_count", count=len(places)))
         self.Layout()
         self.list_results.SetSelection(0)
+        self._pending = "city"
         # The user pressed Search and is still waiting there: take them to the results.
         if wx.Window.FindFocus() in (self.txt_search, self.btn_search):
             self.list_results.SetFocus()
@@ -186,6 +295,77 @@ class FlightRadarPanel(wx.Panel):
             speak(_("search_found_one"), interrupt=True)
         else:
             speak(_("search_found", count=len(places)), interrupt=True)
+
+    # --- address search -----------------------------------------------------
+
+    def _on_address_selected(self, event):
+        self._pending = "address"
+        event.Skip()
+
+    def _on_address_search(self, event):
+        # Only on Enter or the button: Nominatim forbids search-as-you-type.
+        query = " ".join(self.txt_address.GetValue().split())
+        if len(query) < 3:
+            speak(_("address_too_short"), interrupt=True)
+            return
+        self._address_id += 1
+        language = "id" if get_current_language() == "id" else "en"
+        speak(_("address_searching", query=query), interrupt=True)
+        _start(_address_worker, self._on_address_done, self._address_id, query, language)
+
+    def _on_address_done(self, search_id, query, places, error):
+        if not self or search_id != self._address_id:
+            return
+        if error:
+            speak(text.location_error_text(error), interrupt=True)
+            return
+        self._addresses = places
+        self.list_addresses.Set([p["detail"] for p in places])
+        if not places:
+            self.lbl_addresses.SetLabel(_("lbl_addresses"))
+            self.Layout()
+            speak(_("address_none", query=query), interrupt=True)
+            return
+        self.lbl_addresses.SetLabel(_("lbl_addresses_count", count=len(places)))
+        self.Layout()
+        self.list_addresses.SetSelection(0)
+        self._pending = "address"
+        if wx.Window.FindFocus() in (self.txt_address, self.btn_address):
+            self.list_addresses.SetFocus()
+        else:
+            speak(_("address_found", count=len(places)), interrupt=True)
+
+    # --- coordinates and map links ------------------------------------------
+
+    def _on_use(self, event):
+        try:
+            found = location.parse_location_text(self.txt_coords.GetValue())
+        except location.LocationError as e:
+            speak(text.location_error_text(e.kind), interrupt=True)
+            return
+        if found["kind"] == "short_link":
+            self._link_id += 1
+            speak(_("link_expanding"), interrupt=True)
+            _start(_link_worker, self._on_link_done, self._link_id, found["url"])
+            return
+        self._use_point(found["latitude"], found["longitude"])
+
+    def _on_link_done(self, link_id, point, error):
+        if not self or link_id != self._link_id:
+            return
+        if error:
+            speak(text.location_error_text(error), interrupt=True)
+            return
+        self._use_point(*point)
+
+    def _use_point(self, latitude, longitude):
+        self._point = (latitude, longitude)
+        self._pending = "coordinates"
+        hint = text.near_airport_hint(latitude, longitude, self._units())
+        self.lbl_point.SetLabel(_("point_found", lat=f"{latitude:.5f}", lon=f"{longitude:.5f}",
+                                  hint=hint))
+        self.Layout()
+        speak(_("coords_found", place=self._place_name(), hint=hint), interrupt=True)
 
 
 class RadarListDialog(wx.Dialog):

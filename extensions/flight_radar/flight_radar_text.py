@@ -326,6 +326,19 @@ def error_text(kind):
     return _(_ERROR_KEYS.get(kind, "err_bad_response"))
 
 
+def location_error_text(kind):
+    """What went wrong with a pasted location, a map link or an address search."""
+    return {
+        "empty": _("coords_empty"),
+        "not_found": _("coords_not_found"),
+        "out_of_range": _("coords_out_of_range"),
+        "zero": _("coords_zero"),
+        "link_no_coordinates": _("link_no_coordinates"),
+        "link_failed": _("link_failed"),
+        "address_busy": _("err_address_busy"),
+    }.get(kind) or _("err_address_search")
+
+
 def time_text(wall_timestamp):
     return datetime.datetime.fromtimestamp(wall_timestamp).strftime("%H:%M:%S")
 
@@ -333,3 +346,26 @@ def time_text(wall_timestamp):
 def distance_choice(km):
     """A radius or alert distance in both unit systems, for the settings page."""
     return f"{distance_text(km, 'metric')} ({distance_text(km, 'aviation')})"
+
+
+def location_text(location):
+    """How the settings page shows a location: "Jakarta, Indonesia", "Home:
+    Jalan Merdeka Barat, ..." or "Home: -6.20880, 106.84560"."""
+    kind = location.get("kind", "city")
+    if kind == "address":
+        return _("location_address", name=location["name"], detail=location.get("detail", ""))
+    if kind == "coordinates":
+        return _("location_coordinates", name=location["name"],
+                 lat=f"{location['latitude']:.5f}", lon=f"{location['longitude']:.5f}")
+    return api.place_label(location)
+
+
+def near_airport_hint(latitude, longitude, units):
+    """"about 12 kilometres from Batam Hang Nadim airport", worked out from
+    Hariku's own airport table (nothing is looked up), so a blind user can
+    tell whether a pasted point is where they expect."""
+    airport = airports.nearest(latitude, longitude)
+    if airport is None:
+        return None
+    return _("hint_near_airport", distance=distance_text(airport["distance_km"], units),
+             airport=airports.label(airport))
