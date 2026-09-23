@@ -28,3 +28,6 @@ settings/*.local.json
 # ── Misc build artifacts ────────────────────────────────
 Hariku_V2_Developer_SDK.zip
 *.log
+
+# ── Personal notes (kept locally, not part of the project) ──
+how-to.txt
