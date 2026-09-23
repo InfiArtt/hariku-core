@@ -17,9 +17,9 @@ Scope and limits
 ----------------
 
 - This exception applies ONLY to extensions that interact with Hariku solely
-  through that documented extension API. It is the same spirit as the NVDA
-  screen reader's add-on ecosystem: the host application stays free software,
-  while independent add-ons/extensions may be commercial.
+  through that documented extension API. The principle is that the host
+  application stays free software, while independent extensions may be released
+  under commercial terms.
 
 - This exception does NOT grant permission to copy, modify, or redistribute
   Hariku's own source code — the core application and its bundled/official
