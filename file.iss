@@ -1,8 +1,18 @@
 [Setup]
-; AppId tetap menggunakan GUID yang Anda berikan
+; Keep this AppId fixed so new versions upgrade the existing install.
 AppId={{4907aea0-bc99-454c-ac74-893a94beffbc}}
 AppName=Hariku
 AppVersion=2.1.0
+AppPublisher=InfiArtt
+AppPublisherURL=https://github.com/InfiArtt/hariku-core
+AppSupportURL=https://github.com/InfiArtt/hariku-core/issues
+AppUpdatesURL=https://github.com/InfiArtt/hariku/releases
+; Version info embedded in the installer .exe (the CI stamps the real version).
+VersionInfoVersion=2.1.0
+VersionInfoProductName=Hariku
+VersionInfoCompany=InfiArtt
+VersionInfoDescription=Hariku Setup
+VersionInfoCopyright=Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors
 DefaultDirName={sd}\Inflinity\Hariku
 DefaultGroupName=Inflinity
 OutputDir=Output
@@ -18,7 +28,7 @@ LicenseFile=License.txt
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: checkedonce
 Name: "startup"; Description: "Run Hariku when Windows starts"; GroupDescription: "Startup behavior:"; Flags: unchecked
-; Flags: checkedonce memastikan opsi ini tercentang secara default
+; checkedonce: this option is ticked by default.
 Name: "runafterinstall"; Description: "Run Hariku after installation"; GroupDescription: "Post-installation actions:"; Flags: checkedonce
 
 [Files]
@@ -91,6 +101,6 @@ procedure InitializeWizard;
 begin
   MsgBox('Welcome! Thank you for choosing Hariku.'#13#13 +
          'Your support and feedback help make this app better.'#13#13 +
-         'For more information visit https://hariku.novarealm.cloud', 
+         'For more information visit https://github.com/InfiArtt/hariku-core',
          mbInformation, MB_OK);
 end;

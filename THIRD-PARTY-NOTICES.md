@@ -2,7 +2,7 @@
 
 Hariku bundles or depends on the third-party components below. Each remains under
 its own license; those licenses are compatible with Hariku's GPL-3.0-or-later
-distribution. This is a convenience summary — the authoritative terms ship with
+distribution. This is a convenience summary; the authoritative terms ship with
 each component.
 
 ## Python dependencies (see `requirements.txt`)
@@ -19,22 +19,22 @@ each component.
 
 ## Bundled/vendored code
 
-- **comtypes** — vendored under `extensions/window_teleporter/lib/comtypes/`.
+- **comtypes**: vendored under `extensions/window_teleporter/lib/comtypes/`.
   License: MIT. Used for COM automation on Windows.
-- **pyvda** — vendored under `extensions/window_teleporter/lib/pyvda/`.
+- **pyvda**: vendored under `extensions/window_teleporter/lib/pyvda/`.
   License: MIT. Used for Windows virtual-desktop control.
 
 ## Native components
 
-- **nvdaControllerClient64.dll** — the NVDA Controller Client, distributed by
-  NV Access so applications can send speech/braille to NVDA.
-- **SAAPI64.dll** — the System Access API client, for the System Access screen
-  reader.
+- **nvdaControllerClient64.dll**: the NVDA Controller Client from NV Access,
+  which lets applications send speech and braille to NVDA. License: LGPL-2.1.
 - **Tolk** (embedded via cytolk) routes output to whichever screen reader is
-  running (NVDA, JAWS, System Access, ZoomText, SAPI, …).
+  running (NVDA, JAWS, ZoomText, and others), or to Windows SAPI when none is.
+  License: LGPL-3.0.
 
-These native clients are redistributed for the purpose of interoperating with
-the respective screen readers.
+Release builds do not include `SAAPI64.dll`, the System Access client that
+comes with the cytolk package, because it is not distributed under an open
+source license. System Access users hear Hariku through SAPI instead.
 
 ---
 
