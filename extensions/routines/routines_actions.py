@@ -22,7 +22,7 @@ import webbrowser
 import core.api
 from core.speech import speak
 
-import engine
+import routines_engine as engine
 
 logger = logging.getLogger(__name__)
 
@@ -255,7 +255,7 @@ def _a_run_routine(p, ctx, variables):
     if depth >= 5:
         logger.warning("[Routines] run_routine depth limit reached; stopping to avoid a loop.")
         return
-    import runtime
+    import routines_runtime as runtime
     target = next((r for r in runtime.load_routines()
                    if (r.get("name", "").strip().lower() == name)), None)
     if not target:

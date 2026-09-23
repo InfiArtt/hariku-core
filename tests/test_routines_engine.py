@@ -14,7 +14,7 @@ import importlib.util
 import pytest
 
 _ENGINE_PATH = os.path.join(os.path.dirname(__file__), "..",
-                            "extensions", "routines", "engine.py")
+                            "extensions", "routines", "routines_engine.py")
 
 
 @pytest.fixture(scope="module")

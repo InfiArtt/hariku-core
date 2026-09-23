@@ -13,7 +13,7 @@
 # Public entry point: show_log(parent).
 import wx
 
-import runtime
+import routines_runtime as runtime
 
 
 class LogViewerDialog(wx.Dialog):

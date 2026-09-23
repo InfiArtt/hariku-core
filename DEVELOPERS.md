@@ -73,6 +73,11 @@ my_extension/
 
 - The `lib/` folder is automatically added to `sys.path` when your extension loads.
 - You can have as many `.py` files as you want; just import them normally.
+- **Give each extra `.py` file a name prefixed with your extension ID**, such as
+  `my_extension_ui.py` rather than `ui.py`. Every extension's modules share one
+  namespace, so a generic name like `ui`, `utils`, or `config` can silently
+  resolve to one of Hariku's own packages, a standard library module, or another
+  extension's file, and your import gets the wrong module.
 
 ---
 

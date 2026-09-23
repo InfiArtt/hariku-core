@@ -16,4 +16,4 @@
 #   runtime.py  - persistence, state context, event wiring, execution, register
 #   ui.py       - Manage / Edit dialogs (Phase 2: iOS-Shortcuts-style builder)
 # ============================================================
-from runtime import register, teardown  # noqa: F401  (re-exported for the loader)
+from routines_runtime import register, teardown  # noqa: F401  (re-exported for the loader)

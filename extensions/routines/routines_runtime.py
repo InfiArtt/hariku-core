@@ -20,8 +20,8 @@ import core.api
 import core.hotkeys
 from core.events import bus
 
-import engine
-import actions
+import routines_engine as engine
+import routines_actions as actions
 
 logger = logging.getLogger(__name__)
 
@@ -288,12 +288,12 @@ _EVENT_TRIGGERS = [
 
 
 def _open_manage():
-    import ui  # lazy import to avoid a cycle (ui imports runtime)
+    import routines_ui as ui  # lazy import to avoid a cycle (ui imports runtime)
     ui.open_manage_dialog()
 
 
 def _open_log():
-    import log_viewer  # lazy import (log_viewer imports runtime)
+    import routines_log_viewer as log_viewer  # lazy import (log_viewer imports runtime)
     parent = getattr(core.api, "main_window_instance", None)
     log_viewer.show_log(parent)
 

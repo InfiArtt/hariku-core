@@ -40,8 +40,8 @@ import wx
 import core.api
 from core.speech import speak
 
-import engine
-import runtime
+import routines_engine as engine
+import routines_runtime as runtime
 
 _WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
