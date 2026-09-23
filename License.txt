@@ -5,8 +5,7 @@ Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
 Hariku is licensed under the GNU General Public License, version 3 or (at your
 option) any later version, with the Hariku Extension Exception. That exception
 lets a third-party extension built only on Hariku's documented extension API
-ship under any license it likes, including a proprietary or commercial one, the
-same way the NVDA screen reader allows commercial add-ons.
+ship under any license it likes, including a proprietary or commercial one.
 
   - Full license text:   see the LICENSE file.
   - Extension exception: see the LICENSE-EXCEPTION file.

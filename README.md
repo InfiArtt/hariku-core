@@ -56,7 +56,7 @@ Hariku is free software under the GNU General Public License v3.0 or later, with
 the Hariku Extension Exception ([LICENSE-EXCEPTION](LICENSE-EXCEPTION)). The core
 stays copyleft, but a third-party extension that uses only the documented
 extension API can be released under any license, including a proprietary or
-commercial one. It is the same arrangement that lets NVDA have commercial add-ons.
+commercial one.
 
 - Core and official extensions: `GPL-3.0-or-later` (see [LICENSE](LICENSE)).
 - Third-party extensions: your choice, under the extension exception.
