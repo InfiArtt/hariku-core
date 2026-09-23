@@ -43,6 +43,21 @@ jobs:
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "Releasing Hariku $V"
 
+      - name: Verify DIST_TOKEN can reach the dist repo (fail fast)
+        env:
+          GH_TOKEN: ${{ secrets.DIST_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::DIST_TOKEN secret is empty/unset. Run:  gh secret set DIST_TOKEN --repo InfiArtt/hariku-core  and paste the fine-grained PAT when prompted."
+            exit 1
+          fi
+          if ! gh api "repos/${{ env.DIST_REPO }}" --jq .full_name >/dev/null 2>&1; then
+            echo "::error::DIST_TOKEN cannot access ${{ env.DIST_REPO }}. Check the fine-grained PAT has Contents: Read/Write on that repo, and that the InfiArtt org has approved the token."
+            exit 1
+          fi
+          echo "DIST_TOKEN verified for ${{ env.DIST_REPO }}."
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
