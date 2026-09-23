@@ -6,6 +6,13 @@ whatever screen reader is running (NVDA, JAWS, and others) using
 Tolk, and falls back to Windows SAPI when none is present. The core stays small,
 and almost everything else is an extension.
 
+## Download
+
+Get the latest installer, `HarikuV2-Setup.exe`, from the
+[releases page](https://github.com/InfiArtt/hariku/releases/latest). Hariku runs
+on Windows and checks for updates by itself once it's installed. See the code
+signing policy below for how releases are built and signed.
+
 ## What it does
 
 - **Screen-reader first.** Speech is queued so it never talks over itself, with
