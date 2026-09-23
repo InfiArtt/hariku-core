@@ -29,6 +29,18 @@ address and a Hariku user agent. They contain no identifier, no account
 details, and none of your data. GitHub's handling of them is covered by the
 [GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 
+## Weather
+
+The Weather extension sends nothing until you choose a city. After that, it
+fetches the forecast from Open-Meteo (`api.open-meteo.com`) when Hariku starts,
+about every 30 minutes, and when you ask for the weather. The request contains
+the chosen city's coordinates and time zone, not your device's location.
+Searching for a city in the Weather settings sends the text you typed to
+Open-Meteo's city search (`geocoding-api.open-meteo.com`). Open-Meteo's
+handling of these requests is covered by its
+[terms and privacy policy](https://open-meteo.com/en/terms#privacy). The Morning
+Briefing extension makes no connections of its own.
+
 ## When you ask for it
 
 - Opening the extension store, or installing or updating an extension,

@@ -56,7 +56,35 @@ def test_bundled_manifests_are_complete_and_readable():
     assert not problems, "\n".join(problems)
 
 
-LOCALE_MANIFEST_FIELDS = ["language_name", "language_code", "translator", "email", "version"]
+# Core features newer than 2.0, and the release that introduced them. An
+# extension using one must declare at least that minimum_core_version, or older
+# installs load it and crash. Add an entry whenever the core gains a new API.
+CORE_FEATURES_SINCE = {
+    "core.ui_scale": (2, 4),
+    "on_reminder_fired": (2, 4),
+    "zoneinfo": (2, 5),
+}
+
+
+def test_minimum_core_version_covers_the_features_used():
+    from core.extension_manager import _version_tuple
+    problems = []
+    for ext_id, manifest in _manifests():
+        declared = _version_tuple(manifest.get("minimum_core_version")) or (0, 0)
+        ext_dir = os.path.join(EXT_ROOT, ext_id)
+        source = ""
+        for name in os.listdir(ext_dir):
+            if name.endswith(".py"):
+                with open(os.path.join(ext_dir, name), encoding="utf-8") as f:
+                    source += f.read()
+        for feature, since in CORE_FEATURES_SINCE.items():
+            if feature in source and declared < since:
+                problems.append(f"{ext_id} uses {feature} (core {since[0]}.{since[1]}) but "
+                                f"declares minimum_core_version {manifest.get('minimum_core_version')}")
+    assert not problems, "\n".join(problems)
+
+
+LOCALE_MANIFEST_FIELDS =["language_name", "language_code", "translator", "email", "version"]
 
 
 def _locale_files(ext_id):

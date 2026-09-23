@@ -1,0 +1,30 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.0",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Briefing Pagi",
+        "action_play": "Putar briefing pagi",
+        "chk_auto": "Putar briefing saat Hariku pertama kali dijalankan setiap hari",
+
+        "greet_morning": "Selamat pagi.",
+        "greet_midday": "Selamat siang.",
+        "greet_afternoon": "Selamat sore.",
+        "greet_evening": "Selamat malam.",
+        "today_is": "Hari ini {date}.",
+
+        "agenda_none": "Tidak ada pengingat hari ini.",
+        "agenda_all_done": "Semua pengingat hari ini sudah selesai.",
+        "agenda_one": "Ada 1 pengingat hari ini.",
+        "agenda_many": "Ada {count} pengingat hari ini.",
+        "agenda_item": "{time}, {title}",
+        "agenda_untitled": "Pengingat tanpa judul",
+        "agenda_more": "Dan {count} lainnya."
+    }
+}

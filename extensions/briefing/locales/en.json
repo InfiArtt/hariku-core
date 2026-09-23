@@ -1,0 +1,30 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.0",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Morning Briefing",
+        "action_play": "Play the morning briefing",
+        "chk_auto": "Play the briefing the first time Hariku starts each day",
+
+        "greet_morning": "Good morning.",
+        "greet_midday": "Good day.",
+        "greet_afternoon": "Good afternoon.",
+        "greet_evening": "Good evening.",
+        "today_is": "Today is {date}.",
+
+        "agenda_none": "You have no reminders today.",
+        "agenda_all_done": "All of today's reminders are done.",
+        "agenda_one": "You have 1 reminder today.",
+        "agenda_many": "You have {count} reminders today.",
+        "agenda_item": "{time}, {title}",
+        "agenda_untitled": "Untitled reminder",
+        "agenda_more": "And {count} more."
+    }
+}

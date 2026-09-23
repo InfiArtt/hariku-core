@@ -79,6 +79,9 @@ OFFICIAL_EXTENSION_IDS = {
     "filter",
     "quick_expand",
     "hariku_lounge",
+    "weather",
+    "briefing",
+    "finance",
     # add new official extension IDs here
 }
 

@@ -58,6 +58,9 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "filter",
     "quick_expand",
     "hariku_lounge",
+    "weather",
+    "briefing",
+    "finance",
 ])
 
 
