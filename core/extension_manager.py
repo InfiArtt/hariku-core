@@ -54,7 +54,21 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "account_manager",
     "world_clock",
     "routines",
+    "gcal_integration",
+    "filter",
+    "quick_expand",
+    "hariku_lounge",
 ])
+
+
+def _version_tuple(text):
+    """(major, minor) from "2.4", "2.4.0" or "2.10", or None if unreadable.
+    Tuples compare correctly where float("2.10") < float("2.4") would not."""
+    try:
+        parts = [int(p) for p in str(text).strip().split(".")[:2]]
+    except ValueError:
+        return None
+    return tuple(parts + [0] * (2 - len(parts)))
 
 
 def _safe_extractall(zip_ref, dest_path):
@@ -397,12 +411,15 @@ def _load_extension_from_dir(ext_dir, ext_id):
             logger.error(f"Extension '{ext_id}' rejected. Missing required manifest fields: {missing}")
             return False
             
-        try:
-            if float(manifest["minimum_core_version"]) > core.constants.CORE_VERSION_FLOAT:
-                logger.error(f"Extension '{ext_id}' requires Core Version {manifest['minimum_core_version']}, but current is {core.constants.CORE_VERSION_FLOAT}")
-                return False
-        except ValueError:
-            pass
+        required = _version_tuple(manifest["minimum_core_version"])
+        current = _version_tuple(core.constants.CORE_VERSION)
+        if required is None:
+            logger.warning(f"Extension '{ext_id}' has an unreadable minimum_core_version: "
+                           f"{manifest['minimum_core_version']!r}")
+        elif current is not None and required > current:
+            logger.error(f"Extension '{ext_id}' requires Core Version {manifest['minimum_core_version']}, "
+                         f"but current is {core.constants.CORE_VERSION}")
+            return False
         # ----------------------------------
             
         entry_point = manifest.get("main", "main.py")

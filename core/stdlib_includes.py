@@ -43,9 +43,27 @@ import fractions
 import decimal
 import string
 import random
+import shlex        # Routines "open app" action
+import pydoc        # Developer Toolkit
+import zoneinfo     # World Clock (zone data comes from tzdata, below)
 
 try:
     import cryptography
     from cryptography import fernet
 except ImportError:
     pass
+
+# The IANA zone database. Windows has none built in, so zoneinfo needs this
+# package; release.yml also bundles its data files (--include-package-data).
+try:
+    import tzdata
+except ImportError:
+    pass
+
+try:
+    import wx.stc   # Developer Toolkit's code editor
+except ImportError:
+    pass
+
+# tests/test_extension_stdlib.py fails when an extension imports a module that
+# neither the core nor this file brings into the build.

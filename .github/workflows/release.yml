@@ -88,6 +88,7 @@ jobs:
           python -m nuitka --standalone --assume-yes-for-downloads
           --windows-console-mode=disable
           --include-package-data=cytolk --include-package=cryptography
+          --include-package=tzdata --include-package-data=tzdata
           --include-data-dir=sounds=sounds
           --include-data-dir=locales=locales
           --include-data-dir=docs=docs
