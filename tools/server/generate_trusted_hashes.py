@@ -78,7 +78,6 @@ OFFICIAL_EXTENSION_IDS = {
     "gcal_integration",
     "filter",
     "quick_expand",
-    "hariku_lounge",
     "weather",
     "briefing",
     "finance",

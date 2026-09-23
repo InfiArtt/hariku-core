@@ -57,7 +57,6 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "gcal_integration",
     "filter",
     "quick_expand",
-    "hariku_lounge",
     "weather",
     "briefing",
     "finance",
