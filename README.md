@@ -39,10 +39,10 @@ Run the tests with `python -m pytest`.
 
 ## Building the installer
 
-Hariku compiles with Nuitka (the exact command is in `how-to.txt`) and packages
-with Inno Setup (`file.iss`). GitHub Actions builds each release from a version
-tag (`.github/workflows/release.yml`) and publishes the installer alongside an
-`update/version.json` manifest.
+Hariku compiles with Nuitka and packages with Inno Setup (`file.iss`). GitHub
+Actions builds each release from a version tag and publishes the installer
+alongside an `update/version.json` manifest. The exact build commands are in
+`.github/workflows/release.yml`.
 
 ## Code signing policy
 
