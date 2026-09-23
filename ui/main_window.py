@@ -15,6 +15,7 @@ from core.i18n import get_translator, format_date
 import core.api
 import core.hotkeys
 import core.sounds
+import core.ui_scale
 
 _ = get_translator("core")
 
@@ -34,7 +35,6 @@ class MainWindow(wx.Frame):
         self.tb_icon = HarikuTaskBarIcon(self)
         
         # Apply low-vision appearance (font scale + high contrast) if configured.
-        import core.ui_scale
         core.ui_scale.apply_appearance(self)
 
         # Notify extensions that the UI is ready
