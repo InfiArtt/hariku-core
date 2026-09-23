@@ -1,3 +1,12 @@
+Versi 2.6.0 (Pembaruan Inti - 23 September 2026)
+================================================================================
+- Tema suara: dengan extension Sound Themes yang baru, kamu bisa mengganti
+  suara-suara Hariku dengan file WAV pilihanmu, mengimpor paket tema (termasuk
+  tema Hariku 1), dan berganti tema dengan Shift+S.
+- Baru di store extension: Flight Radar (dengar pesawat di dekat rumahmu, lacak
+  penerbangan dari nomornya, peringatan darurat, Dengarkan ATC), Riwayat
+  Clipboard (V), dan Sound Themes.
+
 Versi 2.5.0 (Pembaruan Inti - 23 September 2026)
 ================================================================================
 Catatan ini mencakup semua perubahan sejak 2.2.0, termasuk versi 2.3.0 dan

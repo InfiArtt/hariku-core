@@ -1,0 +1,10 @@
+{
+    "id": "sound_themes",
+    "name": "Sound Themes",
+    "version": "1.0",
+    "description": "Change the sounds Hariku plays, like a visual theme for your ears. Make themes from your own WAV files, switch between them in Preferences, Sound Themes, or with Shift+S, and import or export them as ZIP files. Hariku 1 sound themes can be imported too.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.6"
+}

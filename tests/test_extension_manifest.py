@@ -63,6 +63,9 @@ CORE_FEATURES_SINCE = {
     "core.ui_scale": (2, 4),
     "on_reminder_fired": (2, 4),
     "zoneinfo": (2, 5),
+    "set_theme_dir": (2, 6),
+    "get_builtin_sounds_dir": (2, 6),
+    "stop_sound": (2, 6),
 }
 
 

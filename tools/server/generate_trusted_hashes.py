@@ -82,6 +82,8 @@ OFFICIAL_EXTENSION_IDS = {
     "briefing",
     "finance",
     "flight_radar",
+    "clipboard_history",
+    "sound_themes",
     # add new official extension IDs here
 }
 

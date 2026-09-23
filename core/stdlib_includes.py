@@ -46,6 +46,7 @@ import random
 import shlex        # Routines "open app" action
 import pydoc        # Developer Toolkit
 import zoneinfo     # World Clock (zone data comes from tzdata, below)
+import wave         # Sound Themes (checks imported WAV files)
 
 try:
     import cryptography
