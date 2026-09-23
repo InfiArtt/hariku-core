@@ -22,11 +22,20 @@ class EventBus:
             self._listeners[event_name].append(callback)
             logger.debug(f"Subscribed {callback.__name__} to event: {event_name}")
 
+    def unsubscribe(self, event_name, callback):
+        """Stop a function from listening for an event. Unknown pairs are ignored,
+        so an extension's teardown() can call this unconditionally."""
+        listeners = self._listeners.get(event_name)
+        if listeners and callback in listeners:
+            listeners.remove(callback)
+            logger.debug(f"Unsubscribed {callback.__name__} from event: {event_name}")
+
     def emit(self, event_name, *args, **kwargs):
         """Broadcast an event to all registered listeners."""
         if event_name in self._listeners:
             logger.debug(f"Emitting event: {event_name} to {len(self._listeners[event_name])} listeners")
-            for callback in self._listeners[event_name]:
+            # Iterate over a copy: a callback may unsubscribe itself (or another).
+            for callback in list(self._listeners[event_name]):
                 try:
                     callback(*args, **kwargs)
                 except Exception as e:

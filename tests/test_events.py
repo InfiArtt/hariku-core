@@ -124,3 +124,34 @@ class TestGlobalBusSingleton:
         """The global `bus` should be an EventBus instance."""
         from core.events import bus, EventBus
         assert isinstance(bus, EventBus)
+
+
+class TestEventBusUnsubscribe:
+    """Extensions call unsubscribe() from teardown(); it used to not exist."""
+
+    def test_unsubscribe_stops_delivery(self, fresh_event_bus):
+        bus = fresh_event_bus
+        calls = []
+        handler = lambda *a: calls.append(a)
+        bus.subscribe("tick", handler)
+        bus.unsubscribe("tick", handler)
+        bus.emit("tick", 1)
+        assert calls == []
+
+    def test_unsubscribe_unknown_is_ignored(self, fresh_event_bus):
+        bus = fresh_event_bus
+        bus.unsubscribe("never_subscribed", lambda: None)  # must not raise
+
+    def test_handler_can_unsubscribe_itself_during_emit(self, fresh_event_bus):
+        bus = fresh_event_bus
+        calls = []
+
+        def once():
+            calls.append("once")
+            bus.unsubscribe("tick", once)
+
+        bus.subscribe("tick", once)
+        bus.subscribe("tick", lambda: calls.append("other"))
+        bus.emit("tick")
+        bus.emit("tick")
+        assert calls == ["once", "other", "other"]
