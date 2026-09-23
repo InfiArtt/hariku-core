@@ -2,7 +2,7 @@
 
 Hariku ("My Day") is a keyboard-driven calendar and productivity app for Windows,
 built for blind and low-vision people who use a screen reader. It speaks through
-whatever screen reader is running (NVDA, JAWS, System Access, and others) using
+whatever screen reader is running (NVDA, JAWS, and others) using
 Tolk, and falls back to Windows SAPI when none is present. The core stays small,
 and almost everything else is an extension.
 
@@ -43,6 +43,26 @@ Hariku compiles with Nuitka (the exact command is in `how-to.txt`) and packages
 with Inno Setup (`file.iss`). GitHub Actions builds each release from a version
 tag (`.github/workflows/release.yml`) and publishes the installer alongside an
 `update/version.json` manifest.
+
+## Code signing policy
+
+Windows releases are built and published only by the GitHub Actions release
+workflow in this repository. Builds made on a personal machine are never signed
+or published. A release contains the Hariku executables and the
+`HarikuV2-Setup.exe` installer, all built from this source.
+
+Releases are currently unsigned. We are working on free code signing through
+the SignPath Foundation's open source program.
+
+Team roles:
+
+- Committers and reviewers: Rafli ([@raf-li](https://github.com/raf-li))
+- Approvers: Rafli ([@raf-li](https://github.com/raf-li))
+
+## Privacy
+
+Hariku collects no analytics or telemetry. [PRIVACY.md](PRIVACY.md) lists every
+case where it connects to the internet.
 
 ## Writing extensions
 

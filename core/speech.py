@@ -19,8 +19,8 @@ def init_speech():
     try:
         tolk.load()
         # Tolk is a UNIVERSAL screen-reader layer (not NVDA-only): it auto-routes
-        # to whichever reader is running — NVDA, JAWS, System Access, ZoomText,
-        # SuperNova/Dolphin, Window-Eyes. Enable SAPI 5 as a last-resort fallback
+        # to whichever reader is running (NVDA, JAWS, ZoomText, and others whose
+        # client libraries are present). Enable SAPI 5 as a last-resort fallback
         # so users with NO screen reader still hear output via built-in Windows
         # TTS. This only activates when no screen reader is detected, so it never
         # changes behaviour for NVDA/JAWS/etc. users.

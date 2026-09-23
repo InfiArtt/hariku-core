@@ -73,8 +73,11 @@ jobs:
           $v = "${{ steps.ver.outputs.version }}"
           (Get-Content core/constants.py) -replace 'CORE_VERSION\s*=\s*".*"', ('CORE_VERSION = "' + $v + '"') | Set-Content core/constants.py -Encoding utf8
           (Get-Content file.iss)         -replace 'AppVersion=.*',            ('AppVersion=' + $v)          | Set-Content file.iss -Encoding utf8
+          (Get-Content file.iss)         -replace 'VersionInfoVersion=.*',    ('VersionInfoVersion=' + $v)  | Set-Content file.iss -Encoding utf8
           Write-Host "Stamped version $v"
 
+      # Product name and version are embedded in Hariku.exe because signed
+      # binaries must carry this metadata (SignPath requirement).
       - name: Compile with Nuitka
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads
@@ -84,8 +87,26 @@ jobs:
           --include-data-dir=locales=locales
           --include-data-dir=docs=docs
           --include-data-file=nvdaControllerClient64.dll=nvdaControllerClient64.dll
-          --include-data-file=SAAPI64.dll=SAAPI64.dll
+          --company-name=InfiArtt
+          --product-name=Hariku
+          --file-description=Hariku
+          --file-version=${{ steps.ver.outputs.version }}
+          --product-version=${{ steps.ver.outputs.version }}
+          --copyright="Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors"
           --lto=yes hariku.py
+
+      # SAAPI64.dll (the System Access screen reader client) ships inside the
+      # cytolk package, but it has no open source license we could find, so it
+      # must not end up in releases. Tolk works without it; System Access users
+      # get the SAPI voice instead.
+      - name: Remove closed-source SAAPI client from the build
+        shell: pwsh
+        run: |
+          Get-ChildItem hariku.dist -Recurse -Filter 'SAAPI*.dll' | ForEach-Object {
+            Write-Host "Removing $($_.FullName)"
+            Remove-Item $_.FullName -Force
+          }
+          if (Get-ChildItem hariku.dist -Recurse -Filter 'SAAPI*.dll') { throw "SAAPI DLL is still in hariku.dist" }
 
       - name: Build installer (Inno Setup)
         shell: pwsh

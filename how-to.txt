@@ -32,7 +32,12 @@ LANGKAH-LANGKAH (Disarankan Menggunakan Virtual Environment)
    Inilah "mantra sihir" Nuitka untuk mengubah Hariku menjadi .exe.
    (Pastikan kamu mengetiknya di dalam kondisi venv masih aktif):
 
-nuitka --standalone --windows-console-mode=disable --include-package-data=cytolk --include-package=cryptography --include-data-dir=sounds=sounds --include-data-dir=locales=locales --include-data-dir=docs=docs --include-data-file=nvdaControllerClient64.dll=nvdaControllerClient64.dll --include-data-file=SAAPI64.dll=SAAPI64.dll --lto=yes hariku.py
+nuitka --standalone --windows-console-mode=disable --include-package-data=cytolk --include-package=cryptography --include-data-dir=sounds=sounds --include-data-dir=locales=locales --include-data-dir=docs=docs --include-data-file=nvdaControllerClient64.dll=nvdaControllerClient64.dll --lto=yes hariku.py
+
+   Setelah build selesai, hapus `hariku.dist\cytolk\SAAPI64.dll`. DLL itu
+   (klien screen reader System Access) ikut terbawa dari paket cytolk, tapi
+   bukan open source, jadi tidak boleh ikut dirilis. Build resmi lewat
+   GitHub Actions sudah menghapusnya otomatis.
 
 --------------------------------------------------------------------
 PENJELASAN MANTRA (COMMAND NUITKA)
