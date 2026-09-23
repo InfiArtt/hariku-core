@@ -60,7 +60,23 @@ def _get_reminders_today(date_str):
         return []
 
 
+_SSID_CACHE_SECONDS = 30
+_ssid_cache = (0.0, "")
+
+
 def _get_wifi_ssid():
+    """Current Wi-Fi SSID, cached for a short while because `netsh` takes a few
+    hundred milliseconds and evaluation runs on the UI thread."""
+    global _ssid_cache
+    stamp, ssid = _ssid_cache
+    if time.time() - stamp < _SSID_CACHE_SECONDS:
+        return ssid
+    ssid = _query_wifi_ssid()
+    _ssid_cache = (time.time(), ssid)
+    return ssid
+
+
+def _query_wifi_ssid():
     """Current Wi-Fi SSID via `netsh wlan show interfaces`, or "" if unknown."""
     try:
         import subprocess
@@ -150,8 +166,37 @@ def _get_cpu_percent():
         return None
 
 
+# Context fields that are slow to collect, and what in a routine asks for them.
+_COSTLY_FIELDS = {
+    "wifi_ssid": ("wifi_ssid", "{ssid}"),
+    "ram_percent": ("ram_above", "{ram}"),
+    "cpu_percent": ("cpu_above", "{cpu}"),
+}
+
+
+def _costly_fields_needed(routines):
+    """Which slow context fields any of these routines reads, through a condition
+    type or a placeholder in one of its text parameters."""
+    needed = set()
+    for routine in routines:
+        items = (routine.get("conditions") or []) + (routine.get("actions") or [])
+        types = {item.get("type") for item in items}
+        texts = " ".join(str(v) for item in items
+                         for v in (item.get("params") or {}).values()
+                         if isinstance(v, str))
+        for field, (cond_type, token) in _COSTLY_FIELDS.items():
+            if cond_type in types or token in texts:
+                needed.add(field)
+    return needed
+
+
 # --- Current-state context (add new fields here for new conditions) ---
-def build_context(event=None, event_data=None):
+def build_context(event=None, event_data=None, needed=None):
+    """Snapshot of system state for routine evaluation. `needed` limits the slow
+    fields (see _COSTLY_FIELDS) to those a routine uses; None collects all."""
+    def want(field):
+        return needed is None or field in needed
+
     now = datetime.datetime.now()
     try:
         power = core.api.get_power_status()
@@ -190,9 +235,9 @@ def build_context(event=None, event_data=None):
         "clipboard": clip,
         "online": online,
         "reminders_today": _get_reminders_today(date_str),
-        "wifi_ssid": _get_wifi_ssid(),
-        "ram_percent": _get_ram_percent(),
-        "cpu_percent": _get_cpu_percent(),
+        "wifi_ssid": _get_wifi_ssid() if want("wifi_ssid") else "",
+        "ram_percent": _get_ram_percent() if want("ram_percent") else None,
+        "cpu_percent": _get_cpu_percent() if want("cpu_percent") else None,
         "event": event,             # set only when triggered by a specific event
         "event_data": event_data,   # e.g. the selected date or the fired reminder
     }
@@ -248,9 +293,18 @@ def _has_run_every(routine):
 
 
 def evaluate_all(*_args, event=None, event_data=None, **_kwargs):
+    # Runs on the UI thread for every monitored event, so do no work at all
+    # unless some routine is enabled, and collect slow state only on demand.
     try:
-        ctx = build_context(event=event, event_data=event_data)
-        for routine in load_routines():
+        routines = load_routines()
+        active = [r for r in routines if r.get("enabled", True)]
+        if not active:
+            for routine in routines:
+                _met_last[routine.get("id")] = False
+            return
+        ctx = build_context(event=event, event_data=event_data,
+                            needed=_costly_fields_needed(active))
+        for routine in routines:
             rid = routine.get("id")
             # Inject this routine's own last-fire time so _c_run_every can decide.
             ctx["run_every_last"] = _run_every_last.get(rid)

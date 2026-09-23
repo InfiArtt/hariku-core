@@ -36,7 +36,11 @@ logger = logging.getLogger(__name__)
 # Constants
 WH_KEYBOARD_LL = 13
 WM_KEYDOWN = 0x0100
+WM_KEYUP = 0x0101
 WM_SYSKEYDOWN = 0x0104
+WM_SYSKEYUP = 0x0105
+WM_QUIT = 0x0012
+PM_NOREMOVE = 0x0000
 INPUT_KEYBOARD = 1
 KEYEVENTF_UNICODE = 0x0004
 KEYEVENTF_KEYUP = 0x0002
@@ -108,9 +112,10 @@ HOOKPROC = ctypes.WINFUNCTYPE(
     wintypes.LPARAM
 )
 
-# DLL function mapping
-user32 = ctypes.windll.user32
-kernel32 = ctypes.windll.kernel32
+# Private DLL handles: setting argtypes on the shared ctypes.windll objects would
+# change them for every other module that calls the same functions.
+user32 = ctypes.WinDLL("user32", use_last_error=True)
+kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
 user32.SetWindowsHookExW.argtypes = [
     ctypes.c_int,
@@ -141,8 +146,23 @@ user32.SendInput.restype = ctypes.c_uint
 user32.GetKeyState.argtypes = [ctypes.c_int]
 user32.GetKeyState.restype = ctypes.c_short
 
+user32.GetMessageW.argtypes = [ctypes.POINTER(wintypes.MSG), wintypes.HWND,
+                               wintypes.UINT, wintypes.UINT]
+user32.GetMessageW.restype = wintypes.BOOL
+
+user32.PeekMessageW.argtypes = [ctypes.POINTER(wintypes.MSG), wintypes.HWND,
+                                wintypes.UINT, wintypes.UINT, wintypes.UINT]
+user32.PeekMessageW.restype = wintypes.BOOL
+
+user32.PostThreadMessageW.argtypes = [wintypes.DWORD, wintypes.UINT,
+                                      wintypes.WPARAM, wintypes.LPARAM]
+user32.PostThreadMessageW.restype = wintypes.BOOL
+
 kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
 kernel32.GetModuleHandleW.restype = wintypes.HINSTANCE
+
+kernel32.GetCurrentThreadId.argtypes = []
+kernel32.GetCurrentThreadId.restype = wintypes.DWORD
 
 
 # ============================================================
@@ -155,6 +175,8 @@ is_sending_keys = False
 hook_id = None
 callback_keep_alive = None
 queued_physical_keys = []
+_hook_thread = None
+_hook_thread_id = None
 
 # ============================================================
 # KEYBOARD SIMULATION UTILITIES
@@ -346,36 +368,68 @@ def keyboard_proc(nCode, wParam, lParam):
     return user32.CallNextHookEx(hook_id, nCode, wParam, lParam)
 
 
-def install_hook():
-    """Installs the low-level keyboard hook on the current thread."""
-    global hook_id, callback_keep_alive
+def _hook_thread_main(ready):
+    """Own the low-level keyboard hook and pump the messages that drive it.
+
+    Windows runs a low-level hook's callback on the thread that installed it, and
+    every keystroke in the system waits for that callback. On the UI thread, that
+    wait included whatever the UI happened to be doing, which held up keys on
+    their way to the screen reader. A dedicated thread only ever runs the hook.
+    """
+    global hook_id, callback_keep_alive, _hook_thread_id
+    msg = wintypes.MSG()
     try:
+        _hook_thread_id = kernel32.GetCurrentThreadId()
+        # Create this thread's message queue before anyone can post WM_QUIT to it.
+        user32.PeekMessageW(ctypes.byref(msg), None, 0, 0, PM_NOREMOVE)
         # Keep-alive reference prevents ctypes callback garbage collection crash
         callback_keep_alive = HOOKPROC(keyboard_proc)
-        h_instance = kernel32.GetModuleHandleW(None)
-        
         hook_id = user32.SetWindowsHookExW(
-            WH_KEYBOARD_LL,
-            callback_keep_alive,
-            h_instance,
-            0
-        )
-        if hook_id:
-            logger.info("Quick Expand: Low-level keyboard hook installed successfully.")
-        else:
-            logger.error("Quick Expand: SetWindowsHookExW returned null.")
+            WH_KEYBOARD_LL, callback_keep_alive, kernel32.GetModuleHandleW(None), 0)
     except Exception as e:
         logger.error(f"Quick Expand: Failed to install hook: {e}")
+        hook_id = None
+    finally:
+        ready.set()
+
+    if not hook_id:
+        logger.error(f"Quick Expand: SetWindowsHookExW failed (error {ctypes.get_last_error()}).")
+        callback_keep_alive = None
+        return
+
+    logger.info("Quick Expand: Low-level keyboard hook installed on its own thread.")
+    while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
+        pass  # hook callbacks are dispatched inside GetMessageW
+
+    user32.UnhookWindowsHookEx(hook_id)
+    hook_id = None
+    callback_keep_alive = None
+    logger.info("Quick Expand: Keyboard hook uninstalled.")
+
+
+def install_hook():
+    """Start the keyboard hook thread, but only when there is something to expand,
+    so users without abbreviations never have a system-wide hook running."""
+    global _hook_thread
+    if not EXPANSIONS:
+        return
+    if _hook_thread is not None and _hook_thread.is_alive():
+        return
+    ready = threading.Event()
+    _hook_thread = threading.Thread(target=_hook_thread_main, args=(ready,),
+                                    name="quick-expand-hook", daemon=True)
+    _hook_thread.start()
+    ready.wait(2)
 
 
 def uninstall_hook():
-    """Uninstalls the keyboard hook."""
-    global hook_id, callback_keep_alive
-    if hook_id:
-        user32.UnhookWindowsHookEx(hook_id)
-        hook_id = None
-        callback_keep_alive = None
-        logger.info("Quick Expand: Keyboard hook uninstalled.")
+    """Stop the hook thread; it unhooks itself when its message loop ends."""
+    global _hook_thread
+    thread = _hook_thread
+    if thread is not None and thread.is_alive() and _hook_thread_id:
+        user32.PostThreadMessageW(_hook_thread_id, WM_QUIT, 0, 0)
+        thread.join(2)
+    _hook_thread = None
 
 
 # ============================================================
@@ -386,17 +440,9 @@ class ExpanderSettingsPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
         
-        # Load extensions dictionary
-        self.expansions = core.api.load_data("QuickExpand")
-        if not self.expansions:
-            # Default templates
-            self.expansions = {
-                "my_email": "example@email.com",
-                "thx": "Thank you!",
-                "my_telp": "+6281234567890"
-            }
-            core.api.save_data("QuickExpand", self.expansions)
-            
+        # Load the user's abbreviations (starts empty; no demo entries).
+        self.expansions = dict(core.api.load_data("QuickExpand") or {})
+
         vbox = wx.BoxSizer(wx.VERTICAL)
         
         # Header title
@@ -511,6 +557,11 @@ class ExpanderSettingsPanel(wx.Panel):
         core.api.save_data("QuickExpand", self.expansions)
         global EXPANSIONS
         EXPANSIONS = self.expansions
+        # The hook runs only while at least one abbreviation exists.
+        if EXPANSIONS:
+            install_hook()
+        else:
+            uninstall_hook()
 
 
 # Settings Panel Hook Instances
@@ -546,16 +597,10 @@ def register(bus):
     global EXPANSIONS
     logger.info("Quick Expand: Loading extension...")
     
-    # Load settings from file or initialize
-    EXPANSIONS = core.api.load_data("QuickExpand")
-    if not EXPANSIONS:
-        EXPANSIONS = {
-            "my_email": "example@email.com",
-            "thx": "Thank you!",
-            "my_telp": "+6281234567890"
-        }
-        core.api.save_data("QuickExpand", EXPANSIONS)
-        
+    # Load the user's abbreviations. No demo entries are created: a system-wide
+    # keyboard hook should only run for someone who set up an abbreviation.
+    EXPANSIONS = dict(core.api.load_data("QuickExpand") or {})
+
     # Connect lifecycle events
     bus.subscribe("on_app_startup", on_app_startup)
     bus.subscribe("on_active_window_changed", on_active_window_changed)
