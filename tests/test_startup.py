@@ -17,6 +17,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCE_DIRS = ("core", "ui", "extensions", "tests")
 SKIP_PARTS = ("window_teleporter" + os.sep + "lib",)
@@ -79,6 +81,7 @@ def test_no_name_used_before_its_local_import():
     assert not problems, "\n".join(problems)
 
 
+@pytest.mark.window
 def test_main_window_starts_and_saves_settings(tmp_path):
     env = dict(os.environ, APPDATA=str(tmp_path))
     result = subprocess.run(

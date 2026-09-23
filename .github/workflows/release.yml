@@ -70,6 +70,8 @@ jobs:
       # A failing test stops the release before anything is compiled or
       # published. test_startup.py builds the real main window.
       - name: Run tests
+        env:
+          HARIKU_UI_TESTS: "1"   # include the real-window checks (skipped on dev PCs)
         run: python -m pytest -q
 
       - name: Stamp version into constants.py and file.iss

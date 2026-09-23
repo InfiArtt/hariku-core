@@ -167,3 +167,21 @@ def sample_locale_dir(tmp_path):
         json.dump(id_data, f)
 
     return str(locales)
+
+
+# ---------------------------------------------------------------------------
+# Real-window checks
+# ---------------------------------------------------------------------------
+# These pop up real Hariku windows and dialogs, which steal focus and are
+# announced by the screen reader of whoever is using the computer. They run
+# only when HARIKU_UI_TESTS=1 is set, as the GitHub Actions workflows do.
+# Every tests/test_*_ui.py module counts, plus tests marked @pytest.mark.window.
+
+def pytest_collection_modifyitems(config, items):
+    if os.environ.get("HARIKU_UI_TESTS") == "1":
+        return
+    skip = pytest.mark.skip(reason="opens real windows; set HARIKU_UI_TESTS=1 to run (CI does)")
+    for item in items:
+        module = os.path.basename(str(item.fspath))
+        if "window" in item.keywords or (module.startswith("test_") and module.endswith("_ui.py")):
+            item.add_marker(skip)
