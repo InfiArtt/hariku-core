@@ -11,16 +11,20 @@
 Flight Radar — Hariku V2 extension.
 
 Hear the aircraft flying near your city: the nearest few on a hotkey, a list of
-everything in range, and optional announcements when one passes overhead.
-Aircraft positions come from adsb.fi (adsb.lol when adsb.fi fails), routes from
-adsbdb.com; none need an account or key. The city, radius and units are chosen
-in Preferences, Flight Radar.
+everything in range, optional announcements when one passes overhead or
+reports an emergency, and a shortcut to LiveATC's web page for the nearby
+airport. Aircraft positions come from adsb.fi (adsb.lol when adsb.fi fails),
+routes from adsbdb.com; none need an account or key. The city, radius and
+units are chosen in Preferences, Flight Radar.
 
-  flight_radar_api.py    - aircraft requests, parsing, settings, units, pacing
-  flight_radar_routes.py - best-effort routes (memory only, plausibility check)
-  flight_radar_names.py  - airline and aircraft type names
-  flight_radar_text.py   - spoken/displayed text in the user's language
-  flight_radar_ui.py     - Preferences page and the aircraft list dialog
+  flight_radar_api.py      - aircraft requests, parsing, settings, units, pacing,
+                             emergencies
+  flight_radar_routes.py   - best-effort routes (memory only, plausibility check)
+  flight_radar_names.py    - airline and aircraft type names
+  flight_radar_airports.py - airports near Indonesia (OurAirports data)
+  flight_radar_atc.py      - which airport to listen to, and its LiveATC page
+  flight_radar_text.py     - spoken/displayed text in the user's language
+  flight_radar_ui.py       - Preferences page and the aircraft list dialog
 
 All network calls run on worker threads; results come back via wx.CallAfter.
 At most one aircraft request is in flight, requests are at least 5 seconds
@@ -30,6 +34,7 @@ apart, answers are reused for 15 seconds, and failures back off.
 import logging
 import threading
 import time
+import webbrowser
 
 import wx
 
@@ -38,7 +43,9 @@ import core.hotkeys
 import core.preferences
 from core.speech import speak
 
+import flight_radar_airports as airports
 import flight_radar_api as api
+import flight_radar_atc as atc
 import flight_radar_routes as routes
 import flight_radar_text as text
 import flight_radar_ui
@@ -53,9 +60,12 @@ WEATHER_DATA_KEY = "Weather"
 CACHE_SECONDS = 15          # answer from the last result without fetching
 STALE_MAX_AGE = 120         # oldest result still offered after a failure
 POLL_SECONDS = 30           # overhead alerts
+EMERGENCY_POLL_SECONDS = 60  # emergency watch alone
 FIRST_POLL_SECONDS = 10
 ALERT_COOLDOWN = 600        # an aircraft is announced once per 10 minutes
+EMERGENCY_COOLDOWN = 1800   # an aircraft's emergency is announced once per 30 minutes
 ALERT_SOUND = "info.wav"
+EMERGENCY_SOUND = "error.wav"
 ROUTE_WAIT_SECONDS = 3.0    # longest wait for route lookups before speaking
 
 _bus = None
@@ -66,6 +76,7 @@ _loading = False
 _waiters = []           # callbacks run on the UI thread when the running fetch ends
 _gate = api.RateGate()
 _tracker = api.AlertTracker(ALERT_COOLDOWN)
+_emergency_tracker = api.EmergencyTracker(EMERGENCY_COOLDOWN)
 _routes = routes.RouteLookup()
 _fetch_timer = None     # a fetch waiting for the rate limit
 _poll_timer = None
@@ -97,12 +108,20 @@ def _cancel(timer):
             pass
 
 
-def _play_alert_sound():
+def _play_sound(name):
     try:
         import core.sounds
-        core.sounds.play_internal_sound(ALERT_SOUND)
+        core.sounds.play_internal_sound(name)
     except Exception as e:
-        logger.debug(f"[Flight Radar] Alert sound failed: {e}")
+        logger.debug(f"[Flight Radar] Sound failed: {e}")
+
+
+def _open_url(url):
+    # Only ever LiveATC's own page, in the user's browser, after they asked.
+    try:
+        webbrowser.open(url)
+    except Exception as e:
+        logger.info(f"[Flight Radar] Could not open the browser: {e}")
 
 
 # ------------------------------------------------------------
@@ -159,6 +178,7 @@ def _save_settings(new_settings):
     _settings = new_settings
     if get_location() != old_location:
         _tracker.reset()
+        _emergency_tracker.reset()
     _update_polling()
 
 
@@ -319,14 +339,22 @@ def _speak_after_refresh(error):
         speak(text.error_text(error), interrupt=True)
 
 
+def emergency_intro(aircraft):
+    """The emergencies among `aircraft`, to speak before anything else. They
+    count as heard, so the background watch does not repeat them."""
+    _emergency_tracker.mark(aircraft, _now())
+    return text.emergency_text(aircraft, _settings["units"])
+
+
 def _speak_report(prefix=""):
     aircraft = visible_aircraft()
     settings = get_settings()
+    urgent = emergency_intro(aircraft)
 
     def say():
         report = text.nearby_report(aircraft, settings["radius_km"], settings["units"],
                                     settings["include_ground"], leg_for)
-        speak(f"{prefix} {report}".strip(), interrupt=True)
+        speak(" ".join(p for p in (urgent, prefix, report) if p), interrupt=True)
 
     with_routes(aircraft[:text.NEARBY_COUNT], say)
 
@@ -341,21 +369,68 @@ def show_list():
     dlg = flight_radar_ui.RadarListDialog(
         parent, api.place_label(location), get_settings(), list_data, refresh,
         leg_for, with_routes,
-        refresh_now=not api.is_fresh(current_cache(), CACHE_SECONDS, _now()))
+        refresh_now=not api.is_fresh(current_cache(), CACHE_SECONDS, _now()),
+        listen=listen_for_aircraft, emergency_intro=emergency_intro)
     dlg.ShowModal()
     dlg.Destroy()
 
 
 # ------------------------------------------------------------
-# Overhead alerts
+# Listen to ATC (LiveATC's web page, in the browser)
+# ------------------------------------------------------------
+
+def listen_to_atc():
+    """Open LiveATC for the airport nearest to the chosen city."""
+    location = get_location()
+    if not location:
+        speak(_("no_location"), interrupt=True)
+        return
+    _open_atc(atc.nearest_airport(location["latitude"], location["longitude"]), False)
+
+
+def listen_for_aircraft(plane):
+    """Open LiveATC for the airport an aircraft is most likely talking to
+    (after its route has been looked up), or the one nearest to the city."""
+    if plane is None:
+        listen_to_atc()
+        return
+    airport = atc.airport_for_aircraft(plane, leg_for(plane))
+    if airport is None:
+        location = get_location()
+        airport = location and atc.nearest_airport(location["latitude"], location["longitude"])
+    _open_atc(airport, True)
+
+
+def _open_atc(airport, for_aircraft):
+    url, has_feed = atc.liveatc_url(airport["icao"]) if airport else (None, False)
+    if not url:
+        speak(_("atc_no_airport"), interrupt=True)
+        return
+    name = airports.label(airport)
+    parts = [_("atc_opening_feed", airport=name) if has_feed
+             else _("atc_opening_search", airport=name)]
+    if for_aircraft:
+        parts.append(_("atc_whole_frequency"))
+    speak(" ".join(parts), interrupt=True)
+    _start_thread(_open_url, url)
+
+
+# ------------------------------------------------------------
+# Background polling: overhead alerts and the emergency watch share it
 # ------------------------------------------------------------
 
 def _polling_wanted():
-    return _active and _settings["alerts"] and get_location() is not None
+    return (_active and (_settings["alerts"] or _settings["emergency_watch"])
+            and get_location() is not None)
+
+
+def _poll_interval():
+    return POLL_SECONDS if _settings["alerts"] else EMERGENCY_POLL_SECONDS
 
 
 def _update_polling(first_delay=FIRST_POLL_SECONDS):
-    """Start polling when alerts are on, stop it when they are off."""
+    """Start polling when alerts or the emergency watch are on, stop it when
+    both are off."""
     global _poll_timer
     if not _polling_wanted():
         _cancel(_poll_timer)
@@ -377,8 +452,9 @@ def _poll():
     if not _polling_wanted():
         return
     if api.is_fresh(current_cache(), CACHE_SECONDS, _now()):
+        _check_emergencies()
         _check_alerts()
-        _schedule_poll(POLL_SECONDS)
+        _schedule_poll(_poll_interval())
         return
     _poll_running = True
     if not refresh(_after_poll):
@@ -391,13 +467,25 @@ def _after_poll(error):
     if not _polling_wanted():
         return
     if error is None:
+        _check_emergencies()
         _check_alerts()
-    _schedule_poll(POLL_SECONDS if error is None else _gate.backoff(POLL_SECONDS))
+    interval = _poll_interval()
+    _schedule_poll(interval if error is None else _gate.backoff(interval))
+
+
+def _check_emergencies():
+    """Announce emergencies not heard in the last 30 minutes, first."""
+    if not current_cache():
+        return
+    new = _emergency_tracker.check(visible_aircraft(), _now())
+    if new:
+        _play_sound(EMERGENCY_SOUND)
+        speak(text.emergency_text(new, _settings["units"]))
 
 
 def _check_alerts():
     cache = current_cache()
-    if not cache:
+    if not cache or not _settings["alerts"]:
         return
     new = _tracker.check(cache["aircraft"], _settings["alert_km"], _now())
     if not new:
@@ -407,7 +495,7 @@ def _check_alerts():
     def announce():
         if not _settings["alerts"]:
             return
-        _play_alert_sound()
+        _play_sound(ALERT_SOUND)
         speak(text.alert_text(new, units, leg_for))
 
     with_routes(new, announce)
@@ -462,7 +550,7 @@ def _apply_panel():
 
 def register(bus):
     global _bus, _active, _settings, _cache, _loading, _gate, _tracker, _routes
-    global _fetch_timer, _poll_timer, _poll_running
+    global _fetch_timer, _poll_timer, _poll_running, _emergency_tracker
     _bus = bus
     _active = True
     _cache = None
@@ -471,6 +559,7 @@ def register(bus):
     _poll_running = False
     _gate = api.RateGate()
     _tracker = api.AlertTracker(ALERT_COOLDOWN)
+    _emergency_tracker = api.EmergencyTracker(EMERGENCY_COOLDOWN)
     _routes = routes.RouteLookup()
     _settings = api.normalize_settings(core.api.load_data(DATA_KEY))
 
@@ -483,6 +572,10 @@ def register(bus):
                                  ord("P"), False, speak_nearby)
     core.hotkeys.register_action(EXT_NAME, "show_list", _("action_list"),
                                  ord("P"), False, show_list, default_shift=True)
+    # Shift+L ("listen"): also free everywhere. Shifted, like Shift+P, because
+    # it opens a window (the browser).
+    core.hotkeys.register_action(EXT_NAME, "listen_atc", _("action_listen_atc"),
+                                 ord("L"), False, listen_to_atc, default_shift=True)
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
     _update_polling()
     logger.info("Flight Radar extension loaded.")

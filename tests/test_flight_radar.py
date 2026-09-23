@@ -9,8 +9,9 @@
 
 # Tests for the Flight Radar extension: adsb.fi / adsb.lol parsing and fallback,
 # units, names, sentences in both languages, request pacing, overhead alerts,
-# adsbdb routes and the actions. No test touches the network: the fetch
-# functions are replaced. All aircraft samples are synthetic.
+# emergencies, adsbdb routes, the airport table, Listen to ATC and the actions.
+# No test touches the network or opens a browser: the fetch functions and the
+# browser call are replaced. All aircraft samples are synthetic.
 
 import importlib.util
 import json
@@ -69,11 +70,14 @@ ROUTE_JSON = {"response": {"flightroute": {
 def _import_helpers():
     if FR_DIR not in sys.path:
         sys.path.insert(0, FR_DIR)
+    import flight_radar_airports
     import flight_radar_api
+    import flight_radar_atc
     import flight_radar_names
     import flight_radar_routes
     import flight_radar_text
-    return flight_radar_api, flight_radar_text, flight_radar_names, flight_radar_routes
+    return (flight_radar_api, flight_radar_text, flight_radar_names, flight_radar_routes,
+            flight_radar_airports, flight_radar_atc)
 
 
 @pytest.fixture(scope="module")
@@ -94,6 +98,16 @@ def names():
 @pytest.fixture(scope="module")
 def routes():
     return _import_helpers()[3]
+
+
+@pytest.fixture(scope="module")
+def airports():
+    return _import_helpers()[4]
+
+
+@pytest.fixture(scope="module")
+def atc():
+    return _import_helpers()[5]
 
 
 @pytest.fixture
@@ -490,11 +504,102 @@ def test_sentence_skips_missing_values(text, lang, api):
     assert text.aircraft_sentence(plane, "metric") == "Unidentified aircraft, 1.9 kilometres."
 
 
-def test_emergency_is_mentioned(text, lang, api):
+@pytest.mark.parametrize("squawk, status, emergency", [
+    ("7700", "none", True), ("7600", "", True), ("7500", "none", True),
+    ("2345", "general", True), ("2345", "minfuel", True), ("2345", "nordo", True),
+    ("2345", "unlawful", True), ("2345", "downed", True),
+    ("2345", "lifeguard", False), ("2345", "reserved", False), ("2345", "none", False),
+    ("7000", "none", False), ("", "", False),
+])
+def test_what_counts_as_an_emergency(api, squawk, status, emergency):
+    plane = api.normalize_aircraft(_plane(squawk=squawk or None, emergency=status or None))
+    assert api.is_emergency(plane) is emergency
+    assert (api.emergencies([plane]) == [plane]) is emergency
+
+
+def test_emergency_rows_are_marked(text, lang, api):
     plane = api.normalize_aircraft(_plane(squawk="7700"))
-    assert text.aircraft_sentence(plane, "metric").endswith("descending, emergency.")
-    plane = api.normalize_aircraft(_plane(emergency="general"))
-    assert "Emergency reported." in text.details_text(plane, "metric")
+    assert text.aircraft_sentence(plane, "metric") == (
+        "Emergency: Garuda Indonesia 155, Boeing 737-800, 12 kilometres northeast, "
+        "3,000 metres, descending.")
+    lifeguard = api.normalize_aircraft(_plane(emergency="lifeguard"))
+    assert text.aircraft_sentence(lifeguard, "metric").startswith("Garuda Indonesia 155")
+    lang("id")
+    assert text.aircraft_sentence(plane, "metric").startswith("Darurat: Garuda Indonesia 155,")
+
+
+def test_emergency_text(text, lang, api):
+    plane = api.normalize_aircraft(_plane(squawk="7700", dst=10.8, dir=270.0))
+    assert text.emergency_text([plane], "metric") == (
+        "Attention: Garuda Indonesia 155 is squawking 7 7 0 0, general emergency, "
+        "20 kilometres west.")
+    hijack = api.normalize_aircraft(_plane(squawk="7500"))
+    assert text.emergency_text([hijack], "metric") == (
+        "Attention: Garuda Indonesia 155 is squawking 7 5 0 0, unlawful interference "
+        "(hijack code), 12 kilometres northeast.")
+    fuel = api.normalize_aircraft(_plane(emergency="minfuel", alt_baro="ground"))
+    assert text.emergency_text([fuel], "metric") == (
+        "Attention: Garuda Indonesia 155 reports low fuel, 12 kilometres northeast, "
+        "on the ground.")
+    both = api.normalize_aircraft(_plane(squawk="7600", emergency="minfuel"))
+    assert "is squawking 7 6 0 0, radio failure (lost communications), and reports low fuel," \
+        in text.emergency_text([both], "metric")
+    same = api.normalize_aircraft(_plane(squawk="7700", emergency="general"))
+    assert "reports" not in text.emergency_text([same], "metric")
+    normal = api.normalize_aircraft(_plane(emergency="lifeguard"))
+    assert text.emergency_text([normal], "metric") == ""
+    assert text.emergency_text([plane, hijack], "metric").count("Attention:") == 2
+    lang("id")
+    assert text.emergency_text([plane], "metric") == (
+        "Perhatian: Garuda Indonesia 155 memancarkan kode squawk 7 7 0 0, keadaan darurat umum, "
+        "20 kilometer di sebelah barat.")
+    assert "melaporkan bahan bakar menipis" in text.emergency_text([fuel], "metric")
+
+
+@pytest.mark.parametrize("code, en, id_", [
+    ("7700", "general emergency", "keadaan darurat umum"),
+    ("7600", "radio failure (lost communications)", "gangguan radio (komunikasi terputus)"),
+    ("7500", "unlawful interference (hijack code)", "gangguan melawan hukum (kode pembajakan)"),
+    ("2000", "no code assigned yet (usually when entering controlled airspace)",
+     "belum diberi kode (biasanya saat memasuki wilayah udara terkendali)"),
+    ("7000", "visual flight, no code assigned (used in many countries)",
+     "penerbangan visual tanpa kode khusus (dipakai di banyak negara)"),
+    ("1200", "visual flight, no code assigned (used in the US and Canada)",
+     "penerbangan visual tanpa kode khusus (dipakai di Amerika Serikat dan Kanada)"),
+    ("4521", "a code assigned by air traffic control to identify this flight",
+     "kode dari pengatur lalu lintas udara untuk mengenali penerbangan ini"),
+])
+def test_squawk_meanings(text, lang, code, en, id_):
+    assert text.squawk_meaning(code) == en
+    lang("id")
+    assert text.squawk_meaning(code) == id_
+
+
+@pytest.mark.parametrize("status, en", [
+    ("general", "general emergency"), ("lifeguard", "medical or priority flight"),
+    ("minfuel", "low fuel"), ("nordo", "radio failure"), ("downed", "aircraft down"),
+    ("unlawful", "unlawful interference"), ("reserved", None), ("", None), (None, None),
+])
+def test_status_meanings(text, lang, status, en):
+    assert text.status_meaning(status) == en
+    if en:
+        lang("id")
+        assert text.status_meaning(status) not in (None, en)
+
+
+def test_details_explain_the_squawk_and_status(text, lang, api):
+    plane = api.normalize_aircraft(_plane(squawk="7000", emergency="lifeguard"))
+    details = text.details_text(plane, "metric")
+    assert ("Squawk 7 0 0 0, visual flight, no code assigned (used in many countries). "
+            "Reported status: medical or priority flight.") in details
+    plane = api.normalize_aircraft(_plane(squawk="7700", emergency="general"))
+    details = text.details_text(plane, "metric")
+    assert "Squawk 7 7 0 0, general emergency." in details and "Reported status" not in details
+    plane = api.normalize_aircraft(_plane(squawk="2000", emergency="minfuel"))
+    assert "Reported status: low fuel." in text.details_text(plane, "metric")
+    plane = api.normalize_aircraft(_plane(squawk=None, emergency="reserved"))
+    details = text.details_text(plane, "metric")
+    assert "Squawk" not in details and "status" not in details
 
 
 def test_nearby_report(text, lang, api, planes):
@@ -530,7 +635,8 @@ def test_details_text(text, lang, planes):
     assert text.details_text(gia, "metric") == (
         "Garuda Indonesia 155. Registration P K Q Q A. Type Boeing 737-800. "
         "Speed 460 kilometres per hour. Heading northwest. Descending 250 metres per minute. "
-        "Squawk 2 3 4 5.")
+        "Squawk 2 3 4 5, a code assigned by air traffic control to identify this flight. "
+        "Listen to ATC opens Jakarta Soekarno-Hatta.")
     assert "Speed 250 knots." in text.details_text(gia, "aviation")
     assert "Descending 800 feet per minute." in text.details_text(gia, "aviation")
     leg = {"origin": BATAM, "destination": CGK}
@@ -540,7 +646,8 @@ def test_details_text(text, lang, planes):
     assert text.details_text(gia, "metric") == (
         "Garuda Indonesia 155. Registrasi P K Q Q A. Tipe Boeing 737-800. "
         "Kecepatan 460 kilometer per jam. Menuju arah barat laut. Turun 250 meter per menit. "
-        "Squawk 2 3 4 5.")
+        "Squawk 2 3 4 5, kode dari pengatur lalu lintas udara untuk mengenali penerbangan ini. "
+        "Dengarkan ATC akan membuka Jakarta Soekarno-Hatta.")
 
 
 def test_details_with_nothing_known(text, lang, api):
@@ -619,23 +726,44 @@ def test_alert_tracker(api, planes):
     assert len(tracker.check(planes, 20, now=602)) == 3
 
 
+def test_emergency_tracker(api):
+    mayday = api.normalize_aircraft(_plane(squawk="7700"))
+    quiet = api.normalize_aircraft(_plane(hex="abc009", squawk="2345"))
+    tracker = api.EmergencyTracker(cooldown=1800)
+    assert tracker.check([quiet, mayday], now=0) == [mayday]
+    assert tracker.check([quiet, mayday], now=60) == []          # once
+    assert tracker.check([mayday], now=1799) == []
+    assert tracker.check([mayday], now=1800) == [mayday]         # 30 minutes later
+    # A different emergency on the same aircraft is new.
+    radio = dict(mayday, squawk="7600")
+    assert tracker.check([radio], now=1801) == [radio]
+    # Emergencies the user already heard are not repeated.
+    fuel = api.normalize_aircraft(_plane(hex="abc010", emergency="minfuel"))
+    tracker.mark([fuel, quiet], now=1802)
+    assert tracker.check([fuel], now=1803) == []
+    tracker.reset()
+    assert tracker.check([fuel], now=1804) == [fuel]
+
+
 @pytest.mark.parametrize("raw", [
     None, "garbage", [], {}, {"location": "Jakarta"}, {"radius_km": 7}, {"radius_km": True},
     {"units": "imperial"}, {"include_ground": "yes"}, {"alerts": 1}, {"alert_km": 4},
-    {"location": {"name": "X", "latitude": 95, "longitude": 1}},
+    {"location": {"name": "X", "latitude": 95, "longitude": 1}}, {"emergency_watch": "on"},
 ])
 def test_settings_survive_corrupt_data(api, raw):
     assert api.normalize_settings(raw) == {"location": None, "radius_km": 25, "units": "metric",
                                            "include_ground": False, "alerts": False,
-                                           "alert_km": 5}
+                                           "alert_km": 5, "emergency_watch": False}
 
 
 def test_settings_keep_valid_values(api):
     raw = {"location": dict(JAKARTA, timezone="Asia/Jakarta"), "radius_km": 50,
-           "units": "aviation", "include_ground": True, "alerts": True, "alert_km": 2, "x": 1}
+           "units": "aviation", "include_ground": True, "alerts": True, "alert_km": 2,
+           "emergency_watch": True, "x": 1}
     assert api.normalize_settings(raw) == {"location": JAKARTA, "radius_km": 50,
                                            "units": "aviation", "include_ground": True,
-                                           "alerts": True, "alert_km": 2}
+                                           "alerts": True, "alert_km": 2,
+                                           "emergency_watch": True}
 
 
 # ------------------------------------------------------------
@@ -783,6 +911,81 @@ def test_fetch_route_uses_a_short_timeout(routes, api, monkeypatch):
 
 
 # ------------------------------------------------------------
+# Airports and Listen to ATC
+# ------------------------------------------------------------
+
+def test_airport_table(airports):
+    codes = [row[0] for row in airports.AIRPORTS]
+    assert len(codes) == len(set(codes)) >= 100
+    assert all(len(c) == 4 and c.isalnum() and c.isupper() for c in codes)
+    indonesian = [c for c in codes if c.startswith("WA") or c.startswith("WI")]
+    assert len(indonesian) >= 70
+    for code in ("WIII", "WARR", "WADD", "WIMM", "WAAA", "WSSS", "WMKK", "VTBS", "RPLL",
+                 "YPPH", "YPDN"):
+        assert code in codes, code
+    for icao, city, name, lat, lon in airports.AIRPORTS:
+        assert name and -40 < lat < 20 and 90 < lon < 150, icao
+
+
+def test_airport_names(airports):
+    assert airports.label(airports.by_icao("WIII")) == "Jakarta Soekarno-Hatta"
+    assert airports.label(airports.by_icao("wsss")) == "Singapore Changi"
+    assert airports.label(airports.by_icao("WARR")) == "Surabaya Juanda"
+    assert airports.label(airports.by_icao("YPDN")) == "Darwin"
+    assert airports.by_icao("ZZZZ") is None
+    assert airports.short_name("Soekarno-Hatta International Airport") == "Soekarno-Hatta"
+    assert airports.short_name("Juwata International Airport / Suharnoko Harbani AFB") == "Juwata"
+    assert airports.label({"city": "Batam", "name": ""}) == "Batam"
+
+
+def test_nearest_airport(airports):
+    near = airports.nearest(-6.9, 107.6)
+    assert near["icao"] == "WICC" and near["distance_km"] < 10
+    assert airports.nearest(48.85, 2.35, max_km=500) is None        # Paris
+    assert airports.nearest(-6.2, 106.85, among={"WARR"})["icao"] == "WARR"
+
+
+def test_liveatc_urls(atc):
+    assert atc.liveatc_url("WIII") == ("https://www.liveatc.net/hlisten.php?mount=wiii", True)
+    assert atc.liveatc_url("warr") == ("https://www.liveatc.net/hlisten.php?mount=warr", True)
+    assert atc.liveatc_url("WICC") == ("https://www.liveatc.net/search/?icao=WICC", False)
+    assert atc.liveatc_url("") == (None, False)
+    assert atc.liveatc_url("WI I/") == (None, False)
+
+
+def test_nearest_prefers_a_known_feed(atc):
+    # Central Jakarta: Halim is nearer, but Soekarno-Hatta has a LiveATC feed.
+    assert atc.nearest_airport(-6.2, 106.85)["icao"] == "WIII"
+    assert atc.nearest_airport(-6.9, 107.6)["icao"] == "WICC"      # Bandung: no feed nearby
+    assert atc.nearest_airport(-7.3, 112.7)["icao"] == "WARR"
+    assert atc.nearest_airport(48.85, 2.35) is None
+    assert atc.nearest_airport(None, None) is None
+
+
+def _atc_plane(api, rate, lat=-3.0, lon=105.5):
+    return api.normalize_aircraft(_plane(baro_rate=rate, lat=lat, lon=lon))
+
+
+def test_atc_airport_for_aircraft(atc, api):
+    leg = {"origin": BATAM, "destination": CGK}
+    assert atc.airport_for_aircraft(_atc_plane(api, -1200), leg)["icao"] == "WIII"   # descending
+    assert atc.airport_for_aircraft(_atc_plane(api, 1500), leg)["icao"] == "WIDD"    # climbing
+    # Level (or unknown rate): the nearer end of the route.
+    assert atc.airport_for_aircraft(_atc_plane(api, 0, lat=0.0, lon=104.5), leg)["icao"] == "WIDD"
+    assert atc.airport_for_aircraft(_atc_plane(api, None, lat=-5.5, lon=106.3), leg)["icao"] == "WIII"
+    # No plausible route: the airport nearest to the aircraft.
+    assert atc.airport_for_aircraft(_atc_plane(api, -1200, lat=-6.95, lon=107.55))["icao"] == "WICC"
+    # A route end without an ICAO code falls back to the other end or the nearest airport.
+    no_code = {"origin": dict(BATAM, icao_code=""), "destination": CGK}
+    assert atc.airport_for_aircraft(_atc_plane(api, 1500), no_code)["icao"] == "WIII"
+    # An airport Hariku does not list keeps adsbdb's name.
+    far = {"municipality": "Tokyo", "name": "Tokyo Haneda International Airport",
+           "icao_code": "RJTT", "latitude": 35.55, "longitude": 139.78}
+    airport = atc.airport_for_aircraft(_atc_plane(api, -1500), {"origin": CGK, "destination": far})
+    assert airport["icao"] == "RJTT" and airport["name"] == "Tokyo Haneda"
+
+
+# ------------------------------------------------------------
 # Actions (main.py)
 # ------------------------------------------------------------
 
@@ -818,10 +1021,13 @@ def frmain(monkeypatch, tmp_data_dir, api, text, routes):
         return timers[-1]
 
     monkeypatch.setattr(module, "_call_later", call_later)
-    monkeypatch.setattr(module, "_play_alert_sound", lambda: sounds.append(module.ALERT_SOUND))
+    monkeypatch.setattr(module, "_play_sound", sounds.append)
+    opened = []
+    monkeypatch.setattr(module, "_open_url", opened.append)
     module._routes = routes.RouteLookup(fetch=lambda cs: None, clock=clock, sleep=clock.sleep)
     module._active = True
     module.spoken, module.timers, module.clock, module.sounds = spoken, timers, clock, sounds
+    module.opened = opened
     yield module
     module._active = False
 
@@ -1079,14 +1285,157 @@ def test_polling_backs_off_and_stops(frmain, api, lang, monkeypatch):
     assert _poll_timers(frmain) == []
 
 
+EMERGENCY_PLANE = _plane(hex="abc007", flight="XQZ777", r="PK-QQG", squawk="7700", dst=10.8,
+                         dir=270.0, lat=-6.2, lon=106.6)
+EMERGENCY_JSON = {"aircraft": PLANES[:4] + [EMERGENCY_PLANE]}
+MAYDAY = ("Attention: X Q Z 777 is squawking 7 7 0 0, general emergency, "
+          "20 kilometres west.")
+
+
+def test_nearby_speaks_emergencies_first(frmain, api, lang, monkeypatch):
+    _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    _set(frmain, api)
+    frmain.speak_nearby()
+    said = frmain.spoken[-1]
+    assert said.startswith(MAYDAY + " Citilink 991, Airbus A320"), said
+    assert said.endswith("And 1 more within 25 kilometres.")
+    # The emergency watch does not repeat what the user has just heard.
+    _set(frmain, api, emergency_watch=True)
+    frmain._update_polling()
+    _poll_timers(frmain)[0].fire()
+    assert len(frmain.spoken) == 2 and frmain.sounds == []
+    assert _poll_timers(frmain)[0].seconds == frmain.EMERGENCY_POLL_SECONDS
+    lang("id")
+    frmain.speak_nearby()
+    assert frmain.spoken[-1].startswith("Perhatian: X Q Z 777 memancarkan kode squawk 7 7 0 0")
+
+
+def test_emergency_watch_announces_in_the_background(frmain, api, lang, monkeypatch):
+    calls = _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    _set(frmain, api)
+    frmain._update_polling()
+    assert _poll_timers(frmain) == []                    # off by default
+    _set(frmain, api, emergency_watch=True)
+    frmain._update_polling()
+    [timer] = _poll_timers(frmain)
+    assert timer.seconds == frmain.FIRST_POLL_SECONDS
+    timer.fire()
+    assert len(calls) == 1 and frmain.spoken == [MAYDAY] and frmain.sounds == ["error.wav"]
+    # Overhead alerts are off: CTV991 at 4.5 km is not announced.
+    [timer] = _poll_timers(frmain)
+    assert timer.seconds == frmain.EMERGENCY_POLL_SECONDS
+    for _ in range(3):
+        frmain.clock.now += frmain.EMERGENCY_POLL_SECONDS
+        _poll_timers(frmain)[0].fire()
+    assert len(calls) == 4 and frmain.spoken == [MAYDAY]  # once per 30 minutes
+    # A new emergency code on the same aircraft is announced straight away.
+    radio = {"aircraft": PLANES[:4] + [dict(EMERGENCY_PLANE, squawk="7600")]}
+    _fake_sources(monkeypatch, api, fi=radio)
+    frmain.clock.now += frmain.EMERGENCY_POLL_SECONDS
+    _poll_timers(frmain)[0].fire()
+    assert frmain.spoken[-1].startswith("Attention: X Q Z 777 is squawking 7 6 0 0, radio failure")
+    # And the first one again after 30 minutes.
+    _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    frmain.clock.now += frmain.EMERGENCY_COOLDOWN
+    _poll_timers(frmain)[0].fire()
+    assert frmain.spoken[-1] == MAYDAY and len(frmain.spoken) == 3
+    # Watch off: polling stops.
+    frmain._save_settings(dict(frmain._settings, emergency_watch=False))
+    assert _poll_timers(frmain) == []
+
+
+def test_alerts_and_the_watch_share_one_poll(frmain, api, lang, monkeypatch):
+    calls = _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    _set(frmain, api, alerts=True, emergency_watch=True)
+    frmain._update_polling()
+    frmain._update_polling()
+    [timer] = _poll_timers(frmain)
+    timer.fire()
+    assert len(calls) == 1
+    # The emergency first, then the overhead alert.
+    assert frmain.spoken == [MAYDAY, "Overhead: Citilink 991, Airbus A320, 4.5 kilometres south, "
+                                     "1,500 metres, climbing."]
+    assert frmain.sounds == ["error.wav", "info.wav"]
+    [timer] = _poll_timers(frmain)
+    assert timer.seconds == frmain.POLL_SECONDS
+    # Turning the watch off keeps the overhead alerts polling.
+    frmain._save_settings(dict(frmain._settings, emergency_watch=False))
+    assert len(_poll_timers(frmain)) == 1
+
+
+def test_overhead_polling_also_reports_emergencies(frmain, api, lang, monkeypatch):
+    _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    _set(frmain, api, alerts=True)
+    frmain._update_polling()
+    _poll_timers(frmain)[0].fire()
+    assert frmain.spoken[0] == MAYDAY and frmain.sounds[0] == "error.wav"
+
+
+def test_list_emergency_intro_marks_them_heard(frmain, api, lang, monkeypatch):
+    _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    _set(frmain, api)
+    assert frmain.refresh()
+    aircraft, cache = frmain.list_data()
+    assert frmain.emergency_intro(aircraft) == MAYDAY
+    assert frmain._emergency_tracker.check(aircraft, frmain.clock()) == []
+    assert frmain.emergency_intro(aircraft[:3]) == ""
+
+
+def test_listen_to_atc_opens_liveatc_only(frmain, api, lang):
+    _set(frmain, api, location=None)
+    frmain.listen_to_atc()
+    assert frmain.spoken == ["No flight radar location is set. Choose your city in "
+                             "Preferences, Flight Radar."] and frmain.opened == []
+    _set(frmain, api)
+    frmain.listen_to_atc()
+    assert frmain.spoken[-1] == "Opening LiveATC for Jakarta Soekarno-Hatta in your browser."
+    assert frmain.opened == ["https://www.liveatc.net/hlisten.php?mount=wiii"]
+    _set(frmain, api, location=dict(JAKARTA, name="Bandung", latitude=-6.9, longitude=107.6))
+    frmain.listen_to_atc()
+    assert frmain.spoken[-1] == ("Opening LiveATC's page for Bandung Husein Sastranegara in your "
+                                 "browser. It shows whether a live feed exists.")
+    assert frmain.opened[-1] == "https://www.liveatc.net/search/?icao=WICC"
+    _set(frmain, api, location=dict(JAKARTA, name="Paris", latitude=48.85, longitude=2.35))
+    frmain.listen_to_atc()
+    assert frmain.spoken[-1] == "Hariku does not know an airport near here to listen to."
+    assert len(frmain.opened) == 2
+    lang("id")
+    _set(frmain, api)
+    frmain.listen_to_atc()
+    assert frmain.spoken[-1] == "Membuka LiveATC untuk Jakarta Soekarno-Hatta di peramban Anda."
+
+
+def test_listen_for_an_aircraft(frmain, api, routes, lang, monkeypatch):
+    _fake_sources(monkeypatch, api, fi=ADSBFI_JSON)
+    frmain._routes = routes.RouteLookup(fetch=lambda cs: routes.parse_route(ROUTE_JSON),
+                                        clock=frmain.clock, sleep=frmain.clock.sleep)
+    _set(frmain, api)
+    frmain.speak_nearby()          # looks up GIA155's route (Batam to Jakarta)
+    gia = _by_callsign(frmain.visible_aircraft(), "GIA155")
+    frmain.listen_for_aircraft(gia)
+    assert frmain.spoken[-1] == ("Opening LiveATC for Jakarta Soekarno-Hatta in your browser. "
+                                 "You'll hear the whole frequency, not just this aircraft.")
+    assert frmain.opened == ["https://www.liveatc.net/hlisten.php?mount=wiii"]
+    # No route: the airport nearest to the aircraft.
+    bandung = api.normalize_aircraft(_plane(hex="abc011", flight="", lat=-6.95, lon=107.55))
+    frmain.listen_for_aircraft(bandung)
+    assert frmain.opened[-1] == "https://www.liveatc.net/search/?icao=WICC"
+    assert "Bandung Husein Sastranegara" in frmain.spoken[-1]
+    # No aircraft selected: the airport nearest to the city.
+    frmain.listen_for_aircraft(None)
+    assert frmain.spoken[-1] == "Opening LiveATC for Jakarta Soekarno-Hatta in your browser."
+
+
 def test_changing_settings_saves_them(frmain, api, monkeypatch):
     import core.api
     _set(frmain, api, location=None)
     frmain._save_settings({"location": JAKARTA, "radius_km": 50, "units": "aviation",
-                           "include_ground": True, "alerts": True, "alert_km": 3})
+                           "include_ground": True, "alerts": True, "alert_km": 3,
+                           "emergency_watch": True})
     saved = core.api.load_data(frmain.DATA_KEY)
     assert saved["location"]["name"] == "Jakarta" and saved["radius_km"] == 50
     assert saved["units"] == "aviation" and saved["alerts"] is True and saved["alert_km"] == 3
+    assert saved["emergency_watch"] is True
     assert frmain.query_radius_nm() == 27
     assert len(_poll_timers(frmain)) == 1
 
@@ -1114,6 +1463,10 @@ def test_register_and_teardown(frmain, fresh_event_bus, monkeypatch, tmp_data_di
     list_args, list_kwargs = by_name["show_list"]
     assert list_args[0] == "Flight Radar" and list_args[3] == ord("P")
     assert list_kwargs == {"default_shift": True}
+    atc_args, atc_kwargs = by_name["listen_atc"]
+    assert atc_args[0] == "Flight Radar" and atc_args[3] == ord("L") and atc_args[4] is False
+    assert atc_kwargs == {"default_shift": True}
+    assert len(actions) == 3
     assert len(panels) == 1 and panels[0][0] == "Flight Radar"
 
     frmain._settings = dict(frmain._settings, location=JAKARTA, alerts=True)

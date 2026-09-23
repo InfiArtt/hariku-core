@@ -13,7 +13,8 @@ run its hotkey actions, and browse every list and choice the way arrow keys
 do, checking focus stays put.
 
 adsb.fi, adsbdb and Open-Meteo are stubbed (nothing leaves the machine), speech
-is captured through on_before_speak and sounds are recorded instead of played.
+is captured through on_before_speak, sounds are recorded instead of played, and
+the browser is never opened: the LiveATC addresses are recorded instead.
 
 Run by tests/test_flight_radar_ui.py in a separate process, because
 conftest.py mocks wx inside the pytest process. The caller points APPDATA at a
@@ -52,6 +53,12 @@ def _blocked_urlopen(*args, **kwargs):
 
 
 urllib.request.urlopen = _blocked_urlopen
+
+# Listen to ATC only records the address it would open.
+import webbrowser
+
+opened_urls = []
+webbrowser.open = lambda url, *args, **kwargs: opened_urls.append(url) or True
 
 # Exceptions in wx event handlers are printed, not raised; collect them.
 problems = []
@@ -108,8 +115,10 @@ print("OK main_window")
 P = ord("P")
 PLAIN_P = (P, False, False, False, False)
 SHIFT_P = (P, False, True, False, False)
+SHIFT_L = (ord("L"), False, True, False, False)
 assert PLAIN_P not in core.hotkeys.keybindings, "P is already bound by the core"
 assert SHIFT_P not in core.hotkeys.keybindings, "Shift+P is already bound by the core"
+assert SHIFT_L not in core.hotkeys.keybindings, "Shift+L is already bound by the core"
 
 # Replace the network helper before the extension imports its modules.
 FR_DIR = os.path.join(ROOT, "extensions", "flight_radar")
@@ -133,7 +142,9 @@ AIRCRAFT = {"aircraft": [
            desc="DIAMOND DA-62"),
     _plane("abc004", "BTK6339", "PK-QQD", "B739", 9.72, 95.0, -6.229, 107.008, 7000, -1200),
     _plane("abc005", "AWQ531", "PK-QQE", "A20N", 10.8, 270.0, -6.2146, 106.65, "ground", None),
-], "now": 1790000000000, "resultCount": 5, "ptime": 2}
+    _plane("abc006", "XQZ777", "PK-QQF", "B738", 10.8, 265.0, -6.23, 106.665, 3000, -900,
+           squawk="7700"),
+], "now": 1790000000000, "resultCount": 6, "ptime": 2}
 PLACES = {"results": [
     {"name": "Jakarta", "admin1": "Jakarta", "country": "Indonesia",
      "latitude": -6.21462, "longitude": 106.84513, "timezone": "Asia/Jakarta"},
@@ -142,17 +153,17 @@ PLACES = {"results": [
 ]}
 
 
-def _airport(town, lat, lon):
-    return {"municipality": town, "name": f"{town} Airport", "iata_code": "", "icao_code": "",
+def _airport(town, icao, lat, lon):
+    return {"municipality": town, "name": f"{town} Airport", "iata_code": "", "icao_code": icao,
             "latitude": lat, "longitude": lon, "country_name": "Indonesia"}
 
 
-JAKARTA_AIRPORT = _airport("Jakarta", -6.1256, 106.6559)
+JAKARTA_AIRPORT = _airport("Jakarta", "WIII", -6.1256, 106.6559)
 ROUTES = {
-    "GIA155": {"response": {"flightroute": {"origin": _airport("Batam", 1.121, 104.119),
+    "GIA155": {"response": {"flightroute": {"origin": _airport("Batam", "WIDD", 1.121, 104.119),
                                             "destination": JAKARTA_AIRPORT}}},
-    "BTK6339": {"response": {"flightroute": {"origin": _airport("Semarang", -6.9727, 110.3752),
-                                             "destination": JAKARTA_AIRPORT}}},
+    "BTK6339": {"response": {"flightroute": {
+        "origin": _airport("Semarang", "WAHS", -6.9727, 110.3752), "destination": JAKARTA_AIRPORT}}},
 }
 stub_requests = []
 
@@ -182,6 +193,7 @@ fr_text = sys.modules["flight_radar_text"]
 assert sys.modules["flight_radar_api"] is flight_radar_api
 assert core.hotkeys.keybindings[PLAIN_P][0] == "Flight Radar.speak_nearby"
 assert core.hotkeys.keybindings[SHIFT_P][0] == "Flight Radar.show_list"
+assert core.hotkeys.keybindings[SHIFT_L][0] == "Flight Radar.listen_atc"
 # Shorter pacing so the check runs quickly; the rules themselves are unit-tested.
 main._gate.min_gap = 0.3
 main._routes.min_gap = 0.05
@@ -270,6 +282,10 @@ def said(prefix):
     return any(s.startswith(prefix) for s in spoken)
 
 
+MAYDAY = "Attention: X Q Z 777 is squawking 7 7 0 0, general emergency, 20 kilometres west."
+JAKARTA_FEED = "https://www.liveatc.net/hlisten.php?mount=wiii"
+
+
 _ = fr_text._
 NO_LOCATION = _("no_location")
 
@@ -305,6 +321,10 @@ assert not panel.chk_alerts.GetValue() and not panel.chk_ground.GetValue()
 labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
 assert "Aircraft data: adsb.fi and adsb.lol" in labels, labels
 assert "Flight routes: adsbdb.com (route data by David Taylor and Jim Mason)" in labels, labels
+assert any(label.startswith("Listen to ATC opens LiveATC's website in your browser")
+           and "differ by country" in label for label in labels), labels
+assert panel.chk_emergency.GetLabel() == "Watch for emergencies in the background"
+assert not panel.chk_emergency.GetValue()
 
 panel.txt_search.SetValue("J")
 fire(panel.txt_search, wx.EVT_TEXT_ENTER)
@@ -322,7 +342,7 @@ if search_focused:
 checked = browse(panel.list_results, wx.EVT_LISTBOX)
 for choice in (panel.choice_radius, panel.choice_units, panel.choice_alert):
     checked = browse(choice, wx.EVT_CHOICE) and checked
-for checkbox in (panel.chk_ground, panel.chk_alerts):
+for checkbox in (panel.chk_ground, panel.chk_alerts, panel.chk_emergency):
     checked = toggle(checkbox) and checked
 print(f"OK panel_browse ({focus_note(checked)})")
 
@@ -334,6 +354,7 @@ prefs.OnApply(None)
 saved = core.api.load_data("FlightRadar")
 assert saved["location"]["name"] == "Jakarta" and saved["location"]["country"] == "Indonesia", saved
 assert saved["radius_km"] == 25 and saved["units"] == "metric" and saved["alerts"] is False, saved
+assert saved["emergency_watch"] is False, saved
 assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
 assert main._poll_timer is None, "polling must stay off while alerts are off"
 prefs.Destroy()
@@ -344,25 +365,40 @@ print("OK panel_apply")
 spoken.clear()
 assert run_and_close("Flight Radar.speak_nearby") == []
 assert spoken[0] == _("checking"), spoken
-assert pump(lambda: said("Citilink 991")), spoken
+assert pump(lambda: said(MAYDAY)), spoken
 report = spoken[-1]
-assert report.startswith("Citilink 991, Airbus A320, 4.5 kilometres south, 1,500 metres, climbing."), report
+# An emergency comes first, before anything else.
+assert report.startswith(MAYDAY + " Citilink 991, Airbus A320, 4.5 kilometres south, "
+                         "1,500 metres, climbing."), report
 assert "Garuda Indonesia 155, from Batam to Jakarta, Boeing 737-800, 12 kilometres northeast" in report
-assert report.endswith("And 1 more within 25 kilometres."), report
+assert report.endswith("And 2 more within 25 kilometres."), report
 assert run_and_close("Flight Radar.show_list") == ["RadarListDialog"]
+spoken.clear()
+assert run_and_close("Flight Radar.listen_atc") == []
+assert spoken == ["Opening LiveATC for Jakarta Soekarno-Hatta in your browser."], spoken
+assert pump(lambda: opened_urls == [JAKARTA_FEED]), opened_urls
 print("OK actions")
 
 # --- The list: browse, details (button and Enter), a route arriving, refresh ------
 dlg = fr_ui.RadarListDialog(frame, "Jakarta, Indonesia", main.get_settings(), main.list_data,
-                            main.refresh, main.leg_for, main.with_routes)
+                            main.refresh, main.leg_for, main.with_routes,
+                            listen=main.listen_for_aircraft, emergency_intro=main.emergency_intro)
 dlg.Show()
 wx.Yield()
 rows = [dlg.list_aircraft.GetString(i) for i in range(dlg.list_aircraft.GetCount())]
-assert len(rows) == 4, rows
+assert len(rows) == 5, rows
 assert rows[0].startswith("Citilink 991") and rows[3].startswith("Batik Air 6339, Boeing 737-900")
 assert "from Batam to Jakarta" in rows[2], rows[2]   # cached by the nearby action
+assert rows[4].startswith("Emergency: X Q Z 777, Boeing 737-800, 20 kilometres west"), rows[4]
+assert sum(r.startswith("Emergency:") for r in rows) == 1
 assert "on the ground" not in " ".join(rows)
 checked = browse(dlg.list_aircraft, wx.EVT_LISTBOX)
+details = dlg.txt_details.GetValue()
+assert details.startswith("X Q Z 777. Registration P K Q Q F."), details
+assert "Squawk 7 7 0 0, general emergency." in details, details
+assert details.endswith("Listen to ATC opens Jakarta Soekarno-Hatta."), details
+dlg.list_aircraft.SetSelection(3)
+fire(dlg.list_aircraft, wx.EVT_LISTBOX, 3)
 assert dlg.txt_details.GetValue().startswith("Batik Air 6339. Registration P K Q Q D."), \
     dlg.txt_details.GetValue()
 
@@ -374,6 +410,8 @@ fire(dlg.btn_details, wx.EVT_BUTTON)          # BTK6339 is selected; its route i
 assert pump(lambda: said("Batik Air 6339")), spoken
 assert spoken[-1].startswith("Batik Air 6339, from Semarang to Jakarta. Registration P K Q Q D. "
                              "Type Boeing 737-900."), spoken[-1]
+assert ("Squawk 2 3 4 5, a code assigned by air traffic control to identify this flight. "
+        "Listen to ATC opens Jakarta Soekarno-Hatta.") in spoken[-1], spoken[-1]
 assert dlg.list_aircraft.GetSelection() == 3, "the selection moved"
 assert "from Semarang to Jakarta" in dlg.list_aircraft.GetString(3)
 if list_focused:
@@ -388,11 +426,27 @@ if list_focused:
     assert pump(lambda: said("Citilink 991. Registration")), spoken
     assert wx.Window.FindFocus() is dlg.list_aircraft
 
+# Listen to ATC for the selected aircraft (Batik Air 6339, descending to Jakarta).
 dlg.list_aircraft.SetSelection(3)
+spoken.clear()
+del opened_urls[:]
+if list_focused:
+    dlg.list_aircraft.SetFocus()
+    wx.Yield()
+fire(dlg.btn_listen, wx.EVT_BUTTON)
+assert pump(lambda: opened_urls == [JAKARTA_FEED]), opened_urls
+assert spoken[-1] == ("Opening LiveATC for Jakarta Soekarno-Hatta in your browser. "
+                      "You'll hear the whole frequency, not just this aircraft."), spoken
+assert dlg.list_aircraft.GetSelection() == 3, "the selection moved"
+if list_focused:
+    assert wx.Window.FindFocus() is dlg.list_aircraft, "focus left the list after Listen"
+
+# Refresh: new data, so the emergency is spoken first, then the count.
 spoken.clear()
 fire(dlg.btn_refresh, wx.EVT_BUTTON)
 assert spoken[0] == _("status_refreshing"), spoken
-assert pump(lambda: "4 aircraft within 25 kilometres." in spoken), spoken
+assert pump(lambda: any("aircraft within 25 kilometres." in s for s in spoken)), spoken
+assert spoken[-1] == MAYDAY + " 5 aircraft within 25 kilometres.", spoken
 assert dlg.list_aircraft.GetSelection() == 3 and dlg.list_aircraft.GetString(3).startswith("Batik")
 assert dlg.lbl_status.GetLabel().startswith("Updated at "), dlg.lbl_status.GetLabel()
 dlg.Destroy()
@@ -400,7 +454,8 @@ wx.Yield()
 
 # A dialog closed while its refresh is running must not break anything.
 dlg = fr_ui.RadarListDialog(frame, "Jakarta, Indonesia", main.get_settings(), main.list_data,
-                            main.refresh, main.leg_for, main.with_routes, refresh_now=True)
+                            main.refresh, main.leg_for, main.with_routes, refresh_now=True,
+                            listen=main.listen_for_aircraft, emergency_intro=main.emergency_intro)
 dlg.Destroy()
 assert pump(lambda: not main._loading and main._fetch_timer is None), "fetch never finished"
 print(f"OK list_dialog ({focus_note(checked)})")
@@ -456,6 +511,7 @@ main._poll_timer.Stop()
 main._poll()
 pump(lambda: False, timeout=0.6)
 assert sum(s.startswith("Overhead:") for s in spoken) == 1, spoken   # once per aircraft
+assert not said("Attention:"), "an emergency already heard was repeated"
 
 prefs = PreferencesDialog(frame, select_tab="Flight Radar")
 prefs.Show()
@@ -468,6 +524,45 @@ pump(lambda: not main._poll_running, timeout=2)
 assert main._poll_timer is None, "polling did not stop"
 print("OK alerts")
 
+# --- The emergency watch --------------------------------------------------------------
+prefs = PreferencesDialog(frame, select_tab="Flight Radar")
+prefs.Show()
+wx.Yield()
+main._panel.chk_emergency.SetValue(True)
+prefs.OnApply(None)
+prefs.Destroy()
+wx.Yield()
+assert core.api.load_data("FlightRadar")["emergency_watch"] is True
+assert main._poll_timer is not None, "the emergency watch did not start polling"
+spoken.clear()
+sounds.clear()
+# The same aircraft now squawks 7600: a new emergency, announced in the background.
+AIRCRAFT["aircraft"][-1] = dict(AIRCRAFT["aircraft"][-1], squawk="7600")
+main._cache = None
+main._poll_timer.Stop()
+main._poll()
+assert pump(lambda: said("Attention: X Q Z 777 is squawking 7 6 0 0")), spoken
+assert spoken[-1] == ("Attention: X Q Z 777 is squawking 7 6 0 0, radio failure "
+                      "(lost communications), 20 kilometres west."), spoken
+assert sounds == ["error.wav"], sounds
+assert not said("Overhead:"), "overhead alerts are off"
+assert main._poll_timer is not None
+main._poll_timer.Stop()
+main._poll()
+pump(lambda: False, timeout=0.6)
+assert sum(s.startswith("Attention:") for s in spoken) == 1, spoken   # once per 30 minutes
+
+prefs = PreferencesDialog(frame, select_tab="Flight Radar")
+prefs.Show()
+wx.Yield()
+main._panel.chk_emergency.SetValue(False)
+prefs.OnApply(None)
+prefs.Destroy()
+wx.Yield()
+pump(lambda: not main._poll_running, timeout=2)
+assert main._poll_timer is None, "polling did not stop"
+print("OK emergency_watch")
+
 # --- Teardown, and nothing went wrong along the way -----------------------------------
 em.unload_all_extensions()
 for event_name, handler in main._SUBSCRIPTIONS:
@@ -479,6 +574,8 @@ assert not network_attempts, f"real network access attempted: {network_attempts}
 allowed = ("https://opendata.adsb.fi/", "https://api.adsbdb.com/",
            "https://geocoding-api.open-meteo.com/")
 assert all(u.startswith(allowed) for u in stub_requests), stub_requests
+# LiveATC is only ever opened in the browser, never fetched.
+assert opened_urls and all(u.startswith("https://www.liveatc.net/") for u in opened_urls)
 route_requests = [u for u in stub_requests if "adsbdb" in u]
 assert len(route_requests) == len(set(route_requests)), f"routes looked up twice: {route_requests}"
 # Routes are kept in memory only: nothing about them reaches the data folder.

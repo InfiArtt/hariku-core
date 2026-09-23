@@ -20,7 +20,9 @@ import re
 
 from core.i18n import get_translator
 
+import flight_radar_airports as airports
 import flight_radar_api as api
+import flight_radar_atc as atc
 import flight_radar_names as names
 import flight_radar_routes as routes
 
@@ -29,7 +31,6 @@ _ = get_translator("flight_radar", os.path.join(EXT_DIR, "locales"))
 
 NEARBY_COUNT = 3               # aircraft spoken by "What's flying nearby?"
 LEVEL_RATE_FPM = 250           # slower climbs and descents count as level
-EMERGENCY_SQUAWKS = ("7500", "7600", "7700")
 
 _ERROR_KEYS = {"offline": "err_offline", "service": "err_service",
                "rate_limited": "err_rate_limited", "bad_response": "err_bad_response"}
@@ -183,8 +184,30 @@ def route_text(leg):
     return _("piece_route", origin=origin, destination=destination)
 
 
-def is_emergency(plane):
-    return bool(plane.get("emergency")) or plane.get("squawk") in EMERGENCY_SQUAWKS
+def squawk_meaning(squawk):
+    """What a transponder code means, e.g. 7700 -> "general emergency"."""
+    return {
+        "7700": _("squawk_7700"), "7600": _("squawk_7600"), "7500": _("squawk_7500"),
+        "2000": _("squawk_2000"), "7000": _("squawk_7000"), "1200": _("squawk_1200"),
+    }.get(squawk) or _("squawk_other")
+
+
+def status_meaning(status):
+    """What a readsb emergency value means, or None for none/reserved/unknown."""
+    return {
+        "general": _("status_general"), "lifeguard": _("status_lifeguard"),
+        "minfuel": _("status_minfuel"), "nordo": _("status_nordo"),
+        "unlawful": _("status_unlawful"), "downed": _("status_downed"),
+    }.get(status)
+
+
+def _where(plane, units):
+    """"20 kilometres west" (and "on the ground" when it is)."""
+    distance = distance_text(plane["distance_km"], units)
+    direction = compass(plane.get("bearing"))
+    where = (_("piece_distance_direction", distance=distance, direction=direction)
+             if direction else distance)
+    return f"{where}, {_('piece_on_ground')}" if plane.get("on_ground") else where
 
 
 # ------------------------------------------------------------
@@ -203,20 +226,33 @@ def aircraft_sentence(plane, units, leg=None):
     """One aircraft, e.g. "Garuda Indonesia 155, from Batam to Jakarta, Boeing
     737-800, 12 kilometres northeast, 3,000 metres, descending." `leg` is a
     plausible route leg (or None)."""
-    distance = distance_text(plane["distance_km"], units)
-    direction = compass(plane.get("bearing"))
-    parts = [aircraft_name(plane), route_text(leg), type_name(plane),
-             _("piece_distance_direction", distance=distance, direction=direction)
-             if direction else distance]
-    if plane.get("on_ground"):
-        parts.append(_("piece_on_ground"))
-    else:
+    parts = [aircraft_name(plane), route_text(leg), type_name(plane), _where(plane, units)]
+    if not plane.get("on_ground"):
         if plane.get("altitude_ft") is not None:
             parts.append(_("piece_altitude", altitude=altitude_text(plane["altitude_ft"], units)))
         parts.append(_trend_word(trend(plane.get("vertical_rate_fpm"))))
-    if is_emergency(plane):
-        parts.append(_("piece_emergency"))
-    return _sentence(parts)
+    sentence = _sentence(parts)
+    return _("row_emergency", text=sentence) if api.is_emergency(plane) else sentence
+
+
+def emergency_text(aircraft, units):
+    """"Attention: Garuda Indonesia 155 is squawking 7 7 0 0, general
+    emergency, 20 kilometres west." for each aircraft in emergency. Worded as
+    what the transponder says, since codes are sometimes set by mistake."""
+    sentences = []
+    for plane in api.emergencies(aircraft):
+        squawk, status = api.emergency_squawk(plane), api.emergency_status(plane)
+        squawking = (_("emergency_squawking", code=spell_all(squawk), meaning=squawk_meaning(squawk))
+                     if squawk else None)
+        reports = (_("emergency_reports", meaning=status_meaning(status))
+                   if status and status != api.EMERGENCY_SQUAWKS.get(squawk) else None)
+        if squawking and reports:
+            what = _("emergency_both", squawking=squawking, reports=reports)
+        else:
+            what = squawking or reports
+        sentences.append(_("emergency_attention", name=aircraft_name(plane), what=what,
+                           where=_where(plane, units)))
+    return " ".join(sentences)
 
 
 def _no_leg(_plane):
@@ -272,12 +308,17 @@ def details_text(plane, units, leg=None):
         parts.append(_("detail_descending", value=rate_text(rate, units)))
     elif movement == "level":
         parts.append(_("detail_level"))
-    if plane.get("squawk"):
-        parts.append(_("detail_squawk", value=spell_all(plane["squawk"])))
-    if is_emergency(plane):
-        parts.append(_("detail_emergency"))
+    squawk = plane.get("squawk")
+    if squawk:
+        parts.append(_("detail_squawk", value=spell_all(squawk), meaning=squawk_meaning(squawk)))
+    status = plane.get("emergency")
+    if status_meaning(status) and status != api.EMERGENCY_SQUAWKS.get(squawk):
+        parts.append(_("detail_status", meaning=status_meaning(status)))
     if not parts:
         parts.append(_("detail_none"))
+    airport = atc.airport_for_aircraft(plane, leg)
+    if airport:
+        parts.append(_("detail_atc", airport=airports.label(airport)))
     return " ".join([first] + parts)
 
 

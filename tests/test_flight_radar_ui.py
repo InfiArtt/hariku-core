@@ -27,7 +27,8 @@ def test_flight_radar_windows(tmp_path):
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK load", "OK no_location_hint", "OK weather_default",
                   "OK panel_browse", "OK panel_apply", "OK actions", "OK list_dialog",
-                  "OK escape", "OK alerts", "OK teardown", "OK no_errors", "OK shutdown"):
+                  "OK escape", "OK alerts", "OK emergency_watch", "OK teardown",
+                  "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
     assert "Traceback" not in result.stderr, output

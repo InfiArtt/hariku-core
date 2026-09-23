@@ -10,8 +10,8 @@
 """
 Aircraft data for the Flight Radar extension: request URLs, the HTTP fetch,
 turning adsb.fi / adsb.lol JSON into plain dicts, city search (Open-Meteo), and
-the pure helpers for settings, the cache, units, the request rate limit and the
-overhead alerts. No wx and no translated text, so tests can drive it with
+the pure helpers for settings, the cache, units, the request rate limit,
+emergencies and the overhead alerts. No wx and no translated text, so tests can drive it with
 sample responses.
 
 fetch_json(), fetch_aircraft() and search_places() block on the network: call
@@ -53,6 +53,13 @@ RATE_LIMITED_COOLDOWN = 60.0     # after both services answered 429
 MAX_BACKOFF_SECONDS = 600.0
 
 GROUND_CATEGORIES = ("C1", "C2")  # surface emergency and service vehicles
+
+# Emergency squawk codes, with the readsb `emergency` value each one means.
+EMERGENCY_SQUAWKS = {"7500": "unlawful", "7600": "nordo", "7700": "general"}
+# readsb `emergency` values that are emergencies. "lifeguard" (a medical or
+# priority flight) is only mentioned in details; "reserved" is ignored.
+EMERGENCY_STATUSES = ("general", "minfuel", "nordo", "unlawful", "downed")
+KNOWN_STATUSES = EMERGENCY_STATUSES + ("lifeguard",)
 
 
 class FlightError(Exception):
@@ -357,6 +364,7 @@ def normalize_settings(raw):
         "alerts": raw.get("alerts") is True,
         "alert_km": alert if alert in ALERT_CHOICES_KM and not isinstance(alert, bool)
         else DEFAULT_ALERT_KM,
+        "emergency_watch": raw.get("emergency_watch") is True,
     }
 
 
@@ -442,28 +450,88 @@ class RateGate:
 
 
 # ------------------------------------------------------------
-# Overhead alerts
+# Emergencies
 # ------------------------------------------------------------
 
-class AlertTracker:
-    """Decides which airborne aircraft to announce: each one within the alert
-    distance once, then not again for `cooldown` seconds."""
+def emergency_squawk(plane):
+    """The aircraft's squawk when it is an emergency code, else ""."""
+    squawk = plane.get("squawk") or ""
+    return squawk if squawk in EMERGENCY_SQUAWKS else ""
 
-    def __init__(self, cooldown=600.0):
+
+def emergency_status(plane):
+    """The readsb emergency value when it is an emergency, else ""."""
+    status = plane.get("emergency") or ""
+    return status if status in EMERGENCY_STATUSES else ""
+
+
+def is_emergency(plane):
+    return bool(emergency_squawk(plane) or emergency_status(plane))
+
+
+def emergencies(aircraft):
+    """The aircraft in emergency, in the order given."""
+    return [p for p in aircraft or [] if is_emergency(p)]
+
+
+# ------------------------------------------------------------
+# Announcing once
+# ------------------------------------------------------------
+
+class _OnceTracker:
+    """Remembers what was announced, forgetting each entry after `cooldown`
+    seconds (or when the clock goes backwards)."""
+
+    def __init__(self, cooldown):
         self.cooldown = cooldown
-        self._announced = {}  # aircraft id -> monotonic time announced
+        self._announced = {}  # key -> monotonic time announced
 
-    def check(self, aircraft, alert_km, now):
-        for ident, when in list(self._announced.items()):
+    def _forget_old(self, now):
+        for key, when in list(self._announced.items()):
             if now - when >= self.cooldown or now < when:
-                del self._announced[ident]
+                del self._announced[key]
+
+    def _take_new(self, items, key, now):
+        self._forget_old(now)
         new = []
-        for plane in visible_aircraft(aircraft, alert_km, include_ground=False):
-            if plane["id"] in self._announced:
+        for item in items:
+            if key(item) in self._announced:
                 continue
-            self._announced[plane["id"]] = now
-            new.append(plane)
+            self._announced[key(item)] = now
+            new.append(item)
         return new
 
     def reset(self):
         self._announced.clear()
+
+
+class AlertTracker(_OnceTracker):
+    """Decides which airborne aircraft to announce: each one within the alert
+    distance once, then not again for `cooldown` seconds."""
+
+    def __init__(self, cooldown=600.0):
+        super().__init__(cooldown)
+
+    def check(self, aircraft, alert_km, now):
+        return self._take_new(visible_aircraft(aircraft, alert_km, include_ground=False),
+                              lambda p: p["id"], now)
+
+
+def _emergency_key(plane):
+    return (plane["id"], emergency_squawk(plane), emergency_status(plane))
+
+
+class EmergencyTracker(_OnceTracker):
+    """Each aircraft and emergency once, then not again for `cooldown` seconds.
+    A different emergency on the same aircraft counts as new."""
+
+    def __init__(self, cooldown=1800.0):
+        super().__init__(cooldown)
+
+    def check(self, aircraft, now):
+        """The emergencies among `aircraft` not announced recently."""
+        return self._take_new(emergencies(aircraft), _emergency_key, now)
+
+    def mark(self, aircraft, now):
+        """Record emergencies the user has just heard some other way."""
+        self._take_new(emergencies(aircraft), _emergency_key, now)

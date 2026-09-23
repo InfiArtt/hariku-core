@@ -53,7 +53,8 @@ settings), not your device's location. To say where a flight is
 going, it sends only that flight's callsign to adsbdb (`api.adsbdb.com`);
 routes are kept in memory and never saved. Searching for a city in its
 settings sends the text you typed to Open-Meteo's city search, as described
-for Weather above.
+for Weather above. "Listen to ATC" opens a liveatc.net page in your browser;
+Hariku itself sends nothing to LiveATC.
 
 ## When you ask for it
 

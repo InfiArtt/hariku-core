@@ -10,9 +10,10 @@
 """
 Windows for the Flight Radar extension:
   * FlightRadarPanel - the Preferences page: city search, radius, units,
-                       ground traffic, overhead alerts, attribution.
+                       ground traffic, overhead alerts, the emergency watch,
+                       a note on Listen to ATC, attribution.
   * RadarListDialog  - every aircraft in range, one sentence per row, nearest
-                       first, with Details (Enter) and Refresh.
+                       first, with Details (Enter), Refresh and Listen to ATC.
 Selection changes never move keyboard focus. Focus only moves after the user
 asks for something (opening the dialog, pressing Search). Rows that change
 after a refresh or a route lookup keep the current selection.
@@ -105,7 +106,12 @@ class FlightRadarPanel(wx.Panel):
             self, choices=[text.distance_choice(km) for km in api.ALERT_CHOICES_KM]))
         self.choice_alert.SetSelection(api.ALERT_CHOICES_KM.index(settings["alert_km"]))
         vbox.Add(self.choice_alert, 0, wx.LEFT | wx.RIGHT, 10)
+
+        self.chk_emergency = wx.CheckBox(self, label=_("chk_emergency_watch"))
+        self.chk_emergency.SetValue(settings["emergency_watch"])
+        vbox.Add(self.chk_emergency, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
         vbox.Add(wx.StaticText(self, label=_("alerts_note")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        vbox.Add(wx.StaticText(self, label=_("atc_note")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
         # Credits the data sources (adsbdb's terms ask for the route credit).
         vbox.Add(wx.StaticText(self, label=_("attribution")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
@@ -142,6 +148,7 @@ class FlightRadarPanel(wx.Panel):
             "include_ground": self.chk_ground.GetValue(),
             "alerts": self.chk_alerts.GetValue(),
             "alert_km": api.ALERT_CHOICES_KM[max(0, self.choice_alert.GetSelection())],
+            "emergency_watch": self.chk_emergency.GetValue(),
         }
 
     def _on_search(self, event):
@@ -186,10 +193,13 @@ class RadarListDialog(wx.Dialog):
     `request_refresh(on_done)` starts a background fetch and calls on_done(error)
     on the UI thread, returning False if it could not start. `leg_for(plane)`
     gives a cached route leg; `with_routes(aircraft, callback)` looks routes up
-    and then calls callback() on the UI thread."""
+    and then calls callback() on the UI thread. `listen(plane)` opens LiveATC
+    for an aircraft (None: for the city); `emergency_intro(aircraft)` returns
+    the emergencies to speak first when new data arrives."""
 
     def __init__(self, parent, place, settings, get_data, request_refresh,
-                 leg_for=None, with_routes=None, refresh_now=False):
+                 leg_for=None, with_routes=None, refresh_now=False,
+                 listen=None, emergency_intro=None):
         super().__init__(parent, title=_("list_title"), size=(720, 500),
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self._units = settings["units"]
@@ -199,6 +209,9 @@ class RadarListDialog(wx.Dialog):
         self._request_refresh = request_refresh
         self._leg_for = leg_for or (lambda plane: None)
         self._with_routes = with_routes or (lambda aircraft, callback: callback())
+        self._listen = listen
+        self._emergency_intro = emergency_intro or (
+            lambda aircraft: text.emergency_text(aircraft, self._units))
         self._loading = refresh_now
         self._announce = False
         self._has_data = False
@@ -225,10 +238,12 @@ class RadarListDialog(wx.Dialog):
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.btn_details = wx.Button(self, label=_("btn_details"))
         self.btn_refresh = wx.Button(self, label=_("btn_refresh"))
+        self.btn_listen = wx.Button(self, label=_("btn_listen_atc"))
         self.btn_close = wx.Button(self, wx.ID_CANCEL, label=_("btn_close"))
         self.btn_details.SetDefault()
         buttons.Add(self.btn_details, 0, wx.RIGHT, 6)
         buttons.Add(self.btn_refresh, 0, wx.RIGHT, 6)
+        buttons.Add(self.btn_listen, 0, wx.RIGHT, 6)
         buttons.Add(self.btn_close, 0)
         vbox.Add(buttons, 0, wx.ALL | wx.ALIGN_RIGHT, 8)
 
@@ -236,6 +251,7 @@ class RadarListDialog(wx.Dialog):
         self.SetEscapeId(wx.ID_CANCEL)
         self.btn_details.Bind(wx.EVT_BUTTON, self._on_details)
         self.btn_refresh.Bind(wx.EVT_BUTTON, self._on_refresh)
+        self.btn_listen.Bind(wx.EVT_BUTTON, self._on_listen)
         self.list_aircraft.Bind(wx.EVT_LISTBOX, self._on_select)
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
 
@@ -333,6 +349,22 @@ class RadarListDialog(wx.Dialog):
         self._show_details()
         speak(text.details_text(plane, self._units, self._leg_for(plane)), interrupt=True)
 
+    def _on_listen(self, event=None):
+        if self._listen is None:
+            return
+        plane = self.selected_aircraft()
+        if plane is None:
+            self._listen(None)
+            return
+        self._with_routes([plane], lambda: self._listen_to(plane))
+
+    def _listen_to(self, plane):
+        if not self:
+            return  # closed while the route was looked up
+        self._refresh_rows()
+        self._show_details()
+        self._listen(plane)
+
     def _on_refresh(self, event=None):
         self._announce = True
         self.lbl_status.SetLabel(_("status_refreshing"))
@@ -346,9 +378,13 @@ class RadarListDialog(wx.Dialog):
         had_data = self._has_data
         self._loading = False
         self._fill(error)
+        # New data: any emergency is spoken before anything else.
+        urgent = "" if error else self._emergency_intro(self._aircraft)
         if self._announce or not had_data:
-            speak(text.error_text(error) if error else
-                  text.count_text(len(self._aircraft), self._radius_km, self._units,
-                                  self._include_ground),
-                  interrupt=True)
+            summary = (text.error_text(error) if error else
+                       text.count_text(len(self._aircraft), self._radius_km, self._units,
+                                       self._include_ground))
+            speak(" ".join(p for p in (urgent, summary) if p), interrupt=True)
+        elif urgent:
+            speak(urgent, interrupt=True)
         self._announce = False
