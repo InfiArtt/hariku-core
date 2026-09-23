@@ -1,3 +1,11 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import wx
 import core.api
 from core.i18n import get_translator, get_available_languages, get_current_language, set_language
@@ -103,7 +111,26 @@ class GeneralSettingsPanel(wx.Panel):
         self.rb_close_behavior.SetSelection(sel)
         
         vbox.Add(self.rb_close_behavior, 0, wx.ALL | wx.EXPAND, 10)
-        
+
+        # Braille output toggle (Tolk sends to a connected braille display when on)
+        self.chk_braille = wx.CheckBox(self, label="Also send output to a Braille display")
+        self.chk_braille.SetValue(config.get("braille_output", True))
+        vbox.Add(self.chk_braille, 0, wx.ALL, 10)
+
+        # --- Low-vision appearance ---
+        hbox_scale = wx.BoxSizer(wx.HORIZONTAL)
+        hbox_scale.Add(wx.StaticText(self, label="UI text size:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        self._scale_keys = ["normal", "large", "xlarge"]
+        self.choice_scale = wx.Choice(self, choices=["Normal", "Large", "Extra Large"])
+        _cur_scale = config.get("ui_font_scale", "normal")
+        self.choice_scale.SetSelection(self._scale_keys.index(_cur_scale) if _cur_scale in self._scale_keys else 0)
+        hbox_scale.Add(self.choice_scale, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(hbox_scale, 0, wx.ALL, 10)
+
+        self.chk_high_contrast = wx.CheckBox(self, label="High contrast (yellow on black). For full effect, also try Windows' built-in High Contrast mode.")
+        self.chk_high_contrast.SetValue(config.get("high_contrast", False))
+        vbox.Add(self.chk_high_contrast, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
         # --- Telemetry ---
         box_telemetry = wx.StaticBox(self, label="Public Telemetry Data")
         bsizer_telemetry = wx.StaticBoxSizer(box_telemetry, wx.VERTICAL)
@@ -131,7 +158,7 @@ class GeneralSettingsPanel(wx.Panel):
     def on_check_updates(self, event):
         import core.updater
         import threading
-        # Jalankan di background agar UI tidak freeze saat fetch internet
+        # Run in the background so the UI doesn't freeze during the internet fetch.
         threading.Thread(target=core.updater.check_for_updates, args=(True,), daemon=True).start()
 
     def ApplyChanges(self):
@@ -139,6 +166,10 @@ class GeneralSettingsPanel(wx.Panel):
         
         config["play_startup_sound"] = self.chk_startup_sound.GetValue()
         config["interrupt_speech"] = self.chk_interrupt_speech.GetValue()
+        config["braille_output"] = self.chk_braille.GetValue()
+        _ssel = self.choice_scale.GetSelection()
+        config["ui_font_scale"] = self._scale_keys[_ssel] if _ssel >= 0 else "normal"
+        config["high_contrast"] = self.chk_high_contrast.GetValue()
         config["volume"] = self.slider_volume.GetValue()
         
         autostart = self.chk_autostart.GetValue()
@@ -153,7 +184,14 @@ class GeneralSettingsPanel(wx.Panel):
         config["telemetry_enabled"] = self.chk_telemetry.GetValue()
         
         core.api.save_data("Core", config)
-        
+
+        # Re-apply the low-vision appearance live (font scale + high contrast).
+        try:
+            import core.ui_scale
+            core.ui_scale.apply_appearance(core.api.main_window_instance)
+        except Exception:
+            pass
+
         # Handle language change
         lang_idx = self.cb_language.GetSelection()
         if lang_idx >= 0 and lang_idx < len(self._lang_codes):

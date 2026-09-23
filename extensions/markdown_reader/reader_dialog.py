@@ -1,10 +1,19 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Markdown Reader dialog — the main UI for browsing Markdown documents.
 
-Menggunakan TextCtrl yang ringan dan stabil untuk navigasi internal,
-plus tombol "Read in Web View" yang membuka jendela WebView2 terisolasi
-(subprocess terpisah dari Hariku) sehingga NVDA Browse Mode bekerja
-penuh tanpa crash.
+Uses a lightweight, stable TextCtrl for internal navigation, plus a
+"Read in Web View" button that opens an isolated WebView2 window (a
+separate subprocess from Hariku) so NVDA Browse Mode works fully without
+crashing.
 """
 
 import os
@@ -133,7 +142,7 @@ class MarkdownReaderDialog(wx.Dialog):
 
         left_panel.SetSizer(left_sizer)
 
-        # ── Right: TextCtrl (ringan, stabil, NVDA bisa baca baris) ──
+        # ── Right: TextCtrl (lightweight, stable, NVDA can read line by line) ──
         right_panel = wx.Panel(splitter)
         right_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -200,7 +209,7 @@ class MarkdownReaderDialog(wx.Dialog):
             self._raw_source = raw
             self.filepath = filepath
 
-            # Parse ke plain text untuk tampilan di TextCtrl
+            # Parse to plain text for display in the TextCtrl
             text, headings = md_parser.parse(raw)
             self.headings = headings
             self._plain_text = text
@@ -267,7 +276,7 @@ class MarkdownReaderDialog(wx.Dialog):
     # ── WebView ─────────────────────────────────────────────────────
 
     def _on_open_webview(self, event):
-        """Buka di WebView terisolasi — NVDA Browse Mode penuh."""
+        """Open in an isolated WebView — full NVDA Browse Mode."""
         if not self._raw_source:
             speak("No file loaded.", interrupt=True)
             return

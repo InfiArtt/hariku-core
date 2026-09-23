@@ -1,3 +1,11 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import sys
 import threading
 import logging
@@ -73,11 +81,11 @@ def _handle_exception(exc_type, exc_value, exc_traceback):
     
     import threading
     if app:
-        # Kalau crash terjadi di thread lain, lempar ke main thread
+        # If the crash happened on another thread, marshal it to the main thread.
         if threading.current_thread() is not threading.main_thread():
             wx.CallAfter(_show_dialog, exc_type, exc_value, exc_traceback)
         else:
-            # Kalau di main thread, langsung panggil (meskipun MainLoop belum jalan, ShowModal punya loop sendiri)
+            # On the main thread, call directly (ShowModal has its own loop even if MainLoop isn't running yet).
             _show_dialog(exc_type, exc_value, exc_traceback)
     else:
         # App not running or crashed before wx.App was created

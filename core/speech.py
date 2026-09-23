@@ -1,4 +1,11 @@
-# hariku2/core/speech.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import threading
 import logging
 from cytolk import tolk
@@ -34,7 +41,7 @@ def init_speech():
 
 def speak(text, interrupt=False):
     """
-    Mengucapkan teks menggunakan Tolk (melalui cytolk).
+    Speak text using Tolk (via cytolk).
     """
     import core.api
     from core.events import bus
@@ -51,11 +58,18 @@ def speak(text, interrupt=False):
     final_interrupt = payload.get("interrupt", interrupt)
     actual_interrupt = final_interrupt and config.get("interrupt_speech", True)
 
+    # Braille output: Tolk's output() sends to BOTH speech and a connected
+    # braille display; speak() is speech-only. Default on; users can turn braille
+    # off in Preferences (some prefer speech alone).
+    braille_on = config.get("braille_output", True)
+
     if TOLK_LOADED:
         def _speak_worker():
             try:
-                # Tolk output
-                tolk.output(final_text, actual_interrupt)
+                if braille_on:
+                    tolk.output(final_text, actual_interrupt)   # speech + braille
+                else:
+                    tolk.speak(final_text, actual_interrupt)     # speech only
             except Exception as e:
                 logger.error(f"Tolk speak error: {e}")
         threading.Thread(target=_speak_worker, daemon=True).start()
@@ -71,5 +85,5 @@ def unload_speech():
         except Exception as e:
             logger.error(f"Error unloading tolk: {e}")
 
-# Langsung inisialisasi saat modul dimuat
+# Initialize immediately when the module is imported.
 init_speech()

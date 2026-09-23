@@ -1,3 +1,11 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import threading
 import urllib.request
 import json
@@ -20,17 +28,17 @@ TELEMETRY_DISABLED = True
 API_URL = None  # retired
 
 def _generate_session_id():
-    """Menghasilkan anonymous ID unik per pengguna (hanya sekali)"""
+    """Generate a unique anonymous ID per user (only once)."""
     config = core.api.load_data("Core")
     if "telemetry_id" not in config:
-        # UUID4 benar-benar acak, tidak mengandung informasi hardware atau MAC address.
+        # UUID4 is fully random and carries no hardware info or MAC address.
         config["telemetry_id"] = str(uuid.uuid4())
         core.api.save_data("Core", config)
     return config["telemetry_id"]
 
 def is_enabled():
     config = core.api.load_data("Core")
-    # Default ON (Opt-Out model), kecuali user mematikan di setting/onboarding
+    # Default ON (opt-out model), unless the user disables it in settings/onboarding.
     return config.get("telemetry_enabled", True)
 
 def _send_ping():
@@ -43,7 +51,7 @@ def _send_ping():
         config = core.api.load_data("Core")
         lang = config.get("language", "en")
         
-        # Ambil list ekstensi yang aktif
+        # Collect the list of active extensions.
         ext_list = list(core.extension_manager.LOADED_EXTENSIONS.keys())
         
         payload = {
@@ -61,11 +69,11 @@ def _send_ping():
             if response.getcode() == 201:
                 logger.info("Telemetry ping sent successfully.")
     except Exception as e:
-        # Gagal kirim telemetri tidak boleh mengganggu UX pengguna
+        # A failed telemetry ping must never disrupt the user experience.
         logger.debug(f"Telemetry ping failed silently: {e}")
 
 def record_startup():
-    """Dipanggil saat aplikasi baru nyala. No-op while telemetry is disabled."""
+    """Called when the app has just started. No-op while telemetry is disabled."""
     if TELEMETRY_DISABLED:
         return
     threading.Thread(target=_send_ping, daemon=True).start()

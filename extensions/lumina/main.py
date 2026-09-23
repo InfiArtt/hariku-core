@@ -1,14 +1,22 @@
-# extensions/lumina/main.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # ============================================================
-# Lumina — Pengingat Ulang Tahun untuk Hariku V2
+# Lumina — Birthday Reminder for Hariku V2
 # ============================================================
-# Fitur:
-#   - Simpan ulang tahun teman & keluarga (nama, DD-MM, tahun opsional)
-#   - Ulang tahun DIRI SENDIRI dengan ucapan spesial — nama diambil
-#     otomatis dari profil onboarding Hariku
-#   - Pengingat otomatis H-7, H-3, H-1, dan tepat hari H
-#   - Ucapan custom per orang
-#   - Dialog daftar dengan Tambah / Edit / Hapus
+# Features:
+#   - Store birthdays for friends & family (name, DD-MM, optional year)
+#   - The user's OWN birthday with a special greeting — the name is taken
+#     automatically from the Hariku onboarding profile
+#   - Automatic reminders 7, 3, and 1 day before, and on the day itself
+#   - Custom greeting per person
+#   - List dialog with Add / Edit / Delete
 #   - Hotkey: Ctrl+Shift+B
 # ============================================================
 
@@ -68,8 +76,8 @@ def _save_settings(s: dict):
 
 def _get_self_birthday() -> dict:
     """
-    Kembalikan data ulang tahun pengguna sendiri.
-    Nama diambil dari profil Core (onboarding), bukan disimpan di Lumina.
+    Return the user's own birthday data.
+    The name comes from the Core profile (onboarding), not stored in Lumina.
     """
     return _load().get("self_birthday", {})
 
@@ -79,7 +87,7 @@ def _save_self_birthday(sb: dict):
     _save(data)
 
 def _get_user_name() -> str:
-    """Ambil nama pengguna dari data onboarding Core."""
+    """Get the user's name from Core onboarding data."""
     core_data = core.api.load_data("Core")
     return core_data.get("user_name", "").strip() or "Kamu"
 
@@ -89,19 +97,19 @@ def _get_user_name() -> str:
 # ============================================================
 
 def _parse_birthday(dd_mm: str):
-    """Parse 'DD-MM' → (day, month), atau None jika invalid."""
+    """Parse 'DD-MM' → (day, month), or None if invalid."""
     try:
         parts = dd_mm.strip().split("-")
         if len(parts) != 2:
             return None
         day, month = int(parts[0]), int(parts[1])
-        datetime.date(2000, month, day)  # validasi
+        datetime.date(2000, month, day)  # validate
         return day, month
     except (ValueError, IndexError):
         return None
 
 def _days_until(day: int, month: int) -> int:
-    """Hitung hari ke ulang tahun berikutnya (0 = hari ini)."""
+    """Days until the next birthday (0 = today)."""
     today = datetime.date.today()
     try:
         bday = datetime.date(today.year, month, day)
@@ -125,8 +133,8 @@ def _calc_age(birth_year, day, month):
 
 def _announce_one(entry: dict, is_self: bool = False):
     """
-    Ucapkan pengingat untuk satu entry berdasarkan hari tersisa.
-    is_self=True menggunakan ucapan spesial untuk diri sendiri.
+    Announce the reminder for one entry based on the days remaining.
+    is_self=True uses the special greeting for the user themselves.
     """
     parsed = _parse_birthday(entry.get("date", ""))
     if not parsed:
@@ -166,10 +174,10 @@ def _announce_one(entry: dict, is_self: bool = False):
 
 
 def _check_all_and_announce():
-    """Cek seluruh daftar + self birthday dan umumkan yang relevan."""
+    """Check the whole list plus the self birthday and announce the relevant ones."""
     delay_ms = 2500
 
-    # Cek ulang tahun sendiri
+    # Check the user's own birthday
     sb = _get_self_birthday()
     if sb.get("date"):
         parsed = _parse_birthday(sb["date"])
@@ -179,7 +187,7 @@ def _check_all_and_announce():
                 wx.CallLater(delay_ms, _announce_one, sb, True)
                 delay_ms += 3000
 
-    # Cek daftar teman/keluarga
+    # Check the friends/family list
     for entry in _get_birthdays():
         parsed = _parse_birthday(entry.get("date", ""))
         if not parsed:
@@ -191,7 +199,7 @@ def _check_all_and_announce():
 
 
 def get_upcoming(days_ahead: int = 30) -> list:
-    """Kembalikan semua ulang tahun (termasuk self) dalam X hari ke depan."""
+    """Return all birthdays (including self) within the next X days."""
     result = []
 
     sb = _get_self_birthday()
@@ -336,7 +344,7 @@ class LuminaListDialog(wx.Dialog):
     def _refresh_list(self):
         self.listbox.Clear()
 
-        # Tampilkan self birthday di posisi pertama jika ada
+        # Show the self birthday first if present
         sb = _get_self_birthday()
         if sb.get("date"):
             name  = _get_user_name()
@@ -373,7 +381,7 @@ class LuminaListDialog(wx.Dialog):
         idx = self.listbox.GetSelection()
         if idx == wx.NOT_FOUND:
             return None
-        # Offset jika self birthday ada di baris 0
+        # Offset when the self birthday occupies row 0
         sb = _get_self_birthday()
         offset = 1 if sb.get("date") else 0
         friend_idx = idx - offset
@@ -466,7 +474,7 @@ class LuminaSettingsPanel(wx.Panel):
         vbox.Add(wx.StaticText(self, label=_("settings_title")),
                  0, wx.ALL, 12)
 
-        # --- Ulang tahun sendiri ---
+        # --- The user's own birthday ---
         box     = wx.StaticBox(self, label=_("self_birthday_section"))
         box_sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
 
@@ -487,7 +495,7 @@ class LuminaSettingsPanel(wx.Panel):
 
         vbox.Add(box_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 12)
 
-        # --- Pengingat ---
+        # --- Reminders ---
         self.chk_startup = wx.CheckBox(self, label=_('notify_on_startup'))
         self.chk_startup.SetValue(settings.get('notify_on_startup', True))
         vbox.Add(self.chk_startup, 0, wx.LEFT | wx.BOTTOM, 12)
@@ -505,7 +513,7 @@ class LuminaSettingsPanel(wx.Panel):
             vbox.Add(chk, 0, wx.LEFT | wx.BOTTOM, 8)
             setattr(self, attr, chk)
 
-        # Navigasi kalender
+        # Calendar navigation
         vbox.Add(wx.StaticText(self, label=_("nav_action_label")), 0, wx.LEFT | wx.TOP, 12)
         choices = [_("nav_action_none"), _("nav_action_speak"), _("nav_action_agenda")]
         self.choice_nav = wx.Choice(self, choices=choices)
@@ -517,7 +525,7 @@ class LuminaSettingsPanel(wx.Panel):
         self.SetSizer(vbox)
 
     def ApplyChanges(self):
-        # Simpan self birthday
+        # Save the self birthday
         date_val = self.txt_self_date.GetValue().strip()
         year_val = None
         try:
@@ -577,14 +585,14 @@ def on_date_changed(date_str):
         
     birthdays_today = []
     
-    # Cek ulang tahun sendiri
+    # Check the user's own birthday
     sb = _get_self_birthday()
     if sb.get("date"):
         parsed = _parse_birthday(sb["date"])
         if parsed and parsed[0] == day and parsed[1] == month:
             birthdays_today.append(_get_user_name() + _("self_badge"))
             
-    # Cek daftar teman/keluarga
+    # Check the friends/family list
     for e in _get_birthdays():
         parsed = _parse_birthday(e.get("date", ""))
         if parsed and parsed[0] == day and parsed[1] == month:
@@ -613,14 +621,14 @@ def on_fetch_agenda(payload):
         
     birthdays_today = []
     
-    # Cek ulang tahun sendiri
+    # Check the user's own birthday
     sb = _get_self_birthday()
     if sb.get("date"):
         parsed = _parse_birthday(sb["date"])
         if parsed and parsed[0] == day and parsed[1] == month:
             birthdays_today.append(_get_user_name() + _("self_badge"))
             
-    # Cek daftar teman/keluarga
+    # Check the friends/family list
     for e in _get_birthdays():
         parsed = _parse_birthday(e.get("date", ""))
         if parsed and parsed[0] == day and parsed[1] == month:
@@ -630,7 +638,7 @@ def on_fetch_agenda(payload):
         names = ", ".join(birthdays_today)
         title = _("agenda_birthday_title").format(names=names)
         
-        # Inject fake reminder ke list agenda
+        # Inject a synthetic reminder into the agenda list
         payload["reminders"].insert(0, {
             "id": f"lumina_bday_{date_str}",
             "title": title,

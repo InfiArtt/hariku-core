@@ -1,21 +1,27 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
-hariku2/core/webview_host.py
+Standalone subprocess script — do NOT import it directly.
+Launched by core.webview via subprocess.Popen.
 
-Standalone subprocess script — JANGAN di-import secara langsung.
-Dipanggil oleh core.webview melalui subprocess.Popen.
-
-Cara kerja:
+Usage:
   python webview_host.py <html_file> <title> [width] [height]
 
-Script ini berjalan sebagai proses TERPISAH dari Hariku. Karena
-terpisah dari proses utama, tidak ada WH_KEYBOARD_LL hook, sehingga
-wx.html2.WebView dapat diinisialisasi dengan aman tanpa deadlock COM.
+This runs as a SEPARATE process from Hariku. Being separate from the main
+process, it carries no WH_KEYBOARD_LL hook, so wx.html2.WebView can be
+initialized safely without a COM deadlock.
 """
 
 import sys
 import os
 
-# Pastikan direktori hariku2 ada di path agar core.* bisa diimport
+# Ensure the hariku2 directory is on the path so core.* can be imported.
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 _hariku_root = os.path.dirname(_script_dir)
 if _hariku_root not in sys.path:
@@ -34,7 +40,7 @@ class WebViewFrame(wx.Frame):
             style=wx.DEFAULT_FRAME_STYLE | wx.RESIZE_BORDER
         )
 
-        # Coba pasang ikon Hariku
+        # Attach the Hariku icon if present.
         _icon_path = os.path.join(_hariku_root, "hariku.ico")
         if os.path.exists(_icon_path):
             self.SetIcon(wx.Icon(_icon_path))
@@ -42,7 +48,7 @@ class WebViewFrame(wx.Frame):
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Info bar aksesibilitas
+        # Accessibility info bar.
         info = wx.StaticText(
             panel,
             label="NVDA: tekan H=Heading, T=Tabel, L=List, K=Link, I=Item | ESC=Tutup"
@@ -55,7 +61,7 @@ class WebViewFrame(wx.Frame):
         panel.SetSizer(sizer)
         self.Centre()
 
-        # Muat HTML dari file
+        # Load the HTML from the file.
         file_uri = "file:///" + html_path.replace("\\", "/")
         self.webview.LoadURL(file_uri)
 

@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 generate_trusted_hashes.py — Hariku Extension Trust Registry Generator
 =======================================================================
 
-Jalankan script ini di server setiap kali kamu mengupload .hrk baru ke store.
-Script akan scan folder yang ditentukan, hitung SHA256 setiap file .hrk,
-lalu generate dua file output:
+Run this script on the server every time you upload a new .hrk to the store.
+It scans the given folder, computes the SHA256 of every .hrk file, then
+generates two output files:
 
-  1. trusted_extensions.json  — file yang diserve ke klien Hariku
-  2. trusted_extensions.log   — ringkasan untuk referensi kamu (ID, hash, ukuran)
+  1. trusted_extensions.json  — the file served to Hariku clients
+  2. trusted_extensions.log   — a summary for your reference (ID, hash, size)
 
-Cara pakai:
-  python generate_trusted_hashes.py [folder_hrk] [output_dir]
+Usage:
+  python generate_trusted_hashes.py [hrk_folder] [output_dir]
 
-Contoh:
+Example:
   python generate_trusted_hashes.py ./extensions/store ./public/security
 
-Jika argumen tidak diberikan, defaults:
-  - folder_hrk : ./hrk_store
+If no arguments are given, the defaults are:
+  - hrk_folder : ./hrk_store
   - output_dir : ./security_output
 
-Format trusted_extensions.json yang dihasilkan:
+Format of the generated trusted_extensions.json:
   {
     "generated_at": "2026-06-20T07:00:00Z",
     "total": 3,
@@ -31,7 +39,7 @@ Format trusted_extensions.json yang dihasilkan:
     ]
   }
 
-Publikasikan file ini ke GitHub Pages di path yang dipakai core.endpoints:
+Publish this file to GitHub Pages at the path used by core.endpoints:
   GET https://<owner>.github.io/<repo>/security/trusted_extensions.json
 """
 
@@ -44,17 +52,17 @@ import argparse
 
 
 # ---------------------------------------------------------------------------
-# Konfigurasi
+# Configuration
 # ---------------------------------------------------------------------------
 
-# ID ekstensi yang dianggap "official" Hariku — harus SELALU SAMA dengan
-# _OFFICIAL_EXTENSION_IDS di hariku2/core/extension_manager.py
+# IDs of extensions considered "official" Hariku — must ALWAYS MATCH
+# _OFFICIAL_EXTENSION_IDS in hariku2/core/extension_manager.py
 #
-# CARA MENAMBAH EKSTENSI OFFICIAL BARU:
-#   1. Tambahkan ID-nya di sini (nama folder / nama .hrk tanpa ekstensi).
-#   2. Tambahkan ID yang sama di core/extension_manager.py _OFFICIAL_EXTENSION_IDS.
-#   3. Jalankan ulang script ini lalu upload trusted_extensions.json ke server.
-#   Badge [Official] akan muncul otomatis di klien.
+# HOW TO ADD A NEW OFFICIAL EXTENSION:
+#   1. Add its ID here (folder name / .hrk name without extension).
+#   2. Add the same ID to _OFFICIAL_EXTENSION_IDS in core/extension_manager.py.
+#   3. Re-run this script and upload trusted_extensions.json to the server.
+#   The [Official] badge then appears automatically in the client.
 OFFICIAL_EXTENSION_IDS = {
     "developer_toolkit",
     "ghost_taskbar",
@@ -64,7 +72,7 @@ OFFICIAL_EXTENSION_IDS = {
     "window_teleporter",
     "markdown_reader",
     "lumina",
-    # tambahkan ID ekstensi official baru di sini
+    # add new official extension IDs here
 }
 
 
@@ -73,7 +81,7 @@ OFFICIAL_EXTENSION_IDS = {
 # ---------------------------------------------------------------------------
 
 def compute_sha256(filepath: str) -> str:
-    """Hitung SHA256 hex digest dari sebuah file."""
+    """Compute the SHA256 hex digest of a file."""
     sha256 = hashlib.sha256()
     with open(filepath, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
@@ -82,12 +90,12 @@ def compute_sha256(filepath: str) -> str:
 
 
 def ext_id_from_filename(filename: str) -> str:
-    """Ambil ext_id dari nama file: 'my_extension.hrk' → 'my_extension'."""
+    """Derive ext_id from a filename: 'my_extension.hrk' → 'my_extension'."""
     return os.path.splitext(filename)[0]
 
 
 def format_size(size_bytes: int) -> str:
-    """Format ukuran file ke string yang mudah dibaca."""
+    """Format a file size into a human-readable string."""
     if size_bytes < 1024:
         return f"{size_bytes} B"
     elif size_bytes < 1024 * 1024:
@@ -102,8 +110,8 @@ def format_size(size_bytes: int) -> str:
 
 def scan_hrk_folder(folder: str) -> list[dict]:
     """
-    Scan folder dan kumpulkan info setiap .hrk yang ditemukan.
-    Mengembalikan list of dict dengan keys: filename, ext_id, path, sha256, size, is_official
+    Scan the folder and collect info for every .hrk found.
+    Returns a list of dicts with keys: filename, ext_id, path, sha256, size, is_official
     """
     if not os.path.isdir(folder):
         print(f"[ERROR] Folder tidak ditemukan: {folder}")
@@ -145,7 +153,7 @@ def scan_hrk_folder(folder: str) -> list[dict]:
 
 
 def generate_trusted_json(results: list[dict], output_dir: str):
-    """Tulis trusted_extensions.json ke output_dir."""
+    """Write trusted_extensions.json to output_dir."""
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, "trusted_extensions.json")
 
@@ -163,7 +171,7 @@ def generate_trusted_json(results: list[dict], output_dir: str):
 
 
 def generate_log(results: list[dict], output_dir: str):
-    """Tulis log referensi untuk developer ke output_dir."""
+    """Write a developer reference log to output_dir."""
     os.makedirs(output_dir, exist_ok=True)
     log_path = os.path.join(output_dir, "trusted_extensions.log")
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -216,7 +224,7 @@ def generate_log(results: list[dict], output_dir: str):
 
 
 def print_server_reminder(output_dir: str):
-    """Ingatkan developer langkah deploy yang diperlukan."""
+    """Remind the developer of the required deploy steps."""
     json_path = os.path.join(output_dir, "trusted_extensions.json")
     print(f"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -243,7 +251,7 @@ def print_server_reminder(output_dir: str):
 
 
 def compute_installer_sha256(installer_path: str):
-    """Mode khusus: hitung SHA256 satu file installer untuk version.json."""
+    """Special mode: compute the SHA256 of a single installer file for version.json."""
     if not os.path.isfile(installer_path):
         print(f"[ERROR] File tidak ditemukan: {installer_path}")
         sys.exit(1)
@@ -305,12 +313,12 @@ Contoh:
     print("  Hariku — Trusted Extension Hash Generator")
     print("=" * 60)
 
-    # Mode installer SHA256
+    # Installer SHA256 mode.
     if args.installer:
         compute_installer_sha256(args.installer)
         return
 
-    # Mode scan folder
+    # Folder scan mode.
     results = scan_hrk_folder(args.folder)
 
     if not results:

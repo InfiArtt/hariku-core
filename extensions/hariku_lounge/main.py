@@ -1,3 +1,12 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import wx
 import json
 import logging
@@ -43,7 +52,10 @@ class LoungePreferencesPanel(wx.Panel):
         
         # Load saved data
         data = core.api.load_data(EXTENSION_ID)
-        self.url_input.SetValue(data.get("api_url", DEFAULT_API_URL))
+        saved_url = data.get("api_url", DEFAULT_API_URL)
+        if "novarealm" in (saved_url or ""):
+            saved_url = DEFAULT_API_URL   # migrate off the retired domain
+        self.url_input.SetValue(saved_url)
         self.poll_slider.SetValue(data.get("poll_interval", DEFAULT_POLL_INTERVAL))
 
     def get_data(self):
@@ -53,8 +65,6 @@ class LoungePreferencesPanel(wx.Panel):
         }
 
 def apply_settings():
-    # The parent window handles extracting get_data() implicitly in V2?
-    # Actually, apply_func doesn't receive the panel instance natively unless passed via closure.
     pass
 
 
@@ -69,6 +79,9 @@ class HarikuLoungeFrame(wx.Frame):
         # Load API URL and Interval
         data = core.api.load_data(EXTENSION_ID)
         self.api_url = data.get("api_url", DEFAULT_API_URL)
+        # Migrate old saved URLs off the retired novarealm.cloud domain.
+        if "novarealm" in (self.api_url or ""):
+            self.api_url = DEFAULT_API_URL
         self.poll_interval = data.get("poll_interval", DEFAULT_POLL_INTERVAL)
         
         panel = wx.Panel(self)
@@ -214,13 +227,9 @@ def register(event_bus):
                 _lounge_frame.poll_timer.Start(data["poll_interval"] * 1000)
         return panel, apply
 
-    # Wait, the signature is register_panel(category, name, create_func, apply_func).
-    # Since apply needs the panel instance, we can keep the instance in a global list or use a wrapper.
-    # Let's define the wrapper for Hariku V2 Preferences API:
-    
-    # Hariku V2 Preferences calls `create_func(parent)` and expects a wx.Panel.
-    # When OK is clicked, it calls `apply_func()`.
-    
+    # Preferences API: register_panel(category, name, create_func, apply_func).
+    # create_func(parent) returns a wx.Panel; apply_func() is called on OK. Since
+    # apply needs the panel instance, it is kept in the module global below.
     global _lounge_panel_instance
     _lounge_panel_instance = None
     

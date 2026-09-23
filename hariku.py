@@ -1,19 +1,26 @@
-# hariku2/main.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import sys
 import os
 
-# Cek tombol Shift secara instan sebelum library lain dimuat
+# Check the Shift key instantly, before any other library loads.
 import ctypes
 import winsound
 VK_SHIFT = 0x10
 SHIFT_PRESSED_AT_STARTUP = (ctypes.windll.user32.GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0
 if SHIFT_PRESSED_AT_STARTUP:
-    # Menggunakan suara WAV internal agar tidak terlalu keras dan mengikuti volume Windows
+    # Use an internal WAV so it isn't too loud and follows the Windows volume.
     sound_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", "history.wav")
     winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
 
 
-# Tambahkan root directory hariku2 ke path agar imports internal bekerja dari mana saja
+# Add the hariku2 root directory to the path so internal imports work from anywhere.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import core.crash_handler
@@ -21,7 +28,7 @@ core.crash_handler.setup()
 
 import wx
 
-# Terapkan Ghost Widget (Aksesibilitas StaticText)
+# Apply the Ghost Widget (StaticText accessibility) override.
 import core.ui_overrides
 core.ui_overrides.apply_overrides()
 
@@ -35,7 +42,7 @@ import core.reminders
 import core.api
 from ui.main_window import MainWindow
 
-# Mencegah Nuitka membuang library standar
+# Prevent Nuitka from stripping the standard library.
 import core.stdlib_includes
 
 import os
@@ -43,23 +50,23 @@ import sys
 
 import tempfile
 
-# Siapkan direktori log di folder Temp agar tidak menjadi sampah permanen (seperti NVDA)
+# Put the log directory in Temp so it doesn't become permanent clutter (like NVDA).
 log_dir = os.path.join(tempfile.gettempdir(), "Hariku2")
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "hariku_debug.log")
 
-# Setup logging awal dengan INFO agar import api.py tidak error
+# Set up logging early at INFO so importing api.py doesn't error.
 logging.basicConfig(
-    level=logging.INFO, 
+    level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     handlers=[
-        logging.FileHandler(log_file, mode='w', encoding='utf-8'), # Gunakan mode 'w' agar menimpa log lama
+        logging.FileHandler(log_file, mode='w', encoding='utf-8'), # mode 'w' overwrites the old log
         logging.StreamHandler(sys.stderr)
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Sesuaikan level log berdasarkan pengaturan Core
+# Adjust the log level based on the Core settings.
 try:
     import core.api
     config = core.api.load_data("Core")
@@ -80,6 +87,15 @@ class HarikuApp(wx.App):
     def OnInit(self):
         import core.constants
         logger.info(f"Starting Hariku V{core.constants.CORE_VERSION} Core...")
+
+        # Single-instance guard: a second copy would fight over global hotkeys
+        # and the tray icon, so refuse to start it.
+        self._instance_checker = wx.SingleInstanceChecker(f"Hariku2-{wx.GetUserId()}")
+        if self._instance_checker.IsAnotherRunning():
+            logger.warning("Another instance of Hariku is already running. Exiting.")
+            wx.MessageBox("Hariku is already running.", "Hariku",
+                          wx.OK | wx.ICON_INFORMATION)
+            return False
         
         # Load and set internal config
         import core.api
@@ -87,22 +103,22 @@ class HarikuApp(wx.App):
         
         # Initialize internal audio/volume setup
         import core.sounds
-        # Memastikan volume system diset sesuai config
+        # Make sure the system volume matches the config.
         core.sounds.apply_system_volume(config.get("volume", 100))
-        
-        # Inisialisasi sistem terjemahan (i18n)
+
+        # Initialize the translation system (i18n).
         import core.i18n
         core.i18n.init()
         _ = core.i18n.get_translator("core")
-        
+
         import core.core_panels
         core.core_panels.register()
-        
-        # Inisialisasi sistem Hotkey / Input Gestures
+
+        # Initialize the hotkey / input-gesture system.
         core.hotkeys.init_hotkeys()
-        
-        # Memuat aksesibilitas (Tolk melalui cytolk)
-        # Mengecek apakah berjalan di Safe Mode (lewat argumen atau tahan tombol Shift di awal)
+
+        # Load accessibility (Tolk via cytolk).
+        # Check whether we're running in Safe Mode (via argument or by holding Shift at startup).
         self.is_safe_mode = "--safe-mode" in sys.argv or SHIFT_PRESSED_AT_STARTUP
         
         if self.is_safe_mode:
@@ -118,7 +134,7 @@ class HarikuApp(wx.App):
             if init_speech():
                 speak(_("welcome_message", version=core.constants.CORE_VERSION))
             
-        # Cek Onboarding
+        # Check onboarding.
         completed = config.get("onboarding_completed", False)
         if not completed:
             from ui.onboarding_dialog import run_onboarding
@@ -131,13 +147,13 @@ class HarikuApp(wx.App):
         core.reminders.init(bus)
         
         if not self.is_safe_mode:
-            # Memuat semua ekstensi HANYA jika bukan di safe mode
+            # Load all extensions ONLY when not in safe mode.
             load_all_extensions()
-            # Cek update ekstensi di background (delay 6 detik agar startup tidak terbebani)
+            # Check for extension updates in the background (6s delay so startup isn't burdened).
             import core.update_checker
             core.update_checker.start(delay_seconds=6)
-            
-            # Cek update Core aplikasi di background (delay 3 detik)
+
+            # Check for Core app updates in the background (3s delay).
             import core.updater
             import threading
             def _delayed_core_update_check():
@@ -146,15 +162,15 @@ class HarikuApp(wx.App):
                 core.updater.check_for_updates(interactive=False)
             threading.Thread(target=_delayed_core_update_check, daemon=True, name="core-update-checker").start()
         
-        # Memberitahu ekstensi bahwa sistem utama sudah berjalan
+        # Tell extensions that the main system is now running.
         bus.emit("on_app_startup")
-        
-        # Menampilkan UI Utama
+
+        # Show the main UI.
         self.frame = MainWindow(None, title=_("app_title_safe_mode") if self.is_safe_mode else _("app_title"))
         self.SetTopWindow(self.frame)
         self.frame.Show(True)
-        
-        # Kirim ping telemetri
+
+        # Send the telemetry ping.
         import core.telemetry
         core.telemetry.record_startup()
         

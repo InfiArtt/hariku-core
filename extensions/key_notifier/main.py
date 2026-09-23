@@ -1,3 +1,12 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import threading
 import time
 import ctypes
@@ -36,7 +45,7 @@ def play_if_exists(filepath):
     if filepath and os.path.exists(filepath):
         play_sound(filepath)
     else:
-        # Fallback jika file audio tidak ditemukan tapi user meminta suara
+        # Fallback when the audio file is missing but a sound was requested.
         import winsound
         winsound.MessageBeep(winsound.MB_ICONASTERISK)
 
@@ -90,9 +99,9 @@ def register(bus):
     poll_thread = threading.Thread(target=_poll_keys, daemon=True)
     poll_thread.start()
     
-    # Register Preferences Panel secara dinamis!
+    # Register the Preferences panel dynamically.
     import core.preferences
-    # Local import agar wxPython load di thread UI jika dibutuhkan
+    # Local import so wxPython is only loaded when the panel is needed.
     from settings_ui import KeyNotifierSettingsPanel
     
     _panel_instance = None

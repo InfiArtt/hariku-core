@@ -1,3 +1,11 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import wx
 import wx.adv
 import json
@@ -46,12 +54,22 @@ def load_reminders():
 
 def get_reminders_for_date(date_str):
     reminders = load_reminders()
-    day_reminders = [r for r in reminders if r["date"] == date_str]
-    
+    day_reminders = []
+    for r in reminders:
+        if r.get("date") == date_str:
+            day_reminders.append(r)
+        elif (not r.get("is_done")) and r.get("recurrence", "none") != "none" \
+                and _recurring_hits(r, date_str):
+            # [Recurring] Show a display-only copy of the reminder on this
+            # matching date (firing still uses the stored next-occurrence date).
+            virtual = dict(r)
+            virtual["date"] = date_str
+            day_reminders.append(virtual)
+
     # Allow extensions to inject items into the agenda
     payload = {"date": date_str, "reminders": day_reminders}
     bus.emit("on_fetch_agenda", payload)
-    
+
     return payload["reminders"]
 
 def save_reminders(reminders):
@@ -60,14 +78,18 @@ def save_reminders(reminders):
     except Exception as e:
         logger.error(f"Failed to save reminders: {e}")
 
-def add_reminder(title, date_str, time_str):
+RECURRENCES = ("none", "daily", "weekly", "monthly", "yearly")
+
+def add_reminder(title, date_str, time_str, recurrence="none", interval=1):
     reminders = load_reminders()
     reminders.append({
         "id": str(uuid.uuid4()),
         "title": title,
         "date": date_str,
         "time": time_str,
-        "is_done": False
+        "is_done": False,
+        "recurrence": recurrence if recurrence in RECURRENCES else "none",
+        "interval": max(1, int(interval or 1)),
     })
     save_reminders(reminders)
 
@@ -125,7 +147,7 @@ class ReminderDialog(wx.Dialog):
         font.SetWeight(wx.FONTWEIGHT_BOLD)
         lbl.SetFont(font)
         
-        # Bungkus text text wrap jika kepanjangan
+        # Wrap the label text if it is too long.
         lbl.Wrap(300)
         vbox.Add(lbl, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
         
@@ -153,7 +175,13 @@ class ReminderDialog(wx.Dialog):
 
 def show_notification(r):
     message = f"Reminder: {r['title']}"
-    
+
+    # Let extensions (e.g. Routines) react to a reminder firing.
+    try:
+        bus.emit("on_reminder_fired", r)
+    except Exception:
+        pass
+
     top_window = wx.GetApp().GetTopWindow()
     if not top_window: return
     
@@ -173,6 +201,84 @@ def show_notification(r):
         mark_as_done(r["id"])
         
     dlg.Destroy()
+
+def _add_months(d, months):
+    """Add whole months to a datetime, clamping the day to the target month's end
+    (e.g. Jan 31 + 1 month -> Feb 28/29)."""
+    import calendar
+    m = d.month - 1 + months
+    y = d.year + m // 12
+    m = m % 12 + 1
+    day = min(d.day, calendar.monthrange(y, m)[1])
+    return d.replace(year=y, month=m, day=day)
+
+
+def _next_occurrence(date_str, time_str, recurrence, interval, now):
+    """[Recurring] Return the next occurrence date (YYYY-MM-DD) strictly AFTER
+    `now`, advancing from (date_str, time_str) by `interval` steps of the given
+    recurrence. Skips over any missed occurrences so a long-overdue recurring
+    reminder re-arms once to the next future slot instead of firing repeatedly."""
+    try:
+        dt = datetime.datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+    except (ValueError, KeyError, TypeError):
+        return date_str
+    interval = max(1, int(interval or 1))
+
+    def step(d):
+        if recurrence == "daily":
+            return d + datetime.timedelta(days=interval)
+        if recurrence == "weekly":
+            return d + datetime.timedelta(weeks=interval)
+        if recurrence == "monthly":
+            return _add_months(d, interval)
+        if recurrence == "yearly":
+            return _add_months(d, 12 * interval)
+        return d
+
+    guard = 0
+    while dt <= now and guard < 10000:
+        nxt = step(dt)
+        if nxt <= dt:   # safety: unknown recurrence / no progress
+            break
+        dt = nxt
+        guard += 1
+    return dt.strftime("%Y-%m-%d")
+
+
+def _recurring_hits(r, target_str):
+    """[Recurring] Does recurring reminder `r` fall on the date `target_str`
+    (other than its own stored date)? Lets the agenda show it on every matching
+    day, not only its next stored occurrence. Congruence is taken from the
+    stored date, which stays in the same class as it re-arms."""
+    rec = r.get("recurrence", "none")
+    if rec == "none":
+        return False
+    try:
+        import calendar
+        base = datetime.datetime.strptime(r["date"], "%Y-%m-%d").date()
+        target = datetime.datetime.strptime(target_str, "%Y-%m-%d").date()
+    except (ValueError, KeyError, TypeError):
+        return False
+    if target == base:
+        return False  # exact-date match is handled separately
+    interval = max(1, int(r.get("interval", 1) or 1))
+    delta_days = (target - base).days
+    if rec == "daily":
+        return delta_days % interval == 0
+    if rec == "weekly":
+        return delta_days % (7 * interval) == 0
+    if rec == "monthly":
+        if target.day != min(base.day, calendar.monthrange(target.year, target.month)[1]):
+            return False
+        months = (target.year - base.year) * 12 + (target.month - base.month)
+        return months % interval == 0
+    if rec == "yearly":
+        if (target.month != base.month or
+                target.day != min(base.day, calendar.monthrange(target.year, base.month)[1])):
+            return False
+        return (target.year - base.year) % interval == 0
+    return False
+
 
 def _reminder_due_state(r, now):
     """
@@ -203,14 +309,22 @@ def _reminder_loop():
         modified = False
         for r in reminders:
             state = _reminder_due_state(r, now)
+            if state not in ("fire", "stale"):
+                continue
             if state == "fire":
                 wx.CallAfter(show_notification, r)
-                r["notified"] = True
-                modified = True
-            elif state == "stale":
+            else:
                 logger.info(f"Skipping stale reminder '{r.get('title', '')}' due {r.get('date')} {r.get('time')}")
+
+            rec = r.get("recurrence", "none")
+            if rec and rec != "none":
+                # [Recurring] Re-arm to the next future occurrence instead of ending.
+                r["date"] = _next_occurrence(r["date"], r["time"], rec, r.get("interval", 1), now)
+                r["notified"] = False
+                r.pop("notified_at", None)
+            else:
                 r["notified"] = True
-                modified = True
+            modified = True
 
         if modified:
             save_reminders(reminders)

@@ -1,3 +1,12 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import logging
 import wx
 import ctypes
@@ -132,7 +141,7 @@ def register(bus):
         slot = i
         keycode = ord(slot_keys[i-1])
         
-        # 1. Pin Window: Ctrl + Shift + [Letter] (Lebih aman dari Win key)
+        # 1. Pin Window: Ctrl + Shift + [Letter] (safer than the Win key)
         register_action(
             "window_teleporter",
             f"pin_slot_{slot}",
@@ -174,7 +183,7 @@ def register(bus):
             callback=_create_check_callback(slot)
         )
         
-        # 4. Jump Desktop: Alt + Shift + [Letter] (Aman dari Game Bar/Windows)
+        # 4. Jump Desktop: Alt + Shift + [Letter] (safe from Game Bar/Windows)
         register_action(
             "window_teleporter",
             f"desktop_jump_{slot}",

@@ -1,4 +1,12 @@
-# gcal_integration/main.py
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # ============================================================
 # Google Calendar Reader — Hariku V2 Extension
 # ============================================================
@@ -612,7 +620,6 @@ class GCalSettingsPanel(wx.Panel):
 
         config = core.api.load_data(DATA_KEY)
 
-        # Warning label
         warn = wx.StaticText(
             self,
             label=(
@@ -624,7 +631,6 @@ class GCalSettingsPanel(wx.Panel):
         warn.Wrap(400)
         vbox.Add(warn, 0, wx.ALL, 10)
 
-        # Private URL input
         vbox.Add(
             wx.StaticText(self, label="Private iCal URL (.ics):"),
             0, wx.LEFT | wx.TOP, 10,
@@ -632,7 +638,6 @@ class GCalSettingsPanel(wx.Panel):
         self.txt_url = wx.TextCtrl(self, value=config.get("ics_url", ""))
         vbox.Add(self.txt_url, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
-        # Help text for Private URL
         help_text = wx.StaticText(
             self,
             label=(
@@ -644,7 +649,6 @@ class GCalSettingsPanel(wx.Panel):
         help_text.Wrap(400)
         vbox.Add(help_text, 0, wx.ALL, 10)
 
-        # Historical Country Code input
         vbox.Add(
             wx.StaticText(self, label="Historical Data Country Code (e.g. ID, US):"),
             0, wx.LEFT | wx.TOP, 10,
@@ -652,7 +656,6 @@ class GCalSettingsPanel(wx.Panel):
         self.txt_hist = wx.TextCtrl(self, value=config.get("history_country", "ID"))
         vbox.Add(self.txt_hist, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
-        # Public Holidays Dropdown
         vbox.Add(
             wx.StaticText(self, label="Public Holidays Calendar:"),
             0, wx.LEFT | wx.TOP, 10,
@@ -668,7 +671,6 @@ class GCalSettingsPanel(wx.Panel):
             
         vbox.Add(self.cb_holidays, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
-        # Migration Button
         vbox.AddSpacer(15)
         btn_import = wx.Button(self, label="Import Events from Hariku V1")
         btn_import.Bind(wx.EVT_BUTTON, _import_v1_events)

@@ -1,0 +1,10 @@
+{
+    "id": "routines",
+    "name": "Routines",
+    "version": "1.0",
+    "description": "iOS-Shortcuts-style automation: run a chain of actions automatically when conditions are met (time, battery, idle, focused app, clipboard, network) — or on demand with Run Now. Manage them from the Routines window.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.0"
+}
