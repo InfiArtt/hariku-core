@@ -60,6 +60,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "weather",
     "briefing",
     "finance",
+    "flight_radar",
 ])
 
 

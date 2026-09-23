@@ -4,9 +4,9 @@ Hariku does not collect analytics or telemetry. Your calendar, reminders,
 routines, settings, and extension data stay on your computer, in
 `%APPDATA%\Hariku2`.
 
-This page lists every case where Hariku and the extensions bundled with it
-connect to the internet. It does not cover extensions you install from the
-store or from other sources, which can make their own connections.
+This page lists every case where Hariku and the official extensions in the
+Hariku store connect to the internet. It does not cover third-party
+extensions, which can make their own connections.
 
 ## Automatic connections
 
@@ -20,7 +20,7 @@ When Hariku starts, it downloads a few small files from GitHub Pages
 - The list of trusted extension hashes, which Hariku uses to check extensions
   from the store before loading them.
 
-If the Calendar Integration extension is enabled, it also downloads holiday
+If the Google Calendar Reader extension is enabled, it also downloads holiday
 data for the selected country (Indonesia by default) from GitHub Pages, and it
 fetches any calendar (ICS) links you add from the servers that host them.
 
@@ -40,6 +40,20 @@ Open-Meteo's city search (`geocoding-api.open-meteo.com`). Open-Meteo's
 handling of these requests is covered by its
 [terms and privacy policy](https://open-meteo.com/en/terms#privacy). The Morning
 Briefing extension makes no connections of its own.
+
+## Flight Radar
+
+The Flight Radar extension connects only when you use it: when you ask what is
+flying nearby, open the radar list, or turn on overhead alerts (which then
+check about every 30 seconds). Each check sends your chosen location's
+coordinates and the search radius to adsb.fi (`opendata.adsb.fi`), or to
+adsb.lol (`api.adsb.lol`) if adsb.fi doesn't answer. It is the city you picked
+in the Flight Radar settings (or, if you haven't, the one in the Weather
+settings), not your device's location. To say where a flight is
+going, it sends only that flight's callsign to adsbdb (`api.adsbdb.com`);
+routes are kept in memory and never saved. Searching for a city in its
+settings sends the text you typed to Open-Meteo's city search, as described
+for Weather above.
 
 ## When you ask for it
 
