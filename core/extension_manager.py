@@ -63,6 +63,10 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "flight_radar",
     "clipboard_history",
     "sound_themes",
+    "earthquake",
+    "marine",
+    "air_quality",
+    "space",
 ])
 
 
