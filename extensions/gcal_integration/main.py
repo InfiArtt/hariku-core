@@ -259,7 +259,7 @@ def _sync_google_calendar():
     year = datetime.now().year
 
     def _fetch():
-        from ics_parser import fetch_and_parse
+        from gcal_ics_parser import fetch_and_parse
         all_events = []
         if urls:
             for url in urls:
@@ -311,7 +311,7 @@ def _get_all_events_for_date(date_str):
 
     Returns a sorted list of event dicts.
     """
-    from ics_parser import get_events_for_date
+    from gcal_ics_parser import get_events_for_date
 
     local = _load_local_data()
     hidden_ids = set(local.get("hidden_ids", []))
@@ -385,7 +385,7 @@ def _on_enter_pressed(payload):
 
     payload["handled"] = True  # Prevent default dialog
 
-    from dialogs import EventEditorDialog
+    from gcal_dialogs import EventEditorDialog
 
     parent = core.api.main_window_instance
     dlg = EventEditorDialog(parent, date_str)
@@ -536,7 +536,7 @@ def _edit_selected_event():
         idx = dlg.GetSelection()
         if 0 <= idx < len(editable):
             selected = editable[idx]
-            from dialogs import EventEditorDialog
+            from gcal_dialogs import EventEditorDialog
             edit_dlg = EventEditorDialog(parent, date_str, event_data=selected)
             if edit_dlg.ShowModal() == wx.ID_OK:
                 result = edit_dlg.get_result()

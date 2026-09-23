@@ -40,6 +40,27 @@ def test_helpers_do_not_shadow_hariku_or_stdlib():
     assert not bad, "\n".join(bad)
 
 
+# Published before the prefix rule; rename these when their extensions next ship.
+LEGACY_UNPREFIXED = {
+    ("markdown_reader", "md_parser"),
+    ("markdown_reader", "reader_dialog"),
+    ("key_notifier", "settings_ui"),
+    ("account_manager", "auth_server"),
+}
+
+
+def test_helpers_are_prefixed_with_the_extension_name():
+    # Uniqueness within this repo isn't enough: a third-party extension with a
+    # generic "dialogs.py" would collide too. A prefix (routines_ui, gcal_dialogs)
+    # makes clashes practically impossible.
+    bad = []
+    for ext, mod in _helper_modules():
+        prefixes = (ext + "_", ext.split("_")[0] + "_")
+        if not mod.startswith(prefixes) and (ext, mod) not in LEGACY_UNPREFIXED:
+            bad.append(f"extensions/{ext}/{mod}.py should be named {ext.split('_')[0]}_{mod}.py")
+    assert not bad, "\n".join(bad)
+
+
 def test_helper_names_are_unique_across_extensions():
     owners = {}
     for ext, mod in _helper_modules():
