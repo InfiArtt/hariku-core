@@ -1915,8 +1915,10 @@ def test_registrations_are_named_with_their_country(text, lang):
     # US N-numbers are recognisable without a dash or a registration field.
     assert text.aircraft_name({"callsign": "N71108"}) == \
         "registration N 7 1 1 0 8, United States"
+    assert text.aircraft_name({"callsign": "", "registration": "B-HLA"}) == \
+        "registration B H L A, Hong Kong"
     # A registration whose prefix we can't place is still called a registration.
-    assert text.aircraft_name({"callsign": "", "registration": "B-HLA"}) == "registration B H L A"
+    assert text.aircraft_name({"callsign": "", "registration": "ZZ-ABC"}) == "registration Z Z A B C"
     # Airline-style callsigns are not mistaken for registrations.
     assert text.aircraft_name({"callsign": "NAM123"}) == "N A M 123"
     lang("id")
@@ -1924,26 +1926,54 @@ def test_registrations_are_named_with_their_country(text, lang):
         "registrasi 9 V T N G, Singapura"
 
 
-def test_registration_prefix(names):
-    assert names.registration_prefix("9V-TNG") == "9V"
-    assert names.registration_prefix("9VTNG") == "9V"
-    assert names.registration_prefix("PK-GPA") == "PK"
-    assert names.registration_prefix("N71108") == "N"
-    assert names.registration_prefix("JA8089") == "JA"
-    assert names.registration_prefix("G-XLEA") == "G"
-    assert names.registration_prefix("B-HLA") is None
-    assert names.registration_prefix("GIA155") is None
-    assert names.registration_prefix("") is None
+@pytest.fixture(scope="module")
+def registrations(text):
+    # Imported by the text module from the extension folder.
+    return sys.modules["flight_radar_registrations"]
 
 
-def test_every_registration_prefix_has_a_country_in_both_languages(names):
-    base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "extensions", "flight_radar", "locales")
-    for lang_code in ("en", "id"):
-        with open(os.path.join(base, f"{lang_code}.json"), encoding="utf-8") as f:
-            messages = json.load(f)["messages"]
-        missing = [p for p in names.REGISTRATION_PREFIXES if f"reg_country_{p}" not in messages]
-        assert not missing, f"{lang_code}: {missing}"
+def test_every_prefix_names_a_country_in_both_languages(registrations):
+    keys = list(registrations.PREFIXES.values()) + list(registrations._VP_VQ.values())
+    assert len(registrations.PREFIXES) > 190
+    for key in keys + ["CN", "TW", "HK", "MO", "FR_OVERSEAS"]:
+        english, indonesian = registrations.COUNTRIES[key]
+        assert english and indonesian and not english.startswith(("the ", "a ")), key
+
+
+@pytest.mark.parametrize("reg, en, id_", [
+    ("9V-TNG", "Singapore", "Singapura"),
+    ("9VTNG", "Singapore", "Singapura"),
+    ("PK-GPA", "Indonesia", "Indonesia"),
+    ("N71108", "United States", "Amerika Serikat"),
+    ("JA8089", "Japan", "Jepang"),
+    ("HL7611", "South Korea", "Korea Selatan"),
+    ("G-XLEA", "United Kingdom", "Inggris"),
+    ("D-AIMA", "Germany", "Jerman"),
+    ("B-HLA", "Hong Kong", "Hong Kong"),
+    ("B-KPA", "Hong Kong", "Hong Kong"),
+    ("B-MAR", "Macau", "Makau"),
+    ("B-18901", "Taiwan", "Taiwan"),
+    ("B-1234", "China", "Tiongkok"),
+    ("B-30AE", "China", "Tiongkok"),
+    ("VP-BDE", "Bermuda", "Bermuda"),
+    ("VQ-BAA", "Bermuda", "Bermuda"),
+    ("VP-CBA", "Cayman Islands", "Kepulauan Cayman"),
+    ("F-GZNA", "France", "Prancis"),
+    ("F-OHJU", "French overseas territory", "wilayah seberang laut Prancis"),
+    ("HB-JFA", "Switzerland or Liechtenstein", "Swiss atau Liechtenstein"),
+    ("PP-XYZ", "Brazil", "Brasil"),
+    ("XA-AMX", "Mexico", "Meksiko"),
+    ("RDPL-34001", "Laos", "Laos"),
+    ("A9C-FG", "Bahrain", "Bahrain"),
+])
+def test_registration_countries(registrations, reg, en, id_):
+    assert registrations.country_name(reg, "en") == en
+    assert registrations.country_name(reg, "id") == id_
+
+
+@pytest.mark.parametrize("reg", ["ZZ-ABC", "VP-ZZZ", "B-", "GIA155", "NAM123", "SJV357", ""])
+def test_unplaceable_registrations_get_no_country(registrations, reg):
+    assert registrations.country_key(reg) is None
 
 
 def test_more_airlines_and_the_777_freighter(text):

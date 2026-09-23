@@ -18,12 +18,13 @@ import datetime
 import os
 import re
 
-from core.i18n import get_translator
+from core.i18n import get_current_language, get_translator
 
 import flight_radar_airports as airports
 import flight_radar_api as api
 import flight_radar_atc as atc
 import flight_radar_names as names
+import flight_radar_registrations as registrations
 import flight_radar_routes as routes
 
 EXT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -141,10 +142,9 @@ def spell_all(code):
 def registration_text(reg):
     """"registration 9 V T N G, Singapore": a registration said as one, with
     the country of its prefix when known."""
-    prefix = names.registration_prefix(reg)
-    if prefix:
-        return _("registration_name", reg=spell_all(reg),
-                 country=_("reg_country_" + prefix))
+    country = registrations.country_name(reg, get_current_language())
+    if country:
+        return _("registration_name", reg=spell_all(reg), country=country)
     return _("registration_name_no_country", reg=spell_all(reg))
 
 
@@ -153,7 +153,7 @@ def _is_registration(callsign, plane):
     reg = (plane.get("registration") or "").replace("-", "").upper()
     if reg and callsign.replace("-", "").upper() == reg:
         return True
-    return names.registration_prefix(callsign) is not None
+    return registrations.country_key(callsign) is not None
 
 
 def aircraft_name(plane):
