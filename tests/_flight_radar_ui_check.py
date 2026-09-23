@@ -118,9 +118,13 @@ P = ord("P")
 PLAIN_P = (P, False, False, False, False)
 SHIFT_P = (P, False, True, False, False)
 SHIFT_L = (ord("L"), False, True, False, False)
+PLAIN_T = (ord("T"), False, False, False, False)
+SHIFT_T = (ord("T"), False, True, False, False)
 assert PLAIN_P not in core.hotkeys.keybindings, "P is already bound by the core"
 assert SHIFT_P not in core.hotkeys.keybindings, "Shift+P is already bound by the core"
 assert SHIFT_L not in core.hotkeys.keybindings, "Shift+L is already bound by the core"
+assert PLAIN_T not in core.hotkeys.keybindings, "T is already bound by the core"
+assert SHIFT_T not in core.hotkeys.keybindings, "Shift+T is already bound by the core"
 
 # Replace the network helper before the extension imports its modules.
 FR_DIR = os.path.join(ROOT, "extensions", "flight_radar")
@@ -192,6 +196,11 @@ stub_requests = []
 nominatim_agents = []
 
 
+# A flight to track, 30 km north of home; every other flight is not transmitting.
+TRACKED = {"ac": [_plane("abd408", "GIA408", "PK-GPA", "B738", 30, 0, 9843, -832)],
+           "msg": "No error"}
+
+
 def _fake_fetch_json(url, timeout=None, user_agent=None):
     stub_requests.append(url)
     if url.startswith(flight_radar_api.GEOCODING_URL):
@@ -199,6 +208,10 @@ def _fake_fetch_json(url, timeout=None, user_agent=None):
     if url.startswith("https://nominatim.openstreetmap.org/search?"):
         nominatim_agents.append(user_agent)
         return ADDRESSES
+    if url.startswith("https://opendata.adsb.fi/api/v2/callsign/"):
+        return TRACKED if url.endswith("/GIA408") else {"ac": [], "msg": "No error"}
+    if url.startswith("https://opendata.adsb.fi/api/v2/registration/"):
+        return {"ac": [], "msg": "No error"}
     if url.startswith("https://opendata.adsb.fi/api/v2/lat/"):
         return AIRCRAFT
     if url.startswith("https://api.adsbdb.com/v0/callsign/"):
@@ -236,6 +249,8 @@ assert sys.modules["flight_radar_api"] is flight_radar_api
 assert core.hotkeys.keybindings[PLAIN_P][0] == "Flight Radar.speak_nearby"
 assert core.hotkeys.keybindings[SHIFT_P][0] == "Flight Radar.show_list"
 assert core.hotkeys.keybindings[SHIFT_L][0] == "Flight Radar.listen_atc"
+assert core.hotkeys.keybindings[PLAIN_T][0] == "Flight Radar.speak_tracked"
+assert core.hotkeys.keybindings[SHIFT_T][0] == "Flight Radar.track_flight"
 # Shorter pacing so the check runs quickly; the rules themselves are unit-tested.
 main._gate.min_gap = 0.3
 main._routes.min_gap = 0.05
@@ -586,6 +601,32 @@ escape.Stop()
 assert state.get("found") and not state.get("forced"), f"Escape did not close the list: {state}"
 print("OK escape")
 
+# --- The list's Track button opens Track a flight, filled in -------------------------
+seen_track = {}
+
+
+def inspect_track_dialog():
+    for w in wx.GetTopLevelWindows():
+        if isinstance(w, fr_ui.TrackFlightDialog) and w.IsModal():
+            seen_track["initial"] = w.txt_flight.GetValue()
+            w.EndModal(wx.ID_CANCEL)
+
+
+dlg = fr_ui.RadarListDialog(frame, "Home", main.get_settings(), main.list_data, main.refresh,
+                            main.leg_for, main.with_routes, listen=main.listen_for_aircraft,
+                            emergency_intro=main.emergency_intro, track=main.track_from_list)
+dlg.Show()
+wx.Yield()
+dlg.list_aircraft.SetSelection(3)
+fire(dlg.list_aircraft, wx.EVT_LISTBOX, 3)
+closer = wx.CallLater(400, inspect_track_dialog)
+fire(dlg.btn_track, wx.EVT_BUTTON)
+closer.Stop()
+assert seen_track.get("initial") == "BTK6339", seen_track
+dlg.Destroy()
+wx.Yield()
+print("OK list_track_button")
+
 # --- Overhead alerts ----------------------------------------------------------------
 prefs = PreferencesDialog(frame, select_tab="Flight Radar")
 prefs.Show()
@@ -660,6 +701,58 @@ pump(lambda: not main._poll_running, timeout=2)
 assert main._poll_timer is None, "polling did not stop"
 print("OK emergency_watch")
 
+# --- Track a flight -------------------------------------------------------------------
+spoken.clear()
+assert run_and_close("Flight Radar.speak_tracked") == []
+assert spoken == [_("track_none")], spoken
+assert run_and_close("Flight Radar.track_flight") == ["TrackFlightDialog"]
+
+track = fr_ui.TrackFlightDialog(frame, main.tracked_rows, main.track_flight, main.untrack,
+                                main.speak_tracked)
+track.Show()
+wx.Yield()
+assert track.list_tracked.GetString(0) == _("tracked_empty")
+track.txt_flight.SetFocus()
+wx.Yield()
+field_focused = wx.Window.FindFocus() is track.txt_flight
+track.txt_flight.SetValue("ZZ 12")
+fire(track.txt_flight, wx.EVT_TEXT_ENTER)
+assert spoken[-1].startswith("Hariku doesn't know the airline code Z Z."), spoken[-1]
+track.txt_flight.SetValue("GA 408")
+fire(track.txt_flight, wx.EVT_TEXT_ENTER)
+assert said("Looking for Garuda Indonesia 408"), spoken
+assert pump(lambda: any("Now tracking it" in s for s in spoken)), spoken
+report = spoken[-1]
+assert report.startswith("Garuda Indonesia 408, ") and "of Jakarta Soekarno-Hatta" in report, report
+assert track.list_tracked.GetCount() == 1
+assert track.list_tracked.GetString(0).startswith("Garuda Indonesia 408: "), \
+    track.list_tracked.GetString(0)
+if field_focused:
+    assert wx.Window.FindFocus() is track.txt_flight, "focus moved after Track"
+assert core.api.load_data("FlightRadar")["tracked"][0]["id"] == "GIA408"
+assert main._poll_timer is not None, "tracking did not start polling"
+checked = browse(track.list_tracked, wx.EVT_LISTBOX)
+spoken.clear()
+fire(track.btn_check, wx.EVT_BUTTON)
+assert pump(lambda: any(s.startswith("Garuda Indonesia 408, ") for s in spoken)), spoken
+# Stop tracking: Delete on the list (or the button when focus can't be observed).
+spoken.clear()
+if checked:
+    track.list_tracked.SetFocus()
+    wx.Yield()
+    key = wx.KeyEvent(wx.wxEVT_CHAR_HOOK)
+    key.SetKeyCode(wx.WXK_DELETE)
+    track.GetEventHandler().ProcessEvent(key)
+else:
+    fire(track.btn_untrack, wx.EVT_BUTTON)
+assert spoken[-1] == "Stopped tracking Garuda Indonesia 408.", spoken
+assert track.list_tracked.GetString(0) == _("tracked_empty")
+assert core.api.load_data("FlightRadar")["tracked"] == []
+assert main._poll_timer is None, "polling did not stop"
+track.Destroy()
+wx.Yield()
+print(f"OK track_flight ({focus_note(checked and field_focused)})")
+
 # --- Teardown, and nothing went wrong along the way -----------------------------------
 em.unload_all_extensions()
 for event_name, handler in main._SUBSCRIPTIONS:
@@ -672,10 +765,16 @@ allowed = ("https://opendata.adsb.fi/", "https://api.adsbdb.com/",
            "https://geocoding-api.open-meteo.com/", "https://nominatim.openstreetmap.org/")
 assert all(u.startswith(allowed) for u in stub_requests), stub_requests
 # The aircraft service only ever saw the rounded point and the widened radius.
-radar_requests = [u for u in stub_requests if "adsb.fi" in u]
+radar_requests = [u for u in stub_requests if "adsb.fi/api/v2/lat/" in u]
 assert radar_requests and set(radar_requests) == {
     "https://opendata.adsb.fi/api/v2/lat/-6.21/lon/106.85/dist/15"}, set(radar_requests)
 assert len([u for u in stub_requests if "nominatim" in u]) == 1
+# Tracking only ever sends the callsign.
+flight_requests = [u for u in stub_requests if u.startswith(("https://opendata.adsb.fi/",
+                                                               "https://api.adsb.lol/"))
+                   and ("/callsign/" in u or "/registration/" in u or "/reg/" in u)]
+assert flight_requests and set(flight_requests) == {
+    "https://opendata.adsb.fi/api/v2/callsign/GIA408"}, set(flight_requests)
 # LiveATC is only ever opened in the browser, never fetched.
 assert opened_urls and all(u.startswith("https://www.liveatc.net/") for u in opened_urls)
 route_requests = [u for u in stub_requests if "adsbdb" in u]

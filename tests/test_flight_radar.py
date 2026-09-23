@@ -209,7 +209,9 @@ def test_aircraft_without_a_position_are_dropped(api):
     # The services' own distance is from the rounded point, so it is not enough.
     assert api.parse_aircraft_list({"aircraft": [_plane(lat=None, lon=None)]}, *HOME) == []
     assert api.parse_aircraft_list({"aircraft": [_plane(lat=95.0)]}, *HOME) == []
-    assert api.parse_aircraft_list({"aircraft": [_plane()]}, None, None) == []
+    # A worldwide flight lookup without a location measures each aircraft from itself.
+    alone = api.parse_aircraft_list({"ac": [_plane()]}, None, None)
+    assert len(alone) == 1 and alone[0]["distance_km"] == 0
 
 
 def test_distance_comes_from_the_exact_point_not_the_service(api):
@@ -785,7 +787,8 @@ def test_emergency_tracker(api):
 def test_settings_survive_corrupt_data(api, raw):
     assert api.normalize_settings(raw) == {"location": None, "radius_km": 25, "units": "metric",
                                            "include_ground": False, "alerts": False,
-                                           "alert_km": 5, "emergency_watch": False}
+                                           "alert_km": 5, "emergency_watch": False,
+                                           "tracked": []}
 
 
 def test_settings_keep_valid_values(api):
@@ -795,7 +798,7 @@ def test_settings_keep_valid_values(api):
     assert api.normalize_settings(raw) == {"location": JAKARTA, "radius_km": 50,
                                            "units": "aviation", "include_ground": True,
                                            "alerts": True, "alert_km": 2,
-                                           "emergency_watch": True}
+                                           "emergency_watch": True, "tracked": []}
 
 
 # ------------------------------------------------------------
@@ -1501,7 +1504,12 @@ def test_register_and_teardown(frmain, fresh_event_bus, monkeypatch, tmp_data_di
     atc_args, atc_kwargs = by_name["listen_atc"]
     assert atc_args[0] == "Flight Radar" and atc_args[3] == ord("L") and atc_args[4] is False
     assert atc_kwargs == {"default_shift": True}
-    assert len(actions) == 3
+    speak_args, speak_kwargs = by_name["speak_tracked"]
+    assert speak_args[0] == "Flight Radar" and speak_args[3] == ord("T") and speak_kwargs == {}
+    track_args, track_kwargs = by_name["track_flight"]
+    assert track_args[0] == "Flight Radar" and track_args[3] == ord("T") and track_args[4] is False
+    assert track_kwargs == {"default_shift": True}
+    assert len(actions) == 5
     assert len(panels) == 1 and panels[0][0] == "Flight Radar"
 
     frmain._settings = dict(frmain._settings, location=JAKARTA, alerts=True)
@@ -1992,3 +2000,526 @@ def test_downed_is_worded_as_reported(text, lang, api):
     assert "Garuda Indonesia 155 dilaporkan jatuh" in spoken
     assert "melaporkan" not in spoken
     assert text.status_meaning("downed") == "pesawat dilaporkan jatuh"
+
+
+# ------------------------------------------------------------
+# Track a flight (1.5)
+# ------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def fl():
+    _import_helpers()
+    import flight_radar_flights
+    return flight_radar_flights
+
+
+@pytest.mark.parametrize("typed, kind, ident", [
+    ("GA408", "callsign", "GIA408"), ("GA 408", "callsign", "GIA408"),
+    ("ga-408", "callsign", "GIA408"), ("GIA408", "callsign", "GIA408"),
+    ("GIA 408", "callsign", "GIA408"), ("  gia   408 ", "callsign", "GIA408"),
+    ("GA 0408", "callsign", "GIA408"), ("JT 610", "callsign", "LNI610"),
+    ("SQ 12", "callsign", "SIA12"), ("8B 5205", "callsign", "TNU5205"),
+    ("QZ7510", "callsign", "AWQ7510"), ("3K 123", "callsign", "JSA123"),
+    ("ID 6339", "callsign", "BTK6339"), ("IU 357", "callsign", "SJV357"),
+    ("EK-412", "callsign", "UAE412"),          # EK is also Armenia's prefix: digits mean a flight
+    ("PK 300", "callsign", "PIA300"),          # PK is also Indonesia's prefix
+    ("XQZ357", "callsign", "XQZ357"),          # an ICAO prefix Hariku doesn't know is still a callsign
+    ("GA 15A", "callsign", "GIA15A"),
+    ("PK-GPA", "registration", "PK-GPA"), ("pk-gpa", "registration", "PK-GPA"),
+    ("PKGPA", "registration", "PK-GPA"), ("PK - GPA", "registration", "PK-GPA"),
+    ("9V-TNG", "registration", "9V-TNG"), ("B-1234", "registration", "B-1234"),
+    ("D-AIMA", "registration", "D-AIMA"), ("N71108", "registration", "N71108"),
+    ("JA801A", "registration", "JA801A"),
+])
+def test_flight_numbers(fl, typed, kind, ident):
+    assert fl.parse_flight_input(typed) == {"kind": kind, "id": ident}
+
+
+@pytest.mark.parametrize("typed, kind, code", [
+    ("", "empty", ""), ("   ", "empty", ""), ("XY 123", "unknown_airline", "XY"),
+    ("Z9 12", "unknown_airline", "Z9"), ("12345", "not_understood", ""),
+    ("hello", "not_understood", ""), ("GA", "not_understood", ""),
+])
+def test_flight_numbers_that_are_not_understood(fl, typed, kind, code):
+    with pytest.raises(fl.FlightInputError) as info:
+        fl.parse_flight_input(typed)
+    assert info.value.kind == kind and info.value.code == code
+
+
+def test_iata_table(names):
+    expected = {"GA": "GIA", "QG": "CTV", "JT": "LNI", "ID": "BTK", "QZ": "AWQ", "SJ": "SJY",
+                "IW": "WON", "IU": "SJV", "IP": "PAS", "8B": "TNU", "SQ": "SIA", "TR": "TGW",
+                "MH": "MAS", "AK": "AXM", "D7": "XAX", "OD": "MXD", "TG": "THA", "FD": "AIQ",
+                "PR": "PAL", "5J": "CEB", "VN": "HVN", "VJ": "VJC", "BI": "RBA", "CX": "CPA",
+                "3K": "JSA", "QF": "QFA", "JQ": "JST", "EK": "UAE", "QR": "QTR", "EY": "ETD",
+                "SV": "SVA", "TK": "THY", "KL": "KLM", "NH": "ANA", "JL": "JAL", "KE": "KAL",
+                "OZ": "AAR"}
+    for iata, icao in expected.items():
+        assert names.icao_for_iata(iata) == icao, iata
+    assert names.icao_for_iata("ga") == "GIA" and names.icao_for_iata("XY") is None
+    # Every IATA code leads to an airline Hariku can name.
+    assert all(names.airline_name(icao) for icao in names.IATA_AIRLINES.values())
+    assert len(set(names.IATA_AIRLINES.values())) == len(names.IATA_AIRLINES)
+
+
+def test_comac_types(names):
+    assert names.aircraft_type_name("AJ27") == "Comac ARJ21"
+    assert names.aircraft_type_name("C919") == "Comac C919"
+
+
+def test_flight_urls(api):
+    assert api.build_flight_urls("callsign", "gia408") == [
+        ("adsb.fi", "https://opendata.adsb.fi/api/v2/callsign/GIA408"),
+        ("adsb.lol", "https://api.adsb.lol/v2/callsign/GIA408")]
+    assert api.build_flight_urls("registration", "PK-GPA") == [
+        ("adsb.fi", "https://opendata.adsb.fi/api/v2/registration/PK-GPA"),
+        ("adsb.lol", "https://api.adsb.lol/v2/reg/PK-GPA")]
+    for kind, ident in (("callsign", "GIA 408"), ("callsign", "../x"), ("callsign", ""),
+                        ("registration", "PK/GPA"), ("hex", "abc123")):
+        assert api.build_flight_urls(kind, ident) == []
+
+
+CGK_POINT = (-6.1256, 106.6559)
+# 60 km north of Soekarno-Hatta, over the sea: no other airport is nearer.
+TRACKED_PLANE = _plane(hex="abd408", flight="GIA408", r="PK-GPA", **_at(60, 0, origin=CGK_POINT))
+
+
+def test_fetch_flight_sends_only_the_callsign(api, monkeypatch):
+    calls = []
+
+    def fake(url, timeout=None, user_agent=None):
+        calls.append(url)
+        if "adsb.fi" in url:
+            raise api.FlightError("service", status=503)
+        return {"ac": [TRACKED_PLANE], "msg": "No error", "now": 1, "total": 1}
+
+    monkeypatch.setattr(api, "fetch_json", fake)
+    aircraft, source = api.fetch_flight("callsign", "GIA408", -6.208812, 106.845613)
+    assert source == "adsb.lol" and len(aircraft) == 1
+    assert calls == ["https://opendata.adsb.fi/api/v2/callsign/GIA408",
+                     "https://api.adsb.lol/v2/callsign/GIA408"]
+    # Distances from the exact home point, which is never sent.
+    home = api.distance_and_bearing(-6.208812, 106.845613, TRACKED_PLANE["lat"],
+                                    TRACKED_PLANE["lon"])[0]
+    assert aircraft[0]["distance_km"] == pytest.approx(home)
+    with pytest.raises(api.FlightError):
+        api.fetch_flight("callsign", "not valid")
+    monkeypatch.setattr(api, "fetch_json",
+                        lambda url, timeout=None, user_agent=None: {"ac": [], "msg": "No error"})
+    assert api.fetch_flight("registration", "PK-GPA") == ([], "adsb.fi")
+
+
+def test_tracked_flights_in_settings(api):
+    raw = {"tracked": [
+        {"kind": "callsign", "id": "gia408", "added": 100, "notified": ["airborne", "bogus"],
+         "seen_airborne": True},
+        {"kind": "callsign", "id": "GIA408"},                     # duplicate
+        {"kind": "hex", "id": "abc123"}, {"kind": "callsign", "id": "../x"}, "junk",
+        {"kind": "registration", "id": "PK-GPA", "landed_at": 500},
+        {"kind": "callsign", "id": "SIA12"}, {"kind": "callsign", "id": "QFA1"},
+    ]}
+    tracked = api.normalize_settings(raw)["tracked"]
+    assert [t["id"] for t in tracked] == ["GIA408", "PK-GPA", "SIA12"]      # at most 3
+    assert tracked[0] == {"kind": "callsign", "id": "GIA408", "added": 100.0,
+                          "landed_at": None, "seen_airborne": True, "notified": ["airborne"]}
+    assert tracked[1]["landed_at"] == 500.0 and tracked[1]["seen_airborne"] is False
+    assert api.normalize_settings({"tracked": "x"})["tracked"] == []
+
+
+def test_pick_aircraft(fl, api):
+    ground = dict(_normalize(api, _plane(alt_baro="ground")), seen=0.1)
+    stale = dict(_normalize(api, _plane(hex="b")), seen=40.0)
+    fresh = dict(_normalize(api, _plane(hex="c")), seen=1.0)
+    assert fl.pick_aircraft([ground, stale, fresh]) is fresh
+    assert fl.pick_aircraft([ground]) is ground and fl.pick_aircraft([]) is None
+
+
+DPS = {"municipality": "Denpasar", "name": "I Gusti Ngurah Rai International Airport",
+       "icao_code": "WADD", "latitude": -8.7484, "longitude": 115.1671}
+DPS_CGK = {"origin": DPS, "destination": CGK}
+
+
+def _flying(api, km, bearing, origin=CGK_POINT, **extra):
+    raw = _plane(hex="abd408", flight="GIA408", r="PK-GPA", **_at(km, bearing, origin=origin))
+    raw.update(extra)
+    return _normalize(api, raw)
+
+
+def test_track_events_are_announced_once(fl, api):
+    entry = fl.new_entry({"kind": "callsign", "id": "GIA408"}, now=0)
+    at_gate = _flying(api, 0.5, 0, origin=(DPS["latitude"], DPS["longitude"]), alt_baro="ground")
+    assert fl.evaluate(entry, at_gate, 10, DPS_CGK) == []           # not "landed" before flying
+    assert fl.evaluate(entry, None, 20, DPS_CGK) == []              # not transmitting
+    cruise = _flying(api, 400, 110)
+    assert fl.evaluate(entry, cruise, 30, DPS_CGK) == [("airborne", None)]
+    assert fl.evaluate(entry, cruise, 40, DPS_CGK) == []
+    approach = _flying(api, 40, 90, alt_baro=9843)
+    events = fl.evaluate(entry, approach, 50, DPS_CGK)
+    assert [e for e, _ in events] == ["near_destination"]
+    assert events[0][1]["airport"]["icao"] == "WIII"
+    assert events[0][1]["km"] == pytest.approx(40, abs=0.5)
+    assert fl.evaluate(entry, _flying(api, 20, 90), 60, DPS_CGK) == []
+    assert entry["landed_at"] is None
+    landed = _flying(api, 0.2, 0, alt_baro="ground", gs=20)
+    assert fl.evaluate(entry, landed, 70, DPS_CGK) == [("landed", None)]
+    assert entry["landed_at"] == 70
+    assert fl.evaluate(entry, landed, 80, DPS_CGK) == []
+    assert entry["notified"] == ["airborne", "near_destination", "landed"]
+
+
+def test_low_and_slow_counts_as_landed_only_near_the_destination(fl, api):
+    slow = dict(alt_baro=200, gs=60)
+    entry = dict(fl.new_entry({"kind": "callsign", "id": "GIA408"}, 0), seen_airborne=True,
+                 notified=["airborne", "near_destination"])
+    assert fl.evaluate(entry, _flying(api, 30, 90, **slow), 1, DPS_CGK) == []   # 30 km away
+    assert fl.evaluate(entry, _flying(api, 30, 90, **slow), 2, None) == []      # no route
+    assert fl.evaluate(entry, _flying(api, 4, 90, alt_baro=200, gs=140), 3, DPS_CGK) == []
+    assert fl.evaluate(entry, _flying(api, 4, 90, **slow), 4, DPS_CGK) == [("landed", None)]
+
+
+def test_near_you_and_quiet_first_sighting(fl, api):
+    entry = fl.new_entry({"kind": "callsign", "id": "GIA408"}, 0)
+    plane = _normalize(api, _plane(**_at(3, 0)))                  # 3 km from home
+    assert fl.evaluate(entry, plane, 1, None, near_you_km=5, quiet=True) == []
+    assert entry["seen_airborne"] and entry["notified"] == ["airborne", "near_you"]
+    entry = fl.new_entry({"kind": "callsign", "id": "GIA408"}, 0)
+    assert fl.evaluate(entry, plane, 1, None, near_you_km=None) == [("airborne", None)]
+    assert fl.evaluate(entry, plane, 2, None, near_you_km=2) == []
+    assert fl.evaluate(entry, plane, 3, None, near_you_km=5) == [("near_you", None)]
+    assert fl.evaluate(entry, plane, 4, None, near_you_km=5) == []
+
+
+def test_tracking_stops_by_itself(fl):
+    entry = fl.new_entry({"kind": "callsign", "id": "GIA408"}, now=1000)
+    assert not fl.should_stop(entry, 1000 + 24 * 3600 - 1)
+    assert fl.should_stop(entry, 1000 + 24 * 3600)
+    entry["landed_at"] = 5000
+    assert not fl.should_stop(entry, 5000 + 3599) and fl.should_stop(entry, 5000 + 3600)
+
+
+def test_relative_positions(text, lang, api, airports, atc):
+    plane = _normalize(api, _plane(**_at(120, 0, origin=CGK_POINT)))
+    assert text.relative_text(plane, "metric") == ("120 kilometres north of "
+                                                   "Jakarta Soekarno-Hatta")
+    # The nearest airport wins: 120 km east of Soekarno-Hatta is nearer Kertajati.
+    east = _normalize(api, _plane(**_at(120, 90, origin=CGK_POINT)))
+    assert text.relative_text(east, "metric").endswith("of Kertajati")
+    at_cgk = _normalize(api, _plane(**_at(1.5, 200, origin=CGK_POINT)))
+    assert text.relative_text(at_cgk, "metric") == "at Jakarta Soekarno-Hatta"
+    # A route end nearer than any listed airport is used, with its own name.
+    haneda = {"municipality": "Tokyo", "name": "Tokyo Haneda International Airport",
+              "icao_code": "RJTT", "latitude": 35.5523, "longitude": 139.7798}
+    over_tokyo = _normalize(api, _plane(**_at(30, 180, origin=(35.5523, 139.7798))))
+    assert text.relative_text(over_tokyo, "metric", {"origin": CGK, "destination": haneda}) == (
+        "30 kilometres south of Tokyo Haneda")
+    assert text.relative_text({"lat": None, "lon": None}, "metric") is None
+    lang("id")
+    assert text.relative_text(plane, "metric") == ("120 kilometer di sebelah utara "
+                                                   "Jakarta Soekarno-Hatta")
+    assert text.relative_text(at_cgk, "metric") == "di Jakarta Soekarno-Hatta"
+
+
+def test_tracked_sentence(text, lang, api):
+    plane = _normalize(api, _plane(flight="GIA408", **_at(120, 0, origin=CGK_POINT)))
+    leg = {"origin": DPS, "destination": CGK}
+    assert text.tracked_sentence(plane, "metric", leg) == (
+        "Garuda Indonesia 408, from Denpasar to Jakarta, 120 kilometres north of "
+        "Jakarta Soekarno-Hatta, 3,000 metres, descending.")
+    ground = _normalize(api, _plane(flight="GIA408", alt_baro="ground", **_at(0.5, 0, CGK_POINT)))
+    assert text.tracked_sentence(ground, "metric") == (
+        "Garuda Indonesia 408, at Jakarta Soekarno-Hatta, on the ground.")
+    lang("id")
+    assert text.tracked_sentence(plane, "metric", leg) == (
+        "Garuda Indonesia 408, dari Denpasar ke Jakarta, 120 kilometer di sebelah utara "
+        "Jakarta Soekarno-Hatta, ketinggian 3.000 meter, turun.")
+
+
+def test_flight_labels_and_errors(text, lang, fl):
+    assert text.flight_label({"kind": "callsign", "id": "GIA408"}) == "Garuda Indonesia 408"
+    assert text.flight_label({"kind": "callsign", "id": "XQZ357"}) == "X Q Z 357"
+    assert text.flight_label({"kind": "registration", "id": "PK-GPA"}) == (
+        "registration P K G P A, Indonesia")
+    assert text.flight_input_error_text(fl.FlightInputError("unknown_airline", "XY")) == (
+        "Hariku doesn't know the airline code X Y. Type the flight with the airline's 3-letter "
+        "ICAO code instead, for example G I A 408 for Garuda Indonesia 408.")
+    assert "GA 408" in text.flight_input_error_text(fl.FlightInputError("empty"))
+    assert "could not read" in text.flight_input_error_text(fl.FlightInputError("not_understood"))
+    lang("id")
+    assert text.flight_label({"kind": "registration", "id": "PK-GPA"}) == (
+        "registrasi P K G P A, Indonesia")
+    assert "kode maskapai X Y" in text.flight_input_error_text(
+        fl.FlightInputError("unknown_airline", "XY"))
+
+
+def test_event_texts(text, lang, api, fl):
+    name = "Garuda Indonesia 408"
+    plane = _normalize(api, _plane(flight="GIA408", **_at(40, 0, origin=CGK_POINT)))
+    leg = {"origin": DPS, "destination": CGK}
+    assert text.event_text("airborne", name, plane, "metric", leg) == (
+        "Garuda Indonesia 408 is now airborne: from Denpasar to Jakarta, 40 kilometres north of "
+        "Jakarta Soekarno-Hatta, 3,000 metres, descending.")
+    detail = {"airport": fl.destination_airport(leg), "km": 40.2}
+    assert text.event_text("near_destination", name, plane, "metric", leg, detail) == (
+        "Garuda Indonesia 408 is 40 kilometres from its destination, Jakarta Soekarno-Hatta: "
+        "3,000 metres, descending.")
+    no_state = dict(plane, altitude_ft=None, vertical_rate_fpm=None)
+    assert text.event_text("near_destination", name, no_state, "metric", leg, detail) == (
+        "Garuda Indonesia 408 is 40 kilometres from its destination, Jakarta Soekarno-Hatta.")
+    near = _normalize(api, _plane(flight="GIA408", **_at(3, 0)))
+    assert text.event_text("near_you", name, near, "metric") == (
+        "Garuda Indonesia 408 is passing near you: 3 kilometres north, 3,000 metres, descending.")
+    landed = _normalize(api, _plane(alt_baro="ground", **_at(0.5, 0, origin=CGK_POINT)))
+    assert text.event_text("landed", name, landed, "metric", leg) == (
+        "Garuda Indonesia 408 has landed at Jakarta Soekarno-Hatta.")
+    lang("id")
+    assert text.event_text("landed", name, landed, "metric", leg) == (
+        "Garuda Indonesia 408 telah mendarat di Jakarta Soekarno-Hatta.")
+    assert text.event_text("near_you", name, near, "metric").startswith(
+        "Garuda Indonesia 408 melintas di dekat Anda: 3 kilometer di sebelah utara")
+
+
+def test_tracked_rows(text, lang, api):
+    plane = _normalize(api, _plane(**_at(60, 0, origin=CGK_POINT)))
+    name = "Garuda Indonesia 408"
+    assert text.tracked_row(name, None, "metric") == "Garuda Indonesia 408: not checked yet"
+    row = text.tracked_row(name, (1790000000.0, None), "metric")
+    assert row.startswith("Garuda Indonesia 408: not transmitting. Checked at ")
+    row = text.tracked_row(name, (1790000000.0, plane), "metric")
+    assert row.startswith("Garuda Indonesia 408: 60 kilometres north of Jakarta Soekarno-Hatta,")
+
+
+# --- main.py: the actions, polling and pacing --------------------------------------
+
+def _flight_answers(monkeypatch, api, answers):
+    """Replace fetch_json for flight lookups: answers maps a callsign or
+    registration to a list of successive payloads (the last one repeats) or
+    to an error kind."""
+    calls = []
+
+    def fake(url, timeout=None, user_agent=None):
+        calls.append(url)
+        ident = url.rsplit("/", 1)[1]
+        answer = answers.get(ident, [{"ac": []}])
+        if isinstance(answer, str):
+            raise api.FlightError(answer)
+        payload = answer.pop(0) if len(answer) > 1 else answer[0]
+        return json.loads(json.dumps(payload))
+
+    monkeypatch.setattr(api, "fetch_json", fake)
+    return calls
+
+
+@pytest.fixture
+def wall(frmain, monkeypatch):
+    clock = _Clock(start=1790000000.0)
+    monkeypatch.setattr(frmain, "_wall", clock)
+    return clock
+
+
+def test_track_a_flight(frmain, api, lang, wall, monkeypatch):
+    import core.api
+    calls = _flight_answers(monkeypatch, api, {"GIA408": [{"ac": [TRACKED_PLANE]}]})
+    _set(frmain, api, location=None)
+    done = []
+    assert frmain.track_flight("xy 12") is False
+    assert frmain.spoken[-1].startswith("Hariku doesn't know the airline code X Y.") and not calls
+    frmain.track_flight("GA 408", lambda: done.append(1))
+    assert calls == ["https://opendata.adsb.fi/api/v2/callsign/GIA408"]
+    assert frmain.spoken[-2] == "Looking for Garuda Indonesia 408..."
+    assert frmain.spoken[-1] == (
+        "Garuda Indonesia 408, 60 kilometres north of Jakarta Soekarno-Hatta, 3,000 metres, "
+        "descending. Now tracking it: Hariku will tell you when it takes off, nears its "
+        "destination, lands or passes near you.")
+    assert done == [1]
+    saved = core.api.load_data(frmain.DATA_KEY)["tracked"]
+    assert saved == [{"kind": "callsign", "id": "GIA408", "added": 1790000000.0,
+                      "landed_at": None, "seen_airborne": True, "notified": ["airborne"]}]
+    # The same flight again: its position, reused from the last 15 seconds.
+    frmain.track_flight("GIA408")
+    assert len(calls) == 1 and "Now tracking" not in frmain.spoken[-1]
+    assert len(frmain.tracked_flights()) == 1
+    # Polling started for it (no location or alerts needed).
+    assert _poll_timers(frmain) and _poll_timers(frmain)[0].seconds == frmain.FIRST_POLL_SECONDS
+
+
+def test_track_a_flight_that_is_not_transmitting(frmain, api, lang, wall, monkeypatch):
+    calls = _flight_answers(monkeypatch, api, {})
+    _set(frmain, api)
+    frmain.track_flight("PK-GPA")
+    assert calls == ["https://opendata.adsb.fi/api/v2/registration/PK-GPA"]
+    assert frmain.spoken[-1].startswith(
+        "registration P K G P A, Indonesia isn't transmitting right now. It may be on the "
+        "ground or outside coverage. Now tracking it")
+    assert frmain.tracked_flights()[0]["seen_airborne"] is False
+
+
+def test_at_most_three_tracked_flights(frmain, api, lang, wall, monkeypatch):
+    _flight_answers(monkeypatch, api, {})
+    _set(frmain, api, location=None)
+    for flight in ("GA 1", "GA 2", "GA 3"):
+        frmain.clock.now += 20
+        frmain.track_flight(flight)
+    frmain.clock.now += 20
+    frmain.track_flight("GA 4")
+    assert frmain.spoken[-1].endswith(
+        "You are already tracking 3 flights. Stop tracking one to add another.")
+    assert [t["id"] for t in frmain.tracked_flights()] == ["GIA1", "GIA2", "GIA3"]
+    frmain.untrack(("callsign", "GIA2"))
+    assert frmain.spoken[-1] == "Stopped tracking Garuda Indonesia 2."
+    assert [t["id"] for t in frmain.tracked_flights()] == ["GIA1", "GIA3"]
+
+
+def test_track_lookup_failure_does_not_track(frmain, api, lang, wall, monkeypatch):
+    _flight_answers(monkeypatch, api, {"GIA408": "offline"})
+    _set(frmain, api, location=None)
+    frmain.track_flight("GA 408")
+    assert frmain.spoken[-1] == ("Could not reach the flight data service. "
+                                 "Check your internet connection.")
+    assert frmain.tracked_flights() == []
+
+
+def test_tracked_flight_announcements(frmain, api, routes, lang, wall, monkeypatch):
+    route = routes.parse_route({"response": {"flightroute": {"origin": DPS, "destination": CGK}}})
+    frmain._routes = routes.RouteLookup(fetch=lambda cs: route, clock=frmain.clock,
+                                        sleep=frmain.clock.sleep)
+    cruise = _plane(hex="abd408", flight="GIA408", baro_rate=0, alt_baro=35000,
+                    **_at(300, 110, origin=CGK_POINT))
+    approach = _plane(hex="abd408", flight="GIA408", **_at(40, 90, origin=CGK_POINT))
+    landed = _plane(hex="abd408", flight="GIA408", alt_baro="ground", gs=15,
+                    **_at(0.3, 0, origin=CGK_POINT))
+    calls = _flight_answers(monkeypatch, api, {"GIA408": [
+        {"ac": []}, {"ac": []}, {"ac": [cruise]}, {"ac": [approach]}, {"ac": [approach]},
+        {"ac": [landed]}]})
+    _set(frmain, api, location=None)
+    frmain.track_flight("GA 408")
+    assert frmain.spoken[-1].startswith("Garuda Indonesia 408 isn't transmitting right now.")
+    spoken_before = len(frmain.spoken)
+
+    def poll():
+        frmain.clock.now += 60
+        timer = _poll_timers(frmain)[0]
+        timer.fire()
+
+    poll()                                         # still not transmitting
+    assert len(frmain.spoken) == spoken_before and len(calls) == 2
+    assert _poll_timers(frmain)[0].seconds == frmain.EMERGENCY_POLL_SECONDS   # every 60 s
+    poll()                                         # airborne
+    assert frmain.spoken[-1].startswith(
+        "Garuda Indonesia 408 is now airborne: from Denpasar to Jakarta, ")
+    assert frmain.sounds == ["info.wav"]
+    poll()                                         # 40 km from Jakarta
+    assert frmain.spoken[-1] == (
+        "Garuda Indonesia 408 is 40 kilometres from its destination, Jakarta Soekarno-Hatta: "
+        "3,000 metres, descending.")
+    count = len(frmain.spoken)
+    poll()                                         # the same again: nothing new
+    assert len(frmain.spoken) == count
+    poll()                                         # on the ground at Jakarta
+    assert frmain.spoken[-1] == "Garuda Indonesia 408 has landed at Jakarta Soekarno-Hatta."
+    assert frmain.sounds == ["info.wav"] * 3 and len(calls) == 6
+    entry = frmain.tracked_flights()[0]
+    assert entry["landed_at"] == wall.now
+    # An hour after landing, tracking stops and so does polling.
+    wall.now += 3600
+    poll()
+    assert frmain.tracked_flights() == [] and _poll_timers(frmain) == [] and len(calls) == 6
+
+
+def test_tracked_flight_passing_near_you(frmain, api, lang, wall, monkeypatch):
+    near = _plane(hex="abd408", flight="GIA408", **_at(3, 0))
+    _flight_answers(monkeypatch, api, {"GIA408": [{"ac": []}, {"ac": [near]}]})
+    _set(frmain, api, alert_km=5)
+    frmain.track_flight("GA 408")
+    frmain.clock.now += 60
+    _poll_timers(frmain)[0].fire()
+    said = frmain.spoken[-1]
+    assert said.startswith("Garuda Indonesia 408 is now airborne: "), said
+    assert said.endswith("Garuda Indonesia 408 is passing near you: 3 kilometres north, "
+                         "3,000 metres, descending."), said
+    count = len(frmain.spoken)
+    frmain.clock.now += 60
+    _poll_timers(frmain)[0].fire()
+    assert len(frmain.spoken) == count                            # once only
+
+
+def test_tracking_stops_after_a_day(frmain, api, lang, wall, monkeypatch):
+    calls = _flight_answers(monkeypatch, api, {})
+    _set(frmain, api, location=None)
+    frmain.track_flight("GA 408")
+    wall.now += 24 * 3600
+    frmain.clock.now += 60
+    _poll_timers(frmain)[0].fire()
+    assert frmain.tracked_flights() == [] and len(calls) == 1
+
+
+def test_tracked_flights_survive_settings_changes(frmain, api, wall, monkeypatch):
+    import core.api
+    _flight_answers(monkeypatch, api, {})
+    _set(frmain, api, location=None)
+    frmain.track_flight("GA 408")
+    frmain._save_settings({"radius_km": 50, "units": "aviation"})   # what Preferences saves
+    assert [t["id"] for t in frmain.tracked_flights()] == ["GIA408"]
+    assert core.api.load_data(frmain.DATA_KEY)["tracked"][0]["id"] == "GIA408"
+
+
+def test_flight_lookups_share_the_pacing(frmain, api, monkeypatch):
+    started = []
+    monkeypatch.setattr(frmain, "_start_thread", lambda target, *args: started.append(target))
+    _set(frmain, api)
+    got = []
+    assert frmain.refresh()
+    frmain.lookup_flight({"kind": "callsign", "id": "GIA408"},
+                         lambda aircraft, error: got.append(error))
+    assert started == [frmain._fetch_worker]                 # one request at a time
+    frmain._on_fetched(dict(JAKARTA), 15, [], "adsb.fi", None, 0)
+    assert started == [frmain._fetch_worker]                 # then it waits for the 5-second gap
+    [timer] = [t for t in frmain.timers if not t.stopped]
+    assert 0 < timer.seconds <= api.MIN_GAP_SECONDS
+    frmain.clock.now += timer.seconds
+    timer.fire()
+    assert started == [frmain._fetch_worker, frmain._flight_worker]
+    job = frmain._flight_running
+    frmain._on_flight_fetched(job, [], None)
+    assert got == [None]
+    # Answered again from memory within 15 seconds.
+    frmain.lookup_flight({"kind": "callsign", "id": "GIA408"},
+                         lambda aircraft, error: got.append(error))
+    assert got == [None, None] and len(started) == 2
+
+
+def test_flight_lookups_back_off_after_rate_limits(frmain, api, lang, monkeypatch):
+    calls = _flight_answers(monkeypatch, api, {"GIA408": "rate_limited"})
+    got = []
+    frmain.lookup_flight({"kind": "callsign", "id": "GIA408"},
+                         lambda aircraft, error: got.append(error))
+    assert got == ["rate_limited"] and len(calls) == 2
+    frmain.clock.now += 10
+    frmain.lookup_flight({"kind": "callsign", "id": "GIA408"},
+                         lambda aircraft, error: got.append(error))
+    assert got == ["rate_limited", "rate_limited"] and len(calls) == 2   # cooling down
+
+
+def test_speak_tracked(frmain, api, lang, wall, monkeypatch):
+    _set(frmain, api, location=None)
+    frmain.speak_tracked()
+    assert frmain.spoken[-1] == ("You are not tracking any flights. "
+                                 "Use Track a flight to add one.")
+    calls = _flight_answers(monkeypatch, api, {"GIA408": [{"ac": [TRACKED_PLANE]}]})
+    frmain.track_flight("GA 408")
+    frmain.clock.now += 20
+    frmain.track_flight("SQ 12")
+    frmain.clock.now += 20
+    frmain.speak_tracked()
+    # Two lookups, the second after the pacing gap.
+    pending = [t for t in frmain.timers if not t.stopped and t.callback == frmain._on_dispatch_timer]
+    for timer in pending:
+        frmain.clock.now += timer.seconds
+        timer.fire()
+    assert frmain.spoken[-1] == (
+        "Garuda Indonesia 408, 60 kilometres north of Jakarta Soekarno-Hatta, 3,000 metres, "
+        "descending. Singapore Airlines 12 isn't transmitting right now. It may be on the "
+        "ground or outside coverage.")
+    assert calls.count("https://opendata.adsb.fi/api/v2/callsign/GIA408") == 2
+    rows = frmain.tracked_rows()
+    assert [key for key, _row in rows] == [("callsign", "GIA408"), ("callsign", "SIA12")]
+    assert rows[1][1].startswith("Singapore Airlines 12: not transmitting. Checked at ")

@@ -24,14 +24,17 @@ units are chosen in Preferences, Flight Radar.
   flight_radar_airports.py - airports near Indonesia (OurAirports data)
   flight_radar_atc.py      - which airport to listen to, and its LiveATC page
   flight_radar_location.py - pasted coordinates and map links, address search
+  flight_radar_flights.py  - "Track a flight": flight numbers and what to announce
   flight_radar_text.py     - spoken/displayed text in the user's language
-  flight_radar_ui.py       - Preferences page and the aircraft list dialog
+  flight_radar_registrations.py - the country of a registration prefix
+  flight_radar_ui.py       - Preferences page, the aircraft list, Track a flight
 
 The user's exact location is stored only in the FlightRadar data key; the
 aircraft services get it rounded to about 1 km (see flight_radar_api.py).
 All network calls run on worker threads; results come back via wx.CallAfter.
-At most one aircraft request is in flight, requests are at least 5 seconds
-apart, answers are reused for 15 seconds, and failures back off.
+At most one aircraft request (area or tracked flight) is in flight, requests
+are at least 5 seconds apart, answers are reused for 15 seconds, and failures
+back off.
 """
 
 import logging
@@ -49,6 +52,7 @@ from core.speech import speak
 import flight_radar_airports as airports
 import flight_radar_api as api
 import flight_radar_atc as atc
+import flight_radar_flights as flights
 import flight_radar_routes as routes
 import flight_radar_text as text
 import flight_radar_ui
@@ -69,6 +73,7 @@ ALERT_COOLDOWN = 600        # an aircraft is announced once per 10 minutes
 EMERGENCY_COOLDOWN = 1800   # an aircraft's emergency is announced once per 30 minutes
 ALERT_SOUND = "info.wav"
 EMERGENCY_SOUND = "error.wav"
+TRACK_SOUND = "info.wav"
 ROUTE_WAIT_SECONDS = 3.0    # longest wait for route lookups before speaking
 
 _bus = None
@@ -81,7 +86,12 @@ _gate = api.RateGate()
 _tracker = api.AlertTracker(ALERT_COOLDOWN)
 _emergency_tracker = api.EmergencyTracker(EMERGENCY_COOLDOWN)
 _routes = routes.RouteLookup()
-_fetch_timer = None     # a fetch waiting for the rate limit
+_fetch_timer = None     # the next request waiting for the rate limit
+_area_pending = False   # an area fetch is waiting for its turn
+_flight_jobs = []       # worldwide flight lookups waiting for their turn
+_flight_running = None  # the flight lookup in flight
+_flight_cache = {}      # (kind, id) -> (monotonic time, aircraft); memory only
+_observations = {}      # (kind, id) -> (wall time, plane or None); memory only
 _poll_timer = None
 _poll_running = False
 _panel = None
@@ -93,6 +103,11 @@ _panel = None
 
 def _now():
     return time.monotonic()
+
+
+def _wall():
+    # Tracked flights outlive a restart, so their times are wall-clock.
+    return time.time()
 
 
 def _start_thread(target, *args):
@@ -171,8 +186,9 @@ def list_data():
 
 
 def _save_settings(new_settings):
+    """Save settings; keys not given keep their current values."""
     global _settings
-    new_settings = api.normalize_settings(new_settings)
+    new_settings = api.normalize_settings(dict(_settings, **new_settings))
     old_location = get_location()
     data = core.api.load_data(DATA_KEY)
     data = data if isinstance(data, dict) else {}
@@ -193,33 +209,60 @@ def refresh(on_done=None):
     """Fetch aircraft now, or as soon as the rate limit allows. on_done(error)
     runs on the UI thread afterwards (error is None on success). Returns False
     if nothing can be fetched because no location is set."""
-    global _fetch_timer
+    global _area_pending
     if not _active or not get_location():
         return False
     if on_done is not None and on_done not in _waiters:
         _waiters.append(on_done)
-    if _loading or _fetch_timer is not None:
-        return True
-    now = _now()
-    if _gate.cooldown_left(now) > 0:
-        wx.CallAfter(_deliver, "rate_limited")
-        return True
-    wait = _gate.wait_time(now)
-    if wait > 0:
-        _fetch_timer = _call_later(wait, _start_fetch)
-        return True
-    _start_fetch()
+    if not _loading:
+        _area_pending = True
+    _dispatch()
     return True
 
 
-def _start_fetch():
-    global _loading, _fetch_timer
+def _dispatch():
+    """Start the next waiting request (area first, then flight lookups) when
+    none is in flight and the rate limit allows; otherwise try again later."""
+    global _fetch_timer, _area_pending
+    if not _active or _loading or _flight_running is not None or _fetch_timer is not None:
+        return
+    if not _area_pending and not _flight_jobs:
+        return
+    now = _now()
+    if _gate.cooldown_left(now) > 0:
+        if _area_pending:
+            _area_pending = False
+            wx.CallAfter(_deliver, "rate_limited")
+        jobs = _flight_jobs[:]
+        del _flight_jobs[:]
+        for job in jobs:
+            wx.CallAfter(_deliver_flight, job, [], "rate_limited")
+        return
+    wait = _gate.wait_time(now)
+    if wait > 0:
+        _fetch_timer = _call_later(wait, _on_dispatch_timer)
+        return
+    if _area_pending:
+        _area_pending = False
+        _start_fetch()
+    else:
+        _start_flight(_flight_jobs.pop(0))
+
+
+def _on_dispatch_timer():
+    global _fetch_timer
     _fetch_timer = None
+    _dispatch()
+
+
+def _start_fetch():
+    global _loading
     location = get_location()
     if not _active:
         return
     if not location:
         _deliver(None)
+        _dispatch()
         return
     _loading = True
     _gate.started(_now())
@@ -252,6 +295,7 @@ def _on_fetched(location, radius_nm, aircraft, source, error, wall):
         refresh()  # the city or radius changed while fetching
         return
     _deliver(error)
+    _dispatch()
 
 
 def _deliver(error):
@@ -262,6 +306,73 @@ def _deliver(error):
             callback(error)
         except Exception:
             logger.exception("[Flight Radar] Refresh callback failed")
+
+
+# ------------------------------------------------------------
+# Worldwide flight lookups
+# ------------------------------------------------------------
+
+def lookup_flight(target, on_done):
+    """Find one flight worldwide by callsign or registration ({"kind", "id"}).
+    on_done(aircraft list, error) runs on the UI thread. Shares the pacing with
+    the area fetch; answers are reused for 15 seconds."""
+    if not _active:
+        return False
+    key = flights.target_key(target)
+    cached = _flight_cache.get(key)
+    if cached and 0 <= _now() - cached[0] <= CACHE_SECONDS:
+        on_done(list(cached[1]), None)
+        return True
+    for job in _flight_jobs + ([_flight_running] if _flight_running else []):
+        if job["key"] == key:
+            job["callbacks"].append(on_done)
+            return True
+    _flight_jobs.append({"key": key, "target": {"kind": key[0], "id": key[1]},
+                         "callbacks": [on_done]})
+    _dispatch()
+    return True
+
+
+def _start_flight(job):
+    global _flight_running
+    _flight_running = job
+    _gate.started(_now())
+    location = get_location()
+    point = (location["latitude"], location["longitude"]) if location else (None, None)
+    _start_thread(_flight_worker, job, *point)
+
+
+def _flight_worker(job, latitude, longitude):
+    # Worker thread: sends only the callsign or registration.
+    aircraft, error = [], None
+    try:
+        aircraft, _source = api.fetch_flight(job["target"]["kind"], job["target"]["id"],
+                                             latitude, longitude)
+    except api.FlightError as e:
+        error = e.kind
+    except Exception:
+        error = "bad_response"
+        logger.exception("[Flight Radar] Flight lookup failed")
+    wx.CallAfter(_on_flight_fetched, job, aircraft, error)
+
+
+def _on_flight_fetched(job, aircraft, error):
+    global _flight_running
+    _flight_running = None
+    _gate.finished(_now(), error)
+    if error is None:
+        _flight_cache[job["key"]] = (_now(), aircraft)
+    if _active:
+        _deliver_flight(job, aircraft, error)
+    _dispatch()
+
+
+def _deliver_flight(job, aircraft, error):
+    for callback in job["callbacks"]:
+        try:
+            callback(list(aircraft), error)
+        except Exception:
+            logger.exception("[Flight Radar] Flight lookup callback failed")
 
 
 # ------------------------------------------------------------
@@ -373,9 +484,218 @@ def show_list():
         parent, api.place_label(location), get_settings(), list_data, refresh,
         leg_for, with_routes,
         refresh_now=not api.is_fresh(current_cache(), CACHE_SECONDS, _now()),
-        listen=listen_for_aircraft, emergency_intro=emergency_intro)
+        listen=listen_for_aircraft, emergency_intro=emergency_intro, track=track_from_list)
     dlg.ShowModal()
     dlg.Destroy()
+
+
+# ------------------------------------------------------------
+# Track a flight
+# ------------------------------------------------------------
+
+def tracked_flights():
+    return [dict(entry, notified=list(entry["notified"])) for entry in _settings["tracked"]]
+
+
+def _find_tracked(key):
+    return next((dict(t, notified=list(t["notified"])) for t in _settings["tracked"]
+                 if flights.target_key(t) == key), None)
+
+
+def _replace_tracked(entry):
+    key = flights.target_key(entry)
+    _save_settings({"tracked": [entry if flights.target_key(t) == key else t
+                                for t in _settings["tracked"]]})
+
+
+def _near_you_km():
+    return _settings["alert_km"] if get_location() else None
+
+
+def _record(key, plane, quiet):
+    """Remember the latest sighting and update the entry's state; returns the
+    events to announce."""
+    _observations[key] = (_wall(), plane)
+    entry = _find_tracked(key)
+    if entry is None or plane is None:
+        return []
+    before = dict(entry, notified=list(entry["notified"]))
+    events = flights.evaluate(entry, plane, _wall(), leg_for(plane), _near_you_km(), quiet=quiet)
+    if entry != before:
+        _replace_tracked(entry)
+    return events
+
+
+def track_flight(typed, on_result=None):
+    """Look up a flight the user typed, say where it is, and track it."""
+    try:
+        target = flights.parse_flight_input(typed)
+    except flights.FlightInputError as e:
+        speak(text.flight_input_error_text(e), interrupt=True)
+        return False
+    name = text.flight_label(target)
+    key = flights.target_key(target)
+    speak(_("track_looking", name=name), interrupt=True)
+
+    def finish():
+        if on_result is not None:
+            on_result()
+
+    def found(aircraft, error):
+        if error:
+            speak(text.error_text(error), interrupt=True)
+            finish()
+            return
+        plane = flights.pick_aircraft(aircraft)
+        outcome = _start_tracking(target, plane)
+
+        def say():
+            _record(key, plane, quiet=True)
+            leg = leg_for(plane) if plane else None
+            parts = [text.tracked_sentence(plane, _settings["units"], leg, name) if plane
+                     else text.not_transmitting_text(name)]
+            if outcome == "added":
+                parts.append(_("track_added"))
+            elif outcome == "full":
+                parts.append(_("track_full", count=api.TRACK_LIMIT))
+            speak(" ".join(parts), interrupt=True)
+            finish()
+
+        if plane:
+            with_routes([plane], say)
+        else:
+            say()
+
+    lookup_flight(target, found)
+    return True
+
+
+def _start_tracking(target, plane):
+    """"added", "already" or "full"."""
+    key = flights.target_key(target)
+    tracked = _settings["tracked"]
+    if any(flights.target_key(t) == key for t in tracked):
+        return "already"
+    if len(tracked) >= api.TRACK_LIMIT:
+        return "full"
+    _save_settings({"tracked": tracked + [flights.new_entry(target, _wall())]})
+    return "added"
+
+
+def untrack(key):
+    entry = _find_tracked(key)
+    if entry is None:
+        return
+    _save_settings({"tracked": [t for t in _settings["tracked"] if flights.target_key(t) != key]})
+    _observations.pop(key, None)
+    speak(_("track_stopped", name=text.flight_label(entry)), interrupt=True)
+
+
+def tracked_rows():
+    """[(key, row)] for the Track dialog, from the last sightings (no lookups)."""
+    rows = []
+    for entry in _settings["tracked"]:
+        key = flights.target_key(entry)
+        observation = _observations.get(key)
+        plane = observation[1] if observation else None
+        rows.append((key, text.tracked_row(text.flight_label(entry), observation,
+                                           _settings["units"],
+                                           leg_for(plane) if plane else None)))
+    return rows
+
+
+def speak_tracked(on_done=None):
+    """Where are my tracked flights? Looks each one up, then speaks them all."""
+    entries = tracked_flights()
+    if not entries:
+        speak(_("track_none"), interrupt=True)
+        if on_done is not None:
+            on_done()
+        return
+    speak(_("track_checking"), interrupt=True)
+    results = {}
+
+    def got(entry, aircraft, error):
+        key = flights.target_key(entry)
+        results[key] = (None if error else flights.pick_aircraft(aircraft), error)
+        if len(results) == len(entries):
+            with_routes([plane for plane, _error in results.values() if plane], say)
+
+    def say():
+        sentences = []
+        for entry in entries:
+            key = flights.target_key(entry)
+            plane, error = results[key]
+            name = text.flight_label(entry)
+            if error:
+                sentences.append(_("tracked_row", name=name, status=text.error_text(error)))
+                continue
+            _record(key, plane, quiet=True)
+            sentences.append(text.tracked_sentence(plane, _settings["units"], leg_for(plane), name)
+                             if plane else text.not_transmitting_text(name))
+        speak(" ".join(sentences), interrupt=True)
+        if on_done is not None:
+            on_done()
+
+    for entry in entries:
+        lookup_flight(entry, lambda aircraft, error, entry=entry: got(entry, aircraft, error))
+
+
+def show_track_dialog(initial=""):
+    """Track a flight: type a flight number; see and stop tracked flights."""
+    parent = getattr(core.api, "main_window_instance", None)
+    dlg = flight_radar_ui.TrackFlightDialog(parent, tracked_rows, track_flight, untrack,
+                                            speak_tracked, initial=initial)
+    dlg.ShowModal()
+    dlg.Destroy()
+
+
+def track_from_list(plane):
+    """The list's Track button: the dialog, filled in with this aircraft."""
+    initial = ""
+    if plane:
+        initial = plane.get("callsign") or plane.get("registration") or ""
+    show_track_dialog(initial)
+
+
+def _check_tracked(entry, done):
+    """One background check of a tracked flight; done(error) afterwards."""
+    key = flights.target_key(entry)
+
+    def found(aircraft, error):
+        if error or _find_tracked(key) is None:
+            done(error)
+            return
+        plane = flights.pick_aircraft(aircraft)
+        if plane is None:
+            _observations[key] = (_wall(), None)
+            done(None)
+            return
+
+        def check():
+            events = _record(key, plane, quiet=False)
+            if events:
+                name = text.flight_label(entry)
+                leg = leg_for(plane)
+                _play_sound(TRACK_SOUND)
+                speak(" ".join(text.event_text(event, name, plane, _settings["units"], leg, detail)
+                               for event, detail in events))
+            done(None)
+
+        with_routes([plane], check)
+
+    lookup_flight(entry, found)
+
+
+def _prune_tracked():
+    """Stop tracking flights an hour after landing or after 24 hours."""
+    now = _wall()
+    keep = [t for t in _settings["tracked"] if not flights.should_stop(t, now)]
+    if len(keep) != len(_settings["tracked"]):
+        for t in _settings["tracked"]:
+            if t not in keep:
+                _observations.pop(flights.target_key(t), None)
+        _save_settings({"tracked": keep})
 
 
 # ------------------------------------------------------------
@@ -419,21 +739,26 @@ def _open_atc(airport, for_aircraft):
 
 
 # ------------------------------------------------------------
-# Background polling: overhead alerts and the emergency watch share it
+# Background polling: overhead alerts, the emergency watch and tracked
+# flights share it
 # ------------------------------------------------------------
 
-def _polling_wanted():
-    return (_active and (_settings["alerts"] or _settings["emergency_watch"])
+def _area_polling_wanted():
+    return ((_settings["alerts"] or _settings["emergency_watch"])
             and get_location() is not None)
 
 
+def _polling_wanted():
+    return _active and (_area_polling_wanted() or bool(_settings["tracked"]))
+
+
 def _poll_interval():
-    return POLL_SECONDS if _settings["alerts"] else EMERGENCY_POLL_SECONDS
+    return POLL_SECONDS if _settings["alerts"] and get_location() else EMERGENCY_POLL_SECONDS
 
 
 def _update_polling(first_delay=FIRST_POLL_SECONDS):
-    """Start polling when alerts or the emergency watch are on, stop it when
-    both are off."""
+    """Start polling when alerts, the emergency watch or a tracked flight need
+    it, stop it when nothing does."""
     global _poll_timer
     if not _polling_wanted():
         _cancel(_poll_timer)
@@ -454,26 +779,52 @@ def _poll():
     _poll_timer = None
     if not _polling_wanted():
         return
+    _poll_running = True
+    _prune_tracked()
+    tasks = []
+    if _area_polling_wanted():
+        tasks.append(_poll_area)
+    for entry in tracked_flights():
+        tasks.append(lambda done, entry=entry: _check_tracked(entry, done))
+    if not tasks:
+        _poll_running = False
+        return
+    state = {"left": len(tasks), "errors": 0}
+
+    def done(error):
+        state["left"] -= 1
+        state["errors"] += 1 if error else 0
+        if state["left"] == 0:
+            _after_poll(state["errors"])
+
+    for task in tasks:
+        task(done)
+
+
+def _poll_area(done):
     if api.is_fresh(current_cache(), CACHE_SECONDS, _now()):
         _check_emergencies()
         _check_alerts()
-        _schedule_poll(_poll_interval())
+        done(None)
         return
-    _poll_running = True
-    if not refresh(_after_poll):
-        _poll_running = False
+
+    def after(error):
+        if error is None and _area_polling_wanted():
+            _check_emergencies()
+            _check_alerts()
+        done(error)
+
+    if not refresh(after):
+        done(None)
 
 
-def _after_poll(error):
+def _after_poll(errors=0):
     global _poll_running
     _poll_running = False
     if not _polling_wanted():
         return
-    if error is None:
-        _check_emergencies()
-        _check_alerts()
     interval = _poll_interval()
-    _schedule_poll(interval if error is None else _gate.backoff(interval))
+    _schedule_poll(_gate.backoff(interval) if errors else interval)
 
 
 def _check_emergencies():
@@ -554,12 +905,18 @@ def _apply_panel():
 def register(bus):
     global _bus, _active, _settings, _cache, _loading, _gate, _tracker, _routes
     global _fetch_timer, _poll_timer, _poll_running, _emergency_tracker
+    global _area_pending, _flight_running
     _bus = bus
     _active = True
     _cache = None
     _loading = False
     _fetch_timer = _poll_timer = None
     _poll_running = False
+    _area_pending = False
+    _flight_running = None
+    del _flight_jobs[:]
+    _flight_cache.clear()
+    _observations.clear()
     _gate = api.RateGate()
     _tracker = api.AlertTracker(ALERT_COOLDOWN)
     _emergency_tracker = api.EmergencyTracker(EMERGENCY_COOLDOWN)
@@ -579,6 +936,12 @@ def register(bus):
     # it opens a window (the browser).
     core.hotkeys.register_action(EXT_NAME, "listen_atc", _("action_listen_atc"),
                                  ord("L"), False, listen_to_atc, default_shift=True)
+    # T and Shift+T ("track"): free everywhere (Window Teleporter only uses T
+    # with Ctrl or Alt). Shift+T opens the Track dialog, T speaks the flights.
+    core.hotkeys.register_action(EXT_NAME, "speak_tracked", _("action_speak_tracked"),
+                                 ord("T"), False, speak_tracked)
+    core.hotkeys.register_action(EXT_NAME, "track_flight", _("action_track"),
+                                 ord("T"), False, show_track_dialog, default_shift=True)
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
     _update_polling()
     logger.info("Flight Radar extension loaded.")
@@ -588,6 +951,9 @@ def teardown():
     global _active, _fetch_timer, _poll_timer, _panel
     _active = False
     del _waiters[:]
+    del _flight_jobs[:]
+    _flight_cache.clear()
+    _observations.clear()
     _cancel(_fetch_timer)
     _cancel(_poll_timer)
     _fetch_timer = _poll_timer = None

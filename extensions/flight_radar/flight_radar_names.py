@@ -173,6 +173,9 @@ AIRCRAFT_TYPES = {
     "B789": "Boeing 787-9",
     "B78X": "Boeing 787-10",
     "MD11": "McDonnell Douglas MD-11",
+    # Comac
+    "AJ27": "Comac ARJ21",
+    "C919": "Comac C919",
     # Regional airliners
     "AT43": "ATR 42-300",
     "AT45": "ATR 42-500",
@@ -250,6 +253,42 @@ AIRCRAFT_TYPES = {
 # Rotorcraft among the types above; the text module adds a translated word.
 HELICOPTER_TYPES = frozenset(("EC35", "EC45", "AS50", "AS65", "EC30", "B412", "B429",
                               "AW39", "S76", "R44", "R22"))
+
+
+# IATA airline codes, as printed on tickets ("GA 408"), -> the ICAO code the
+# aircraft uses as its callsign prefix ("GIA408"). Only airlines in AIRLINES.
+IATA_AIRLINES = {
+    # Indonesia
+    "GA": "GIA", "QG": "CTV", "JT": "LNI", "ID": "BTK", "QZ": "AWQ", "SJ": "SJY",
+    "IW": "WON", "IU": "SJV", "IP": "PAS", "8B": "TNU", "SI": "SQS",
+    # Southeast Asia
+    "SQ": "SIA", "TR": "TGW", "3K": "JSA", "MH": "MAS", "AK": "AXM", "D7": "XAX",
+    "OD": "MXD", "FY": "FFM", "TG": "THA", "FD": "AIQ", "SL": "TLM", "PG": "BKP",
+    "DD": "NOK", "PR": "PAL", "5J": "CEB", "VN": "HVN", "VJ": "VJC", "BI": "RBA",
+    "QV": "LAO", "UB": "UBA",
+    # East Asia
+    "CX": "CPA", "UO": "HKE", "HX": "CRK", "NX": "AMU", "MU": "CES", "CZ": "CSN",
+    "CA": "CCA", "MF": "CXA", "ZH": "CSZ", "3U": "CSC", "HU": "CHH", "FM": "CSH",
+    "JL": "JAL", "NH": "ANA", "KE": "KAL", "OZ": "AAR", "7C": "JJA", "LJ": "JNA",
+    "TW": "TWB", "BR": "EVA", "CI": "CAL",
+    # South Asia
+    "AI": "AIC", "IX": "AXB", "6E": "IGO", "UL": "ALK", "PK": "PIA",
+    # Oceania
+    "QF": "QFA", "JQ": "JST", "VA": "VOZ", "NZ": "ANZ", "PX": "ANG", "FJ": "FJI",
+    # Middle East and Africa
+    "EK": "UAE", "QR": "QTR", "EY": "ETD", "SV": "SVA", "FZ": "FDB", "WY": "OMA",
+    "GF": "GFA", "KU": "KAC", "MS": "MSR", "ET": "ETH",
+    # Europe and the Americas
+    "TK": "THY", "KL": "KLM", "AF": "AFR", "LH": "DLH", "BA": "BAW", "AY": "FIN",
+    "UA": "UAL", "DL": "DAL", "AA": "AAL",
+    # Cargo
+    "FX": "FDX", "5X": "UPS", "CV": "CLX",
+}
+
+
+def icao_for_iata(code):
+    """The ICAO airline code for a 2-character IATA code, or None."""
+    return IATA_AIRLINES.get((code or "").strip().upper())
 
 
 def airline_name(prefix):

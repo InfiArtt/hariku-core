@@ -1,7 +1,7 @@
 {
     "id": "flight_radar",
     "name": "Flight Radar",
-    "version": "1.4",
+    "version": "1.5",
     "description": "Hear the aircraft flying near your city: the nearest few on a hotkey, a list of everything in range, optional announcements when one passes overhead or reports an emergency, and a shortcut that opens LiveATC's page for the nearby airport in your browser. Set your city, street address or exact coordinates in Preferences, Flight Radar; your exact location stays on your computer. Aircraft data by adsb.fi and adsb.lol, flight routes by adsbdb.com, address search by OpenStreetMap Nominatim (no account or API key needed).",
     "author": "Rafli",
     "main": "main.py",

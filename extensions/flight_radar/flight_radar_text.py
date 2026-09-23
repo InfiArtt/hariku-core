@@ -370,6 +370,113 @@ def distance_choice(km):
     return f"{distance_text(km, 'metric')} ({distance_text(km, 'aviation')})"
 
 
+# ------------------------------------------------------------
+# Tracked flights
+# ------------------------------------------------------------
+
+def flight_label(target):
+    """What to call a tracked flight: "Garuda Indonesia 408" or "registration
+    P K G P A, Indonesia"."""
+    if target.get("kind") == "registration":
+        return registration_text(target["id"])
+    return aircraft_name({"callsign": target["id"]})
+
+
+def flight_input_error_text(error):
+    if error.kind == "empty":
+        return _("flight_empty")
+    if error.kind == "unknown_airline":
+        return _("flight_unknown_airline", code=spell_all(error.code))
+    return _("flight_not_understood")
+
+
+def relative_text(plane, units, leg=None):
+    """Where an aircraft is, relative to the nearest airport Hariku knows (its
+    own table plus the ends of the flight's route): "120 kilometres east of
+    Jakarta Soekarno-Hatta", or "at Jakarta Soekarno-Hatta" when very close.
+    Nothing is looked up."""
+    lat, lon = plane.get("lat"), plane.get("lon")
+    if lat is None or lon is None:
+        return None
+    candidates = []
+    nearest = airports.nearest(lat, lon)
+    if nearest:
+        candidates.append(nearest)
+    for end in ("origin", "destination"):
+        airport = atc.route_airport((leg or {}).get(end))
+        if airport and airport.get("latitude") is not None:
+            candidates.append(airport)
+    if not candidates:
+        return None
+    best, best_km, bearing = None, None, None
+    for airport in candidates:
+        km, degrees = api.distance_and_bearing(airport["latitude"], airport["longitude"], lat, lon)
+        if best_km is None or km < best_km:
+            best, best_km, bearing = airport, km, degrees
+    place = airports.label(best)
+    if best_km < 3:
+        return _("piece_at_place", place=place)
+    return _("piece_relative", distance=distance_text(best_km, units),
+             direction=compass(bearing), place=place)
+
+
+def _flight_state(plane, units):
+    """["9,000 metres", "descending"] or ["on the ground"]."""
+    if plane.get("on_ground"):
+        return [_("piece_on_ground")]
+    parts = []
+    if plane.get("altitude_ft") is not None:
+        parts.append(_("piece_altitude", altitude=altitude_text(plane["altitude_ft"], units)))
+    parts.append(_trend_word(trend(plane.get("vertical_rate_fpm"))))
+    return [p for p in parts if p]
+
+
+def tracked_details(plane, units, leg=None):
+    """"from Denpasar to Jakarta, 120 kilometres east of Jakarta Soekarno-Hatta,
+    9,000 metres, descending"."""
+    return ", ".join(p for p in [route_text(leg), relative_text(plane, units, leg)]
+                     + _flight_state(plane, units) if p)
+
+
+def tracked_sentence(plane, units, leg=None, name=None):
+    """"Garuda Indonesia 408, from Denpasar to Jakarta, 120 kilometres east of
+    Jakarta Soekarno-Hatta, 9,000 metres, descending."."""
+    sentence = _sentence([name or aircraft_name(plane), tracked_details(plane, units, leg)])
+    return _("row_emergency", text=sentence) if api.is_emergency(plane) else sentence
+
+
+def not_transmitting_text(name):
+    return _("track_not_transmitting", name=name)
+
+
+def event_text(event, name, plane, units, leg=None, detail=None):
+    """The announcement for one tracked-flight event."""
+    state = ", ".join(_flight_state(plane, units))
+    if event == "airborne":
+        return _("event_airborne", name=name, details=tracked_details(plane, units, leg))
+    if event == "near_you":
+        return _("event_near_you", name=name,
+                 details=", ".join(p for p in (_where(plane, units), state) if p))
+    if event == "near_destination":
+        values = {"name": name, "distance": distance_text(detail["km"], units),
+                  "airport": airports.label(detail["airport"])}
+        if state:
+            return _("event_near_destination", state=state, **values)
+        return _("event_near_destination_short", **values)
+    return _("event_landed", name=name, where=relative_text(plane, units, leg) or "")
+
+
+def tracked_row(name, observation, units, leg=None):
+    """One row of the tracked-flights list. `observation` is (wall time, plane
+    or None) from the last check, or None before the first."""
+    if observation is None:
+        return _("tracked_row", name=name, status=_("tracked_not_checked"))
+    checked, plane = observation
+    status = (tracked_details(plane, units, leg) if plane
+              else _("tracked_not_transmitting"))
+    return _("tracked_row_checked", name=name, status=status, time=time_text(checked))
+
+
 def location_text(location):
     """How the settings page shows a location: "Jakarta, Indonesia", "Home:
     Jalan Merdeka Barat, ..." or "Home: -6.20880, 106.84560"."""

@@ -26,6 +26,7 @@ them from a worker thread only.
 import json
 import logging
 import math
+import re
 import time
 import urllib.error
 import urllib.parse
@@ -37,6 +38,17 @@ logger = logging.getLogger(__name__)
 
 ADSBFI_URL = "https://opendata.adsb.fi/api/v2/lat/{lat}/lon/{lon}/dist/{dist}"
 ADSBLOL_URL = "https://api.adsb.lol/v2/point/{lat}/{lon}/{dist}"
+# Worldwide lookups of one flight, for "Track a flight" (both answer {"ac": [...]}).
+FLIGHT_URLS = {
+    "callsign": (("adsb.fi", "https://opendata.adsb.fi/api/v2/callsign/{id}"),
+                 ("adsb.lol", "https://api.adsb.lol/v2/callsign/{id}")),
+    "registration": (("adsb.fi", "https://opendata.adsb.fi/api/v2/registration/{id}"),
+                     ("adsb.lol", "https://api.adsb.lol/v2/reg/{id}")),
+}
+_FLIGHT_ID = {"callsign": re.compile(r"^[A-Z0-9]{2,8}$"),
+              "registration": re.compile(r"^[A-Z0-9][A-Z0-9-]{1,9}$")}
+TRACK_LIMIT = 3
+TRACK_EVENTS = ("airborne", "near_you", "near_destination", "landed")
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 USER_AGENT = f"HarikuV2/{CORE_VERSION} (Flight Radar extension)"
 TIMEOUT_SECONDS = 10
@@ -168,6 +180,35 @@ def fetch_aircraft(latitude, longitude, radius_nm):
     raise FlightError(combined_error_kind(kinds))
 
 
+def build_flight_urls(kind, ident):
+    """[(source, url)] for a worldwide lookup, or [] for an invalid id."""
+    ident = (ident or "").strip().upper()
+    pattern = _FLIGHT_ID.get(kind)
+    if not pattern or not pattern.match(ident):
+        return []
+    quoted = urllib.parse.quote(ident, safe="-")
+    return [(name, url.format(id=quoted)) for name, url in FLIGHT_URLS[kind]]
+
+
+def fetch_flight(kind, ident, latitude=None, longitude=None):
+    """One flight worldwide by callsign or registration, from adsb.fi or, when
+    it fails, adsb.lol. Only the callsign or registration is sent. Distances
+    are from (latitude, longitude) when given (the user's exact point, never
+    sent). Returns (aircraft list, source); an empty list means it is not
+    transmitting now. Raises FlightError."""
+    urls = build_flight_urls(kind, ident)
+    if not urls:
+        raise FlightError("bad_response", "invalid flight id")
+    kinds = []
+    for name, url in urls:
+        try:
+            return parse_aircraft_list(fetch_json(url), latitude, longitude), name
+        except FlightError as e:
+            logger.info(f"[Flight Radar] {name} flight lookup failed: {e}")
+            kinds.append(e.kind)
+    raise FlightError(combined_error_kind(kinds))
+
+
 def search_places(name, language="en"):
     return parse_places(fetch_json(build_search_url(name, language)))
 
@@ -200,15 +241,22 @@ def _valid_position(lat, lon):
 def parse_aircraft_list(payload, latitude, longitude):
     """adsb.fi ({"aircraft": [...]}) or adsb.lol ({"ac": [...]}) JSON -> list
     of aircraft dicts, measured from the exact point (latitude, longitude).
-    Raises FlightError for anything else."""
+    Without a point (a worldwide flight lookup and no location set) each
+    aircraft is measured from itself. Raises FlightError for anything else."""
     if not isinstance(payload, dict):
         raise FlightError("bad_response", "not an object")
     items = payload.get("aircraft") if "aircraft" in payload else payload.get("ac")
     if not isinstance(items, list):
         raise FlightError("bad_response", "no aircraft list")
+    has_point = _valid_position(to_float(latitude), to_float(longitude))
     aircraft = []
     for item in items:
-        plane = normalize_aircraft(item, latitude, longitude)
+        if has_point:
+            plane = normalize_aircraft(item, latitude, longitude)
+        elif isinstance(item, dict):
+            plane = normalize_aircraft(item, item.get("lat"), item.get("lon"))
+        else:
+            plane = None
         if plane:
             aircraft.append(plane)
     return aircraft
@@ -269,6 +317,7 @@ def normalize_aircraft(raw, latitude, longitude):
         "category": category,
         "lat": lat,
         "lon": lon,
+        "seen": to_float(raw.get("seen")),
     }
 
 
@@ -389,7 +438,36 @@ def normalize_settings(raw):
         "alert_km": alert if alert in ALERT_CHOICES_KM and not isinstance(alert, bool)
         else DEFAULT_ALERT_KM,
         "emergency_watch": raw.get("emergency_watch") is True,
+        "tracked": normalize_tracked(raw.get("tracked")),
     }
+
+
+def normalize_tracked(raw):
+    """The tracked flights (at most TRACK_LIMIT) from settings, dropping
+    anything malformed. Wall-clock times, since they outlive a restart."""
+    tracked = []
+    for item in raw if isinstance(raw, list) else []:
+        if not isinstance(item, dict):
+            continue
+        kind = item.get("kind")
+        ident = str(item.get("id") or "").strip().upper()
+        if kind not in _FLIGHT_ID or not _FLIGHT_ID[kind].match(ident):
+            continue
+        if any(t["kind"] == kind and t["id"] == ident for t in tracked):
+            continue
+        notified = item.get("notified")
+        tracked.append({
+            "kind": kind,
+            "id": ident,
+            "added": to_float(item.get("added")) or 0.0,
+            "landed_at": to_float(item.get("landed_at")),
+            "seen_airborne": item.get("seen_airborne") is True,
+            "notified": [e for e in TRACK_EVENTS
+                         if isinstance(notified, list) and e in notified],
+        })
+        if len(tracked) >= TRACK_LIMIT:
+            break
+    return tracked
 
 
 def make_cache(location, radius_nm, aircraft, source, now, wall=None):

@@ -14,7 +14,10 @@ Windows for the Flight Radar extension:
                        link, with a name), radius, units, ground traffic,
                        overhead alerts, the emergency watch, notes, credits.
   * RadarListDialog  - every aircraft in range, one sentence per row, nearest
-                       first, with Details (Enter), Refresh and Listen to ATC.
+                       first, with Details (Enter), Refresh, Listen to ATC
+                       and Track.
+  * TrackFlightDialog - type a flight number to find and track it; the
+                       tracked flights, with Stop tracking and Check now.
 Selection changes never move keyboard focus. Focus only moves after the user
 asks for something (opening the dialog, pressing Search). Rows that change
 after a refresh or a route lookup keep the current selection.
@@ -379,7 +382,7 @@ class RadarListDialog(wx.Dialog):
 
     def __init__(self, parent, place, settings, get_data, request_refresh,
                  leg_for=None, with_routes=None, refresh_now=False,
-                 listen=None, emergency_intro=None):
+                 listen=None, emergency_intro=None, track=None):
         super().__init__(parent, title=_("list_title"), size=(720, 500),
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self._units = settings["units"]
@@ -390,6 +393,7 @@ class RadarListDialog(wx.Dialog):
         self._leg_for = leg_for or (lambda plane: None)
         self._with_routes = with_routes or (lambda aircraft, callback: callback())
         self._listen = listen
+        self._track = track
         self._emergency_intro = emergency_intro or (
             lambda aircraft: text.emergency_text(aircraft, self._units))
         self._loading = refresh_now
@@ -419,11 +423,13 @@ class RadarListDialog(wx.Dialog):
         self.btn_details = wx.Button(self, label=_("btn_details"))
         self.btn_refresh = wx.Button(self, label=_("btn_refresh"))
         self.btn_listen = wx.Button(self, label=_("btn_listen_atc"))
+        self.btn_track = wx.Button(self, label=_("btn_track_selected"))
         self.btn_close = wx.Button(self, wx.ID_CANCEL, label=_("btn_close"))
         self.btn_details.SetDefault()
         buttons.Add(self.btn_details, 0, wx.RIGHT, 6)
         buttons.Add(self.btn_refresh, 0, wx.RIGHT, 6)
         buttons.Add(self.btn_listen, 0, wx.RIGHT, 6)
+        buttons.Add(self.btn_track, 0, wx.RIGHT, 6)
         buttons.Add(self.btn_close, 0)
         vbox.Add(buttons, 0, wx.ALL | wx.ALIGN_RIGHT, 8)
 
@@ -432,6 +438,7 @@ class RadarListDialog(wx.Dialog):
         self.btn_details.Bind(wx.EVT_BUTTON, self._on_details)
         self.btn_refresh.Bind(wx.EVT_BUTTON, self._on_refresh)
         self.btn_listen.Bind(wx.EVT_BUTTON, self._on_listen)
+        self.btn_track.Bind(wx.EVT_BUTTON, self._on_track)
         self.list_aircraft.Bind(wx.EVT_LISTBOX, self._on_select)
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
 
@@ -529,6 +536,10 @@ class RadarListDialog(wx.Dialog):
         self._show_details()
         speak(text.details_text(plane, self._units, self._leg_for(plane)), interrupt=True)
 
+    def _on_track(self, event=None):
+        if self._track is not None:
+            self._track(self.selected_aircraft())
+
     def _on_listen(self, event=None):
         if self._listen is None:
             return
@@ -568,3 +579,100 @@ class RadarListDialog(wx.Dialog):
         elif urgent:
             speak(urgent, interrupt=True)
         self._announce = False
+
+
+class TrackFlightDialog(wx.Dialog):
+    """Track a flight. `get_rows()` returns [(key, row)] for the tracked
+    flights; `track(typed, on_result)` looks a flight up, says where it is and
+    tracks it; `untrack(key)` stops; `check_all(on_done)` looks them all up and
+    says where they are. Focus stays where the user put it."""
+
+    def __init__(self, parent, get_rows, track, untrack, check_all, initial=""):
+        super().__init__(parent, title=_("track_title"), size=(660, 440),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self._get_rows = get_rows
+        self._track = track
+        self._untrack = untrack
+        self._check_all = check_all
+        self._keys = []
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        label = _("lbl_track_input")
+        vbox.Add(wx.StaticText(self, label=label), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        self.txt_flight = wx.TextCtrl(self, value=initial, style=wx.TE_PROCESS_ENTER)
+        self.txt_flight.SetName(label.rstrip(":"))
+        row.Add(self.txt_flight, 1, wx.RIGHT, 6)
+        self.btn_track = wx.Button(self, label=_("btn_track"))
+        row.Add(self.btn_track, 0)
+        vbox.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 8)
+
+        label = _("lbl_tracked", count=api.TRACK_LIMIT)
+        vbox.Add(wx.StaticText(self, label=label), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.list_tracked = wx.ListBox(self, style=wx.LB_SINGLE)
+        self.list_tracked.SetName(label.rstrip(":"))
+        vbox.Add(self.list_tracked, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 8)
+        vbox.Add(wx.StaticText(self, label=_("track_note")), 0, wx.ALL, 8)
+
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_untrack = wx.Button(self, label=_("btn_untrack"))
+        self.btn_check = wx.Button(self, label=_("btn_check_now"))
+        self.btn_close = wx.Button(self, wx.ID_CANCEL, label=_("btn_close"))
+        self.btn_track.SetDefault()
+        for button in (self.btn_untrack, self.btn_check):
+            buttons.Add(button, 0, wx.RIGHT, 6)
+        buttons.Add(self.btn_close, 0)
+        vbox.Add(buttons, 0, wx.ALL | wx.ALIGN_RIGHT, 8)
+
+        self.SetSizer(vbox)
+        self.SetEscapeId(wx.ID_CANCEL)
+        self.txt_flight.Bind(wx.EVT_TEXT_ENTER, self._on_track)
+        self.btn_track.Bind(wx.EVT_BUTTON, self._on_track)
+        self.btn_untrack.Bind(wx.EVT_BUTTON, self._on_untrack)
+        self.btn_check.Bind(wx.EVT_BUTTON, self._on_check)
+        self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
+
+        apply_rtl_layout(self)
+        core.ui_scale.apply_appearance(self)
+        self._fill()
+        self.CentreOnParent()
+        self.txt_flight.SetFocus()
+        self.txt_flight.SetInsertionPointEnd()
+
+    def _fill(self):
+        rows = self._get_rows()
+        self._keys = [key for key, _row in rows]
+        sel = self.list_tracked.GetSelection()
+        self.list_tracked.Set([row for _key, row in rows] or [_("tracked_empty")])
+        count = self.list_tracked.GetCount()
+        self.list_tracked.SetSelection(min(sel, count - 1) if sel != wx.NOT_FOUND else 0)
+        self.Layout()
+
+    def selected_key(self):
+        sel = self.list_tracked.GetSelection()
+        return self._keys[sel] if 0 <= sel < len(self._keys) else None
+
+    def _refilled(self):
+        if self:
+            self._fill()
+
+    def _on_track(self, event=None):
+        self._track(self.txt_flight.GetValue(), self._refilled)
+
+    def _on_untrack(self, event=None):
+        key = self.selected_key()
+        if key is None:
+            speak(_("tracked_empty"), interrupt=True)
+            return
+        self._untrack(key)
+        self._fill()
+
+    def _on_check(self, event=None):
+        self._check_all(self._refilled)
+
+    def _on_char_hook(self, event):
+        if (event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE)
+                and wx.Window.FindFocus() is self.list_tracked):
+            self._on_untrack()
+            return
+        event.Skip()
