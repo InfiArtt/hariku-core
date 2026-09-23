@@ -72,6 +72,13 @@ OFFICIAL_EXTENSION_IDS = {
     "window_teleporter",
     "markdown_reader",
     "lumina",
+    "account_manager",
+    "world_clock",
+    "routines",
+    "gcal_integration",
+    "filter",
+    "quick_expand",
+    "hariku_lounge",
     # add new official extension IDs here
 }
 

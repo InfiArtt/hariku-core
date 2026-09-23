@@ -11,7 +11,9 @@ import wx
 import json
 import logging
 import threading
-import requests
+import urllib.error
+import urllib.parse
+import urllib.request
 import core.api
 import core.preferences
 import core.hotkeys
@@ -23,6 +25,19 @@ EXTENSION_ID = "hariku_lounge"
 DEFAULT_API_URL = "https://infiartt.com"
 # Default polling interval in seconds
 DEFAULT_POLL_INTERVAL = 1
+
+
+def _http(method, url, form=None, headers=None, timeout=5):
+    """Small HTTP call over urllib; the compiled app doesn't ship `requests`.
+    Returns (status, body text). HTTP error statuses are returned, not raised."""
+    data = urllib.parse.urlencode(form).encode("utf-8") if form is not None else None
+    req = urllib.request.Request(url, data=data, method=method, headers=dict(headers or {}))
+    req.add_header("User-Agent", "HarikuV2/2.0")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", errors="replace")
 
 class LoungePreferencesPanel(wx.Panel):
     def __init__(self, parent):
@@ -152,9 +167,9 @@ class HarikuLoungeFrame(wx.Frame):
         def fetch():
             try:
                 headers = {"Authorization": f"Bearer {self.access_token}"}
-                resp = requests.get(f"{self.api_url}/api/chat", headers=headers, timeout=5)
-                if resp.status_code == 200:
-                    data = resp.json()
+                status, body = _http("GET", f"{self.api_url}/api/chat", headers=headers)
+                if status == 200:
+                    data = json.loads(body)
                     wx.CallAfter(self.update_ui, data)
             except Exception as e:
                 logger.error(f"[Lounge] Poll error: {e}")
@@ -188,7 +203,7 @@ class HarikuLoungeFrame(wx.Frame):
         def send():
             try:
                 headers = {"Authorization": f"Bearer {self.access_token}"}
-                requests.post(f"{self.api_url}/api/chat", data={"message": msg}, headers=headers, timeout=5)
+                _http("POST", f"{self.api_url}/api/chat", form={"message": msg}, headers=headers)
                 # Next poll will fetch the message
             except Exception as e:
                 logger.error(f"[Lounge] Send error: {e}")

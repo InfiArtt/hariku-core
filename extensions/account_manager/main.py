@@ -10,7 +10,9 @@
 import wx
 import json
 import logging
-import requests
+import urllib.error
+import urllib.parse
+import urllib.request
 import webbrowser
 import base64
 import hashlib
@@ -33,6 +35,19 @@ BASE_URL = "https://infiartt.com"
 LOCAL_PORT = 16623
 REDIRECT_URI = f"http://localhost:{LOCAL_PORT}/callback"
 # ==============================================================================
+
+def _http(method, url, form=None, headers=None, timeout=10):
+    """Small HTTP call over urllib; the compiled app doesn't ship `requests`.
+    Returns (status, body text). HTTP error statuses are returned, not raised."""
+    data = urllib.parse.urlencode(form).encode("utf-8") if form is not None else None
+    req = urllib.request.Request(url, data=data, method=method, headers=dict(headers or {}))
+    req.add_header("User-Agent", "HarikuV2/2.0")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", errors="replace")
+
 
 def generate_pkce_pair():
     """Generates a random code_verifier and its SHA256 code_challenge."""
@@ -138,9 +153,10 @@ class AccountSettingsPanel(wx.Panel):
                 
             # 4. Exchange Code for Token (Using PKCE, no client_secret needed!)
             logger.info("Exchanging code for token...")
-            token_resp = requests.post(
+            status, body = _http(
+                "POST",
                 f"{BASE_URL}/oauth/token",
-                data={
+                form={
                     "client_id": CLIENT_ID,
                     "grant_type": "authorization_code",
                     "code": auth_code,
@@ -149,11 +165,11 @@ class AccountSettingsPanel(wx.Panel):
                 },
                 timeout=10
             )
-            
-            if token_resp.status_code != 200:
-                return {"error": f"Token exchange failed: {token_resp.text}"}
-                
-            token_data = token_resp.json()
+
+            if status != 200:
+                return {"error": f"Token exchange failed: {body}"}
+
+            token_data = json.loads(body)
             access_token = token_data.get("access_token")
             
             if not access_token:
@@ -161,16 +177,17 @@ class AccountSettingsPanel(wx.Panel):
                 
             # 5. Fetch User Profile
             logger.info("Fetching user profile...")
-            api_resp = requests.get(
+            status, body = _http(
+                "GET",
                 f"{BASE_URL}/api/user",
                 headers={"Authorization": f"Bearer {access_token}"},
                 timeout=10
             )
-            
-            if api_resp.status_code != 200:
+
+            if status != 200:
                 return {"error": "Failed to fetch user profile."}
-                
-            user_profile = api_resp.json()
+
+            user_profile = json.loads(body)
             
             return {
                 "success": True,

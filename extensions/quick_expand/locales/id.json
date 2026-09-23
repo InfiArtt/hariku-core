@@ -1,0 +1,27 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Rafli",
+        "email": "",
+        "version": "1.0",
+        "core_version": "2.0",
+        "rtl": false
+    },
+    "messages": {
+        "panel_title": "Pengaturan Quick Expand (Text Expander)",
+        "panel_description": "Daftar singkatan di bawah ini akan diganti secara otomatis saat Anda mengetiknya diikuti oleh tombol Spasi, Tab, atau Enter secara global di seluruh sistem Windows.\nHanya mendukung huruf (a-z), angka (0-9), garis hubung (-), dan garis bawah (_).",
+        "col_abbrev": "Singkatan",
+        "col_replacement": "Teks Pengganti",
+        "lbl_abbrev": "Singkatan:",
+        "lbl_replacement": "Teks Pengganti:",
+        "btn_add_update": "Tambah / Perbarui",
+        "btn_delete": "Hapus Pilihan",
+        "error_title": "Error",
+        "error_empty": "Isian singkatan dan teks pengganti tidak boleh kosong.",
+        "error_invalid": "Singkatan hanya boleh mengandung huruf kecil (a-z), angka (0-9), tanda minus (-), dan garis bawah (_).",
+        "error_no_selection": "Pilih singkatan pada list terlebih dahulu untuk menghapus.",
+        "spoken_saved": "Singkatan {abbrev} berhasil ditambahkan atau diperbarui.",
+        "spoken_deleted": "Singkatan {abbrev} berhasil dihapus."
+    }
+}

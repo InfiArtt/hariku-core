@@ -1,0 +1,27 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Rafli",
+        "email": "",
+        "version": "1.0",
+        "core_version": "2.0",
+        "rtl": false
+    },
+    "messages": {
+        "panel_title": "Quick Expand (text expander) settings",
+        "panel_description": "Abbreviations in this list are replaced automatically when you type them anywhere in Windows, followed by Space, Tab, or Enter.\nOnly lowercase letters (a-z), digits (0-9), hyphens (-) and underscores (_) are supported.",
+        "col_abbrev": "Abbreviation",
+        "col_replacement": "Replacement text",
+        "lbl_abbrev": "Abbreviation:",
+        "lbl_replacement": "Replacement text:",
+        "btn_add_update": "Add / Update",
+        "btn_delete": "Delete selected",
+        "error_title": "Error",
+        "error_empty": "The abbreviation and the replacement text can't be empty.",
+        "error_invalid": "Abbreviations can only contain lowercase letters (a-z), digits (0-9), hyphens (-) and underscores (_).",
+        "error_no_selection": "Select an abbreviation in the list first.",
+        "spoken_saved": "Abbreviation {abbrev} added or updated.",
+        "spoken_deleted": "Abbreviation {abbrev} deleted."
+    }
+}

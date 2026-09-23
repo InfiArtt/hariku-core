@@ -17,6 +17,7 @@
 import ctypes
 from ctypes import wintypes
 import logging
+import os
 import time
 import threading
 import re
@@ -25,9 +26,13 @@ import wx
 # --- Core Imports ---
 import core.api
 import core.preferences
+from core.i18n import get_translator
 from core.speech import speak
 
 logger = logging.getLogger(__name__)
+
+EXT_DIR = os.path.dirname(os.path.abspath(__file__))
+_ = get_translator("quick_expand", os.path.join(EXT_DIR, "locales"))
 
 # ============================================================
 # WINDOWS API & CTYPES CONFIGURATION
@@ -446,24 +451,19 @@ class ExpanderSettingsPanel(wx.Panel):
         vbox = wx.BoxSizer(wx.VERTICAL)
         
         # Header title
-        title_text = wx.StaticText(self, label="Pengaturan Quick Expand (Text Expander)")
+        title_text = wx.StaticText(self, label=_("panel_title"))
         title_font = title_text.GetFont()
         title_font.MakeBold()
         title_text.SetFont(title_font)
         vbox.Add(title_text, 0, wx.ALL, 10)
-        
+
         # Description
-        desc_text = (
-            "Daftar singkatan di bawah ini akan diganti secara otomatis saat Anda mengetiknya\n"
-            "diikuti oleh tombol Spasi, Tab, atau Enter secara global di seluruh sistem Windows.\n"
-            "Hanya mendukung huruf (a-z), angka (0-9), garis hubung (-), dan garis bawah (_)."
-        )
-        vbox.Add(wx.StaticText(self, label=desc_text), 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        
+        vbox.Add(wx.StaticText(self, label=_("panel_description")), 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
         # List of expansions
         self.list_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL)
-        self.list_ctrl.InsertColumn(0, "Singkatan (Abbrev)", width=120)
-        self.list_ctrl.InsertColumn(1, "Teks Pengganti (Replacement)", width=350)
+        self.list_ctrl.InsertColumn(0, _("col_abbrev"), width=120)
+        self.list_ctrl.InsertColumn(1, _("col_replacement"), width=350)
         vbox.Add(self.list_ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
         
         # Populate List View
@@ -473,12 +473,14 @@ class ExpanderSettingsPanel(wx.Panel):
         form_sizer = wx.FlexGridSizer(2, 2, 10, 10)
         form_sizer.AddGrowableCol(1, 1)
         
-        form_sizer.Add(wx.StaticText(self, label="Singkatan:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        form_sizer.Add(wx.StaticText(self, label=_("lbl_abbrev")), 0, wx.ALIGN_CENTER_VERTICAL)
         self.txt_abbrev = wx.TextCtrl(self)
+        self.txt_abbrev.SetName(_("lbl_abbrev").rstrip(":"))
         form_sizer.Add(self.txt_abbrev, 1, wx.EXPAND)
-        
-        form_sizer.Add(wx.StaticText(self, label="Teks Pengganti:"), 0, wx.ALIGN_CENTER_VERTICAL)
+
+        form_sizer.Add(wx.StaticText(self, label=_("lbl_replacement")), 0, wx.ALIGN_CENTER_VERTICAL)
         self.txt_replace = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_BESTWRAP)
+        self.txt_replace.SetName(_("lbl_replacement").rstrip(":"))
         form_sizer.Add(self.txt_replace, 1, wx.EXPAND)
         
         vbox.Add(form_sizer, 0, wx.EXPAND | wx.ALL, 10)
@@ -486,11 +488,11 @@ class ExpanderSettingsPanel(wx.Panel):
         # Action Buttons
         hbox_buttons = wx.BoxSizer(wx.HORIZONTAL)
         
-        self.btn_add = wx.Button(self, label="Tambah / Perbarui")
+        self.btn_add = wx.Button(self, label=_("btn_add_update"))
         self.btn_add.Bind(wx.EVT_BUTTON, self.on_add_update)
         hbox_buttons.Add(self.btn_add, 1, wx.ALL, 5)
         
-        self.btn_delete = wx.Button(self, label="Hapus Pilihan")
+        self.btn_delete = wx.Button(self, label=_("btn_delete"))
         self.btn_delete.Bind(wx.EVT_BUTTON, self.on_delete)
         hbox_buttons.Add(self.btn_delete, 1, wx.ALL, 5)
         
@@ -521,27 +523,24 @@ class ExpanderSettingsPanel(wx.Panel):
         repl = self.txt_replace.GetValue()
         
         if not abbrev or not repl:
-            core.api.show_message("Error", "Isian singkatan dan teks pengganti tidak boleh kosong.")
+            core.api.show_message(_("error_title"), _("error_empty"))
             return
-            
+
         # Input validation
         if not re.match("^[a-z0-9_-]+$", abbrev):
-            core.api.show_message(
-                "Error",
-                "Singkatan hanya boleh mengandung huruf kecil (a-z), angka (0-9), tanda minus (-), dan garis bawah (_)."
-            )
+            core.api.show_message(_("error_title"), _("error_invalid"))
             return
-            
+
         self.expansions[abbrev] = repl
         self.populate_list()
         self.txt_abbrev.Clear()
         self.txt_replace.Clear()
-        speak(f"Singkatan {abbrev} berhasil ditambahkan atau diperbarui.")
-        
+        speak(_("spoken_saved", abbrev=abbrev))
+
     def on_delete(self, event):
         index = self.list_ctrl.GetFirstSelected()
         if index == -1:
-            core.api.show_message("Error", "Pilih singkatan pada list terlebih dahulu untuk menghapus.")
+            core.api.show_message(_("error_title"), _("error_no_selection"))
             return
             
         abbrev = self.list_ctrl.GetItemText(index, 0)
@@ -550,7 +549,7 @@ class ExpanderSettingsPanel(wx.Panel):
             self.populate_list()
             self.txt_abbrev.Clear()
             self.txt_replace.Clear()
-            speak(f"Singkatan {abbrev} berhasil dihapus.")
+            speak(_("spoken_deleted", abbrev=abbrev))
             
     def ApplyChanges(self):
         """Save settings and apply them instantly to the active expansion runtime."""

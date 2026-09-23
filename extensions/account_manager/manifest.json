@@ -1,7 +1,7 @@
 {
   "name": "Hariku Account Manager",
   "version": "1.0.0",
-  "description": "Handles authentication with Hariku Cloud (novarealm.cloud). Provides identity for other extensions.",
+  "description": "Sign in with your InfiArtt account (infiartt.com). Provides identity for other extensions such as Hariku Lounge.",
   "main": "main.py",
   "author": "Hariku Core Team",
   "language": "id",
