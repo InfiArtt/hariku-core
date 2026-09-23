@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import wx
 import core.api
+import core.ui_scale
 from core.i18n import get_translator, get_available_languages, get_current_language, set_language
 
 _ = get_translator("core")
@@ -187,7 +188,6 @@ class GeneralSettingsPanel(wx.Panel):
 
         # Re-apply the low-vision appearance live (font scale + high contrast).
         try:
-            import core.ui_scale
             core.ui_scale.apply_appearance(core.api.main_window_instance)
         except Exception:
             pass
