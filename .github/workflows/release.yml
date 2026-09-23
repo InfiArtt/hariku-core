@@ -1,9 +1,10 @@
 name: Release Hariku Core
 
 # Trigger: push a tag like `v2.3.0` (git push origin v2.3.0), or run manually.
-# Everything else — version stamping, compiling, installer, hashing, publishing —
-# happens automatically. Source stays in THIS private repo; only the installer +
-# version.json are pushed to the PUBLIC distribution repo (InfiArtt/hariku).
+# Everything else (version stamping, compiling, installer, hashing, publishing)
+# happens automatically. The source lives in this repo; the built installer and
+# version.json are published to the separate distribution repo (InfiArtt/hariku),
+# which also serves GitHub Pages and the release downloads.
 on:
   push:
     tags: ['v*.*.*']
