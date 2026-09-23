@@ -1,0 +1,70 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.4",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Clipboard History",
+        "action_open": "Open the clipboard history",
+        "action_speak_last": "Speak the last copied text",
+
+        "history_empty": "The clipboard history is empty.",
+        "speak_truncated": "The text continues. Open the clipboard history to read all of it.",
+
+        "dlg_title": "Clipboard history",
+        "dlg_title_paused": "Clipboard history (recording paused)",
+        "lbl_filter": "&Filter:",
+        "lbl_items": "&Items ({count}):",
+        "lbl_items_filtered": "&Items ({shown} of {total}):",
+        "lbl_full_text": "F&ull text:",
+        "btn_copy": "&Copy",
+        "btn_pin": "&Pin",
+        "btn_unpin": "Un&pin",
+        "btn_delete": "&Delete",
+        "btn_clear": "Clear &all",
+        "btn_close": "Close",
+
+        "row": "{text}, {ago}",
+        "row_pinned": "Pinned: {text}, {ago}",
+        "empty_history": "Nothing copied yet. Text you copy while Hariku is running appears here.",
+        "no_matches": "No items match the filter.",
+        "count_one": "1 item",
+        "count_many": "{count} items",
+
+        "time_just_now": "just now",
+        "time_minute": "1 minute ago",
+        "time_minutes": "{count} minutes ago",
+        "time_hour": "1 hour ago",
+        "time_hours": "{count} hours ago",
+        "time_day": "1 day ago",
+        "time_days": "{count} days ago",
+        "time_on_date": "on {date}",
+
+        "copied": "Copied. Press Control+V to paste.",
+        "copy_failed": "Could not put the text on the clipboard. Please try again.",
+        "pinned": "Pinned.",
+        "unpinned": "Unpinned.",
+        "deleted": "Deleted.",
+        "nothing_selected": "No item is selected.",
+        "item_gone": "That item is no longer in the history.",
+        "confirm_delete_pinned": "Delete this pinned item?\n\n{text}",
+        "confirm_delete_title": "Delete pinned item",
+        "nothing_to_clear": "There is nothing to clear. Pinned items are kept.",
+        "confirm_clear": "Clear the clipboard history? Every item that is not pinned is deleted ({count} in all). Pinned items are kept.",
+        "confirm_clear_title": "Clear clipboard history",
+        "cleared": "History cleared.",
+        "cleared_kept": "History cleared. Pinned items kept: {kept}.",
+
+        "lbl_size": "&History size:",
+        "size_option": "{count} items",
+        "chk_remember": "&Remember history after restarting Hariku",
+        "chk_paused": "Pa&use recording",
+        "lbl_privacy": "Privacy:",
+        "privacy_note": "Text copied from password managers such as KeePass, 1Password and Bitwarden is never recorded. Unless Remember history is on, the history is kept in memory only and is gone when Hariku closes. Pinned items are the exception: they are always saved on this computer, so they are still there after a restart. Turning Remember history off deletes the saved history at once, except pinned items. Nothing is ever sent over the internet."
+    }
+}

@@ -1,0 +1,70 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.4",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Riwayat Clipboard",
+        "action_open": "Buka riwayat clipboard",
+        "action_speak_last": "Ucapkan teks yang terakhir disalin",
+
+        "history_empty": "Riwayat clipboard masih kosong.",
+        "speak_truncated": "Teksnya masih berlanjut. Buka riwayat clipboard untuk membaca semuanya.",
+
+        "dlg_title": "Riwayat clipboard",
+        "dlg_title_paused": "Riwayat clipboard (perekaman dijeda)",
+        "lbl_filter": "&Cari:",
+        "lbl_items": "&Item ({count}):",
+        "lbl_items_filtered": "&Item ({shown} dari {total}):",
+        "lbl_full_text": "&Teks lengkap:",
+        "btn_copy": "&Salin",
+        "btn_pin": "Se&matkan",
+        "btn_unpin": "&Lepas sematan",
+        "btn_delete": "&Hapus",
+        "btn_clear": "Hapus s&emua",
+        "btn_close": "Tutup",
+
+        "row": "{text}, {ago}",
+        "row_pinned": "Disematkan: {text}, {ago}",
+        "empty_history": "Belum ada yang disalin. Teks yang Anda salin selama Hariku berjalan akan muncul di sini.",
+        "no_matches": "Tidak ada item yang cocok dengan pencarian.",
+        "count_one": "1 item",
+        "count_many": "{count} item",
+
+        "time_just_now": "baru saja",
+        "time_minute": "1 menit yang lalu",
+        "time_minutes": "{count} menit yang lalu",
+        "time_hour": "1 jam yang lalu",
+        "time_hours": "{count} jam yang lalu",
+        "time_day": "1 hari yang lalu",
+        "time_days": "{count} hari yang lalu",
+        "time_on_date": "pada {date}",
+
+        "copied": "Disalin. Tekan Control+V untuk menempel.",
+        "copy_failed": "Teks tidak bisa ditaruh di clipboard. Silakan coba lagi.",
+        "pinned": "Disematkan.",
+        "unpinned": "Sematan dilepas.",
+        "deleted": "Dihapus.",
+        "nothing_selected": "Tidak ada item yang dipilih.",
+        "item_gone": "Item itu sudah tidak ada di riwayat.",
+        "confirm_delete_pinned": "Hapus item yang disematkan ini?\n\n{text}",
+        "confirm_delete_title": "Hapus item yang disematkan",
+        "nothing_to_clear": "Tidak ada yang perlu dihapus. Item yang disematkan tetap disimpan.",
+        "confirm_clear": "Kosongkan riwayat clipboard? Semua item yang tidak disematkan akan dihapus ({count} item). Item yang disematkan tetap disimpan.",
+        "confirm_clear_title": "Kosongkan riwayat clipboard",
+        "cleared": "Riwayat dikosongkan.",
+        "cleared_kept": "Riwayat dikosongkan. Item disematkan yang tetap disimpan: {kept}.",
+
+        "lbl_size": "&Jumlah riwayat:",
+        "size_option": "{count} item",
+        "chk_remember": "&Ingat riwayat setelah Hariku dimulai ulang",
+        "chk_paused": "Je&da perekaman",
+        "lbl_privacy": "Privasi:",
+        "privacy_note": "Teks yang disalin dari pengelola kata sandi seperti KeePass, 1Password, dan Bitwarden tidak pernah direkam. Selama Ingat riwayat tidak aktif, riwayat hanya ada di memori dan hilang saat Hariku ditutup. Pengecualiannya adalah item yang disematkan: item itu selalu disimpan di komputer ini agar tetap ada setelah Hariku dimulai ulang. Menonaktifkan Ingat riwayat langsung menghapus riwayat yang tersimpan, kecuali item yang disematkan. Tidak ada yang dikirim lewat internet."
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "clipboard_history",
+    "name": "Clipboard History",
+    "version": "1.0",
+    "description": "Keeps a list of the text you copy, so you can find, pin and copy it again. Press V for the history and Shift+V to hear the last copied text. Copies from password managers are never recorded, and the history stays in memory unless you choose to remember it.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.4"
+}
