@@ -41,6 +41,50 @@ handling of these requests is covered by its
 [terms and privacy policy](https://open-meteo.com/en/terms#privacy). The Morning
 Briefing extension makes no connections of its own.
 
+## Sea Conditions and Air Quality
+
+These two extensions work like Weather. Each uses its own place if you choose
+one in its settings, or the Weather city otherwise, and sends nothing until one
+of them is set. After that, each fetches its data from Open-Meteo when Hariku
+starts, about every 30 minutes, and when you ask: Sea Conditions from
+`marine-api.open-meteo.com`, Air Quality from `air-quality-api.open-meteo.com`.
+The request contains the place's coordinates and time zone, not your device's
+location. Searching for a place sends the text you typed to Open-Meteo's city
+search, as described for Weather above.
+
+## Earthquakes and Tsunami
+
+The Earthquakes and Tsunami extension downloads BMKG's public earthquake files
+from `data.bmkg.go.id`. With the tsunami alert on (the default) or any other
+BMKG alert on, it checks the latest-earthquake file about once a minute while
+Hariku runs. It also downloads BMKG's recent lists when you open them. If you
+turn on worldwide alerts, or show worldwide earthquakes in the list, it
+downloads the U.S. Geological Survey's public feeds from
+`earthquake.usgs.gov`.
+
+These requests contain none of your data. Your location stays on your
+computer: the extension downloads the same files for everyone and works out
+distances itself. Searching for a city sends the text you typed to Open-Meteo's
+city search, as described for Weather above.
+
+## Space
+
+The Space extension connects only when you use it. The one exception: while
+you have a launch reminder set, it refreshes the launch list at most once an
+hour.
+
+- "Where is the ISS?" asks `api.wheretheiss.at` for the space station's
+  position, then sends that position (the station's, not yours) back to the
+  same service to learn which country it's over.
+- The launch list comes from The Space Devs (`ll.thespacedevs.com`). Launch
+  reminders are kept on your computer.
+- Sunrise, sunset and the moon phase are calculated on your computer.
+- Searching for a city sends the text you typed to Open-Meteo's city search,
+  as described for Weather above.
+
+Your location is never sent; distances and directions are worked out on your
+computer.
+
 ## Flight Radar
 
 The Flight Radar extension connects only when you use it: when you ask what is

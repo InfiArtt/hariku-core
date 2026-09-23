@@ -84,6 +84,10 @@ OFFICIAL_EXTENSION_IDS = {
     "flight_radar",
     "clipboard_history",
     "sound_themes",
+    "earthquake",
+    "marine",
+    "air_quality",
+    "space",
     # add new official extension IDs here
 }
 
