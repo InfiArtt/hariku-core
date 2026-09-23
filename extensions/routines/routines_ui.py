@@ -244,18 +244,17 @@ class ItemDialog(wx.Dialog):
                 ctrl.SetName(label)
                 self.field_sizer.Add(ctrl, 0, wx.EXPAND | wx.TOP, 2)
             self._field_ctrls[key] = (ctrl, fkind)
+        # Name the group after the chosen type, so tabbing into it announces what
+        # these settings belong to.
+        self._settings_box.SetLabel(f"Settings for {self.choice.GetStringSelection()}")
         self.field_panel.Layout()
         if reapply:
-            # New controls were just built — re-apply scale/theme + tint to them
-            # and move focus into the settings so NVDA follows the type change.
+            # New controls were just built: re-apply scale/theme + tint to them.
+            # Focus stays on the Type list. Arrowing through a wx.Choice fires
+            # EVT_CHOICE on every step, so moving focus here would throw the user
+            # out of the list after each arrow press.
             _apply_scale(self.field_panel)
             self._apply_tints()
-            for _key, (ctrl, _k) in self._field_ctrls.items():
-                try:
-                    ctrl.SetFocus()
-                except Exception:
-                    pass
-                break
 
     def get_item(self):
         cur_type = self._types[self.choice.GetSelection()] if self._types else None
