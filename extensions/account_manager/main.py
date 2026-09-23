@@ -70,11 +70,11 @@ class AccountSettingsPanel(wx.Panel):
     def setup_ui(self):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         
-        title = wx.StaticText(self, label="Hariku Cloud Account")
+        title = wx.StaticText(self, label="InfiArtt Account")
         title.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.sizer.Add(title, 0, wx.ALL, 10)
-        
-        info_text = wx.StaticText(self, label="Login to sync your data and access cloud features.")
+
+        info_text = wx.StaticText(self, label="Sign in with your infiartt.com account to use online features such as Hariku Lounge.")
         self.sizer.Add(info_text, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         
         # Status Area

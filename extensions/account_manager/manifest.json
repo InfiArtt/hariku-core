@@ -4,6 +4,6 @@
   "description": "Sign in with your InfiArtt account (infiartt.com). Provides identity for other extensions such as Hariku Lounge.",
   "main": "main.py",
   "author": "Hariku Core Team",
-  "language": "id",
+  "language": "en",
   "minimum_core_version": "2.0.0"
 }
