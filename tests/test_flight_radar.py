@@ -455,10 +455,11 @@ def test_aircraft_names(text, lang):
     assert text.aircraft_name({"callsign": "BTK6339"}) == "Batik Air 6339"
     assert text.aircraft_name({"callsign": "GIA0155"}) == "Garuda Indonesia 155"
     assert text.aircraft_name({"callsign": "AWQ53A"}) == "Indonesia AirAsia 53 A"
-    # Unknown prefixes and non-airline callsigns are spelled out.
+    # Unknown airline prefixes are spelled out; registrations are named as such.
     assert text.aircraft_name({"callsign": "XQZ357"}) == "X Q Z 357"
-    assert text.aircraft_name({"callsign": "PKQQA"}) == "P K Q Q A"
-    assert text.aircraft_name({"callsign": "", "registration": "PK-QQA"}) == "P K Q Q A"
+    assert text.aircraft_name({"callsign": "PKQQA"}) == "registration P K Q Q A, Indonesia"
+    assert text.aircraft_name({"callsign": "", "registration": "PK-QQA"}) == \
+        "registration P K Q Q A, Indonesia"
     assert text.aircraft_name({"callsign": "", "registration": ""}) == "Unidentified aircraft"
     lang("id")
     assert text.aircraft_name({}) == "Pesawat tanpa identitas"
@@ -1903,3 +1904,61 @@ def test_exact_home_end_to_end(frmain, api, lang, monkeypatch):
     assert frmain.spoken[-1].startswith("Garuda Indonesia 155, Boeing 737-800, "
                                         "3 kilometres east,")
     assert api.place_label(frmain.get_location()) == "Home"
+
+
+# --- Registrations, extra airlines, "reported down" (Flight Radar 1.3) -------
+
+def test_registrations_are_named_with_their_country(text, lang):
+    # Callsign equal to the registration (no airline callsign broadcast).
+    assert text.aircraft_name({"callsign": "9VTNG", "registration": "9V-TNG"}) == \
+        "registration 9 V T N G, Singapore"
+    # US N-numbers are recognisable without a dash or a registration field.
+    assert text.aircraft_name({"callsign": "N71108"}) == \
+        "registration N 7 1 1 0 8, United States"
+    # A registration whose prefix we can't place is still called a registration.
+    assert text.aircraft_name({"callsign": "", "registration": "B-HLA"}) == "registration B H L A"
+    # Airline-style callsigns are not mistaken for registrations.
+    assert text.aircraft_name({"callsign": "NAM123"}) == "N A M 123"
+    lang("id")
+    assert text.aircraft_name({"callsign": "9VTNG", "registration": "9V-TNG"}) == \
+        "registrasi 9 V T N G, Singapura"
+
+
+def test_registration_prefix(names):
+    assert names.registration_prefix("9V-TNG") == "9V"
+    assert names.registration_prefix("9VTNG") == "9V"
+    assert names.registration_prefix("PK-GPA") == "PK"
+    assert names.registration_prefix("N71108") == "N"
+    assert names.registration_prefix("JA8089") == "JA"
+    assert names.registration_prefix("G-XLEA") == "G"
+    assert names.registration_prefix("B-HLA") is None
+    assert names.registration_prefix("GIA155") is None
+    assert names.registration_prefix("") is None
+
+
+def test_every_registration_prefix_has_a_country_in_both_languages(names):
+    base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "extensions", "flight_radar", "locales")
+    for lang_code in ("en", "id"):
+        with open(os.path.join(base, f"{lang_code}.json"), encoding="utf-8") as f:
+            messages = json.load(f)["messages"]
+        missing = [p for p in names.REGISTRATION_PREFIXES if f"reg_country_{p}" not in messages]
+        assert not missing, f"{lang_code}: {missing}"
+
+
+def test_more_airlines_and_the_777_freighter(text):
+    assert text.aircraft_name({"callsign": "CKK288"}) == "China Cargo Airlines 288"
+    assert text.aircraft_name({"callsign": "JSA123"}) == "Jetstar Asia 123"
+    assert text.aircraft_name({"callsign": "FFM2105"}) == "Firefly 2105"
+    assert text.type_name({"type_code": "B77L"}) == "Boeing 777-200LR or 777 Freighter"
+
+
+def test_downed_is_worded_as_reported(text, lang, api):
+    plane = _normalize(api, _plane(emergency="downed", **_at(20, 270)))
+    assert text.emergency_text([plane], "metric") == (
+        "Attention: Garuda Indonesia 155 is reported down, 20 kilometres west.")
+    lang("id")
+    spoken = text.emergency_text([plane], "metric")
+    assert "Garuda Indonesia 155 dilaporkan jatuh" in spoken
+    assert "melaporkan" not in spoken
+    assert text.status_meaning("downed") == "pesawat dilaporkan jatuh"

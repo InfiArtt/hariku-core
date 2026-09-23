@@ -138,8 +138,27 @@ def spell_all(code):
     return " ".join(ch.upper() for ch in (code or "") if ch.isascii() and ch.isalnum())
 
 
+def registration_text(reg):
+    """"registration 9 V T N G, Singapore": a registration said as one, with
+    the country of its prefix when known."""
+    prefix = names.registration_prefix(reg)
+    if prefix:
+        return _("registration_name", reg=spell_all(reg),
+                 country=_("reg_country_" + prefix))
+    return _("registration_name_no_country", reg=spell_all(reg))
+
+
+def _is_registration(callsign, plane):
+    """Aircraft without an airline callsign often broadcast their registration."""
+    reg = (plane.get("registration") or "").replace("-", "").upper()
+    if reg and callsign.replace("-", "").upper() == reg:
+        return True
+    return names.registration_prefix(callsign) is not None
+
+
 def aircraft_name(plane):
-    """"Garuda Indonesia 155", else the spelled callsign or registration."""
+    """"Garuda Indonesia 155", else a registration ("registration 9 V T N G,
+    Singapore"), else the spelled callsign."""
     callsign = plane.get("callsign") or ""
     match = _AIRLINE_CALLSIGN.match(callsign)
     if match:
@@ -149,10 +168,10 @@ def aircraft_name(plane):
             digits = re.match(r"[0-9]+", flight).group(0)
             flight = (digits.lstrip("0") or "0") + flight[len(digits):]
             return f"{airline} {spell_code(flight)}"
-    if callsign:
+    if callsign and not _is_registration(callsign, plane):
         return spell_code(callsign)
-    if plane.get("registration"):
-        return spell_all(plane["registration"])
+    if plane.get("registration") or callsign:
+        return registration_text(plane.get("registration") or callsign)
     return _("unidentified")
 
 
@@ -244,7 +263,10 @@ def emergency_text(aircraft, units):
         squawk, status = api.emergency_squawk(plane), api.emergency_status(plane)
         squawking = (_("emergency_squawking", code=spell_all(squawk), meaning=squawk_meaning(squawk))
                      if squawk else None)
-        reports = (_("emergency_reports", meaning=status_meaning(status))
+        # "downed" already says "reported" in its own wording ("pesawat
+        # dilaporkan jatuh"), so it gets a sentence without "reports".
+        reports_key = "emergency_reports_downed" if status == "downed" else "emergency_reports"
+        reports = (_(reports_key, meaning=status_meaning(status))
                    if status and status != api.EMERGENCY_SQUAWKS.get(squawk) else None)
         if squawking and reports:
             what = _("emergency_both", squawking=squawking, reports=reports)

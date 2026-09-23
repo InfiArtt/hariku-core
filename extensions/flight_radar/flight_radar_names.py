@@ -13,6 +13,8 @@ aircraft type designators. Proper names, so the same in every language.
 Written for Hariku; kept short so a screen reader says them quickly.
 """
 
+import re
+
 AIRLINES = {
     # Indonesia
     "GIA": "Garuda Indonesia",
@@ -108,6 +110,17 @@ AIRLINES = {
     "CLX": "Cargolux",
     "GTI": "Atlas Air",
     "CKS": "Kalitta Air",
+    "CKK": "China Cargo Airlines",
+    "CAO": "Air China Cargo",
+    "CSS": "SF Airlines",
+    "AHK": "Air Hong Kong",
+    "GEC": "Lufthansa Cargo",
+    # More carriers seen around Singapore and the region
+    "JSA": "Jetstar Asia",
+    "FFM": "Firefly",
+    "CRK": "Hong Kong Airlines",
+    "AMU": "Air Macau",
+    "UBA": "Myanmar National Airlines",
 }
 
 AIRCRAFT_TYPES = {
@@ -153,7 +166,7 @@ AIRCRAFT_TYPES = {
     "B763": "Boeing 767-300",
     "B764": "Boeing 767-400",
     "B772": "Boeing 777-200",
-    "B77L": "Boeing 777-200LR",
+    "B77L": "Boeing 777-200LR or 777 Freighter",  # ICAO uses B77L for both
     "B773": "Boeing 777-300",
     "B77W": "Boeing 777-300ER",
     "B778": "Boeing 777-8",
@@ -239,6 +252,38 @@ AIRCRAFT_TYPES = {
 # Rotorcraft among the types above; the text module adds a translated word.
 HELICOPTER_TYPES = frozenset(("EC35", "EC45", "AS50", "AS65", "EC30", "B412", "B429",
                               "AW39", "S76", "R44", "R22"))
+
+
+# Registration prefixes (the part before the dash, e.g. "9V" in 9V-TNG) whose
+# country the text module can name; each has a "reg_country_<prefix>" string in
+# both locales. Written without a dash, only N (US), JA (Japan) and HL (Korea)
+# are recognisable, plus any of these prefixes followed by 3 or 4 letters.
+REGISTRATION_PREFIXES = (
+    "9V", "PK", "9M", "VH", "ZK", "HS", "RP", "VN", "XU", "9N", "VT", "4R", "S2",
+    "AP", "A6", "A7", "HZ", "TC", "EI", "G", "D", "F", "C", "N", "JA", "HL",
+)
+_NO_DASH_REGISTRATION = (
+    ("N", re.compile(r"^N[1-9][0-9A-Z]{0,4}$")),
+    ("JA", re.compile(r"^JA[0-9][0-9A-Z]{3}$")),
+    ("HL", re.compile(r"^HL[0-9]{4}$")),
+)
+
+
+def registration_prefix(text):
+    """The country prefix of a registration ("9V-TNG", "9VTNG", "N71108"),
+    or None when the text doesn't look like one we can place."""
+    reg = (text or "").strip().upper()
+    if "-" in reg:
+        prefix = reg.split("-", 1)[0]
+        return prefix if prefix in REGISTRATION_PREFIXES else None
+    for prefix, pattern in _NO_DASH_REGISTRATION:
+        if pattern.match(reg):
+            return prefix
+    for prefix in sorted(REGISTRATION_PREFIXES, key=len, reverse=True):
+        rest = reg[len(prefix):]
+        if reg.startswith(prefix) and 3 <= len(rest) <= 4 and rest.isalpha():
+            return prefix
+    return None
 
 
 def airline_name(prefix):
