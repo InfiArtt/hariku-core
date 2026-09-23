@@ -10,6 +10,7 @@
 import wx
 import logging
 import core.preferences
+import core.ui_scale
 from ui.input_gestures_panel import InputGesturesPanel
 from core.i18n import get_translator
 
@@ -74,7 +75,9 @@ class PreferencesDialog(wx.Dialog):
         
         from core.i18n import apply_rtl_layout
         apply_rtl_layout(self)
-        
+        # Large text and high contrast for every page, including extension panels.
+        core.ui_scale.apply_appearance(self)
+
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=wx.ID_CANCEL)
         self.Bind(wx.EVT_BUTTON, self.OnApply, id=wx.ID_APPLY)
@@ -112,6 +115,9 @@ class PreferencesDialog(wx.Dialog):
                     p["apply"]()
                 except Exception as e:
                     logger.error(f"Error applying preferences: {e}")
+        # A changed text size or contrast setting shows here immediately too.
+        core.ui_scale.apply_appearance(self)
+        self.Layout()
         self.is_dirty = False
         # Do not close window
         
