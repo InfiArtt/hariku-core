@@ -1,3 +1,49 @@
+Version 2.5.0 (Core Update - September 23, 2026)
+================================================================================
+This entry covers everything since 2.2.0, including versions 2.3.0 and 2.4.0.
+
+================================================================================
+1. HARIKU IS NOW OPEN SOURCE
+================================================================================
+Hariku is free software under the GNU General Public License, version 3 or
+later. The source code is at https://github.com/InfiArtt/hariku-core, and
+every release is built from it automatically. Updates, store extensions and
+calendar data now come from GitHub instead of hariku.novarealm.cloud.
+
+================================================================================
+2. ACCESSIBILITY
+================================================================================
+- When no screen reader is running, Hariku speaks with the Windows voice.
+- General settings has an option to send output to a braille display.
+- Press F1 for a list of every keyboard shortcut.
+- Large text and high contrast options for low vision. They also apply to
+  the Preferences dialog and to every extension's settings page.
+
+================================================================================
+3. REMINDERS AND YOUR DATA
+================================================================================
+- Reminders can repeat daily, weekly, monthly or yearly.
+- A reminder missed while Hariku was closed (up to a day earlier) is
+  announced when Hariku starts again.
+- Your data is saved more safely: a crash or power cut in the middle of a
+  save no longer corrupts it.
+
+================================================================================
+4. NEW IN THE EXTENSION STORE
+================================================================================
+Open the Extension Manager to install Routines (automation in the style of
+iOS Shortcuts), Weather, Morning Briefing, Finance, World Clock, Filter,
+Google Calendar Reader and Quick Expand.
+
+================================================================================
+5. FIXES
+================================================================================
+- Only one copy of Hariku runs at a time.
+- An update installer must match its published SHA-256 hash before it runs.
+- An extension that needs a newer Hariku is refused cleanly instead of
+  failing while it loads.
+- World Clock and Developer Toolkit work in the installed app.
+
 Version 2.2.0 (Core Update - July 12, 2026)
 ================================================================================
 This release focuses on core improvements to accessibility, the Preferences

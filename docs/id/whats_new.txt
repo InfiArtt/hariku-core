@@ -1,3 +1,53 @@
+Versi 2.5.0 (Pembaruan Inti - 23 September 2026)
+================================================================================
+Catatan ini mencakup semua perubahan sejak 2.2.0, termasuk versi 2.3.0 dan
+2.4.0.
+
+================================================================================
+1. HARIKU SEKARANG OPEN SOURCE
+================================================================================
+Hariku adalah perangkat lunak bebas dengan lisensi GNU General Public License
+versi 3 atau yang lebih baru. Kode sumbernya ada di
+https://github.com/InfiArtt/hariku-core, dan setiap rilis dibangun otomatis
+dari sana. Update, extension di store, dan data kalender sekarang diambil dari
+GitHub, tidak lagi dari hariku.novarealm.cloud.
+
+================================================================================
+2. AKSESIBILITAS
+================================================================================
+- Kalau tidak ada screen reader yang berjalan, Hariku berbicara dengan suara
+  bawaan Windows.
+- Pengaturan General punya opsi untuk mengirim keluaran ke layar braille.
+- Tekan F1 untuk melihat daftar semua pintasan keyboard.
+- Opsi teks besar dan kontras tinggi untuk pengguna low vision. Keduanya juga
+  berlaku di dialog Preferensi dan di halaman pengaturan setiap extension.
+
+================================================================================
+3. PENGINGAT DAN DATAMU
+================================================================================
+- Pengingat bisa berulang setiap hari, minggu, bulan, atau tahun.
+- Pengingat yang terlewat saat Hariku tertutup (paling lama sehari
+  sebelumnya) dibacakan saat Hariku dibuka lagi.
+- Data disimpan dengan lebih aman: crash atau listrik padam di tengah proses
+  menyimpan tidak lagi merusaknya.
+
+================================================================================
+4. BARU DI STORE EXTENSION
+================================================================================
+Buka Extension Manager untuk memasang Routines (otomatisasi ala iOS
+Shortcuts), Cuaca, Briefing Pagi, Keuangan, World Clock, Filter, Google
+Calendar Reader, dan Quick Expand.
+
+================================================================================
+5. PERBAIKAN
+================================================================================
+- Hanya satu salinan Hariku yang bisa berjalan dalam satu waktu.
+- Installer update harus cocok dengan hash SHA-256 yang diterbitkan sebelum
+  dijalankan.
+- Extension yang butuh Hariku versi lebih baru ditolak dengan rapi, tidak lagi
+  gagal di tengah proses memuat.
+- World Clock dan Developer Toolkit berfungsi di aplikasi yang terinstal.
+
 Versi 2.2.0 (Pembaruan Inti - 12 Juli 2026)
 ================================================================================
 Rilis ini berfokus pada peningkatan inti (core) untuk aksesibilitas, dialog
