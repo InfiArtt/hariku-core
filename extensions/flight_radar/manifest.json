@@ -1,0 +1,10 @@
+{
+    "id": "flight_radar",
+    "name": "Flight Radar",
+    "version": "1.0",
+    "description": "Hear the aircraft flying near your city: the nearest few on a hotkey, a list of everything in range, and optional announcements when one passes overhead. Choose the city in Preferences, Flight Radar. Aircraft data by adsb.fi and adsb.lol, flight routes by adsbdb.com (no account or API key needed).",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.4"
+}

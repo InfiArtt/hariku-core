@@ -81,6 +81,7 @@ OFFICIAL_EXTENSION_IDS = {
     "weather",
     "briefing",
     "finance",
+    "flight_radar",
     # add new official extension IDs here
 }
 
