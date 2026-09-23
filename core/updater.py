@@ -23,6 +23,11 @@ from core.speech import speak
 
 logger = logging.getLogger(__name__)
 
+# Nuitka defines __compiled__ in every module it compiles. Without it we are
+# running from a source checkout, where CORE_VERSION isn't stamped by the release
+# build and the installer would not update the checkout anyway.
+RUNNING_FROM_SOURCE = "__compiled__" not in globals()
+
 UPDATE_JSON_URL = core.endpoints.UPDATE_JSON_URL
 
 # How many times a "recommended" update can be snoozed before it becomes forced
@@ -218,6 +223,10 @@ def check_for_updates(interactive=True):
       - "optional"    : Blue dialog, freely skippable (default)
     """
     global _snooze_count
+
+    if RUNNING_FROM_SOURCE and not interactive:
+        logger.info("Running from source; skipping the automatic update check.")
+        return False
 
     info = get_update_info()
     if not info:
