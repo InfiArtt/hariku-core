@@ -40,7 +40,9 @@ Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
 - Perbarui Briefing Pagi, Routines, Cuaca, Lumina, Radar Pesawat, Kondisi
   Laut, Kualitas Udara, dan Gempa & Tsunami di Extension Manager.
 - Baru di store extension: Gempa & Tsunami (G), Kondisi Laut (O), Kualitas
-  Udara (U), dan Antariksa (A).
+  Udara (U), Antariksa (A), dan Pola Tidur: memperkirakan kapan kamu tidur dan
+  begadang dari kapan kamu memakai komputer (Z untuk semalam, Shift+Z untuk
+  riwayatnya), tanpa merekam apa yang kamu ketik.
 
 Versi 2.6.0 (Pembaruan Inti - 23 September 2026)
 ================================================================================
