@@ -22,6 +22,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Sounds](#sounds)
   - [Volume Control](#volume-control)
   - [Reminders](#reminders)
+  - [Reminders from a Sentence](#reminders-from-a-sentence)
   - [Personal Profile](#personal-profile)
   - [Placeholders from Extensions](#placeholders-from-extensions)
   - [Quiet Hours](#quiet-hours)
@@ -40,6 +41,8 @@ Welcome to the Hariku V2 extension development guide. This document covers every
 - [Bundling Third-Party Libraries](#bundling-third-party-libraries)
 - [Packaging & Distribution](#packaging--distribution)
 - [Best Practices](#best-practices)
+- [For Translators](#for-translators)
+  - [Quick Reminder Languages](#quick-reminder-languages)
 
 ---
 
@@ -590,9 +593,9 @@ The reminders module lets you create, query, modify, and delete calendar reminde
 
 | Function | Returns | Description |
 |---|---|---|
-| `reminders.load_reminders()` | `list[dict]` | Load all reminders. Each dict contains `id`, `title`, `date` (YYYY-MM-DD), `time` (HH:MM), and `is_done` (bool). It may also carry an internal `notified` flag once the reminder has fired — leave that field alone. |
-| `reminders.get_reminders_for_date(date_str)` | `list[dict]` | Get all reminders for a specific date (`"YYYY-MM-DD"`). |
-| `reminders.add_reminder(title, date_str, time_str)` | None | Create a new reminder. A unique UUID is assigned automatically. `date_str` = `"YYYY-MM-DD"`, `time_str` = `"HH:MM"`. |
+| `reminders.load_reminders()` | `list[dict]` | Load all reminders. Each dict contains `id`, `title`, `date` (YYYY-MM-DD), `time` (HH:MM), `is_done` (bool), `recurrence` (`"none"`, `"daily"`, `"weekly"`, `"monthly"` or `"yearly"`) and `interval` (every N days, weeks, months or years). A monthly or yearly reminder may carry `anchor_day`, the day of the month it keeps (a reminder on the 31st falls on 28 February, then on 31 March again). It may also carry an internal `notified` flag once the reminder has fired — leave that field alone. |
+| `reminders.get_reminders_for_date(date_str)` | `list[dict]` | Get all reminders for a specific date (`"YYYY-MM-DD"`), repeating ones included. |
+| `reminders.add_reminder(title, date_str, time_str, recurrence="none", interval=1)` | None | Create a new reminder. A unique UUID is assigned automatically. `date_str` = `"YYYY-MM-DD"`, `time_str` = `"HH:MM"`. `recurrence` and `interval` make it repeat, e.g. `recurrence="daily", interval=2` for every other day. |
 | `reminders.delete_reminder(rem_id)` | None | Delete a reminder by its UUID. Speaks confirmation. |
 | `reminders.mark_as_done(rem_id)` | None | Mark a reminder as done by its UUID. Speaks confirmation. |
 | `reminders.snooze_reminder(rem_id, minutes=5)` | None | Snooze a reminder — pushes its date/time forward by the specified number of minutes. Speaks confirmation. |
@@ -621,6 +624,42 @@ if today_reminders:
 # Delete a specific reminder
 if today_reminders:
     reminders.delete_reminder(today_reminders[0]["id"])
+```
+
+---
+
+### Reminders from a Sentence
+
+*(Available since core 2.7.)*
+
+```python
+from core import when
+import core.quick_reminder
+```
+
+The quick reminder (N) reads one sentence, such as "minum obat besok jam 8 pagi, tiap hari" or "call mom tomorrow at 7pm", into a reminder. It uses rules, not AI, and runs on the computer: nothing is sent anywhere. The words come from language packs (see [For Translators](#for-translators)).
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.quick_reminder.parse_text(text)` | `Result` | Read a sentence with the languages the user has on (the Hariku language, English, Indonesian and the ones added in Preferences, Reminders). |
+| `core.quick_reminder.readback(result)` | `str` | What the quick reminder says about a result, in the Hariku language: "Minum obat, Friday 25 September 2026, at 08:00, every day. Save?", or what went wrong. |
+| `core.quick_reminder.save_result(result)` | `bool` | Save a result that is `ok` through `reminders.add_reminder`, and say so. |
+| `when.parse(text, now=None, language=None, packs=None, default_date=None)` | `Result` | The reader itself, with the packs you choose. `default_date` is the date for a sentence that gives a time but no date. |
+| `when.resolve(components, now=None, default_date=None)` | `Result` | Turn relative parts (`when.COMPONENT_FIELDS`: "tomorrow", "8", "evening", "every 2 days") into a date and time with the same rules. Meant for a fallback such as an AI, which then never has to work out a date itself. |
+
+A `Result` has `title`, `date` (`"YYYY-MM-DD"`), `time` (`"HH:MM"`), `recurrence`, `interval`, and:
+
+- `ok`: it can be saved (a title, a date and a time, and no blocking problem).
+- `problems`: `"nothing_found"`, `"no_title"`, `"invalid_date"`, `"invalid_time"`, `"unsupported_repeat"` (every hour is not possible), or the warning `"conflict"` (two dates or times; the first one counts).
+- `time_assumed` (no time was said: 09:00), `date_assumed`, `in_past`.
+- `confidence` (0 to 1), `unparsed` (words that look like a date or time but weren't understood) and `needs_fallback`, for deciding when to ask a person or a fallback.
+
+```python
+import core.quick_reminder
+
+result = core.quick_reminder.parse_text("bayar listrik tiap bulan tanggal 5 jam 9")
+if result.ok and not result.needs_fallback:
+    core.quick_reminder.save_result(result)   # monthly on the 5th, 09:00
 ```
 
 ---
@@ -1426,3 +1465,103 @@ the exact URLs. To publish your extension:
 14. **Use `core.api.main_window_instance` as the parent** for any custom `wx.Dialog` you create. This ensures proper window stacking and accessibility.
 15. **Use `apply_rtl_layout()`** in your dialogs if you support RTL languages like Arabic or Hebrew.
 16. **Use `format_date()` for displaying dates** instead of formatting them yourself — this ensures dates are displayed in the user's language.
+
+---
+
+## For Translators
+
+Hariku's own text is in `locales/en.json` and `locales/id.json`; a new language is a copy of `en.json` with its `manifest` filled in (see [Translation (i18n)](#translation-i18n)). The quick reminder also needs a language pack, so it understands sentences typed in that language.
+
+### Quick Reminder Languages
+
+The quick reminder (N) and the reminder dialog's "Or type it in one sentence" field read a sentence such as "minum obat besok jam 8 pagi, tiap hari" with `core/when.py`. That reader knows no language: every word comes from a language pack, one Python file per language in `core/`: `when_lang_id.py`, `when_lang_en.py` and `when_lang_de.py`. A pack is plain data, no code: a `PACK` dict with the words and an `EXAMPLES` list of sentences with the reminder each must give.
+
+The Hariku language, English and Indonesian are always on; users switch the others on in Preferences, Reminders. Several packs can be on at once, so people can mix languages ("meeting besok jam 3"); how clashes are settled is described at the top of `core/when.py`. What Hariku says back ("..., every day. Save?") comes from the `qr_` keys in `locales/`, in the Hariku language.
+
+#### How to add a language
+
+1. Copy `core/when_lang_en.py` to `core/when_lang_<code>.py`, where `<code>` is the language code (`"fr"`, `"ms"`, `"nl"`...). Set `"code"` and `"name"` (the language's own name, shown in Preferences).
+2. Translate the word lists (see the fields below). Write words in lower case; accents are fine. A phrase may have several words ("the day after tomorrow"). Case and punctuation such as commas never matter in what the user types.
+3. Fill in `EXAMPLES`: at least five sentences, each with a fixed "now" and the reminder it must give. Cover your language's own forms: its half-hour idiom, its "every Monday", its "in 30 minutes".
+4. In `core/when_packs.py`, import the module next to the others (`from core import when_lang_de, when_lang_en, when_lang_id, when_lang_<code>`) and add it to `PACK_MODULES`. The compiled Hariku only contains modules the core imports by name, so a pack that isn't imported there is missing for every installed user.
+5. Run the tests:
+
+   ```
+   venv\Scripts\python.exe -m pytest tests/test_when.py -q
+   ```
+
+   `test_every_pack_file_is_imported_by_name` checks step 4, `test_pack_is_valid` checks the fields and that every pattern compiles, and `test_pack_examples` runs your `EXAMPLES` table with only your pack on.
+
+#### Patterns
+
+Fields marked "pattern" are short templates:
+
+| Write | Means | Example |
+|---|---|---|
+| `word` | a word the user types | `lagi` |
+| `(a\|b c)` | one of the choices | `(lewat\|lebih)` |
+| `[a\|b]` | optional | `[menit]` |
+| `{h}` | an hour, 0-24, in digits or number words ("9", "neun") | `setengah {h}` |
+| `{m}` | minutes, 0-59 | `{h} lewat {m}` |
+| `{n}` | a count ("2", "two", "a") | |
+| `{unit}` | a unit from `units` (minute, hour, day, week, month, year) | `einmal pro {unit}` |
+| `{dur}` | a count and a unit ("30 minutes", "sejam", "half an hour") | `{dur} lagi` |
+
+#### Fields
+
+All lists hold lower-case words or phrases.
+
+| Field | What it holds |
+|---|---|
+| `code`, `name` | The language code and the language's own name. |
+| `date_order` | `"DMY"` or `"MDY"`: how to read 5/10 (5 October or May 10). |
+| `numbers` | `{"eight": 8, ...}`: 0-12 at least, plus 15, 20, 30, 45. |
+| `count_words` | Words that mean "one" only before a unit ("a", "an", "ein"). |
+| `weekdays` | 7 lists, Monday first. Full names, recognised anywhere. |
+| `weekday_abbreviations` | 7 lists. Only recognised after a marker ("on Mon", "am Mo"). |
+| `weekday_plurals` | 7 lists meaning "every Monday" by themselves ("mondays", "montags"). |
+| `months` | 12 lists: full names and abbreviations. Only read next to a day. |
+| `relative_days` | `{"tomorrow": 1, ...}`; a value `[days, part_of_day]` adds a part of the day: `"tonight": [0, "evening"]`. |
+| `units` | `{"minute": [...], "hour": [...], "day": [...], "week": [...], "month": [...], "year": [...]}`. |
+| `counted_units` | `{"half an hour": ["minute", 30], "sejam": ["hour", 1]}`. |
+| `parts_of_day` | `[{"part": "morning", "words": [...]}, ...]`. Parts: morning, midday, afternoon, evening, night. Optional `"hours": [first, last]` and `"default": "HH:MM"` replace the defaults of `PARTS_OF_DAY` in `core/when.py` for these words only (hours past 24 are after midnight). |
+| `noon`, `midnight` | Words for 12:00 and 00:00 ("noon", "tengah malam"). |
+| `meridiem_am`, `meridiem_pm` | "am", "pm". |
+| `clock_prefixes` | Words before a clock time: "at", "jam", "um". |
+| `clock_suffixes` | Words after one: "o'clock", "Uhr", "WIB". |
+| `clock_idioms` | `[{"pattern": ..., "minutes": ...}]`: half and quarter forms. `"minutes"` is added to {h}:00, or `"+m"`/`"-m"` adds or subtracts {m}. "halb {h}" is -30 (halb neun = 08:30, half BEFORE nine) while English "half past {h}" is +30 (half AFTER). |
+| `relative_patterns` | Patterns with {dur}: "in {dur}", "{dur} lagi". |
+| `weekday_prefixes` | Words before a weekday that change nothing: "on", "hari", "am". |
+| `next_before`, `next_after` | "next" words before or after a weekday or a week/month/year: "next Monday", "Senin depan", "nächste Woche". |
+| `this_before`, `this_after` | "this" words: "this evening", "malam ini", "nanti malam". |
+| `every`, `every_other` | "every", "each" / "every other". |
+| `repeat_leads` | Optional words before a repeat: "repeat", "ulangi". |
+| `repeat_words` | `{"daily": [...], "weekly": [...], "monthly": [...], "yearly": [...]}`. |
+| `repeat_patterns` | Extra "every <dur>" patterns with {dur} or {unit}: "{dur} sekali". |
+| `day_prefixes` | Words before a plain day of the month: "tanggal 5". |
+| `ordinal_day_prefixes` | Words before an ordinal day: "the 5th", "am 5.". |
+| `ordinal_suffixes` | "st", "nd", "rd", "th", or "." for German "5.". |
+| `date_connectors` | "of" in "the 5th of October". |
+| `fillers` | Small words dropped when they touch a date or time: "at", "pada". |
+| `triggers` | Patterns stripped from the start: "[please] remind me [to]". |
+| `infinitive_marker` | German "zu": "erinnere mich, die Tabletten zu nehmen" gives "Die Tabletten nehmen". |
+
+#### The EXAMPLES table
+
+`EXAMPLES` is a list of `(now, sentence, expected)`: `now` is `"YYYY-MM-DD HH:MM"`, and `expected` a dict with any of `title`, `date`, `time`, `recurrence`, `interval` and `time_assumed`. The test reads each sentence at that moment with only your pack on, and checks those fields and that the reminder can be saved. From the English pack:
+
+```python
+# (now, sentence, expected). Thursday 24 September 2026 10:40 unless noted.
+EXAMPLES = [
+    ("2026-09-24 10:40", "remind me to call mom tomorrow at 7pm",
+     {"title": "Call mom", "date": "2026-09-25", "time": "19:00"}),
+    ("2026-09-24 10:40", "pay rent monthly on the 1st",
+     {"title": "Pay rent", "date": "2026-10-01", "time": "09:00", "recurrence": "monthly",
+      "time_assumed": True}),
+    ("2026-09-24 10:40", "team meeting every other week on Friday at 3",
+     {"title": "Team meeting", "date": "2026-09-25", "time": "15:00", "recurrence": "weekly",
+      "interval": 2}),
+]
+```
+
+The rules for dates and times (which day "Monday" is, when "at 8" means 20:00, what happens without a time) are the same for every language and are described at the top of `core/when.py`.

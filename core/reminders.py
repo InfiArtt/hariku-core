@@ -89,19 +89,74 @@ def save_reminders(reminders):
         logger.error(f"Failed to save reminders: {e}")
 
 RECURRENCES = ("none", "daily", "weekly", "monthly", "yearly")
+# Repeats that keep the day of the month they started on (their anchor).
+ANCHORED = ("monthly", "yearly")
+
+
+def _day_of(date_str):
+    try:
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d").day
+    except (ValueError, TypeError):
+        return None
+
+
+def anchor_day(r):
+    """The day of the month a monthly or yearly reminder keeps: its stored
+    "anchor_day", or, for reminders saved before core 2.7, the day of its
+    stored date. Each occurrence falls on min(anchor, days in that month)."""
+    value = r.get("anchor_day")
+    if isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 31:
+        return value
+    return _day_of(r.get("date"))
+
+
+def _keep_anchor(r):
+    """Store the anchor of a monthly or yearly reminder before its date moves
+    (re-arming, snoozing), so a reminder on the 31st isn't stuck on the 28th
+    after February."""
+    if r.get("recurrence") in ANCHORED and "anchor_day" not in r:
+        day = anchor_day(r)
+        if day:
+            r["anchor_day"] = day
+
 
 def add_reminder(title, date_str, time_str, recurrence="none", interval=1):
-    reminders = load_reminders()
-    reminders.append({
+    recurrence = recurrence if recurrence in RECURRENCES else "none"
+    reminder = {
         "id": str(uuid.uuid4()),
         "title": title,
         "date": date_str,
         "time": time_str,
         "is_done": False,
-        "recurrence": recurrence if recurrence in RECURRENCES else "none",
+        "recurrence": recurrence,
         "interval": max(1, int(interval or 1)),
-    })
+    }
+    _keep_anchor(reminder)
+    reminders = load_reminders()
+    reminders.append(reminder)
     save_reminders(reminders)
+
+
+def parse_date_text(text):
+    """A date typed in the reminder dialog, "YYYY-MM-DD" or "DD/MM/YYYY", as
+    "YYYY-MM-DD"; None when it isn't a real date."""
+    text = (text or "").strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.datetime.strptime(text, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return None
+
+
+def parse_time_text(text):
+    """A time typed in the reminder dialog, "HH:MM" (24-hour; "8:30" and
+    "08.30" work too), as "HH:MM"; None when it isn't a real time."""
+    text = (text or "").strip().replace(".", ":")
+    try:
+        return datetime.datetime.strptime(text, "%H:%M").strftime("%H:%M")
+    except ValueError:
+        return None
 
 def mark_as_done(rem_id):
     reminders = load_reminders()
@@ -131,6 +186,8 @@ def snooze_reminder(rem_id, minutes=5):
     reminders = load_reminders()
     for r in reminders:
         if r["id"] == rem_id:
+            # A monthly or yearly reminder keeps the day it repeats on.
+            _keep_anchor(r)
             # Snooze relative to NOW (handles reminders fired late via catch-up).
             new_dt = datetime.datetime.now() + datetime.timedelta(minutes=minutes)
             r["date"] = new_dt.strftime("%Y-%m-%d")
@@ -239,46 +296,54 @@ def show_notification(r):
         
     dlg.Destroy()
 
-def _add_months(d, months):
-    """Add whole months to a datetime, clamping the day to the target month's end
-    (e.g. Jan 31 + 1 month -> Feb 28/29)."""
+def _add_months(d, months, anchor=None):
+    """Add whole months to a date or datetime. The day is `anchor` (default:
+    the day of `d`), clamped to the target month's end: Jan 31 + 1 month is
+    Feb 28/29, and Feb 28 + 1 month with anchor 31 is Mar 31."""
     import calendar
     m = d.month - 1 + months
     y = d.year + m // 12
     m = m % 12 + 1
-    day = min(d.day, calendar.monthrange(y, m)[1])
+    day = min(anchor or d.day, calendar.monthrange(y, m)[1])
     return d.replace(year=y, month=m, day=day)
 
 
-def _next_occurrence(date_str, time_str, recurrence, interval, now):
+def _next_occurrence(date_str, time_str, recurrence, interval, now, anchor=None):
     """[Recurring] Return the next occurrence date (YYYY-MM-DD) strictly AFTER
     `now`, advancing from (date_str, time_str) by `interval` steps of the given
     recurrence. Skips over any missed occurrences so a long-overdue recurring
-    reminder re-arms once to the next future slot instead of firing repeatedly."""
+    reminder re-arms once to the next future slot instead of firing repeatedly.
+    Monthly and yearly steps keep the day of the month `anchor` (default: the
+    day of date_str), each time clamped to that month's length, so 31 Jan goes
+    to 28 Feb, 31 Mar, 30 Apr, and a yearly 29 Feb to 28 Feb in common years."""
     try:
-        dt = datetime.datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        start = datetime.datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
     except (ValueError, KeyError, TypeError):
         return date_str
     interval = max(1, int(interval or 1))
+    if not (isinstance(anchor, int) and 1 <= anchor <= 31):
+        anchor = start.day
 
-    def step(d):
+    def occurrence(k):
+        # The k-th step counted from the start, not from the previous step,
+        # so a day clamped once (the 28th of February) doesn't stick.
         if recurrence == "daily":
-            return d + datetime.timedelta(days=interval)
+            return start + datetime.timedelta(days=interval * k)
         if recurrence == "weekly":
-            return d + datetime.timedelta(weeks=interval)
+            return start + datetime.timedelta(weeks=interval * k)
         if recurrence == "monthly":
-            return _add_months(d, interval)
+            return _add_months(start, interval * k, anchor)
         if recurrence == "yearly":
-            return _add_months(d, 12 * interval)
-        return d
+            return _add_months(start, 12 * interval * k, anchor)
+        return start
 
-    guard = 0
-    while dt <= now and guard < 10000:
-        nxt = step(dt)
+    dt, k = start, 0
+    while dt <= now and k < 10000:
+        k += 1
+        nxt = occurrence(k)
         if nxt <= dt:   # safety: unknown recurrence / no progress
             break
         dt = nxt
-        guard += 1
     return dt.strftime("%Y-%m-%d")
 
 
@@ -300,18 +365,20 @@ def _recurring_hits(r, target_str):
         return False  # exact-date match is handled separately
     interval = max(1, int(r.get("interval", 1) or 1))
     delta_days = (target - base).days
+    # Monthly and yearly keep their anchor day (see _next_occurrence).
+    anchor = anchor_day(r) or base.day
     if rec == "daily":
         return delta_days % interval == 0
     if rec == "weekly":
         return delta_days % (7 * interval) == 0
     if rec == "monthly":
-        if target.day != min(base.day, calendar.monthrange(target.year, target.month)[1]):
+        if target.day != min(anchor, calendar.monthrange(target.year, target.month)[1]):
             return False
         months = (target.year - base.year) * 12 + (target.month - base.month)
         return months % interval == 0
     if rec == "yearly":
         if (target.month != base.month or
-                target.day != min(base.day, calendar.monthrange(target.year, base.month)[1])):
+                target.day != min(anchor, calendar.monthrange(target.year, base.month)[1])):
             return False
         return (target.year - base.year) % interval == 0
     return False
@@ -338,6 +405,17 @@ def _reminder_due_state(r, now):
     return "fire" if (now - due) <= CATCHUP_WINDOW else "stale"
 
 
+def _rearm(r, now):
+    """[Recurring] Move recurring reminder `r`, which just fired or was
+    skipped, to its next occurrence after `now` and arm it again. Monthly and
+    yearly ones remember their day first (anchor_day)."""
+    _keep_anchor(r)
+    r["date"] = _next_occurrence(r["date"], r["time"], r.get("recurrence", "none"),
+                                 r.get("interval", 1), now, anchor=anchor_day(r))
+    r["notified"] = False
+    r.pop("notified_at", None)
+
+
 def _reminder_loop():
     while _daemon_running:
         reminders = load_reminders()
@@ -356,9 +434,7 @@ def _reminder_loop():
             rec = r.get("recurrence", "none")
             if rec and rec != "none":
                 # [Recurring] Re-arm to the next future occurrence instead of ending.
-                r["date"] = _next_occurrence(r["date"], r["time"], rec, r.get("interval", 1), now)
-                r["notified"] = False
-                r.pop("notified_at", None)
+                _rearm(r, now)
             else:
                 r["notified"] = True
             modified = True

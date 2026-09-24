@@ -1,5 +1,36 @@
 Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
 ================================================================================
+- Pengingat cepat: tekan N lalu ketik pengingatnya dalam satu kalimat,
+  misalnya "minum obat besok jam 8 pagi, tiap hari", "telepon Budi 30 menit
+  lagi", atau "take medicine tomorrow at 8 am". Tekan Enter untuk mendengar
+  apa yang ditangkap Hariku ("Minum obat, Jumat 25 September 2026, jam 08:00,
+  setiap hari. Simpan?"), lalu Enter lagi atau Simpan. Tidak ada yang
+  disimpan sebelum kamu mendengarnya. Ia juga paham "setiap Senin", "setiap
+  tanggal 5", "2 hari sekali", "setengah 9", "nanti malam", "minggu depan",
+  dan dalam bahasa Inggris "every other week" atau "half past eight". "Edit
+  di dialog pengingat lengkap" membuka dialog pengingat dengan semuanya sudah
+  terisi. Pengingat cepat juga ada di menu Pengingat yang baru, lengkap
+  dengan tombolnya.
+- Bahasa campur dan bahasa Jerman: satu kalimat boleh mencampur bahasa
+  Indonesia dan Inggris, misalnya "meeting besok jam 3". Nyalakan bahasa
+  Jerman di Pengaturan, Pengingat, dan "morgen halb neun Zahnarzt" juga
+  dipahami. Hariku membaca kalimatmu di komputermu dengan aturan, bukan AI,
+  dan tidak mengirim apa pun ke mana pun.
+- Dialog pengingat (Enter di sebuah tanggal) punya kolom baru di bagian atas:
+  "Atau ketik dalam satu kalimat". Ketik pengingatnya di sana, tekan Enter
+  atau Isi, lalu Hariku mengisi kolom-kolomnya dan memberitahumu apa yang
+  ditangkapnya, termasuk jam yang dipakainya kalau kamu tidak menyebut jam.
+  Kalau kalimatnya tanpa tanggal, tanggal di dialog tetap dipakai. Kolom ini
+  ada dua kali Shift+Tab di atas judul. Dialognya sekarang juga punya kolom
+  Tanggal, jadi kamu bisa mengganti tanggalnya di sana.
+- Ulangi setiap beberapa hari, minggu, bulan, atau tahun: di sebelah Ulangi,
+  "Seberapa sering" memilih setiap 2 hari, setiap 3 minggu, setiap 6 bulan,
+  dan seterusnya, sampai 30.
+- Diperbaiki: pengingat bulanan di tanggal 31 bergeser ke tanggal 28 setelah
+  Februari dan tetap di sana. Sekarang tanggalnya tetap: 31 Januari,
+  28 Februari, 31 Maret, 30 April. Pengingat tahunan di 29 Februari datang di
+  28 Februari pada tahun biasa. Pengingat yang sudah terlanjur bergeser ke
+  tanggal 28 tetap di sana; hapus lalu tambahkan lagi di tanggal 31.
 - Profil kamu: di Pengaturan ada halaman Profil baru untuk namamu, panggilan
   yang dipakai Hariku untukmu, ulang tahunmu, dan placeholder buatanmu
   sendiri, misalnya %kantor% untuk alamat kantormu. Profil ini tetap di
