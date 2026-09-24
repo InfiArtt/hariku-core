@@ -30,31 +30,21 @@ class KeyNotifierSettingsPanel(wx.Panel):
         self.chk_num.SetValue(config.get("monitor_numlock", False))
         vbox.Add(self.chk_num, 0, wx.ALL, 10)
         
-        # Sound file pickers
-        # ON Sound
-        hbox_on = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_on.Add(wx.StaticText(self, label="ON Sound: "), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.fp_on = wx.FilePickerCtrl(self, message="Select ON Sound", wildcard="Sound files (*.wav;*.mp3)|*.wav;*.mp3", path=config.get("sound_on", ""))
-        hbox_on.Add(self.fp_on, 1, wx.EXPAND)
-        vbox.Add(hbox_on, 0, wx.EXPAND | wx.ALL, 10)
-        
-        # OFF Sound
-        hbox_off = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_off.Add(wx.StaticText(self, label="OFF Sound: "), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.fp_off = wx.FilePickerCtrl(self, message="Select OFF Sound", wildcard="Sound files (*.wav;*.mp3)|*.wav;*.mp3", path=config.get("sound_off", ""))
-        hbox_off.Add(self.fp_off, 1, wx.EXPAND)
-        vbox.Add(hbox_off, 0, wx.EXPAND | wx.ALL, 10)
-        
+        # Sound files: a labelled text field and a Browse button each. (A
+        # wx.FilePickerCtrl hides an unlabelled text field inside, which screen
+        # readers announce as just "edit".)
+        self.fp_on = self._sound_row(vbox, "ON Sound:", "Browse for the ON sound...",
+                                     "Select ON Sound", config.get("sound_on", ""))
+        self.fp_off = self._sound_row(vbox, "OFF Sound:", "Browse for the OFF sound...",
+                                      "Select OFF Sound", config.get("sound_off", ""))
+
         # Loop Settings
         self.chk_loop = wx.CheckBox(self, label="Enable Looping Sound")
         self.chk_loop.SetValue(config.get("loop_enabled", True))
         vbox.Add(self.chk_loop, 0, wx.ALL, 10)
         
-        hbox_loop_snd = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_loop_snd.Add(wx.StaticText(self, label="Loop Sound: "), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        self.fp_loop = wx.FilePickerCtrl(self, message="Select Loop Sound", wildcard="Sound files (*.wav;*.mp3)|*.wav;*.mp3", path=config.get("sound_loop", ""))
-        hbox_loop_snd.Add(self.fp_loop, 1, wx.EXPAND)
-        vbox.Add(hbox_loop_snd, 0, wx.EXPAND | wx.ALL, 10)
+        self.fp_loop = self._sound_row(vbox, "Loop Sound:", "Browse for the loop sound...",
+                                       "Select Loop Sound", config.get("sound_loop", ""))
         
         hbox_interval = wx.BoxSizer(wx.HORIZONTAL)
         hbox_interval.Add(wx.StaticText(self, label="Loop Interval (seconds): "), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -65,6 +55,30 @@ class KeyNotifierSettingsPanel(wx.Panel):
         vbox.Add(hbox_interval, 0, wx.EXPAND | wx.ALL, 10)
         
         self.SetSizer(vbox)
+
+    def _sound_row(self, vbox, label, browse_label, title, path):
+        """A label, the path field it names, then a Browse button. The label is
+        created first so screen readers read it with the field."""
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(wx.StaticText(self, label=label), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        field = wx.TextCtrl(self, value=path)
+        field.SetName(label.rstrip(":"))
+        row.Add(field, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        browse = wx.Button(self, label=browse_label)
+        browse.Bind(wx.EVT_BUTTON, lambda event: self._browse(field, title))
+        row.Add(browse, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(row, 0, wx.EXPAND | wx.ALL, 10)
+        return field
+
+    def _browse(self, field, title):
+        current = field.GetValue()
+        with wx.FileDialog(self, title, defaultDir=os.path.dirname(current),
+                           defaultFile=os.path.basename(current),
+                           wildcard="Sound files (*.wav;*.mp3)|*.wav;*.mp3",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                field.SetValue(dlg.GetPath())
+                field.SetFocus()
 
     def _load_config(self):
         config = core.api.load_data("key_notifier")
@@ -88,10 +102,10 @@ class KeyNotifierSettingsPanel(wx.Panel):
         
         config["monitor_capslock"] = self.chk_caps.GetValue()
         config["monitor_numlock"] = self.chk_num.GetValue()
-        config["sound_on"] = self.fp_on.GetPath()
-        config["sound_off"] = self.fp_off.GetPath()
+        config["sound_on"] = self.fp_on.GetValue().strip()
+        config["sound_off"] = self.fp_off.GetValue().strip()
         config["loop_enabled"] = self.chk_loop.GetValue()
-        config["sound_loop"] = self.fp_loop.GetPath()
+        config["sound_loop"] = self.fp_loop.GetValue().strip()
         config["loop_interval_sec"] = self.spin_interval.GetValue()
         
         core.api.save_data("key_notifier", config)

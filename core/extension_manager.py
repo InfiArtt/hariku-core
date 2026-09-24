@@ -68,6 +68,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "air_quality",
     "space",
     "edge_voices",
+    "sleep_tracker",
 ])
 
 

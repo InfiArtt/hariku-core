@@ -89,6 +89,7 @@ OFFICIAL_EXTENSION_IDS = {
     "air_quality",
     "space",
     "edge_voices",
+    "sleep_tracker",
     # add new official extension IDs here
 }
 

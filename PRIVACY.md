@@ -125,6 +125,14 @@ restarting Hariku", it is saved in `%APPDATA%\Hariku2` on your computer; pinned
 items are always saved there. Copies that password managers mark as private
 are never recorded.
 
+## Sleep Pattern
+
+The Sleep Pattern extension sends nothing over the internet. Once a minute it
+asks Windows whether the keyboard or mouse was used, and saves only that: used,
+not used, or unknown, for each minute. It never records what you typed, which
+keys you pressed, or which apps or windows you used. The record stays in
+`%APPDATA%\Hariku2` for 90 days, and you can clear it in its settings.
+
 ## Edge Voices
 
 The Edge Voices extension sends nothing until you choose "Microsoft Edge neural
