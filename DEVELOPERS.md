@@ -898,7 +898,7 @@ def teardown():
 import core.commands
 ```
 
-**Ctrl+Alt+Space**, from anywhere (a global hotkey through `RegisterHotKey`; users can move it in Input Gestures), opens a small always-on-top window called "Hariku" with one field, "Say or type a command". Enter runs what was typed:
+**Ctrl+Alt+Backspace**, from anywhere (a global hotkey through `RegisterHotKey`; users can move it in Input Gestures), opens a small always-on-top window called "Hariku" with one field, "Say or type a command". Enter runs what was typed:
 
 - A reminder sentence (a trigger such as "ingatkan aku" or "remind me", or a date or time) gets the quick reminder's read-back ("..., Save?"); Enter again or "ya"/"simpan" saves it, "tidak"/"batal" or Escape doesn't.
 - Otherwise the text is matched against **every registered hotkey action**, by its description in the user's language and its aliases. A clear winner runs at once: the bar closes, focus goes back to the window that had it, and the action runs as its hotkey would, so a dialog it opens opens as usual. A close call asks "Did you mean …?" (Enter or "ya" runs it). Anything else: "I didn't understand".

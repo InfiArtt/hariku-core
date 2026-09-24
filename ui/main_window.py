@@ -71,7 +71,7 @@ class MainWindow(wx.Frame):
         prefMenu.Append(wx.ID_PREFERENCES, _("menu_preferences_open"))
         self.Bind(wx.EVT_MENU, self.OnOpenPreferences, id=wx.ID_PREFERENCES)
         
-        # The command bar (Ctrl+Alt+Space from anywhere). Its key is written
+        # The command bar (Ctrl+Alt+Backspace from anywhere). Its key is written
         # in the label, like the quick reminder's, never as an accelerator.
         self.item_command_bar = fileMenu.Append(wx.ID_ANY, _("menu_command_bar"))
         self.Bind(wx.EVT_MENU, lambda e: self.OnCommandBar(), self.item_command_bar)
@@ -247,7 +247,7 @@ class MainWindow(wx.Frame):
         # package. Saved "Assistant.quick_reminder" bindings (the extension it
         # came from) count for it (core.hotkeys.RENAMED_ACTIONS).
         core.hotkeys.register_action("Hariku Core", "quick_reminder", _("nav_quick_reminder"), ord('N'), False, self.OnQuickReminder)
-        # The command bar: Ctrl+Alt+Space, global (RegisterHotKey through
+        # The command bar: Ctrl+Alt+Backspace, global (RegisterHotKey through
         # core.hotkeys), free in the core, every bundled extension and store
         # package. Say the time and the date have no key; the bar runs them.
         from ui.command_bar import register_hotkey

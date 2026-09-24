@@ -9,7 +9,7 @@
 """
 Hariku Voice (since core 2.7): four kinds of Hariku's own announcements, the
 startup greeting, the Briefing and evening summary, fired reminders and the
-answers to commands (the command bar, Ctrl+Alt+Space), can be spoken by a
+answers to commands (the command bar, Ctrl+Alt+Backspace), can be spoken by a
 voice the user picks instead of their screen reader. Everything else stays
 with the screen reader, and a braille display still gets the text.
 

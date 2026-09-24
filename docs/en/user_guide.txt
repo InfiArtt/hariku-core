@@ -464,7 +464,7 @@ bring it back without pressing alt tab.
 
 COMMAND BAR
 ------------
-  Ctrl + Alt + Space  (default, works system-wide)
+  Ctrl + Alt + Backspace  (default, works system-wide)
 
 Opens the command bar, a small window called "Hariku", from anywhere, even
 when Hariku is hidden in the tray. Type a command, such as "latest
@@ -482,7 +482,7 @@ Every action of Hariku and of your extensions can be run this way, in English
 or Indonesian. Tab reaches the "Last result" field, which shows what Hariku
 last said. Escape closes the bar. The answers are spoken with your Hariku
 Voice when you have set one up (Preferences, Hariku Voice, "Read answers to
-commands"). With the Voice Control extension, press Ctrl + Alt + Space again
+commands"). With the Voice Control extension, press Ctrl + Alt + Backspace again
 while the bar is open, and speak after the tone instead of typing.
 
 CLOSE BEHAVIOUR
