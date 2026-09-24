@@ -197,7 +197,36 @@ for line in problems:
 if not problems:
     print("OK labels")
 
+def settle_workers(timeout=10.0):
+    """Let pages' background work (voice lists, searches) finish and deliver its
+    results before the windows are destroyed: a worker posting to wx while the
+    app is being torn down can corrupt memory (seen as a heap-corruption crash
+    at exit)."""
+    import threading
+    loop = wx.GUIEventLoop()
+    previous = wx.EventLoop.GetActive()
+    wx.EventLoop.SetActive(loop)
+    try:
+        end = time.time() + timeout
+        while time.time() < end:
+            while loop.Pending():
+                loop.Dispatch()
+            app.ProcessPendingEvents()
+            busy = [t for t in threading.enumerate()
+                    if t.name in ("hariku-voice-list",) and t.is_alive()]
+            if not busy:
+                break
+            time.sleep(0.05)
+        # One more round so the results posted just now are handled.
+        while loop.Pending():
+            loop.Dispatch()
+        app.ProcessPendingEvents()
+    finally:
+        wx.EventLoop.SetActive(previous)
+
+
 stray_timer.Stop()
+settle_workers()
 print("closing")
 prefs.Destroy()
 em.unload_all_extensions()
