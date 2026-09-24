@@ -10,6 +10,25 @@ Version 2.7.0 (Core Update - September 24, 2026)
 - Placeholders: write %myname%, %mynickname%, %mybirthday%, %myage% or one of
   your own in a reminder or a routine, and Hariku fills it in when the
   reminder is announced or the routine runs.
+- A title: on the Profile page you can also say how Hariku should address
+  you, such as Captain, Pak or Kak. The greeting then says "Good morning,
+  Captain Bro.", and %mytitle% fills it in anywhere.
+- Your own startup greeting: on the Profile page, write what Hariku says when
+  it starts, with placeholders from the new "Insert placeholder" button, for
+  example "Welcome aboard, %mytitle% %mynickname%. It's %time%. You have
+  %reminders%." Tick "Only when Hariku starts with Windows" to keep the usual
+  greeting when you open Hariku yourself. A placeholder that comes out empty
+  leaves no gap.
+- More placeholders, filled in when the text is used: %greeting%, %time%,
+  %day%, %date%, %zulu% (the time in UTC) and %reminders% ("3 reminders
+  today"), plus %weather% from Weather, %sleep% from Sleep Pattern and
+  %airportweather% from Cockpit. They read what is already on your computer,
+  so they never wait for the internet. Other extensions can add their own.
+- When Windows starts Hariku, the greeting now waits until the computer is
+  online (at most 25 seconds), so the weather in it is up to date. Hariku
+  updates its autostart entry by itself.
+- Fixed: Hariku now starts with your sound theme's start sound instead of the
+  built-in one (with Sound Themes 1.1).
 - Quiet hours: in Preferences, Quiet Hours, choose when extension alerts stay
   silent, for example from 22:00 to 05:00: aircraft overhead, high waves,
   unhealthy air and earthquakes. Tsunami warnings, your own reminders and
@@ -39,7 +58,18 @@ Version 2.7.0 (Core Update - September 24, 2026)
 - Lumina 1.1 uses the birthday from your profile, and doesn't wish you a happy
   birthday twice.
 - Update Morning Briefing, Routines, Weather, Lumina, Flight Radar, Sea
-  Conditions, Air Quality and Earthquakes & Tsunami in the Extension Manager.
+  Conditions, Air Quality, Earthquakes & Tsunami and Sound Themes in the
+  Extension Manager.
+- New in the Extension Store: Cockpit, pilot vibes for Hariku. Q speaks the
+  aviation weather (METAR) of your airport decoded into plain sentences, such
+  as "Wind from 200 degrees at 6 knots. Visibility 7 kilometres."; Shift+Q
+  shows all your airports with their forecasts (TAF). Without favourites it
+  uses the airport nearest to your Weather city. Captain mode adds the airport
+  weather to your Morning Briefing and evening summary, spells codes in the
+  pilots' alphabet, and offers to call you Captain and greet you with a
+  cockpit welcome. It also comes with a Cockpit sound theme: cabin chimes made
+  for Hariku. Data from the NOAA Aviation Weather Center; for information
+  only, not for flight planning.
 - New in the Extension Store: Earthquakes & Tsunami (G), Sea Conditions (O),
   Air Quality (U), Space (A), and Sleep Pattern: it estimates when you slept
   and when you stayed up late from when you used the computer (Z for last

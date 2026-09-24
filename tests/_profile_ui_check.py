@@ -7,8 +7,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Open Preferences with real wxPython, go to the Profile page, type a name and a
-nickname, choose a birthday (an impossible one is refused), turn the startup
+Open Preferences with real wxPython, go to the Profile page, type a name, a
+nickname and a title, write a startup greeting with the Insert placeholder
+menu (Routines' menu), choose a birthday (an impossible one is refused), turn the startup
 greeting off, add, edit and remove placeholders through the real dialog
 (including its spoken validation), browse the lists checking focus stays put,
 set quiet hours on their own page, press OK and check what was saved.
@@ -235,6 +236,53 @@ def interact():
     panel.txt_name.SetValue("Rafli")
     panel.txt_nickname.SetValue("Bro")
 
+    # Title (core 2.7): right after the nickname, named by its label.
+    assert panel.txt_title.GetName() == ("How should Hariku address you? Title (optional, for "
+                                         "example Captain, Pak or Kak)"), panel.txt_title.GetName()
+    assert panel.txt_title.GetValue() == ""
+    panel.txt_title.SetValue("Kapten")
+
+    # The user's own startup greeting, with the Insert placeholder menu Routines
+    # uses too. The popup is replaced by a stand-in that picks an entry.
+    assert panel.txt_greeting.GetName() == "What Hariku says when it starts (optional)"
+    assert panel.chk_boot_only.GetName() == "Only when Hariku starts with Windows"
+    assert panel.txt_greeting.GetValue() == "" and panel.chk_boot_only.GetValue() is False
+    menus = []
+
+    def pick(token_label):
+        def show(menu):
+            items = menu.GetMenuItems()
+            menus.append([item.GetItemLabelText() for item in items])
+            for item in items:
+                if item.GetItemLabelText().startswith(token_label):
+                    evt = wx.CommandEvent(wx.EVT_MENU.typeId, item.GetId())
+                    evt.SetEventObject(menu)
+                    menu.ProcessEvent(evt)
+                    return
+            raise AssertionError(f"no menu entry for {token_label}")
+        return show
+
+    panel.txt_greeting.ChangeValue("Welcome aboard, ")
+    panel._show_menu = pick("%mytitle%:")
+    fire(panel.btn_insert, wx.EVT_BUTTON)
+    # Never focused before: the token goes at the end.
+    assert panel.txt_greeting.GetValue() == "Welcome aboard, %mytitle%", panel.txt_greeting.GetValue()
+    labels = menus[-1]
+    assert labels[:3] == ["%myname%: your name (Rafli)", "%mynickname%: what Hariku calls you (Bro)",
+                          "%mytitle%: your title (Kapten)"], labels     # what is typed, unsaved
+    assert any(label.startswith("%zulu%: the time in UTC") for label in labels), labels
+    assert any(label.startswith("%reminders%: how many reminders") for label in labels), labels
+    greeting_focus = wx.Window.FindFocus()
+    if greeting_focus is not None and greeting_focus.GetTopLevelParent() is prefs:
+        assert greeting_focus is panel.txt_greeting, "focus did not return to the greeting field"
+    panel.txt_greeting.SetInsertionPointEnd()
+    panel._show_menu = pick("%mynickname%:")
+    fire(panel.btn_insert, wx.EVT_BUTTON)
+    panel.txt_greeting.AppendText(". It's %time%.")
+    assert panel.txt_greeting.GetValue() == "Welcome aboard, %mytitle%%mynickname%. It's %time%."
+    panel.txt_greeting.SetValue("Welcome aboard, %mytitle% %mynickname%. It's %time%.")
+    panel.chk_boot_only.SetValue(True)
+
     # Birthday: named day and month choices and an optional year field.
     assert panel.choice_day.GetName() == "Birthday, day"
     assert panel.choice_month.GetName() == "Birthday, month"
@@ -357,6 +405,8 @@ def interact():
     # Nothing is saved before OK.
     assert core.personal.get_name() == ""
     assert core.personal.get_birthday() is None
+    assert core.personal.get_title() == ""
+    assert core.personal.get_custom_greeting()["text"] == ""
     print(f"OK profile_edit ({focus_note(state['focus'])})")
 
     # --- Quiet Hours, a page of its own -------------------------------------
@@ -409,6 +459,13 @@ assert result == wx.ID_OK, result
 # --- What OK saved ------------------------------------------------------------
 saved = core.api.load_data("Core")
 assert saved["user_name"] == "Rafli" and saved["user_nickname"] == "Bro", saved
+assert saved["user_title"] == "Kapten", saved
+assert saved["custom_greeting"] == "Welcome aboard, %mytitle% %mynickname%. It's %time%.", saved
+assert saved["custom_greeting_boot_only"] is True, saved
+assert ", Kapten Bro." in core.personal.greeting()     # (a birthday line may follow)
+assert core.personal.startup_speech("Welcome.", boot=True).startswith("Welcome aboard, Kapten Bro. It's ")
+manual = core.personal.startup_speech("Welcome.")      # boot only: the usual greeting
+assert ", Kapten Bro." in manual and manual.endswith(" Welcome."), manual
 assert saved["user_fields"] == [{"key": "kantor_baru", "value": "Jl. Thamrin 2"}], saved
 assert saved["onboarding_completed"] is True, saved
 assert saved["user_birthday"] == {"day": 24, "month": 9, "year": 1999}, saved
@@ -427,6 +484,9 @@ wx.Yield()
 prefs.realize_all()
 panel = core.core_panels._profile_panel_instance
 assert panel.txt_name.GetValue() == "Rafli" and panel.txt_nickname.GetValue() == "Bro"
+assert panel.txt_title.GetValue() == "Kapten"
+assert panel.txt_greeting.GetValue() == "Welcome aboard, %mytitle% %mynickname%. It's %time%."
+assert panel.chk_boot_only.GetValue() is True
 assert rows(panel) == [("%kantor_baru%", "Jl. Thamrin 2")], rows(panel)
 assert panel.choice_day.GetSelection() == 24 and panel.choice_month.GetSelection() == 9
 assert panel.txt_year.GetValue() == "1999" and panel.chk_greet.GetValue() is False

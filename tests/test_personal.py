@@ -101,9 +101,11 @@ class TestNameAndNickname:
 
     def test_get_profile_keeps_the_nickname_as_typed(self, personal):
         _save_core({"user_name": "Rafli", "user_fields": [{"key": "kantor", "value": "Jl. A"}]})
-        assert personal.get_profile() == {"name": "Rafli", "nickname": "", "birthday": None,
+        assert personal.get_profile() == {"name": "Rafli", "nickname": "", "title": "",
+                                          "birthday": None,
                                           "fields": [("kantor", "Jl. A")],
-                                          "greet_on_startup": True}
+                                          "greet_on_startup": True, "custom_greeting": "",
+                                          "custom_greeting_boot_only": False}
 
 
 # ------------------------------------------------------------
@@ -349,13 +351,15 @@ def test_profile_messages_exist_in_both_languages():
     panels = os.path.join(ROOT, "core", "core_panels.py")
     personal_py = os.path.join(ROOT, "core", "personal.py")
     used = _literal_keys(panels, ("profile_", "prefs_tab_", "prefs_btn_", "error", "quiet_"))
-    used |= _literal_keys(personal_py, ("greet_", "month_", "profile_"))
+    used |= _literal_keys(personal_py, ("greet_", "month_", "profile_", "token_"))
+    import core.personal
+    used |= {"token_desc_" + key for key in core.personal.DYNAMIC_KEYS}
     used |= {f"{key}_name" for key in ("greet_morning", "greet_midday", "greet_afternoon",
                                        "greet_evening")}
     with open(personal_py, encoding="utf-8") as f:
         source = f.read()
     codes = set(re.findall(r'ProfileError\("(\w+)"', source))
-    codes |= {f"{field}_too_long" for field in ("name", "nickname", "value")}
+    codes |= {f"{field}_too_long" for field in ("name", "nickname", "value", "title", "greeting")}
     used |= {"profile_err_" + code for code in codes}
     assert "profile_err_key_reserved" in used and "profile_lbl_fields" in used
     for code in ("en", "id"):
@@ -696,9 +700,9 @@ def test_hariku_merges_the_welcome_into_the_greeting():
     with open(os.path.join(ROOT, "hariku.py"), encoding="utf-8") as f:
         source = f.read()
     assert "if core.personal.startup_greeting_enabled():" in source
-    assert ("wx.CallLater(core.personal.STARTUP_GREETING_DELAY_MS,\n"
-            "                         core.personal.speak_startup_greeting, welcome)") in source
-    assert source.index("self.frame.Show(True)") < source.index("speak_startup_greeting")
+    assert ("core.personal.schedule_startup_greeting(\n"
+            "                welcome, boot=core.api.started_with_windows())") in source
+    assert source.index("self.frame.Show(True)") < source.index("schedule_startup_greeting")
 
 
 # ------------------------------------------------------------
@@ -807,3 +811,446 @@ def test_preferences_refuse_invalid_pages_before_saving():
     assert apply_body.index("self._validate()") < apply_body.index('p["apply"]()')
     ok_body = source[source.index("def OnOK"):source.index("def OnCancel")]
     assert "if self.OnApply(None) is False:" in ok_body
+
+
+# ------------------------------------------------------------
+# Title and %mytitle% (core 2.7)
+# ------------------------------------------------------------
+
+class TestTitle:
+    def test_nothing_saved(self, personal):
+        assert personal.get_title() == ""
+        assert personal.get_addressed_name() == ""
+        assert personal.get_profile()["title"] == ""
+
+    def test_title_before_the_nickname(self, personal):
+        _save_core({"user_name": "Rafli", "user_nickname": "Bro", "user_title": "  Kapten "})
+        assert personal.get_title() == "Kapten"
+        assert personal.get_addressed_name() == "Kapten Bro"
+        _save_core({"user_name": "Rafli", "user_title": "Pak"})
+        assert personal.get_addressed_name() == "Pak Rafli"
+        _save_core({"user_title": "Kak"})
+        assert personal.get_addressed_name() == "Kak"
+        _save_core({"user_title": 42, "user_nickname": "Bro"})
+        assert personal.get_title() == "" and personal.get_addressed_name() == "Bro"
+
+    def test_greeting_with_a_title(self, personal, lang):
+        _save_core({"user_name": "Rafli", "user_nickname": "Bro", "user_title": "Kapten"})
+        lang("id")
+        assert personal.greeting(MORNING) == "Selamat pagi, Kapten Bro."
+        lang("en")
+        assert personal.greeting(MORNING) == "Good morning, Kapten Bro."
+        assert personal.greeting(MORNING, nickname="Budi", title="") == "Good morning, Budi."
+        _save_core({"user_title": "Captain"})
+        assert personal.greeting(MORNING.replace(hour=20)) == "Good evening, Captain."
+        _save_core({"user_title": "Captain", "user_birthday": {"day": 23, "month": 9}})
+        assert personal.greeting(MORNING) == "Good morning, Captain. Happy birthday!"
+
+    def test_mytitle_placeholder(self, personal):
+        _save_core({"user_nickname": "Bro", "user_title": "Kapten"})
+        assert personal.expand("%mytitle% %mynickname%, %MyTitle%!") == "Kapten Bro, Kapten!"
+        _save_core({"user_nickname": "Bro"})
+        assert personal.expand("[%mytitle%]") == "[]"
+
+    def test_mytitle_is_reserved(self, personal):
+        with pytest.raises(personal.ProfileError) as e:
+            personal.check_key("mytitle")
+        assert e.value.code == "key_reserved"
+
+    def test_set_title_and_set_profile(self, personal):
+        _save_core({"user_name": "Rafli", "user_title": "Pak"})
+        personal.set_profile("Rafli", "Bro", [])
+        assert personal.get_title() == "Pak"                   # kept when not given
+        personal.set_profile("Rafli", "Bro", [], title="  Kapten   Udara ")
+        assert _load_core()["user_title"] == "Kapten Udara"
+        assert personal.set_title("") is True and personal.get_title() == ""
+        personal.set_title("Captain")
+        assert personal.get_title() == "Captain"
+        with pytest.raises(personal.ProfileError) as e:
+            personal.set_title("x" * 501)
+        assert e.value.code == "title_too_long" and personal.get_title() == "Captain"
+
+
+# ------------------------------------------------------------
+# Dynamic placeholders: Hariku's own and registered ones (core 2.7)
+# ------------------------------------------------------------
+
+WIB = datetime.timezone(datetime.timedelta(hours=7))
+NOW_WIB = datetime.datetime(2026, 9, 24, 10, 30, tzinfo=WIB)     # a Thursday, 03:30 UTC
+
+
+@pytest.fixture
+def registry(personal, monkeypatch):
+    """No registered placeholders besides the test's own, and no real reminders read."""
+    saved = dict(personal._providers)
+    personal._providers.clear()
+    counts = {"today": 3}
+    monkeypatch.setattr(personal, "reminders_today_count", lambda day=None: counts["today"])
+    personal.counts = counts
+    yield personal
+    personal._providers.clear()
+    personal._providers.update(saved)
+
+
+class TestDynamicPlaceholders:
+    def test_values_in_english(self, registry, lang):
+        p = registry
+        assert p.expand("%greeting%|%time%|%day%|%date%|%zulu%|%reminders%", now=NOW_WIB) == (
+            "Good morning|10:30|Thursday|24 September|03:30|3 reminders today")
+        p.counts["today"] = 1
+        assert p.expand("%reminders%", now=NOW_WIB) == "1 reminder today"
+        p.counts["today"] = 0
+        assert p.expand("You have %REMINDERS%.", now=NOW_WIB) == "You have no reminders today."
+        assert p.expand("%greeting%", now=NOW_WIB.replace(hour=16)) == "Good afternoon"
+
+    def test_values_in_indonesian(self, registry, lang):
+        lang("id")
+        assert registry.expand("%greeting%, %day% %date%, %reminders%", now=NOW_WIB) == (
+            "Selamat pagi, Kamis 24 September, 3 pengingat hari ini")
+        registry.counts["today"] = 0
+        assert registry.expand("%reminders%", now=NOW_WIB) == "tidak ada pengingat hari ini"
+
+    def test_zulu_from_a_local_clock(self, registry):
+        naive = datetime.datetime(2026, 9, 24, 10, 30)
+        expected = datetime.datetime.fromtimestamp(naive.timestamp(), datetime.timezone.utc)
+        assert registry.dynamic_value("zulu", naive) == expected.strftime("%H:%M")
+
+    def test_register_and_unregister(self, registry):
+        p = registry
+        assert p.register_placeholder("Weather", lambda: "light rain, 25 degrees",
+                                      "the weather now") == "weather"
+        assert p.is_placeholder_registered("WEATHER")
+        assert p.expand("It is %weather%.") == "It is light rain, 25 degrees."
+        assert ("weather", "the weather now", "light rain, 25 degrees") in p.get_placeholders()
+        assert p.unregister_placeholder("weather") is True
+        assert p.unregister_placeholder("weather") is False
+        assert p.expand("It is %weather%.") == "It is %weather%."
+
+    def test_failing_or_empty_providers_give_nothing(self, registry):
+        p = registry
+
+        def boom():
+            raise RuntimeError("no cache")
+
+        p.register_placeholder("boom", boom)
+        p.register_placeholder("none", lambda: None)
+        p.register_placeholder("number", lambda: 42)
+        p.register_placeholder("messy", lambda: "  two\nlines\t" + "x" * 400)
+        assert p.expand("[%boom%][%none%][%number%]") == "[][][42]"
+        messy = p.expand("%messy%")
+        assert messy.startswith("two lines x") and len(messy) == p.MAX_PLACEHOLDER_VALUE
+
+    def test_order_extra_dynamic_registered_profile(self, registry):
+        p = registry
+        _save_core({"user_fields": [{"key": "weather", "value": "my own"}]})
+        assert p.expand("%weather%") == "my own"
+        p.register_placeholder("weather", lambda: "registered")
+        assert p.expand("%weather%") == "registered"             # before the profile
+        assert p.expand("%weather%", {"weather": "extra"}) == "extra"
+        assert p.expand("%time%", {"time": "08:00"}, now=NOW_WIB) == "08:00"   # Routines' own
+        assert p.expand("%time%", now=NOW_WIB) == "10:30"
+
+    @pytest.mark.parametrize("name", ["time", "myname", "mytitle", "reminders", "var",
+                                      "bad name", "", "x" * 33])
+    def test_names_hariku_uses_are_refused(self, registry, name):
+        with pytest.raises(ValueError):
+            registry.register_placeholder(name, lambda: "x")
+
+    def test_registered_names_are_reserved_for_new_keys(self, registry):
+        p = registry
+        p.register_placeholder("airportweather", lambda: "")
+        with pytest.raises(p.ProfileError) as e:
+            p.check_key("airportweather")
+        assert e.value.code == "key_reserved"
+        # A key the user saved before the extension registered it still saves.
+        p.set_profile("Rafli", "", [("airportweather", "mine"), ("kantor", "K")])
+        assert p.get_fields() == [("airportweather", "mine"), ("kantor", "K")]
+
+    def test_unknown_tokens_can_be_dropped(self, registry):
+        assert registry.expand("A %gone% B 100%") == "A %gone% B 100%"
+        assert registry.expand("A %gone% B 100%", unknown="") == "A  B 100%"
+
+
+def test_reminders_today_count_skips_done_ones(reminders, monkeypatch):
+    import core.personal
+    today = datetime.date.today().isoformat()
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    reminders.save_reminders([
+        {"id": "a", "title": "A", "date": today, "time": "09:00", "is_done": False},
+        {"id": "b", "title": "B", "date": today, "time": "10:00", "is_done": True},
+        {"id": "c", "title": "C", "date": today, "time": "11:00", "is_done": False},
+        {"id": "d", "title": "D", "date": tomorrow, "time": "09:00", "is_done": False},
+    ])
+    assert core.personal.reminders_today_count() == 2
+
+
+@pytest.mark.parametrize("raw, tidy", [
+    ("Welcome aboard,  Bro.", "Welcome aboard, Bro."),
+    ("Welcome aboard, .", "Welcome aboard."),
+    ("It is 10:30, 03:30 Zulu. . You have 3 reminders today.",
+     "It is 10:30, 03:30 Zulu. You have 3 reminders today."),
+    ("Zulu. .. Next", "Zulu. Next"),
+    ("Hi , there", "Hi, there"),
+    ("A,, b", "A, b"),
+    (". Hello", "Hello"),
+    ("Visibility 7.5 kilometres at 10:30.", "Visibility 7.5 kilometres at 10:30."),
+    ("Wow! . Next?", "Wow! Next?"),
+])
+def test_tidy_spoken(personal, raw, tidy):
+    assert personal.tidy_spoken(raw) == tidy
+
+
+# ------------------------------------------------------------
+# The user's own startup greeting (core 2.7)
+# ------------------------------------------------------------
+
+COCKPIT_EN = ("Welcome aboard, %mytitle% %mynickname%. Welcome to your cockpit. It's %time% "
+              "local, %zulu% Zulu. %airportweather%. You have %reminders%. "
+              "What are we doing today?")
+
+
+class TestCustomGreeting:
+    def test_saved_and_read(self, personal):
+        assert personal.get_custom_greeting() == {"text": "", "boot_only": False}
+        personal.set_custom_greeting("  Hello %mynickname%  ", boot_only=True)
+        assert personal.get_custom_greeting() == {"text": "Hello %mynickname%", "boot_only": True}
+        assert _load_core()["custom_greeting"] == "Hello %mynickname%"   # raw
+        with pytest.raises(personal.ProfileError) as e:
+            personal.set_custom_greeting("x" * 501)
+        assert e.value.code == "greeting_too_long"
+
+    def test_replaces_the_greeting_and_welcome(self, registry, lang):
+        p = registry
+        _save_core({"user_nickname": "Bro", "user_title": "Kapten", "custom_greeting": COCKPIT_EN})
+        p.register_placeholder("airportweather",
+                               lambda: "Hang Nadim: wind from 200 degrees at 6 knots")
+        assert p.startup_speech("Welcome to Hariku version 2.7.0", NOW_WIB) == (
+            "Welcome aboard, Kapten Bro. Welcome to your cockpit. It's 10:30 local, 03:30 Zulu. "
+            "Hang Nadim: wind from 200 degrees at 6 knots. You have 3 reminders today. "
+            "What are we doing today?")
+
+    def test_empty_placeholders_leave_no_gaps(self, registry, lang):
+        p = registry
+        _save_core({"custom_greeting": COCKPIT_EN})
+        p.register_placeholder("airportweather", lambda: "")
+        assert p.startup_speech("", NOW_WIB) == (
+            "Welcome aboard. Welcome to your cockpit. It's 10:30 local, 03:30 Zulu. "
+            "You have 3 reminders today. What are we doing today?")
+        p.unregister_placeholder("airportweather")   # Cockpit removed: nothing is said
+        assert "%" not in p.startup_speech("", NOW_WIB)
+
+    def test_only_when_windows_started_hariku(self, registry, lang):
+        _save_core({"user_nickname": "Bro", "custom_greeting": "Morning, %mynickname%!",
+                    "custom_greeting_boot_only": True})
+        assert registry.startup_speech("Welcome.", MORNING, boot=True) == "Morning, Bro!"
+        assert registry.startup_speech("Welcome.", MORNING) == "Good morning, Bro. Welcome."
+
+    def test_nothing_left_means_the_usual_greeting(self, registry, lang):
+        _save_core({"user_nickname": "Bro", "custom_greeting": "%gone%."})
+        assert registry.startup_speech("Welcome.", MORNING) == "Good morning, Bro. Welcome."
+
+    def test_birthday(self, registry, lang):
+        _save_core({"custom_greeting": "Hello %mynickname%", "user_nickname": "Bro",
+                    "user_birthday": {"day": 23, "month": 9}})
+        assert registry.startup_speech("", MORNING) == "Hello Bro. Happy birthday!"
+
+    def test_spoken_as_the_greeting(self, registry, lang, monkeypatch):
+        import core.voice
+        said = []
+        monkeypatch.setattr(core.voice, "announce",
+                            lambda text, kind, interrupt=True: said.append((text, kind, interrupt)))
+        _save_core({"custom_greeting": "Hi %mynickname%", "user_nickname": "Bro",
+                    "custom_greeting_boot_only": True})
+        registry.speak_startup_greeting("Welcome.", boot=True)
+        registry.speak_startup_greeting("Welcome.")
+        assert said[0] == ("Hi Bro", "greeting", False)
+        assert said[1][0].endswith(", Bro. Welcome.") and said[1][1] == "greeting"
+
+
+# ------------------------------------------------------------
+# When Windows started Hariku: the greeting waits for the network (core 2.7)
+# ------------------------------------------------------------
+
+@pytest.mark.parametrize("elapsed, online_at, wait", [
+    (1.5, None, 1.0),       # offline: look again in a second
+    (1.5, 1.5, 3.0),        # online at the first look: 3 seconds to settle
+    (4.0, 1.5, 0.5),
+    (4.5, 1.5, 0.0),        # greet now
+    (24.5, None, 0.5),      # never past the cap
+    (25.0, None, 0.0),
+    (23.0, 22.5, 2.0),      # settling is cut short by the cap
+    (30.0, 29.0, 0.0),
+])
+def test_boot_greeting_wait(personal, elapsed, online_at, wait):
+    assert personal.boot_greeting_wait(elapsed, online_at) == pytest.approx(wait)
+
+
+class _Timers:
+    """A fake clock and wx.CallLater."""
+
+    def __init__(self):
+        self.now = 0.0
+        self.pending = []
+
+    def call_later(self, ms, fn, *args):
+        self.pending.append((self.now + ms / 1000.0, fn, args))
+
+    def run(self, limit=100):
+        while self.pending and limit:
+            self.pending.sort(key=lambda item: item[0])
+            when, fn, args = self.pending.pop(0)
+            self.now = when
+            fn(*args)
+            limit -= 1
+
+
+@pytest.fixture
+def greeted(personal, monkeypatch):
+    said = []
+    timers = _Timers()
+    monkeypatch.setattr(personal, "speak_startup_greeting",
+                        lambda welcome="", boot=False: said.append((timers.now, welcome, boot)))
+    return said, timers
+
+
+def test_a_manual_start_greets_after_the_window(personal, greeted):
+    said, timers = greeted
+    personal.schedule_startup_greeting("Welcome.", boot=False, call_later=timers.call_later,
+                                       is_online=lambda: False, clock=lambda: timers.now)
+    timers.run()
+    assert said == [(1.5, "Welcome.", False)]
+
+
+@pytest.mark.parametrize("online_from, greeted_at", [
+    (0.0, 4.5),       # the network is already up: 1.5 + 3
+    (6.0, 9.5),       # seen up at the 6.5 s look, then 3 more seconds
+    (None, 25.0),     # never: the cap
+])
+def test_a_start_with_windows_waits_for_the_network(personal, greeted, online_from, greeted_at):
+    said, timers = greeted
+    personal.schedule_startup_greeting(
+        "Welcome.", boot=True, call_later=timers.call_later, clock=lambda: timers.now,
+        is_online=lambda: online_from is not None and timers.now >= online_from)
+    timers.run()
+    assert said == [(pytest.approx(greeted_at), "Welcome.", True)]
+
+
+def test_a_failing_network_check_does_not_hold_the_greeting(personal, greeted):
+    said, timers = greeted
+
+    def broken():
+        raise OSError("wininet")
+
+    personal.schedule_startup_greeting("", boot=True, call_later=timers.call_later,
+                                       is_online=broken, clock=lambda: timers.now)
+    timers.run()
+    assert said == [(pytest.approx(4.5), "", True)]
+
+
+# ------------------------------------------------------------
+# Knowing Windows started Hariku (core.api, 2.7)
+# ------------------------------------------------------------
+
+def test_autostart_command_has_the_flag():
+    import core.api
+    exe = r"C:\Program Files\Hariku\Hariku.exe"
+    assert core.api.autostart_command(True, exe) == f'"{exe}" --autostart'
+    assert core.api.autostart_command(False, r"C:\Py\python.exe", r"D:\hariku2\hariku.py") == \
+        r'"C:\Py\python.exe" "D:\hariku2\hariku.py" --autostart'
+
+
+def test_started_with_windows():
+    import core.api
+    assert core.api.started_with_windows(["--autostart"]) is True
+    assert core.api.started_with_windows(["--safe-mode", "--autostart"]) is True
+    assert core.api.started_with_windows([]) is False
+    assert core.api.started_with_windows(["--safe-mode"]) is False
+
+
+def test_a_restart_is_not_a_start_with_windows():
+    with open(os.path.join(ROOT, "core", "api.py"), encoding="utf-8") as f:
+        source = f.read()
+    allowed = source[source.index("_ALLOWED_RESTART_ARGS"):]
+    allowed = allowed[:allowed.index("\n")]
+    assert "--autostart" not in allowed
+
+
+@pytest.mark.parametrize("config, value, needed", [
+    ({"auto_start": True}, r'"C:\Hariku\Hariku.exe"', True),
+    ({"auto_start": True}, r'C:\Hariku\Hariku.exe', True),
+    ({"auto_start": True}, r'"C:\Hariku\Hariku.exe" --autostart', False),
+    ({"auto_start": True}, None, False),        # removed by the user: stays removed
+    ({"auto_start": False}, r'"C:\Hariku\Hariku.exe"', False),
+    ({}, r'"C:\Hariku\Hariku.exe"', False),
+])
+def test_autostart_needs_update(config, value, needed):
+    import core.api
+    assert core.api.autostart_needs_update(config, value) is needed
+
+
+def test_migrate_autostart():
+    import core.api
+    writes = []
+    assert core.api.migrate_autostart({"auto_start": True}, read_value=lambda: r'"C:\H.exe"',
+                                      write=writes.append) is True
+    assert writes == [True]
+
+    def must_not_read():
+        raise AssertionError("the registry is only read when autostart is on")
+
+    assert core.api.migrate_autostart({"auto_start": False}, read_value=must_not_read,
+                                      write=writes.append) is False
+    assert core.api.migrate_autostart({"auto_start": True},
+                                      read_value=lambda: r'"C:\H.exe" --autostart',
+                                      write=writes.append) is False
+
+    def broken():
+        raise OSError("no registry")
+
+    assert core.api.migrate_autostart({"auto_start": True}, read_value=broken,
+                                      write=writes.append) is False
+    assert writes == [True]
+
+
+def test_hariku_migrates_and_loads_the_theme_before_the_start_sound():
+    with open(os.path.join(ROOT, "hariku.py"), encoding="utf-8") as f:
+        source = f.read()
+    assert "core.api.migrate_autostart(config)" in source
+    first_sound = source.index('core.sounds.play_internal_sound("start.wav")')
+    assert source.index("core.sounds.load_remembered_theme()") < first_sound
+    assert source.index("core.sounds.load_remembered_theme()") > source.index(
+        "self.is_safe_mode = ")
+
+
+# ------------------------------------------------------------
+# The shared Insert placeholder menu
+# ------------------------------------------------------------
+
+def test_menu_entries(registry, lang):
+    p = registry
+    p.register_placeholder("sleep", lambda: "about 6 hours 25 minutes", "how long you slept")
+    entries = p.menu_entries(name="Rafli", nickname="Bro", title="Kapten",
+                             fields=[("kantor", "Jl. Sudirman 1")])
+    tokens = [t for t, _label in entries]
+    labels = dict(entries)
+    assert tokens[:6] == ["%myname%", "%mynickname%", "%mytitle%", "%mybirthday%", "%myage%",
+                          "%kantor%"]
+    assert labels["%mytitle%"] == "%mytitle%: your title (Kapten)"
+    assert labels["%mybirthday%"] == "%mybirthday%: your birthday (not set)"
+    assert labels["%kantor%"] == "%kantor%: your placeholder (Jl. Sudirman 1)"
+    assert labels["%reminders%"].startswith("%reminders%: how many reminders")
+    assert labels["%sleep%"] == "%sleep%: how long you slept (about 6 hours 25 minutes)"
+    assert tokens[-1] == "%sleep%"
+    lang("id")
+    labels = dict(p.menu_entries(dynamic=[]))
+    assert labels["%mytitle%"] == "%mytitle%: sapaan Anda (belum diisi)"
+
+
+@pytest.mark.parametrize("value, start, end, expected, caret", [
+    ("", 0, 0, "%time%", 6),
+    ("Hi ", 3, 3, "Hi %time%", 9),
+    ("Hi there", 0, 8, "Hi there%time%", 14),      # everything selected: added at the end
+    ("Hi XX!", 3, 5, "Hi %time%!", 9),
+])
+def test_insert_placeholder(personal, value, start, end, expected, caret):
+    assert personal.insert_placeholder(value, start, end, "%time%") == (expected, caret)

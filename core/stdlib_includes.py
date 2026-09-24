@@ -47,6 +47,7 @@ import shlex        # Routines "open app" action
 import pydoc        # Developer Toolkit
 import zoneinfo     # World Clock (zone data comes from tzdata, below)
 import wave         # Sound Themes (checks imported WAV files)
+import struct       # Cockpit (writes the samples of its sound theme)
 
 try:
     import cryptography

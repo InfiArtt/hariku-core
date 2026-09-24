@@ -101,6 +101,9 @@ class HarikuApp(wx.App):
         # Load and set internal config
         import core.api
         config = core.api.load_data("Core")
+        # A Run value from before 2.7 lacks --autostart; add it so a start with
+        # Windows can be told apart (core.api.started_with_windows).
+        core.api.migrate_autostart(config)
         
         # Initialize internal audio/volume setup
         import core.sounds
@@ -121,6 +124,10 @@ class HarikuApp(wx.App):
         # Load accessibility (Tolk via cytolk).
         # Check whether we're running in Safe Mode (via argument or by holding Shift at startup).
         self.is_safe_mode = "--safe-mode" in sys.argv or SHIFT_PRESSED_AT_STARTUP
+        if not self.is_safe_mode:
+            # The sound theme the user picked, so its start sound plays: the
+            # Sound Themes extension itself only loads later.
+            core.sounds.load_remembered_theme()
         
         if self.is_safe_mode:
             logger.warning(_("safe_mode_log"))
@@ -155,6 +162,12 @@ class HarikuApp(wx.App):
         if not self.is_safe_mode:
             # Load all extensions ONLY when not in safe mode.
             load_all_extensions()
+            # A remembered theme only plays while Sound Themes, which manages
+            # it, is there (turned off or removed: the built-in sounds).
+            import core.extension_manager
+            if (core.sounds.get_theme_dir()
+                    and "sound_themes" not in core.extension_manager.LOADED_EXTENSIONS):
+                core.sounds.set_theme_dir(None)
             # Check for extension updates in the background (6s delay so startup isn't burdened).
             import core.update_checker
             core.update_checker.start(delay_seconds=6)
@@ -176,12 +189,14 @@ class HarikuApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show(True)
 
-        # "Good morning, Bro. Welcome to Hariku ...": one announcement, after the
-        # screen reader has read the window. A timer, so startup doesn't wait.
+        # "Good morning, Bro. Welcome to Hariku ..." (or the user's own
+        # greeting): one announcement, after the screen reader has read the
+        # window. Timers, so startup doesn't wait; when Windows started Hariku
+        # it also waits for the network, so %weather% and the like are fresh.
         welcome = getattr(self, "_startup_welcome", None)
         if welcome is not None:
-            wx.CallLater(core.personal.STARTUP_GREETING_DELAY_MS,
-                         core.personal.speak_startup_greeting, welcome)
+            core.personal.schedule_startup_greeting(
+                welcome, boot=core.api.started_with_windows())
 
         # Send the telemetry ping.
         import core.telemetry
