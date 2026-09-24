@@ -83,8 +83,8 @@ Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
   Windows" supaya sapaan biasa tetap dipakai saat kamu membuka Hariku
   sendiri. Placeholder yang kosong tidak meninggalkan celah.
 - Placeholder baru yang diisi saat teksnya dipakai: %greeting%, %time%,
-  %day%, %date%, %zulu% (jam UTC), dan %reminders% ("3 pengingat hari ini"),
-  ditambah %weather% dari Cuaca, %sleep% dari Pola Tidur, dan
+  %day%, %date%, %zulu% (jam UTC), %reminders% ("3 pengingat hari ini"),
+  dan %version% (versi Hariku), ditambah %weather% dari Cuaca, %sleep% dari Pola Tidur, dan
   %airportweather% dari Kokpit. Semuanya membaca data yang sudah ada di
   komputermu, jadi tidak pernah menunggu internet. Extension lain juga bisa
   menambahkan placeholder-nya sendiri.

@@ -1254,3 +1254,13 @@ def test_menu_entries(registry, lang):
 ])
 def test_insert_placeholder(personal, value, start, end, expected, caret):
     assert personal.insert_placeholder(value, start, end, "%time%") == (expected, caret)
+
+
+def test_version_placeholder(personal):
+    import core.constants
+    assert personal.dynamic_value("version") == core.constants.CORE_VERSION
+    assert personal.expand("Welcome to Hariku %version%.") == \
+        f"Welcome to Hariku {core.constants.CORE_VERSION}."
+    with pytest.raises(personal.ProfileError) as e:
+        personal.check_key("version")        # Hariku's own placeholder now
+    assert e.value.code == "key_reserved"

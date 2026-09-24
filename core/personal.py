@@ -40,7 +40,7 @@ MAX_VALUE_LENGTH = 500
 # The profile's own tokens.
 PROFILE_KEYS = ("myname", "mynickname", "mytitle", "mybirthday", "myage")
 # Hariku's dynamic placeholders, filled in when the text is used (see below).
-DYNAMIC_KEYS = ("greeting", "time", "day", "date", "zulu", "reminders")
+DYNAMIC_KEYS = ("greeting", "time", "day", "date", "zulu", "reminders", "version")
 # Tokens Hariku itself uses (the profile, the dynamic ones and Routines); custom
 # keys can't take them. Placeholders extensions register are refused too.
 RESERVED_KEYS = frozenset(PROFILE_KEYS + DYNAMIC_KEYS + (
@@ -674,6 +674,9 @@ def dynamic_value(key, now=None):
         utc = now.astimezone(datetime.timezone.utc) if now.tzinfo else \
             datetime.datetime.fromtimestamp(now.timestamp(), datetime.timezone.utc)
         return utc.strftime("%H:%M")
+    if key == "version":
+        import core.constants
+        return core.constants.CORE_VERSION
     if key == "reminders":
         try:
             return reminders_today_text(reminders_today_count(now.date()))

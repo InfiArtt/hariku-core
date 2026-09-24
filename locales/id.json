@@ -334,6 +334,7 @@
         "token_desc_date": "tanggal hari ini",
         "token_desc_zulu": "jam UTC, cara pilot menyebutnya (Zulu)",
         "token_desc_reminders": "jumlah pengingat yang masih ada hari ini",
+        "token_desc_version": "versi Hariku, misalnya 2.7.0",
         "profile_err_birthday_incomplete": "Pilih tanggal dan bulan ulang tahun Anda, atau kosongkan keduanya.",
         "profile_err_birthday_invalid": "Tanggal itu tidak ada. Periksa tanggal dan bulan ulang tahun Anda.",
         "profile_err_birthday_year": "Tahun kelahiran harus berupa angka dari {min} sampai {max}, atau dikosongkan.",
