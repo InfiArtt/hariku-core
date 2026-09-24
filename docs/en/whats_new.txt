@@ -38,6 +38,15 @@ Version 2.8.0 (Core Update)
 - Incompatible, like in NVDA, lists extensions made for a Hariku older than
   this one still runs. No update has broken older extensions, so it's empty
   for now.
+- Aruna stays open after an answer. Ask "what time is it", "latest
+  earthquake" or "weather" and the answer shows in Last result while Aruna
+  waits for your next command (what you typed is selected, so just type the
+  next one); a saved reminder keeps it open too. Commands that open a window,
+  or act on the window you were in, still close Aruna first. Status says
+  "Aruna is thinking..." until the answer comes, then "Aruna answered". A soft
+  sound plays when you send a typed command and another when Aruna answers.
+  Both are on a new Preferences page, Aruna; a sound theme can replace the
+  sounds (aruna_send.wav and aruna_reply.wav).
 - Piper Voices 1.1 answers much sooner. Piper used to start again and load
   the voice for every answer (one to three seconds on an older laptop) and
   said nothing until the whole text was ready, which felt like an online

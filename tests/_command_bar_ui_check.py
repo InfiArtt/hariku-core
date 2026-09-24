@@ -100,9 +100,12 @@ import core.commands
 import core.reminders
 from core.events import bus
 
+# The first stages check the bar that closes before every action (as in core
+# 2.7); "Keep Aruna open" and Aruna's sounds (core 2.8) are checked at the end.
 core.api.save_data("Core", {"onboarding_completed": True, "language": "en",
                             "enable_scratchpad": False,
-                            "scratchpad_dir": os.path.join(ROOT, "scratchpad")})
+                            "scratchpad_dir": os.path.join(ROOT, "scratchpad"),
+                            "aruna_keep_open": False, "aruna_sounds": False})
 
 spoken = []
 
@@ -365,6 +368,47 @@ type_text(bar, "what time is it")
 press_enter(bar)
 assert pump(lambda: any(s.startswith("It's ") for s in spoken)), spoken
 print("OK time")
+
+# --- Core 2.8: Aruna stays open after an answer, says it's thinking, plays its sounds ------------
+import core.sounds
+played = []
+core.sounds.play_internal_sound = played.append
+core.commands.save_bar_settings(True, True)
+cb.current_bar() and cb.current_bar().close(restore=False)
+ran.clear()
+focus_calls.clear()
+bar, focus_ok = open_bar()
+spoken.clear()
+type_text(bar, "gempa terbaru")
+press_enter(bar)
+assert bar.txt_status.GetValue() == "Aruna is thinking...", bar.txt_status.GetValue()
+assert pump(lambda: ran), "the earthquake action did not run"
+assert ran == [("Earthquakes.speak_latest", False)], ran         # the bar was still open
+assert pump(lambda: bar.txt_result.GetValue() == "M 5.2, 30 km southwest of Ambon."),     bar.txt_result.GetValue()
+assert cb.current_bar() is bar and focus_calls == []
+assert bar.txt_status.GetValue().startswith("Aruna answered."), bar.txt_status.GetValue()
+assert pump(lambda: played == ["aruna_send.wav", "aruna_reply.wav"]), played
+if focus_ok:
+    assert wx.Window.FindFocus() is bar.txt_input, "the answer moved focus"
+# The next command replaces the last one; one that opens a window still closes the bar.
+assert bar.txt_input.GetStringSelection() == "gempa terbaru"
+type_text(bar, "recent earthquakes")
+opened_dialogs.clear()
+press_enter(bar)
+assert pump(lambda: opened_dialogs, timeout=8.0), "the dialog did not open"
+assert ("Earthquakes.show_recent", True) in ran and cb.current_bar() is None
+# A saved reminder keeps it open too.
+bar, focus_ok = open_bar()
+type_text(bar, "remind me to drink water tomorrow at 9 am")
+press_enter(bar)
+press_enter(bar)
+assert pump(lambda: any(r["title"] == "Drink water" for r in core.reminders.load_reminders()))
+pump(lambda: False, timeout=0.3)
+assert cb.current_bar() is bar and bar.txt_input.GetValue() == ""
+assert bar.txt_status.GetValue().startswith("Aruna answered.")
+press_escape(bar)
+assert pump(lambda: cb.current_bar() is None), "Escape did not close the bar"
+print(f"OK keep_open ({focus_note(focus_ok)})")
 
 # --- Nothing went wrong along the way -------------------------------------------------------------
 assert not network_attempts, f"network access attempted: {network_attempts}"

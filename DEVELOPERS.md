@@ -1031,6 +1031,14 @@ Your extension's actions are commands already: register them with `core.hotkeys.
 
 How matching works (so you can choose good aliases): case, accents, punctuation and hyphens don't count, a letter said twice counts once, and filler words ("tolong", "ucapkan", "please", "the", "what") are dropped. Words are compared letter by letter, because speech recognisers get words wrong ("Gampak terbaru" still finds "gempa terbaru"). A phrase scores the F1 of how much of the text it explains and how much of it the text says, with words many commands share ("buka", "open", "hari") counting less, and the whole strings are compared too. A command runs at 0.80 or more when it leads the next by 0.10; from 0.55 Hariku asks. Aliases of two or three distinctive words work best; avoid aliases that are only a common word.
 
+**Actions that only answer** *(core 2.8)*. With "Keep Aruna open after an answer" (Preferences, Aruna; on by default), an action that only says something runs with the bar still open, and what it `speak()`s shows in the bar's Last result. Every other action closes the bar first, as above, because it may open a window or act on the window that had the focus (typing into it, moving it). Name yours when it opens nothing and doesn't touch the focused window:
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.commands.add_answer_actions(action_ids)` | `None` | *(core 2.8)* One id or a list, `"<extension name>.<action name>"`, of actions that only say something. If one opens a window after all, the bar steps aside for it. Declare `"minimum_core_version": "2.8"`, or guard it with `hasattr(core.commands, "add_answer_actions")`. |
+| `core.commands.is_answer_action(action_id)` | `bool` | Whether the bar stays open for it (`core.commands.ANSWER_ACTIONS` lists the core's and the official extensions'). |
+| `core.commands.bar_settings()` | `dict` | *(core 2.8)* `{"keep_open": bool, "sounds": bool}`, the user's Aruna settings. The bar plays `core.commands.SEND_SOUND` (`aruna_send.wav`) for a typed command and `REPLY_SOUND` (`aruna_reply.wav`) for an answer; sound themes can replace both. |
+
 Hariku's own aliases for the core and the official extensions are in `core.commands.BUILTIN_ALIASES`. The core also has **Say the time** and **Say today's date** (no key by default) for "jam berapa" and "what time is it".
 
 **A speech recogniser** (the Voice Control extension) registers itself; there is one at a time:

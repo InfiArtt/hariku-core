@@ -39,6 +39,17 @@ Versi 2.8.0 (Pembaruan Inti)
 - Tab Tidak kompatibel, seperti di NVDA, berisi ekstensi yang dibuat untuk
   Hariku yang lebih lama dari yang masih didukung Hariku ini. Belum ada
   pembaruan yang merusak ekstensi lama, jadi untuk sekarang tab ini kosong.
+- Aruna tetap terbuka setelah menjawab. Tanya "jam berapa", "gempa
+  terbaru", atau "cuaca", dan jawabannya tampil di Hasil terakhir sementara
+  Aruna menunggu perintah berikutnya (yang tadi kamu ketik sudah terpilih,
+  jadi langsung ketik saja yang baru). Setelah menyimpan pengingat pun Aruna
+  tetap terbuka. Perintah yang membuka jendela, atau yang bekerja pada
+  jendela yang tadi kamu pakai, tetap menutup Aruna dulu. Status bertuliskan
+  "Aruna sedang berpikir..." sampai jawabannya datang, lalu "Aruna sudah
+  menjawab". Ada suara lembut saat kamu mengirim perintah yang diketik, dan
+  satu lagi saat Aruna menjawab. Keduanya bisa diatur di halaman baru
+  Pengaturan, Aruna; tema suara bisa mengganti suaranya (aruna_send.wav dan
+  aruna_reply.wav).
 - Piper Voices 1.1 menjawab jauh lebih cepat. Dulu Piper menyala ulang dan
   memuat suaranya untuk setiap jawaban (satu sampai tiga detik di laptop
   lama), dan baru bersuara setelah seluruh teks selesai, jadi terasa seperti
