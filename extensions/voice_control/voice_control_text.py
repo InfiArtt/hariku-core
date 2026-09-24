@@ -141,9 +141,7 @@ def wake_status(state, phrase):
 def wake_engine_error(error):
     """Why the wake phrase listener didn't start, for the user."""
     if isinstance(error, kws.KwsError):
-        if error.kind == "load" and error.detail.lower().endswith(".dll"):
-            return _("wake_err_vcredist", files=error.detail)
-        if error.kind in ("missing", "damaged", "version"):
+        if error.kind in ("missing", "damaged", "version", "load"):
             return _("wake_err_damaged")
         if error.kind == "path":
             return _("wake_err_path")
@@ -254,6 +252,8 @@ def download_error(error):
             return _("err_disk")
         if kind == "unsupported":
             return _("err_unsupported")
+        if kind == "in_use":
+            return _("err_in_use")
         return _("err_bad_data")
     if isinstance(error, OSError):
         return _("err_disk")

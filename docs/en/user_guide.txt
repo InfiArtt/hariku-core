@@ -532,7 +532,7 @@ or one you choose, so you don't have to press a key. In Preferences, Voice
 Control:
 
   1. In the list at the top, select "Wake phrase listener" and press
-     Download (38.1 MB from GitHub: sherpa-onnx and an English keyword model).
+     Download (42.4 MB from GitHub: sherpa-onnx and an English keyword model).
   2. Tick "Listen for a wake phrase", and type your phrase in "Wake phrase".
      "About this phrase" tells you when a phrase is one word, very short or
      common (easily heard by mistake). English words work best with this

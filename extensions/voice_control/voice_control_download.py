@@ -72,14 +72,18 @@ MODELS = {
 SIZE_TOLERANCE = 0.05       # a file may be this much bigger than shown before it's refused
 
 # The wake phrase listener. sherpa-onnx v1.13.8 (Apache-2.0), the official
-# Windows x64 build with shared libraries ("shared-MD-Release"): its C API DLL
-# and ONNX Runtime (MIT). The SHA-256 is the one GitHub shows for the asset.
+# Windows x64 build with shared libraries and the static C runtime
+# ("shared-MT-Release"): its C API DLL and ONNX Runtime (MIT). Its DLLs import
+# only Windows' own (KERNEL32, ADVAPI32, dbghelp, SETUPAPI, dxgi and an API
+# set), not the Visual C++ runtime, so nothing else needs installing (the
+# "shared-MD" build needs msvcp140_1.dll, which neither Python nor wxPython
+# brings). The SHA-256 is the one GitHub shows for the asset.
 WAKE_RUNTIME_VERSION = "1.13.8"
-WAKE_RUNTIME_FILE = "sherpa-onnx-v1.13.8-win-x64-shared-MD-Release.tar.bz2"
+WAKE_RUNTIME_FILE = "sherpa-onnx-v1.13.8-win-x64-shared-MT-Release.tar.bz2"
 WAKE_RUNTIME_URL = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/"
                     + WAKE_RUNTIME_FILE)
-WAKE_RUNTIME_SIZE = 20494724
-WAKE_RUNTIME_SHA256 = "3e971a04b2e0ba4dfa53d381a006367ce8c9f5f09b4ae00043e9845c2baded22"
+WAKE_RUNTIME_SIZE = 24805859
+WAKE_RUNTIME_SHA256 = "6dffdc715a4465b989446a6105265d2cb345e7101591a17d35534b6758f6e8df"
 # The English open-vocabulary keyword model (Apache-2.0), trained on
 # GigaSpeech by the sherpa-onnx authors, from the "kws-models" release.
 WAKE_MODEL_NAME = "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01"
@@ -91,19 +95,19 @@ WAKE_MODEL_SHA256 = "f170013b4716e41b62b9bfd809687c207cef798ef9bc6534d524e17af9b
 WAKE_SIZE = WAKE_RUNTIME_SIZE + WAKE_MODEL_SIZE
 
 # What is unpacked: {name in the archive: (where it goes, size, SHA-256)}.
-_RUNTIME_PREFIX = "sherpa-onnx-v1.13.8-win-x64-shared-MD-Release/lib/"
+_RUNTIME_PREFIX = "sherpa-onnx-v1.13.8-win-x64-shared-MT-Release/lib/"
 _MODEL_PREFIX = WAKE_MODEL_NAME + "/"
 _MODEL_STEM = "-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
 WAKE_RUNTIME_MEMBERS = {
     _RUNTIME_PREFIX + "sherpa-onnx-c-api.dll": (
-        "runtime/sherpa-onnx-c-api.dll", 4197376,
-        "f86ed1570de14b4750d29fb4f58cfaf5558f734040d73133da79dd6457ed77ff"),
+        "runtime/sherpa-onnx-c-api.dll", 4605952,
+        "300e0c88400903fc4cfc88be88a8ae587a24cc658653e0e1fd1c2b8dbbc68557"),
     _RUNTIME_PREFIX + "onnxruntime.dll": (
-        "runtime/onnxruntime.dll", 17136128,
-        "422d776ab0e3218260f7f628fcb84606aaa5c21116f720c8619a6da5e0b2e0f9"),
+        "runtime/onnxruntime.dll", 17799168,
+        "7f66f939a881baf4f46a2216496798edf4a1429878b646d12674aa62f27d8a25"),
     _RUNTIME_PREFIX + "onnxruntime_providers_shared.dll": (
-        "runtime/onnxruntime_providers_shared.dll", 10752,
-        "0190137dee4933261c065c5d030c3568a68c7aa43cad942b4726a07011738bc2"),
+        "runtime/onnxruntime_providers_shared.dll", 104960,
+        "551d0e1fe4c227d8542314ba718d52f4379e0c7bfe729a37c59833a884e27b4d"),
 }
 WAKE_MODEL_MEMBERS = {
     _MODEL_PREFIX + "tokens.txt": (
@@ -143,8 +147,9 @@ CHUNK_BYTES = 64 * 1024
 
 class DownloadError(Exception):
     """kind: "offline", "http" (code), "host" (detail = the host), "verify",
-    "size", "extract", "disk", "bad_data" or "unsupported" (this Hariku
-    can't unpack .tar.bz2)."""
+    "size", "extract", "disk", "bad_data", "unsupported" (this Hariku can't
+    unpack .tar.bz2) or "in_use" (the files it replaces are loaded until
+    Hariku restarts)."""
 
     def __init__(self, kind, detail="", code=None):
         super().__init__(f"{kind}: {detail}" if detail else kind)
@@ -620,11 +625,18 @@ def install_wake(root, progress=None, cancelled=None, opener=None):
         if cancelled():
             raise Cancelled()
         store.write_json(os.path.join(staging, store.WAKE_MARKER), {
-            "version": WAKE_RUNTIME_VERSION, "model": WAKE_MODEL_NAME,
+            "version": WAKE_RUNTIME_VERSION, "runtime": WAKE_RUNTIME_FILE,
+            "model": WAKE_MODEL_NAME,
             "files": {dest: {"size": size, "sha256": sha}
                       for dest, (size, sha) in WAKE_FILES.items()}})
         if os.path.isdir(target):
-            shutil.rmtree(target)
+            store.remove_quietly(os.path.join(target, store.WAKE_MARKER))
+            try:
+                shutil.rmtree(target)
+            except OSError as e:
+                # A DLL of it is loaded in Hariku (removed and downloaded
+                # again in one session): Windows keeps it until Hariku closes.
+                raise DownloadError("in_use", str(e)) from None
         os.replace(staging, target)
     except (DownloadError, Cancelled):
         shutil.rmtree(staging, ignore_errors=True)
@@ -635,6 +647,26 @@ def install_wake(root, progress=None, cancelled=None, opener=None):
     for path in paths:
         store.remove_quietly(path)
     return target
+
+
+def wake_current(root):
+    """Whether the installed listener is the one pinned here: its marker
+    lists these files with these SHA-256s. One installed with other pins (an
+    earlier build of sherpa-onnx) counts as not installed, so it is
+    downloaded again and never loaded."""
+    marker = store.read_json(os.path.join(store.wake_dir(root), store.WAKE_MARKER))
+    files = marker.get("files") if isinstance(marker, dict) else None
+    if not isinstance(files, dict):
+        return False
+    listed = {name: info.get("sha256") if isinstance(info, dict) else None
+              for name, info in files.items()}
+    return listed == {name: sha for name, (_size, sha) in WAKE_FILES.items()}
+
+
+def wake_installed(root):
+    """The pinned wake phrase listener is installed (a quick look: the
+    marker and the files' sizes; verify_wake() hashes them)."""
+    return store.wake_installed(root) and wake_current(root)
 
 
 _verified = {}

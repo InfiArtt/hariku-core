@@ -186,12 +186,14 @@ def fake_install_wake(root, progress=None, cancelled=None):
         progress(dl.WAKE_SIZE * step // 4)
     folder = store.wake_dir(root)
     files = {}
-    for relative in dl.WAKE_FILES:
+    for relative, (_size, sha256) in dl.WAKE_FILES.items():
         path = os.path.join(folder, *relative.split("/"))
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "wb") as f:
             f.write(b"fake")
-        files[relative] = {"size": 4, "sha256": "not checked: the spotter is a fake"}
+        # The pinned SHA-256s, so the marker counts as this version's; the
+        # files themselves are never hashed (the spotter is a fake).
+        files[relative] = {"size": 4, "sha256": sha256}
     store.write_json(os.path.join(folder, store.WAKE_MARKER), {"version": "1.13.8",
                                                                "files": files})
 
@@ -352,7 +354,7 @@ assert rows(panel.list_items) == [
     ("Base speech model (more accurate, for reminders)", "148.0 MB", "Not installed"),
     ("Small speech model (most accurate, slow on older computers)", "487.6 MB",
      "Not installed"),
-    ("Wake phrase listener (sherpa-onnx and an English keyword model)", "38.1 MB",
+    ("Wake phrase listener (sherpa-onnx and an English keyword model)", "42.4 MB",
      "Not installed")], rows(panel.list_items)
 assert panel.selected_item() == "tiny"
 assert panel.choice_model.GetStringSelection() == "Automatic (recommended)"
@@ -578,7 +580,7 @@ panel = main._panel
 # Download the wake phrase listener.
 select(panel, "wake")
 fire(panel.btn_download, wx.EVT_BUTTON)
-assert "GitHub" in questions[-1][1] and "38.1 MB" in questions[-1][1], questions[-1]
+assert "GitHub" in questions[-1][1] and "42.4 MB" in questions[-1][1], questions[-1]
 assert "Apache-2.0" in questions[-1][1], questions[-1]
 assert pump(lambda: main._downloads.current() is None and ("wake", True) in installs,
             timeout=10), installs

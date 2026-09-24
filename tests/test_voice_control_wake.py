@@ -483,29 +483,19 @@ class TestSpotter:
             kws.load(str(folder), cdll=lambda path: FakeSherpa(version=b"1.12.0"))
         assert error.value.kind == "version" and error.value.detail == "1.12.0"
 
-    def test_a_missing_visual_cpp_runtime_is_named(self, tmp_path, monkeypatch):
+    def test_dlls_that_dont_load(self, tmp_path, monkeypatch):
         monkeypatch.setattr(kws, "_loaded", {})
         for name in kws.RUNTIME_FILES:
             (tmp_path / name).write_bytes(b"MZ")
 
         def cdll(path):
-            raise OSError("[WinError 126] The specified module could not be found")
+            raise OSError("[WinError 193] %1 is not a valid Win32 application")
 
-        monkeypatch.setattr(kws, "missing_crt", lambda folder: ["msvcp140_1.dll"])
         with pytest.raises(kws.KwsError) as error:
             kws.load(str(tmp_path), cdll=cdll)
-        assert (error.value.kind, error.value.detail) == ("load", "msvcp140_1.dll")
-        assert "Visual C++" in text.wake_engine_error(error.value)
-        assert "msvcp140_1.dll" in text.wake_engine_error(error.value)
-
-    def test_missing_crt(self, tmp_path):
-        system = tmp_path / "system32"
-        system.mkdir()
-        (system / "msvcp140.dll").write_bytes(b"MZ")
-        loaded = {"vcruntime140.dll"}
-        missing = kws.missing_crt(str(tmp_path / "rt"), system_dir=str(system),
-                                  exe_dir=str(tmp_path), loaded=lambda name: name in loaded)
-        assert missing == ["msvcp140_1.dll", "vcruntime140_1.dll"]
+        assert error.value.kind == "load" and "193" in error.value.detail
+        assert text.wake_engine_error(error.value) == text._("wake_err_damaged")
+        assert str(tmp_path) not in kws._loaded
 
     def test_native_paths(self):
         assert kws.native_path(r"C:\Users\Rafli\x.onnx") == rb"C:\Users\Rafli\x.onnx"
@@ -883,13 +873,14 @@ class TestWakeListener:
         assert wait_until(lambda: listener.state == wake.LISTENING and log.opened == 2)
 
     def test_a_spotter_that_cant_start_is_said_once(self, make):
-        error = kws.KwsError("load", "msvcp140_1.dll")
+        error = kws.KwsError("damaged", "a file doesn't match its SHA-256")
         listener, log = make(fail=error)
         listener.configure(ON)
         assert wait_until(lambda: listener.state == wake.ENGINE_ERROR)
         time.sleep(0.2)                        # it tries again, silently
         assert log.problems == [("engine", error)] and log.opened == 0
-        assert "Visual C++" in text.wake_problem("engine", error)
+        assert text.wake_problem("engine", error) == text._(
+            "wake_problem_engine", reason=text._("wake_err_damaged"))
 
     def test_a_microphone_error(self, make):
         listener, log = make(mic_error="busy")
@@ -936,15 +927,18 @@ class TestWakeListener:
 # ------------------------------------------------------------
 
 def test_the_pinned_wake_downloads():
+    # The "shared-MT" build: its DLLs don't need the Visual C++ runtime.
     assert dl.WAKE_RUNTIME_URL == (
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/"
-        "sherpa-onnx-v1.13.8-win-x64-shared-MD-Release.tar.bz2")
+        "sherpa-onnx-v1.13.8-win-x64-shared-MT-Release.tar.bz2")
     assert dl.WAKE_MODEL_URL == (
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/"
         "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01.tar.bz2")
-    assert (dl.WAKE_RUNTIME_SIZE, dl.WAKE_MODEL_SIZE) == (20494724, 17626723)
+    assert (dl.WAKE_RUNTIME_SIZE, dl.WAKE_MODEL_SIZE) == (24805859, 17626723)
     assert dl.WAKE_RUNTIME_SHA256 == \
-        "3e971a04b2e0ba4dfa53d381a006367ce8c9f5f09b4ae00043e9845c2baded22"
+        "6dffdc715a4465b989446a6105265d2cb345e7101591a17d35534b6758f6e8df"
+    assert all(name.startswith("sherpa-onnx-v1.13.8-win-x64-shared-MT-Release/lib/")
+               for name in dl.WAKE_RUNTIME_MEMBERS)
     assert dl.WAKE_MODEL_SHA256 == \
         "f170013b4716e41b62b9bfd809687c207cef798ef9bc6534d524e17af9b6561a"
     assert all(dl.host_allowed(url) for url in (dl.WAKE_RUNTIME_URL, dl.WAKE_MODEL_URL))
@@ -954,7 +948,7 @@ def test_the_pinned_wake_downloads():
         [f"runtime/{name}" for name in kws.RUNTIME_FILES]
         + ["/".join(parts) for parts in store.WAKE_PARTS.values()])
     assert all(len(sha) == 64 for _size, sha in dl.WAKE_FILES.values())
-    assert text.size_label(dl.WAKE_SIZE) == "38.1 MB"
+    assert text.size_label(dl.WAKE_SIZE) == "42.4 MB"
 
 
 class Entry:
@@ -1068,7 +1062,7 @@ class TestUnpacking:
 def fake_wake_archives(monkeypatch):
     """Two made-up archives with the eight files, pinned like the real ones."""
     runtime = {name: b"MZ " + name.encode() for name in dl.WAKE_RUNTIME_MEMBERS}
-    runtime["sherpa-onnx-v1.13.8-win-x64-shared-MD-Release/bin/tool.exe"] = b"MZ not wanted"
+    runtime["sherpa-onnx-v1.13.8-win-x64-shared-MT-Release/bin/tool.exe"] = b"MZ not wanted"
     model = {name: b"model " + name.encode() for name in dl.WAKE_MODEL_MEMBERS}
     runtime_members = {name: (dest, len(runtime[name]), hashlib.sha256(runtime[name]).hexdigest())
                        for name, (dest, _s, _h) in dl.WAKE_RUNTIME_MEMBERS.items()}
@@ -1156,6 +1150,40 @@ class TestInstallWake:
         store.write_json(os.path.join(store.wake_dir(root), store.WAKE_MARKER),
                          {"files": {"../../evil.dll": {"size": 2}}})
         assert not store.wake_installed(root)
+
+    def test_a_listener_with_other_pins_counts_as_not_installed(self, userdata, monkeypatch):
+        # One installed from an earlier build (the "shared-MD" one, say) is
+        # downloaded again, never loaded.
+        fake_wake_archives(monkeypatch)
+        root = store.root_dir()
+        dl.install_wake(root)
+        assert dl.wake_current(root) and dl.wake_installed(root)
+        changed = dict(dl.WAKE_FILES)
+        changed["runtime/onnxruntime.dll"] = (changed["runtime/onnxruntime.dll"][0], "1" * 64)
+        monkeypatch.setattr(dl, "WAKE_FILES", changed)
+        assert store.wake_installed(root)                    # the files are all there...
+        assert not dl.wake_current(root) and not dl.wake_installed(root)   # ...but not ours
+        os.remove(os.path.join(store.wake_dir(root), store.WAKE_MARKER))
+        assert not dl.wake_current(root)
+
+    def test_replacing_a_listener_whose_dll_is_loaded(self, userdata, monkeypatch):
+        fake_wake_archives(monkeypatch)
+        root = store.root_dir()
+        dl.install_wake(root)
+        real_rmtree = dl.shutil.rmtree
+
+        def rmtree(path, *args, **kwargs):
+            if os.path.normcase(path) == os.path.normcase(store.wake_dir(root)) and \
+                    not kwargs.get("ignore_errors"):
+                raise PermissionError(5, "Access is denied", "onnxruntime.dll")
+            return real_rmtree(path, *args, **kwargs)
+
+        monkeypatch.setattr(dl.shutil, "rmtree", rmtree)
+        with pytest.raises(dl.DownloadError) as error:
+            dl.install_wake(root)
+        assert error.value.kind == "in_use"
+        assert "Restart Hariku" in text.download_error(error.value)
+        assert not os.path.exists(store.wake_dir(root) + ".new")
 
 
 # ------------------------------------------------------------
@@ -1339,13 +1367,13 @@ class TestExtension:
         assert wait_until(lambda: downloads.current() is None)
         assert done == ["wake"] and vc._wake._suspended == set()
         assert vc.spoken[0] == "Downloading Wake phrase listener (sherpa-onnx and an English " \
-                               "keyword model), 38.1 MB."
+                               "keyword model), 42.4 MB."
         assert vc.spoken[-1].endswith("downloaded.")
 
     def test_the_download_question(self, vc):
         question = text.confirm_download("wake", need_runtime=True)
-        assert "GitHub" in question and "20.5 MB" in question and "17.6 MB" in question
-        assert "38.1 MB" in question and "Apache-2.0" in question and "MIT" in question
+        assert "GitHub" in question and "24.8 MB" in question and "17.6 MB" in question
+        assert "42.4 MB" in question and "Apache-2.0" in question and "MIT" in question
         assert "whisper" not in question
 
     def test_removing_the_listener(self, vc, monkeypatch):

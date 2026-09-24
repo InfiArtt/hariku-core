@@ -25,6 +25,10 @@ SherpaOnnxOnlineStreamInputFinished, SherpaOnnxIsKeywordStreamReady,
 SherpaOnnxDecodeKeywordStream, SherpaOnnxResetKeywordStream,
 SherpaOnnxGetKeywordResult and SherpaOnnxDestroyKeywordResult.
 
+The DLLs are the official "shared-MT-Release" build: the Visual C++ runtime
+is inside them (/MT), so they import only Windows' own DLLs and need no
+Visual C++ Redistributable.
+
 Careful: sherpa-onnx ends the whole process (exit(-1)) when a keyword holds a
 token that isn't in tokens.txt. Spotter() therefore refuses keywords with any
 token it doesn't find in tokens.txt itself, before sherpa-onnx sees them.
@@ -47,8 +51,6 @@ SAMPLE_RATE = 16000
 FEATURE_DIM = 80
 MAX_ACTIVE_PATHS = 4
 NUM_TRAILING_BLANKS = 1
-# The Visual C++ runtime the official "shared-MD" build needs.
-CRT_DLLS = ("msvcp140.dll", "msvcp140_1.dll", "vcruntime140.dll", "vcruntime140_1.dll")
 
 c_char_p = ctypes.c_char_p
 c_int32 = ctypes.c_int32
@@ -56,10 +58,10 @@ c_float = ctypes.c_float
 
 
 class KwsError(Exception):
-    """kind: "missing" (a file isn't there), "load" (the DLLs didn't load;
-    `detail` names a missing Visual C++ runtime DLL when that's why),
-    "version" (another sherpa-onnx), "path" (a folder name sherpa-onnx can't
-    open), "keywords" (a token the model doesn't have) or "create"."""
+    """kind: "missing" (a file isn't there), "damaged" (a file doesn't match
+    its SHA-256), "load" (the DLLs didn't load), "version" (another
+    sherpa-onnx), "path" (a folder name sherpa-onnx can't open), "keywords"
+    (a token the model doesn't have) or "create"."""
 
     def __init__(self, kind, detail=""):
         super().__init__(f"{kind}: {detail}" if detail else kind)
@@ -174,35 +176,6 @@ _lock = threading.Lock()
 _loaded = {}          # folder -> the C API
 
 
-def _module_loaded(name):
-    try:
-        kernel32 = ctypes.WinDLL("kernel32")
-        kernel32.GetModuleHandleW.argtypes = [ctypes.c_wchar_p]
-        kernel32.GetModuleHandleW.restype = ctypes.c_void_p
-        return bool(kernel32.GetModuleHandleW(name))
-    except Exception:
-        return False
-
-
-def missing_crt(folder, system_dir=None, exe_dir=None, loaded=None):
-    """The Visual C++ runtime DLLs Windows can't find for the official
-    "shared-MD" build: not already loaded in Hariku (wxPython brings some),
-    not next to the DLLs, next to Hariku, or in System32. [] when none is
-    missing."""
-    system_dir = system_dir or os.path.join(os.environ.get("SystemRoot", r"C:\Windows"),
-                                            "System32")
-    exe_dir = exe_dir or os.path.dirname(os.path.abspath(sys.executable))
-    loaded = loaded or _module_loaded
-    missing = []
-    for name in CRT_DLLS:
-        if loaded(name):
-            continue
-        if any(os.path.isfile(os.path.join(d, name)) for d in (folder, exe_dir, system_dir)):
-            continue
-        missing.append(name)
-    return missing
-
-
 def load(folder, cdll=None):
     """The C API from `folder` (the three DLLs), loaded once. onnxruntime.dll
     is loaded first from the same folder by its full path, so Windows' own
@@ -220,8 +193,7 @@ def load(folder, cdll=None):
             cdll(os.path.join(folder, ONNXRUNTIME_DLL))
             dll = _declare(cdll(os.path.join(folder, C_API_DLL)))
         except OSError as e:
-            missing = missing_crt(folder)
-            raise KwsError("load", ", ".join(missing) if missing else str(e)) from None
+            raise KwsError("load", str(e)) from None
         version = (dll.SherpaOnnxGetVersionStr() or b"").decode("ascii", "replace")
         if version != VERSION:
             raise KwsError("version", version)

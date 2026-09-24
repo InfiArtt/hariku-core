@@ -111,6 +111,7 @@
         "item_wake": "Pendengar frasa pemanggil (sherpa-onnx dan model kata kunci bahasa Inggris)",
         "confirm_wake": "Unduh pendengar frasa pemanggil dari GitHub? Isinya sherpa-onnx ({runtime}, lisensi Apache-2.0, bersama ONNX Runtime, lisensi MIT) dan model kata kunci bahasa Inggrisnya ({model}, lisensi Apache-2.0): total {total}. Ia mendengarkan di komputer ini saja; apa pun yang kamu ucapkan tidak pernah disimpan atau dikirim ke mana pun.",
         "err_unsupported": "Versi Hariku ini tidak bisa membuka paket pendengar frasa pemanggil. Perbarui Hariku, lalu coba lagi.",
+        "err_in_use": "Hariku masih memakai berkas pendengar frasa pemanggil yang sebelumnya. Buka ulang Hariku, lalu unduh lagi.",
         "remove_later": "{name} dihapus. Sebagian berkasnya masih dipakai; berkas itu dihapus saat Hariku dibuka lagi.",
 
         "wake_help": "Ucapkan frasa pemanggil, misalnya \"Hey Aruna\", untuk membuka Aruna yang langsung mendengarkan, tanpa menekan tombol. Hariku lalu terus mendengarkan mikrofon, hanya di komputer ini: tidak ada yang disimpan atau dikirim ke mana pun. Hariku tidak mendengarkan selama Hariku atau screen reader-mu berbicara lewat Hariku.",
@@ -142,7 +143,6 @@
 
         "wake_problem": "Frasa pemanggil dijeda. {reason}",
         "wake_problem_engine": "Pendengar frasa pemanggil tidak berjalan. {reason}",
-        "wake_err_vcredist": "Windows belum punya Microsoft Visual C++ Redistributable (x64) yang dibutuhkannya ({files}). Pasang dari situs Microsoft, lalu buka ulang Hariku.",
         "wake_err_damaged": "Berkasnya rusak. Hapus pendengar frasa pemanggil di Pengaturan, Voice Control, lalu unduh lagi.",
         "wake_err_path": "Ia tidak bisa membuka berkas di folder penggunamu, karena namanya memakai karakter yang tidak didukungnya.",
         "wake_err_phrase": "Model ini tidak bisa mendengar frasa pemanggil ini. Ganti di Pengaturan, Voice Control.",

@@ -62,7 +62,7 @@ Versi 2.8.0 (Pembaruan Inti)
   menekan tombol. Fitur ini tidak aktif sampai kamu menyalakan "Dengarkan
   frasa pemanggil" di Pengaturan, Voice Control, dan mengunduh pendengar
   frasa pemanggil di sana (sherpa-onnx dan model kata kunci bahasa Inggris,
-  38,1 MB, dari GitHub). Ia mendengarkan di komputermu saja; tidak ada yang
+  42,4 MB, dari GitHub). Ia mendengarkan di komputermu saja; tidak ada yang
   disimpan atau dikirim ke mana pun, dan ia tidak mendengarkan selama Hariku
   atau screen reader-mu berbicara lewat Hariku. "Tes frasa pemanggil..."
   menghitung berapa kali ia mendengarmu selama 20 detik, supaya kamu bisa

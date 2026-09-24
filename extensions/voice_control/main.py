@@ -125,7 +125,7 @@ def refresh_state():
     global _available, _wake_available
     root = store.root_dir()
     models = store.installed_models(root)
-    wake_ready = store.wake_installed(root)
+    wake_ready = download.wake_installed(root)
     with _state_lock:
         _available = bool(models) and store.runtime_installed(root)
         _wake_available = wake_ready
@@ -455,7 +455,7 @@ def make_spotter(phrase, sensitivity):
     moment). Raises kws.KwsError, ValueError (a phrase the model can't hear)
     or bpe.ModelError."""
     root = store.root_dir()
-    if not store.wake_installed(root):
+    if not download.wake_installed(root):
         raise kws.KwsError("missing", "the wake phrase listener")
     if not download.verify_wake(root):
         raise kws.KwsError("damaged", "a file doesn't match its SHA-256")
@@ -801,7 +801,8 @@ class Controller:
         listener (a quick look at the disk)."""
         root = store.root_dir()
         models = set(store.installed_models(root))
-        state = {"runtime": store.runtime_installed(root), "wake": store.wake_installed(root)}
+        state = {"runtime": store.runtime_installed(root),
+                 "wake": download.wake_installed(root)}
         state.update({name: name in models for name in store.MODEL_NAMES})
         return state
 

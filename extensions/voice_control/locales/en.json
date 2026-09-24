@@ -111,6 +111,7 @@
         "item_wake": "Wake phrase listener (sherpa-onnx and an English keyword model)",
         "confirm_wake": "Download the wake phrase listener from GitHub? It is sherpa-onnx ({runtime}, Apache-2.0 license, with ONNX Runtime, MIT license) and its English keyword model ({model}, Apache-2.0 license): {total} in all. It listens on this computer; nothing you say is saved or sent anywhere.",
         "err_unsupported": "This version of Hariku can't unpack the wake phrase listener. Update Hariku, then try again.",
+        "err_in_use": "Hariku is still using the files of the wake phrase listener it had before. Restart Hariku, then download it again.",
         "remove_later": "{name} removed. Some of its files are still in use; they are deleted the next time Hariku starts.",
 
         "wake_help": "Say a wake phrase, such as \"Hey Aruna\", to open Aruna listening, without pressing a key. Hariku then listens to the microphone all the time, on this computer only: nothing is saved or sent anywhere. It doesn't listen while Hariku or your screen reader speaks through Hariku.",
@@ -142,7 +143,6 @@
 
         "wake_problem": "The wake phrase is paused. {reason}",
         "wake_problem_engine": "The wake phrase listener didn't start. {reason}",
-        "wake_err_vcredist": "Windows is missing the Microsoft Visual C++ Redistributable (x64), which it needs ({files}). Install it from Microsoft's website, then restart Hariku.",
         "wake_err_damaged": "Its files are damaged. Remove the wake phrase listener in Preferences, Voice Control, and download it again.",
         "wake_err_path": "It can't open files in your user folder, whose name has characters it doesn't support.",
         "wake_err_phrase": "The model can't hear this wake phrase. Change it in Preferences, Voice Control.",
