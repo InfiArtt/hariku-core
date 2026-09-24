@@ -3,7 +3,8 @@
 Hariku does not collect analytics or telemetry. Your calendar, reminders,
 routines, profile (your name, birthday and the placeholders you add in
 Preferences, Profile), settings, and extension data stay on your computer, in
-`%APPDATA%\Hariku2`.
+`%APPDATA%\Hariku2`. Hariku Voice with the built-in Windows voices speaks on
+your computer too: the text it reads never leaves it.
 
 This page lists every case where Hariku and the official extensions in the
 Hariku store connect to the internet. It does not cover third-party
@@ -123,6 +124,30 @@ stays in memory until you close Hariku. If you turn on "Remember history after
 restarting Hariku", it is saved in `%APPDATA%\Hariku2` on your computer; pinned
 items are always saved there. Copies that password managers mark as private
 are never recorded.
+
+## Edge Voices
+
+The Edge Voices extension sends nothing until you choose "Microsoft Edge neural
+voices (online)" as the source in Preferences, Hariku Voice. From then on, when
+a Hariku Voice announcement is read with an Edge voice (the startup greeting,
+the Briefing and evening summary, or a reminder, whichever you turned on), or
+you press Test, it sends the text being read, with the chosen voice and speed,
+to Microsoft's online speech service for the Edge browser
+(`speech.platform.bing.com`) over an encrypted connection. That text can
+include your nickname and your reminder titles. The request also carries a
+random identifier made up for that request and an Edge browser user agent, but
+no account and none of your other data. The list of voices comes from the same
+service, at most once a week, and contains nothing about you.
+
+Microsoft's handling of these requests is covered by the
+[Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement).
+The service is meant for the Edge browser and may stop working at any time;
+Hariku then uses your fallback voice.
+
+The speech that comes back is saved in `%APPDATA%\Hariku2\voice_cache\edge`
+(up to 30 MB; the least recently used goes first), so a phrase Hariku says
+again, like your greeting, plays at once and without the internet. The voice
+list is kept there too. Delete that folder to remove them.
 
 ## When you ask for it
 
