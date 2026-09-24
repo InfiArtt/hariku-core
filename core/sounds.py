@@ -112,6 +112,26 @@ def get_builtin_sounds_dir():
     return os.path.join(base_dir, "sounds")
 
 
+# A due reminder plays Windows' own calendar sound, which Hariku can't ship;
+# a sound theme can replace it with a file of this name (core 2.7).
+REMINDER_SOUND = "reminder.wav"
+
+
+def default_sound_path(sound_name):
+    """The file `sound_name` plays without a theme: Hariku's own copy, or
+    Windows' calendar sound for REMINDER_SOUND."""
+    if sound_name == REMINDER_SOUND:
+        windir = os.environ.get("WINDIR", r"C:\Windows")
+        return os.path.join(windir, "Media", "Windows Notify Calendar.wav")
+    return os.path.join(get_builtin_sounds_dir(), sound_name)
+
+
+def play_reminder_sound():
+    """The sound for a due reminder: the theme's reminder.wav, or Windows'
+    calendar sound."""
+    return play_sound(_theme_sound_path(REMINDER_SOUND) or default_sound_path(REMINDER_SOUND))
+
+
 # Core.json key holding the theme folder the user picked (core 2.7), so the
 # next start plays that theme's start.wav before any extension has loaded.
 REMEMBERED_THEME_KEY = "sound_theme_dir"
