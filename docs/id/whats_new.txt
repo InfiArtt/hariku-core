@@ -1,5 +1,30 @@
 Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
 ================================================================================
+- Bilah perintah: tekan Ctrl+Alt+Space di mana saja, bahkan saat Hariku ada di
+  tray, lalu ketik apa yang kamu mau: "gempa terbaru", "jam berapa",
+  "ringkasan malam", atau pengingat seperti "ingatkan aku minum obat besok jam
+  8". Tekan Enter: perintah langsung dijalankan dan fokus kembali ke tempatmu
+  tadi; pengingat dibacakan dulu ("... Simpan?"), lalu Enter lagi untuk
+  menyimpannya. Kalau Hariku ragu, ia bertanya "Maksudnya ...?". Semua aksi
+  Hariku dan ekstensimu bisa dijalankan dengan cara ini, dalam bahasa
+  Indonesia atau Inggris. Escape menutupnya. Tombolnya bisa kamu ganti di
+  Pintasan Keyboard.
+- Jawaban perintah dengan Suara Hariku: apa yang diucapkan bilah perintah, dan
+  apa yang disampaikan perintahnya sesudah itu, dibacakan dengan suara yang
+  kamu pilih di Pengaturan, Suara Hariku (kotak centang baru, langsung menyala
+  setelah kamu mengatur Suara Hariku). Tampilan braille tetap menampilkan
+  semuanya, dan selama Suara Hariku belum kamu atur, screen reader-mu yang
+  membacakan jawabannya.
+- Aksi baru "Ucapkan jam sekarang" dan "Ucapkan tanggal hari ini", tanpa
+  tombol: bilah perintah menjalankannya ("jam berapa", "tanggal berapa"), atau
+  beri tombol di Pintasan Keyboard.
+- Baru di Toko Ekstensi: Voice Control. Ucapkan perintahmu ke bilah perintah:
+  tekan Ctrl+Alt+Space lalu bicara setelah nada. Ucapanmu dikenali di
+  komputermu oleh whisper.cpp, tanpa internet, dan tidak pernah disimpan atau
+  dikirim ke mana pun. Unduh programnya dan model ucapan di Pengaturan, Voice
+  Control: model tiny (77,7 MB) untuk perintah, dan model base (148 MB) untuk
+  pengingat yang lebih akurat. Sebaiknya pakai headset, supaya mikrofon tidak
+  mendengar screen reader-mu.
 - Pengingat cepat: tekan N lalu ketik pengingatnya dalam satu kalimat,
   misalnya "minum obat besok jam 8 pagi, tiap hari", "telepon Budi 30 menit
   lagi", atau "take medicine tomorrow at 8 am". Tekan Enter untuk mendengar

@@ -7,8 +7,10 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Preferences, Hariku Voice: which announcements a voice speaks, the source and
-voice, rate, volume, a Test button, the fallback and "Stop when I press a key".
+Preferences, Hariku Voice: which announcements a voice speaks (the greeting,
+the Briefing, reminders, and answers to commands, which is on by default), the
+source and voice, rate, volume, a Test button, the fallback and "Stop when I
+press a key".
 
 A voice is picked with three choices, each narrowing the next: Language (one
 entry per locale, the user's languages first), Gender (All voices, Female,
@@ -36,7 +38,7 @@ _ = get_translator("core")
 logger = logging.getLogger(__name__)
 
 _KIND_LABELS = (("greeting", "voice_chk_greeting"), ("briefing", "voice_chk_briefing"),
-                ("reminder", "voice_chk_reminder"))
+                ("reminder", "voice_chk_reminder"), ("command", "voice_chk_command"))
 
 
 # ------------------------------------------------------------

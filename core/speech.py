@@ -6,6 +6,7 @@
 # Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+import sys
 import threading
 import logging
 from cytolk import tolk
@@ -41,11 +42,22 @@ def init_speech():
 
 def speak(text, interrupt=False):
     """
-    Speak text using Tolk (via cytolk).
+    Speak text using Tolk (via cytolk). Right after a command from the command
+    bar (core.voice.route_speech), Hariku Voice may speak it instead; braille
+    still gets it.
     """
     import core.api
     from core.events import bus
-    
+
+    # core.voice is only loaded once Hariku runs; before that nothing is routed.
+    voice = sys.modules.get("core.voice")
+    if voice is not None:
+        try:
+            if voice.speak_routed(text, interrupt):
+                return
+        except Exception:
+            logger.exception("Giving speech to Hariku Voice failed; the screen reader speaks it")
+
     config = core.api.load_data("Core")
     
     payload = {"text": text, "interrupt": interrupt, "cancel": False}
@@ -96,6 +108,20 @@ def braille(text, interrupt=False):
     speech" on), the screen reader stops talking first, as speak() would."""
     import core.api
     _deliver(text, interrupt, core.api.load_data("Core"), speech=False, silence=True)
+
+
+def silence():
+    """Stop the screen reader's speech now (since 2.7), for example right
+    before listening to the microphone, so speakers don't talk into it. Braille
+    is not affected. Returns whether Tolk was asked."""
+    if not TOLK_LOADED:
+        return False
+    try:
+        tolk.silence()
+        return True
+    except Exception as e:
+        logger.error(f"Tolk silence error: {e}")
+        return False
 
 
 def speak_announced(text, interrupt=False, braille=True):

@@ -47,6 +47,19 @@ each component.
   before the user chooses to download it; some cards, such as the Indonesian
   `id_ID-news_tts-medium`, don't name a clear license, and the extension says so.
 
+- **whisper.cpp** (https://github.com/ggml-org/whisper.cpp, MIT): the Voice
+  Control extension (`extensions/voice_control/`) downloads the official
+  Windows x64 build (`whisper-bin-x64.zip`, release b5130; the libraries in it,
+  such as ggml, come under their own licenses) from GitHub when the user presses
+  Download, and checks it against a SHA-256 pinned in the extension. It runs
+  `whisper-server.exe` as a separate program that answers on 127.0.0.1 only.
+  whisper.cpp is not included in Hariku or its installer.
+- **Whisper speech models** (OpenAI, https://github.com/openai/whisper, MIT),
+  in whisper.cpp's format from https://huggingface.co/ggerganov/whisper.cpp:
+  `ggml-tiny.bin`, `ggml-base.bin` and `ggml-small.bin`, each downloaded only
+  when the user chooses it and checked against a SHA-256 pinned in the
+  extension. No model is included in Hariku or its installer.
+
 ## Native components
 
 - **nvdaControllerClient64.dll**: the NVDA Controller Client from NV Access,

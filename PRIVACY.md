@@ -147,6 +147,15 @@ field read what you type on your computer, with rules built into Hariku. No AI
 and no online service is involved: the sentence is never sent anywhere, and it
 is not stored. Only the reminder you save is kept, like any other reminder.
 
+## The command bar
+
+The command bar (Ctrl+Alt+Space) works out what you typed or said on your
+computer, with rules built into Hariku: it compares your words with the names
+of Hariku's actions. No AI and no online service is involved, and what you
+type is not stored. A command you run makes the connections that command
+makes when you use its own key (the latest earthquake downloads BMKG's file,
+for example), as described on this page.
+
 ## Clipboard History
 
 The Clipboard History extension sends nothing over the internet. Copied text
@@ -221,6 +230,49 @@ Everything is stored in `%APPDATA%\Hariku2\piper`: the Piper program in
 is saved in `%APPDATA%\Hariku2\voice_cache\piper` (up to 30 MB; the least
 recently used goes first), so a phrase it says again plays at once. Remove a
 voice on the Piper Voices page, or delete those folders to remove everything.
+
+## Voice Control
+
+The Voice Control extension lets you speak commands into the command bar. Your
+speech is recognised on your computer by whisper.cpp, a program that runs
+without the internet:
+
+- While it listens, the microphone's sound is kept in memory only. When you
+  stop speaking, it is handed to the whisper.cpp program on your computer
+  through a local connection (127.0.0.1) that nothing outside your computer
+  can reach, and then dropped. It is never saved to disk and never sent
+  anywhere. What was recognised is handled like text you typed.
+- It listens only after you press Ctrl+Alt+Space (or, if you turned that on,
+  when the command bar opens), and it stops on its own after a second or two of
+  silence, after 12 seconds, or when you press the key again. There is no wake
+  word and nothing listens in the background. Hariku plays a tone when
+  listening starts and another when it ends.
+- It keeps each speech model's measured speed in its settings in
+  `%APPDATA%\Hariku2`, to choose a model automatically. It keeps nothing you
+  said.
+
+It connects only when you press Download in Preferences, Voice Control:
+
+- The whisper.cpp program (the official `whisper-bin-x64.zip`, release
+  b5130) from GitHub (`github.com` and its download server,
+  `release-assets.githubusercontent.com` or `objects.githubusercontent.com`).
+- The speech models you choose (tiny, base or small) from Hugging Face
+  (`huggingface.co` and its download servers, `*.hf.co`).
+
+These requests go over encrypted connections. Like every web request they
+include your IP address, and they carry a user agent that names Hariku and its
+version, but no identifier, no account and none of your data. Hugging Face's
+handling of them is covered by the
+[Hugging Face Privacy Policy](https://huggingface.co/privacy), and GitHub's by
+the GitHub General Privacy Statement linked above. Hariku refuses to download
+from any other server, even when redirected, and deletes any file whose
+SHA-256 doesn't match the one built into the extension.
+
+Everything is stored in `%APPDATA%\Hariku2\voice_control`: the program in
+`runtime`, the models in `models`, and `server.log`, the messages the
+whisper.cpp program printed the last time it ran (it holds no recognised
+text). Remove the program or a model on the Voice Control page, or delete that
+folder to remove everything.
 
 ## When you ask for it
 

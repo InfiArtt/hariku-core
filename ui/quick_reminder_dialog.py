@@ -36,9 +36,10 @@ class QuickReminderDialog(wx.Dialog):
     or Save, saves it; nothing is saved before a read-back was given for the
     text as it is now. Edit closes with wx.ID_EDIT so the caller can open the
     full reminder dialog. `parse(text)` returns a core.when Result,
-    `readback(result)` its sentence, `save(result)` saves it and returns True."""
+    `readback(result)` its sentence, `save(result)` saves it and returns True.
+    `text` fills in the field (the command bar hands over a sentence)."""
 
-    def __init__(self, parent, parse=None, readback=None, save=None, say=None):
+    def __init__(self, parent, parse=None, readback=None, save=None, say=None, text=""):
         super().__init__(parent, title=_("qr_title"),
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self._parse = parse or quick.parse_text
@@ -80,6 +81,9 @@ class QuickReminderDialog(wx.Dialog):
         self.Fit()
         self.SetMinSize(self.GetSize())
         self.CentreOnParent()
+        if text:
+            self.txt_input.ChangeValue(text)
+            self.txt_input.SetInsertionPointEnd()
         self.txt_input.SetFocus()
 
     def text(self):
@@ -144,16 +148,16 @@ class QuickReminderDialog(wx.Dialog):
 _dialog_open = False
 
 
-def open_quick_reminder(parent=None):
+def open_quick_reminder(parent=None, text=""):
     """The N action: the quick reminder, then, after Edit, the full reminder
-    dialog filled in with everything understood."""
+    dialog filled in with everything understood. `text` is put in the field."""
     global _dialog_open
     if _dialog_open:
         return
     _dialog_open = True
     parent = parent or core.api.main_window_instance
     try:
-        dlg = QuickReminderDialog(parent)
+        dlg = QuickReminderDialog(parent, text=text)
         try:
             code = dlg.ShowModal()
             result, text = dlg.result, dlg.text()

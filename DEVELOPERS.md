@@ -27,6 +27,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Placeholders from Extensions](#placeholders-from-extensions)
   - [Quiet Hours](#quiet-hours)
   - [Hariku Voice](#hariku-voice)
+  - [The Command Bar](#the-command-bar)
   - [Morning Briefing and Evening Summary](#morning-briefing-and-evening-summary)
   - [Translation (i18n)](#translation-i18n)
   - [Constants](#constants)
@@ -129,8 +130,9 @@ from core.speech import speak, TOLK_LOADED
 
 | Function / Variable | Description |
 |---|---|
-| `speak(text, interrupt=False)` | Speak text through the active screen reader (NVDA, JAWS, etc.). Set `interrupt=True` to cut off any current speech. |
+| `speak(text, interrupt=False)` | Speak text through the active screen reader (NVDA, JAWS, etc.). Set `interrupt=True` to cut off any current speech. *(core 2.7)* Right after the user runs your action from the command bar, Hariku Voice may say it instead (see [The Command Bar](#the-command-bar)); keep calling `speak()`, Hariku decides. |
 | `braille(text, interrupt=False)` | *(core 2.7)* Show text on a braille display without speaking it (for text something else reads aloud). Follows the user's braille setting. |
+| `silence()` | *(core 2.7)* Stop the screen reader's speech now, for example right before you listen to the microphone (through speakers it would talk into it). Braille is not affected. Returns whether the screen reader was asked. |
 | `TOLK_LOADED` | Boolean — `True` if the Tolk speech engine loaded successfully, `False` otherwise. Useful for checking screen reader availability. |
 
 **Example:**
@@ -535,6 +537,7 @@ from core.sounds import play_sound, play_internal_sound
 |---|---|
 | `play_internal_sound(name)` | Play one of Hariku's sounds by file name. Example: `play_internal_sound("info.wav")`. Since core 2.6 it plays the active sound theme's copy when the theme has one, otherwise the built-in `sounds/info.wav`. |
 | `play_sound(filepath)` | Play any `.wav` file from an absolute path. Supports overlapping sounds (multiple sounds can play simultaneously). Returns `True` / `False`. |
+| `sound_path(name)` | *(core 2.7)* The file `play_internal_sound(name)` plays: the active theme's copy when it has one, otherwise Hariku's own. Read a sound's length with it. Hariku 2.7 adds `listen.wav` and `listen_end.wav`, the command bar's listening tones (`core.commands.LISTEN_SOUND` and `LISTEN_END_SOUND`). |
 | `set_theme_dir(path_or_None, remember=False)` | *(core 2.6)* Use a folder of `.wav` files named like Hariku's sounds as the active theme; `None` goes back to the built-in sounds. Only plain file names are looked up in it, never paths. *(core 2.7)* With `remember=True` the choice is also saved in `Core.json` (`None` forgets it), so the next start plays that theme's `start.wav` before any extension loads; pass it only when the **user** picks a theme. A plain call, such as your `teardown()` handing the sounds back, leaves the saved choice alone. |
 | `load_remembered_theme()` | *(core 2.7)* Hariku calls this at startup, before `start.wav`: it uses the remembered folder if it still exists inside `%APPDATA%\Hariku2\sound_themes`. |
 | `get_theme_dir()` | *(core 2.6)* The active theme folder, or `None`. |
@@ -803,21 +806,25 @@ def _on_new_alert(message):
 import core.voice
 ```
 
-In Preferences, Hariku Voice, the user can have three kinds of Hariku's own announcements spoken by a voice they choose instead of their screen reader: the startup greeting, the Briefing and evening summary, and reminders when they fire. Everything else stays with the screen reader, and a braille display still gets the text. All three are off by default. The voices come from *providers*: "Windows voices" (SAPI 5, every voice installed on the computer) is built in and is the fallback; extensions add more (the Edge Voices extension adds Microsoft Edge's online voices).
+In Preferences, Hariku Voice, the user can have four kinds of Hariku's own announcements spoken by a voice they choose instead of their screen reader: the startup greeting, the Briefing and evening summary, reminders when they fire, and *(core 2.7)* answers to commands from the command bar. Everything else stays with the screen reader, and a braille display still gets the text. The first three are off by default. Answers to commands are on by default, because users asked for them in their own voice, but only once the user has set up Hariku Voice (saved its page); until then the screen reader says them. The voices come from *providers*: "Windows voices" (SAPI 5, every voice installed on the computer) is built in and is the fallback; extensions add more (the Edge Voices extension adds Microsoft Edge's online voices).
 
 #### Announcing
 
 | Function | Returns | Description |
 |---|---|---|
-| `core.voice.announce(text, kind, interrupt=True)` | `bool` | Say one of the three announcements. `kind` is `"greeting"`, `"briefing"` or `"reminder"`. When the user hasn't chosen a voice for that kind, this is exactly `core.speech.speak(text, interrupt)`. Otherwise the chosen voice speaks and the braille display gets the text; if the voice fails, the user's fallback Windows voice, then the screen reader. `interrupt=True` stops a Hariku voice that is speaking; `False` waits for it. Returns `True` when a Hariku voice speaks it (the screen reader was not given the text), `False` when the screen reader did. |
+| `core.voice.announce(text, kind, interrupt=True)` | `bool` | Say one of the announcements. `kind` is `"greeting"`, `"briefing"`, `"reminder"` or `"command"`. When the user hasn't chosen a voice for that kind, this is exactly `core.speech.speak(text, interrupt)`. Otherwise the chosen voice speaks and the braille display gets the text; if the voice fails, the user's fallback Windows voice, then the screen reader. `interrupt=True` stops a Hariku voice that is speaking; `False` waits for it. Returns `True` when a Hariku voice speaks it (the screen reader was not given the text), `False` when the screen reader did. |
 | `core.voice.is_enabled(kind)` | `bool` | Whether the user chose a voice for this kind. |
+| `core.voice.is_configured()` | `bool` | *(core 2.7)* Whether the user has set up Hariku Voice (saved its page). |
+| `core.voice.route_speech(kind, seconds=20)` | `True` | *(core 2.7)* From now until the next key press, or `seconds` at most (60 at most), `core.speech.speak()` speaks with Hariku Voice as an announcement of `kind`, when that kind is on and a voice is available; otherwise the screen reader speaks as usual. Braille still gets every text. The command bar calls `route_speech("command")` right before it runs an action, because actions often answer seconds later, after a download. The key that ran the command doesn't end it; key presses are noticed with `GetLastInputInfo`, never a keyboard hook. A new call replaces the window. |
+| `core.voice.stop_routing()` | None | *(core 2.7)* End that window now. |
+| `core.voice.routed_kind()` | `str` or `None` | *(core 2.7)* The kind speech is routed as right now. |
 | `core.voice.stop()` | None | Stop the Hariku voice now and drop what was waiting. The "Stop Hariku Voice" action (S) does this; so does any key press, unless the user turned that off. |
 | `core.voice.is_speaking()` | `bool` | Whether a Hariku voice is speaking or has announcements waiting. |
 
 **Rules:**
-- Use `announce()` only for these three kinds; the Morning Briefing uses `"briefing"`. Everything else goes through `core.speech.speak()`, so the user's screen reader stays in charge.
+- Use `announce()` only for these kinds; the Morning Briefing uses `"briefing"`, the command bar `"command"`. Everything else goes through `core.speech.speak()`, so the user's screen reader stays in charge. An action the user ran from the command bar needs nothing special: its `speak()` is routed for a moment (`route_speech`).
 - When `announce()` returns `True`, don't also speak the text. If you show a window for it, keep the text out of what the screen reader reads when the window opens: the core's reminder popup puts it in a read-only field after the buttons, so the screen reader says only the title and the focused button.
-- `on_before_speak` fires once for a voiced announcement too (with `"kind"` and `"voice"` in the payload); cancelling it silences the voice.
+- `on_before_speak` fires once for a voiced announcement too (with `"kind"` and `"voice"` in the payload); cancelling it silences the voice. Speech routed by `route_speech()` fires it once, with `"kind": "command"`.
 - Quiet hours don't apply: these are the user's own greeting, briefing and reminders.
 - The settings are in `Core.json` under `"hariku_voice"`; read them with `core.voice.get_settings()`, but only the Hariku Voice page changes them.
 
@@ -882,6 +889,58 @@ def teardown():
 ```
 
 ---
+
+### The Command Bar
+
+*(Available since core 2.7.)*
+
+```python
+import core.commands
+```
+
+**Ctrl+Alt+Space**, from anywhere (a global hotkey through `RegisterHotKey`; users can move it in Input Gestures), opens a small always-on-top window called "Hariku" with one field, "Say or type a command". Enter runs what was typed:
+
+- A reminder sentence (a trigger such as "ingatkan aku" or "remind me", or a date or time) gets the quick reminder's read-back ("..., Save?"); Enter again or "ya"/"simpan" saves it, "tidak"/"batal" or Escape doesn't.
+- Otherwise the text is matched against **every registered hotkey action**, by its description in the user's language and its aliases. A clear winner runs at once: the bar closes, focus goes back to the window that had it, and the action runs as its hotkey would, so a dialog it opens opens as usual. A close call asks "Did you mean …?" (Enter or "ya" runs it). Anything else: "I didn't understand".
+- The bar's answers are spoken with Hariku Voice (`announce(text, "command")`), and the action's own `speak()` is routed there for a moment (`core.voice.route_speech`).
+
+Your extension's actions are commands already: register them with `core.hotkeys.register_action` (a key is optional; `None` works) and give them a clear description. Add the other ways people say them:
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.commands.add_aliases(action_id, aliases, title=None)` | `list` | More ways to say an action, in any language: `add_aliases("Pets.feed", ["kasih makan kucing", "feed the cat"])`. `action_id` is `"<extension name>.<action name>"` as registered. `title` is an optional short name for "Did you mean …?" in the user's language (default: the description). Call it in `register()`. |
+| `core.commands.remove_aliases(action_id)` | `bool` | Remove them; call it in `teardown()`. |
+| `core.commands.match(text)` | `Match` | Every command scored for `text`: `.best` (a `Command` with `.id`, `.name`, `.title`), `.score`, `.kind` (`"run"`, `"ask"` or `"none"`). |
+| `core.commands.decide(text)` | `Decision` | What the bar does with a text: `.kind` is `"reminder"` (`.result`, a `core.when` Result), `"run"` or `"confirm"` (`.command`), `"offer_reminder"`, `"unknown"` or `"empty"`. |
+| `core.commands.answer(text)` | `"yes"`, `"no"` or `None` | A spoken or typed answer: "ya", "iya, simpan", "yes", "save" / "tidak", "batal", "no", "cancel", "bukan". |
+| `core.commands.looks_like_reminder(text)` | `bool` | A trigger or a date/time in it (a recogniser may listen again more carefully). |
+| `core.commands.vocabulary()` | `list` | Every command's name and aliases: the words a speech recogniser should expect. |
+
+How matching works (so you can choose good aliases): case, accents, punctuation and hyphens don't count, a letter said twice counts once, and filler words ("tolong", "ucapkan", "please", "the", "what") are dropped. Words are compared letter by letter, because speech recognisers get words wrong ("Gampak terbaru" still finds "gempa terbaru"). A phrase scores the F1 of how much of the text it explains and how much of it the text says, with words many commands share ("buka", "open", "hari") counting less, and the whole strings are compared too. A command runs at 0.80 or more when it leads the next by 0.10; from 0.55 Hariku asks. Aliases of two or three distinctive words work best; avoid aliases that are only a common word.
+
+Hariku's own aliases for the core and the official extensions are in `core.commands.BUILTIN_ALIASES`. The core also has **Say the time** and **Say today's date** (no key by default) for "jam berapa" and "what time is it".
+
+**A speech recogniser** (the Voice Control extension) registers itself; there is one at a time:
+
+```python
+core.commands.register_listener(start, stop, is_available=None, listen_on_open=None, name="")
+core.commands.unregister_listener(start)     # in teardown()
+```
+
+| Argument | What Hariku expects |
+|---|---|
+| `start(on_event)` | Start listening and return at once: `True` when it started. Call `on_event(kind, value)` from any thread: `("listening", None)` once the microphone is open, `("recognising", None)` when recording ended, `("text", "...")` with what was said, `("error", "...")` with a message for the user (said through Hariku Voice; listening has ended) or `("stopped", None)` when it ended without text. When it can't start, send `("error", why)` and return `False`. |
+| `stop(discard)` | Stop recording now: recognise what was heard, or with `discard=True` drop it and send only `("stopped", None)`. The hotkey or Enter pressed while listening calls `stop(False)`; Escape and closing the bar `stop(True)`. |
+| `is_available()` | Fast: whether it can listen (installed, a model downloaded). |
+| `listen_on_open()` | Fast: whether to listen as soon as the bar opens. |
+
+Before listening, silence the screen reader (`core.speech.silence()`) and Hariku Voice (`core.voice.stop()`), play `core.commands.LISTEN_SOUND` and start recording after it (its length: `core.sounds.sound_path()`), and play `LISTEN_END_SOUND` when recording ends. After a question it asked by voice ("Did you mean …?", "Save?"), the bar listens again for the answer once the question has been said.
+
+**Rules:**
+- Recordings stay in memory or in a temporary file deleted right after use; never send them anywhere without asking the user first, and say so on your page.
+- Never install a keyboard hook. Global keys go through `core.hotkeys` (`RegisterHotKey`).
+
+**A future AI fallback:** `core.commands.set_fallback(handler)` registers `handler(text, commands)`, called on a worker thread for a text the rules didn't understand; it returns an action id or `None`. The bar only ever asks "Did you mean …?" about its answer; it never runs it straight away. Reserved for Hariku's own AI extension.
 
 ### Morning Briefing and Evening Summary
 
@@ -1233,7 +1292,7 @@ These events are emitted by the Hariku core at specific moments. Subscribe to th
 | `on_user_active` | `float` | Fired when the user returns from being idle (touches mouse/keyboard after being AFK). Payload is the current idle time (close to 0). |
 | `on_power_changed` | `dict` | Fired when the laptop is plugged in, unplugged, or battery percentage changes. Payload is `{"ac_line_status": 0/1, "battery_percent": 0-100, "charging": bool}`. |
 | `on_network_changed` | `bool` | Fired when the system connects or disconnects from the internet. Payload is `True` (Online) or `False` (Offline). |
-| `on_before_speak` | `payload` | Fired immediately before Hariku speaks. `payload` is a dict with `"text"`, `"interrupt"`, and `"cancel"`. Extensions can modify the text, toggle interrupt, or set `"cancel": True` to prevent speech. *(Since 2.7)* When a [Hariku Voice](#hariku-voice) speaks instead of the screen reader, it fires once too, with `"kind"` (`"greeting"`, `"briefing"` or `"reminder"`) and `"voice"` (the provider id) added; cancelling it silences the voice. |
+| `on_before_speak` | `payload` | Fired immediately before Hariku speaks. `payload` is a dict with `"text"`, `"interrupt"`, and `"cancel"`. Extensions can modify the text, toggle interrupt, or set `"cancel": True` to prevent speech. *(Since 2.7)* When a [Hariku Voice](#hariku-voice) speaks instead of the screen reader, it fires once too, with `"kind"` (`"greeting"`, `"briefing"`, `"reminder"` or `"command"`) and `"voice"` (the provider id) added; cancelling it silences the voice. |
 | `on_date_changed` | `date_str` | When the user navigates to a different date on the calendar. |
 | `on_ui_ready` | `main_window` | When the main window is fully initialized. You receive the `MainWindow` instance as an argument. |
 | `on_unload` | None | When the application is shutting down. Save state here. |

@@ -13,6 +13,7 @@ from core.events import bus
 from core.speech import speak
 from core.i18n import get_translator, format_date
 import core.api
+import core.commands
 import core.hotkeys
 import core.sounds
 import core.ui_scale
@@ -70,6 +71,11 @@ class MainWindow(wx.Frame):
         prefMenu.Append(wx.ID_PREFERENCES, _("menu_preferences_open"))
         self.Bind(wx.EVT_MENU, self.OnOpenPreferences, id=wx.ID_PREFERENCES)
         
+        # The command bar (Ctrl+Alt+Space from anywhere). Its key is written
+        # in the label, like the quick reminder's, never as an accelerator.
+        self.item_command_bar = fileMenu.Append(wx.ID_ANY, _("menu_command_bar"))
+        self.Bind(wx.EVT_MENU, lambda e: self.OnCommandBar(), self.item_command_bar)
+
         # Minimize to System Tray
         item_minimize = wx.MenuItem(fileMenu, wx.ID_ANY, _("menu_minimize_to_tray"))
         fileMenu.Append(item_minimize)
@@ -241,6 +247,17 @@ class MainWindow(wx.Frame):
         # package. Saved "Assistant.quick_reminder" bindings (the extension it
         # came from) count for it (core.hotkeys.RENAMED_ACTIONS).
         core.hotkeys.register_action("Hariku Core", "quick_reminder", _("nav_quick_reminder"), ord('N'), False, self.OnQuickReminder)
+        # The command bar: Ctrl+Alt+Space, global (RegisterHotKey through
+        # core.hotkeys), free in the core, every bundled extension and store
+        # package. Say the time and the date have no key; the bar runs them.
+        from ui.command_bar import register_hotkey
+        register_hotkey(self.OnCommandBar)
+        core.hotkeys.register_action("Hariku Core", "speak_time", _("nav_speak_time"), None, False, core.commands.say_time)
+        core.hotkeys.register_action("Hariku Core", "speak_date", _("nav_speak_date"), None, False, core.commands.say_date)
+
+    def OnCommandBar(self):
+        from ui.command_bar import toggle_command_bar
+        toggle_command_bar()
 
     def OnQuickReminder(self):
         from ui.quick_reminder_dialog import open_quick_reminder
@@ -263,16 +280,21 @@ class MainWindow(wx.Frame):
         dlg.Destroy()
 
     def UpdateReminderMenu(self):
-        """Show the quick reminder's current key in its menu item ("Quick
-        reminder... (N)"); users can move it in Input Gestures."""
-        label = _("menu_quick_reminder")
-        bindings = core.hotkeys.get_current_bindings("Hariku Core.quick_reminder")
-        if bindings:
-            keycode, ctrl, shift, alt, win, is_global = sorted(bindings)[0]
-            key = core.hotkeys.format_key_name(keycode, ctrl, shift, alt, win)
-            label = _("menu_with_shortcut", label=label, shortcut=key)
-        if self.item_quick_reminder.GetItemLabel() != label:
-            self.item_quick_reminder.SetItemLabel(label)
+        """Show the quick reminder's and the command bar's current keys in
+        their menu items ("Quick reminder... (N)"); users can move them in
+        Input Gestures."""
+        for item, action_id, message in ((self.item_quick_reminder, "Hariku Core.quick_reminder",
+                                          "menu_quick_reminder"),
+                                         (self.item_command_bar, core.commands.COMMAND_BAR_ACTION,
+                                          "menu_command_bar")):
+            label = _(message)
+            bindings = core.hotkeys.get_current_bindings(action_id)
+            if bindings:
+                keycode, ctrl, shift, alt, win, is_global = sorted(bindings)[0]
+                shortcut = core.hotkeys.format_key_name(keycode, ctrl, shift, alt, win)
+                label = _("menu_with_shortcut", label=label, shortcut=shortcut)
+            if item.GetItemLabel() != label:
+                item.SetItemLabel(label)
 
     def OnMenuOpen(self, event):
         # Cheap enough for every menu; it only changes a label when needed.
