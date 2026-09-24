@@ -813,6 +813,7 @@ class TestExtension:
         with open(os.path.join(EDGE_DIR, "locales", "id.json"), encoding="utf-8") as f:
             id_ = json.load(f)["messages"]
         assert set(en) == set(id_)
+        assert "voice_female" not in en and "voice_male" not in en    # names are plain
         assert en["privacy_note"] == (
             "Edge voices send the text being read (for example your reminder titles) to "
             "Microsoft's online speech service. This service is meant for the Edge browser "
@@ -927,13 +928,26 @@ class TestExtension:
                             lambda: fetched.append(1) or protocol.parse_voice_list(VOICE_LIST))
         voices = edge.list_voices()
         assert fetched == [1]
-        assert voices[:2] == [{"id": "id-ID-ArdiNeural", "name": "Ardi (male)",
-                               "language": "id-ID"},
-                              {"id": "id-ID-GadisNeural", "name": "Gadis (female)",
-                               "language": "id-ID"}]
+        # The plain name and the gender: Preferences groups them by language and gender.
+        assert voices[:2] == [{"id": "id-ID-ArdiNeural", "name": "Ardi",
+                               "language": "id-ID", "gender": "male"},
+                              {"id": "id-ID-GadisNeural", "name": "Gadis",
+                               "language": "id-ID", "gender": "female"}]
+        assert voices[2]["name"] == "Emma Multilingual"
         assert edge.list_voices() == voices and fetched == [1]      # 7 days from disk
         monkeypatch.setattr(core.i18n, "_current_language", "id")
-        assert edge.list_voices()[1]["name"] == "Gadis (perempuan)"
+        assert edge.list_voices() == voices                          # the same in Indonesian
+
+    def test_core_keeps_the_gender(self, edge, monkeypatch):
+        import core.voice
+        monkeypatch.setattr(service, "fetch_voice_list",
+                            lambda: protocol.parse_voice_list(VOICE_LIST))
+        core.voice.register_provider(edge.PROVIDER_ID, "Edge", edge.list_voices, edge.speak,
+                                     edge.stop, edge.is_available)
+        voices = core.voice.list_voices(edge.PROVIDER_ID)
+        assert [(v["name"], v["gender"]) for v in voices] == [
+            ("Ardi", "male"), ("Gadis", "female"), ("Emma Multilingual", "female"),
+            ("Xiaobei", "female")]
 
     def test_old_list_is_refreshed_and_kept_when_offline(self, edge, monkeypatch):
         directory = edge._cache_dir()

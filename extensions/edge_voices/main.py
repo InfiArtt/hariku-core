@@ -118,14 +118,10 @@ def default_voice():
 
 
 def _shown(voice):
-    gender = voice.get("gender")
-    if gender == "female":
-        name = _("voice_female", name=voice["name"])
-    elif gender == "male":
-        name = _("voice_male", name=voice["name"])
-    else:
-        name = voice["name"]
-    return {"id": voice["id"], "name": name, "language": voice.get("language", "")}
+    # The plain name ("Gadis"): Preferences groups the voices by language and
+    # gender itself.
+    return {"id": voice["id"], "name": voice["name"], "language": voice.get("language", ""),
+            "gender": voice.get("gender", "")}
 
 
 def list_voices():
