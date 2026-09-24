@@ -16,6 +16,7 @@ import core.api
 import core.hotkeys
 import core.sounds
 import core.ui_scale
+import core.voice
 
 _ = get_translator("core")
 
@@ -221,6 +222,9 @@ class MainWindow(wx.Frame):
         core.hotkeys.register_action("Hariku Core", "minimize_tray", _("nav_minimize_tray"), ord('M'), True, self.MinimizeToTray)
         core.hotkeys.register_action("Hariku Core", "show_app",    _("nav_show_app"),    ord('H'), True, self.OnToggleVisibility, default_alt=True, default_global=True)
         core.hotkeys.register_action("Hariku Core", "show_shortcuts", "Show Keyboard Shortcuts", wx.WXK_F1, False, self.OnShowShortcuts)
+        # S: free in the core, every bundled extension and store package (Sound
+        # Themes has Shift+S). Any key stops the voice too, unless that is off.
+        core.hotkeys.register_action("Hariku Core", "stop_voice", _("nav_stop_voice"), ord('S'), False, core.voice.stop)
 
     def OnShowShortcuts(self):
         from ui.shortcuts_dialog import show_shortcuts

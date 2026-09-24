@@ -56,26 +56,55 @@ def speak(text, interrupt=False):
         
     final_text = payload.get("text", text)
     final_interrupt = payload.get("interrupt", interrupt)
-    actual_interrupt = final_interrupt and config.get("interrupt_speech", True)
+    _deliver(final_text, final_interrupt, config, speech=True)
+
+
+def _deliver(text, interrupt, config, speech=True, braille=None, silence=False):
+    """Hand text to Tolk on a worker thread. `braille` None follows the
+    braille_output setting; `silence` first stops the screen reader's speech."""
+    actual_interrupt = interrupt and config.get("interrupt_speech", True)
 
     # Braille output: Tolk's output() sends to BOTH speech and a connected
     # braille display; speak() is speech-only. Default on; users can turn braille
     # off in Preferences (some prefer speech alone).
-    braille_on = config.get("braille_output", True)
+    braille_on = config.get("braille_output", True) if braille is None else (
+        braille and config.get("braille_output", True))
 
     if TOLK_LOADED:
         def _speak_worker():
             try:
-                if braille_on:
-                    tolk.output(final_text, actual_interrupt)   # speech + braille
-                else:
-                    tolk.speak(final_text, actual_interrupt)     # speech only
+                if silence and actual_interrupt:
+                    tolk.silence()
+                if speech and braille_on:
+                    tolk.output(text, actual_interrupt)   # speech + braille
+                elif speech:
+                    tolk.speak(text, actual_interrupt)     # speech only
+                elif braille_on:
+                    tolk.braille(text)                     # braille only
             except Exception as e:
                 logger.error(f"Tolk speak error: {e}")
         threading.Thread(target=_speak_worker, daemon=True).start()
-    else:
+    elif speech:
         # Fallback console print
-        print(f"[SPEECH] {final_text}")
+        print(f"[SPEECH] {text}")
+
+
+def braille(text, interrupt=False):
+    """Show text on a braille display without speaking it (since 2.7). Hariku
+    Voice uses it while a voice reads the text aloud, so braille users still get
+    it. Follows the braille_output setting. With `interrupt` (and "Interrupt
+    speech" on), the screen reader stops talking first, as speak() would."""
+    import core.api
+    _deliver(text, interrupt, core.api.load_data("Core"), speech=False, silence=True)
+
+
+def speak_announced(text, interrupt=False, braille=True):
+    """Speak text through the screen reader after on_before_speak has already
+    run for it (Hariku Voice's fallback), so extensions don't see it twice.
+    `braille=False` when the braille display already has it."""
+    import core.api
+    _deliver(text, interrupt, core.api.load_data("Core"), speech=True,
+             braille=None if braille else False)
 
 def unload_speech():
     if TOLK_LOADED:

@@ -67,6 +67,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "marine",
     "air_quality",
     "space",
+    "edge_voices",
 ])
 
 
