@@ -507,6 +507,11 @@ earthquake", "what time is it" or "evening summary", or a reminder, such as
 
   - A command runs at once. The bar closes first, so you are back where you
     were, and a window the command opens opens as usual.
+  - A command that only tells you something, such as the time, the weather
+    or the latest earthquake, keeps Aruna open: the answer shows in "Last
+    result", and you can type the next command straight away (what you typed
+    is selected, so typing replaces it). A saved reminder keeps it open too.
+    Turn this off in Preferences, Aruna, "Keep Aruna open after an answer".
   - A reminder is read back first ("... Save?"). Press Enter again (or say
     "yes") to save it, or Escape to cancel.
   - When Hariku isn't sure, it asks "Did you mean ...?". Enter runs it,
@@ -514,7 +519,10 @@ earthquake", "what time is it" or "evening summary", or a reminder, such as
 
 Every action of Hariku and of your extensions can be run this way, in English
 or Indonesian. Tab reaches the "Last result" field, which shows what Hariku
-last said. Escape closes the bar. The answers are spoken with your Hariku
+last said, then "Status": "Aruna is thinking..." while an answer is on its
+way, then "Aruna answered". Escape closes the bar. A soft sound plays when you
+send a typed command and another when Aruna answers; turn them off in
+Preferences, Aruna, "Play Aruna's sounds" (a sound theme can replace them). The answers are spoken with your Hariku
 Voice when you have set one up (Preferences, Hariku Voice, "Read answers to
 commands"). With the Voice Control extension, press Ctrl + Alt + Backspace again
 while the bar is open, and speak after the tone instead of typing.

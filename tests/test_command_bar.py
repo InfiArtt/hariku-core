@@ -150,22 +150,27 @@ def cb(monkeypatch, tmp_data_dir, indonesian):
     core.commands.set_fallback(None)
 
 
-def make_bar(cb, voiced=False, language="id"):
+def make_bar(cb, voiced=False, language="id", keep_open=False, sounds=False, say=None):
+    """A bar on fakes. Most tests check the bar that closes before an action
+    runs (keep_open=False) without sounds; the core 2.8 tests turn them on."""
     import core.commands
     candidates = core.commands.commands(real_actions(language))
     said, ran = [], []
 
-    def say(text):
+    def say_it(text):
         said.append(text)
+        if say is not None:
+            say(text)
         return voiced
 
     bar = cb.CommandBar(None, previous=4242,
                         decide=lambda text: core.commands.decide(text, candidates,
                                                                  parse=parse_reminder),
-                        run=ran.append, say=say)
+                        run=ran.append, say=say_it)
     bar.txt_input, bar.txt_result, bar.txt_status = FakeText(), FakeText(), FakeText()
     bar.btn_listen = FakeButton()
     bar.said, bar.ran = said, ran
+    bar._keep_open, bar._sounds = keep_open, sounds
     cb._bar = bar
     return bar
 
@@ -473,6 +478,186 @@ def test_the_fallback_is_only_ever_asked_about(cb, monkeypatch):
     while not bar.said and time.monotonic() < deadline:
         time.sleep(0.01)
     assert bar.said == ["Maksudnya: Ucapkan cuaca saat ini?"] and bar.ran == []
+
+
+# ------------------------------------------------------------
+# Core 2.8: staying open after an answer, "thinking", sounds
+# ------------------------------------------------------------
+
+def speak_as_the_action(text):
+    """What an action's core.speech.speak() does first."""
+    from core.events import bus
+    bus.emit("on_before_speak", {"text": text, "interrupt": True, "cancel": False})
+
+
+def test_an_answer_keeps_the_bar_open_and_shows_it(cb):
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "gempa terbaru")
+    assert bar.ran == ["Earthquakes.speak_latest"]
+    assert not bar._closed and cb.current_bar() is bar and cb.focus == []
+    assert bar.txt_status.value == "Aruna sedang berpikir..."
+    assert bar.txt_input.selected                    # typing replaces the last command
+    speak_as_the_action("M 5,2, 30 km barat daya Ambon.")
+    speak_as_the_action("Tidak berpotensi tsunami.")
+    assert bar.txt_result.value == "M 5,2, 30 km barat daya Ambon.\nTidak berpotensi tsunami."
+    assert bar.last_said == bar.txt_result.value
+    assert bar.txt_status.value.startswith("Aruna sudah menjawab.")
+    bar._end_answer()
+    speak_as_the_action("Something else Hariku says later.")
+    assert "later" not in bar.txt_result.value      # no longer waiting for an answer
+    bar.close()
+
+
+def test_the_bars_own_words_are_not_an_answer(cb):
+    bar = make_bar(cb, keep_open=True, say=speak_as_the_action)
+    type_and_enter(bar, "jam berapa")
+    assert bar.ran == ["Hariku Core.speak_time"] and bar._awaiting is not None
+    bar.say("Maksudnya: ...?")                        # e.g. a question in between
+    assert bar._awaiting.lines == []
+    bar.close()
+
+
+def test_every_new_message_stops_waiting_for_the_last_answer(cb):
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "gempa terbaru")
+    first = bar._awaiting
+    type_and_enter(bar, "cuaca hari ini")
+    assert bar.ran == ["Earthquakes.speak_latest", "Weather.speak_current_weather"]
+    assert bar._awaiting is not first
+    bar.close()
+
+
+def test_no_answer_in_time_says_it_ran(cb):
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "gempa terbaru")
+    bar._answer_timeout(bar._awaiting)
+    assert bar.txt_result.value == "Selesai: Ucapkan gempa terkini dari BMKG."
+    assert bar._awaiting is None and not bar._closed
+    bar.close()
+
+
+def test_an_answer_that_opens_a_window_after_all_closes_the_bar(cb, monkeypatch):
+    bar = make_bar(cb, keep_open=True)
+    class NewWindow:                                 # hashable, as wx windows are
+        def IsShown(self):
+            return True
+
+    new_window = NewWindow()
+    windows = [bar]
+    monkeypatch.setattr(cb.wx, "GetTopLevelWindows", lambda: list(windows))
+    monkeypatch.setattr(bar, "_run", lambda action_id: windows.append(new_window))
+    type_and_enter(bar, "gempa terbaru")
+    assert bar._closed and cb.current_bar() is None
+    assert cb.focus == []                            # focus stays with the new window
+
+
+def test_other_actions_still_close_the_bar_first(cb):
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "daftar gempa terbaru")
+    assert bar.ran == ["Earthquakes.show_recent"]
+    assert bar._closed and cb.focus == [4242]
+
+
+def test_a_saved_reminder_keeps_the_bar_open(cb):
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "ingatkan aku minum obat besok jam 8")
+    bar._on_enter(None)
+    assert [r.title for r in cb.saved] == ["Minum obat"]
+    assert not bar._closed and cb.focus == [] and not bar._busy
+    assert bar.txt_input.value == "" and bar.txt_status.value.startswith("Aruna sudah menjawab.")
+    bar.close()
+
+
+def test_a_question_says_how_to_answer(cb):
+    bar = make_bar(cb)
+    type_and_enter(bar, "Tua-tahari ini.")
+    assert bar.said[-1].startswith("Maksudnya:")
+    assert bar.txt_status.value.startswith("Aruna bertanya: Enter atau \"ya\"")
+    bar.close()
+
+
+@pytest.fixture
+def sounds(cb, monkeypatch):
+    played = []
+    monkeypatch.setattr(cb.core.sounds, "play_internal_sound", played.append)
+    from unittest.mock import MagicMock
+
+    def call_later(ms, fn, *args):
+        # The answer's sound (waiting for the send sound) comes at once; the
+        # long waits for an answer never do here.
+        if ms <= cb.REPLY_AFTER_SEND_MS:
+            fn(*args)
+        return MagicMock()
+
+    monkeypatch.setattr(cb.wx, "CallLater", call_later)
+    return played
+
+
+def test_a_typed_message_and_its_answer_have_sounds(cb, sounds):
+    bar = make_bar(cb, sounds=True)
+    type_and_enter(bar, "blablabla")                 # not understood: Aruna answers at once
+    assert sounds == ["aruna_send.wav", "aruna_reply.wav"]
+    sounds.clear()
+    bar = make_bar(cb, sounds=True, keep_open=True)
+    type_and_enter(bar, "gempa terbaru")
+    assert sounds == ["aruna_send.wav"]              # the action hasn't answered yet
+    speak_as_the_action("M 5,2.")
+    assert sounds == ["aruna_send.wav", "aruna_reply.wav"]
+    speak_as_the_action("More of the same answer.")
+    assert sounds.count("aruna_reply.wav") == 1
+    bar.close()
+
+
+def test_a_spoken_message_has_no_send_sound(cb, sounds):
+    listener = FakeListener().register()
+    bar = make_bar(cb, sounds=True)
+    bar.start_listening()
+    listener.started[0]("text", "blablabla")
+    assert sounds == ["aruna_reply.wav"]             # Voice Control has its own tones
+
+
+def test_sounds_off(cb, sounds):
+    bar = make_bar(cb, sounds=False)
+    type_and_enter(bar, "blablabla")
+    assert sounds == []
+
+
+def test_settings_default_on_and_are_saved(tmp_data_dir):
+    import core.api
+    import core.commands
+    assert core.commands.bar_settings() == {"keep_open": True, "sounds": True}
+    core.commands.save_bar_settings(False, True)
+    assert core.api.load_data("Core")["aruna_keep_open"] is False
+    assert core.commands.bar_settings() == {"keep_open": False, "sounds": True}
+
+
+def test_answer_actions(monkeypatch):
+    import core.commands
+    monkeypatch.setattr(core.commands, "_answer_actions", set())
+    assert core.commands.is_answer_action("Hariku Core.speak_time")
+    assert core.commands.is_answer_action("Earthquakes.speak_latest")
+    assert not core.commands.is_answer_action("Earthquakes.show_recent")
+    assert not core.commands.is_answer_action("Cockpit.airport_weather")   # opens a window
+    core.commands.add_answer_actions("Observatory.next_asteroid")
+    core.commands.add_answer_actions(["Tide.speak_tide", ""])
+    assert core.commands.is_answer_action("Observatory.next_asteroid")
+    assert core.commands.is_answer_action("Tide.speak_tide")
+
+
+def test_answer_actions_exist_as_registered_actions():
+    """Every id in ANSWER_ACTIONS is one the core or a bundled extension registers."""
+    import core.commands
+    ids = set(core.commands.BUILTIN_ALIASES)
+    missing = sorted(a for a in core.commands.ANSWER_ACTIONS if a not in ids)
+    assert not missing, missing
+
+
+def test_arunas_sounds_ship_with_hariku():
+    import wave
+    for name in ("aruna_send.wav", "aruna_reply.wav"):
+        with wave.open(os.path.join(ROOT, "sounds", name)) as w:
+            assert w.getframerate() == 44100 and w.getnchannels() == 1
+            assert 0.05 < w.getnframes() / w.getframerate() < 0.8
 
 
 # ------------------------------------------------------------

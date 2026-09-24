@@ -72,6 +72,8 @@ CORE_FEATURES_SINCE = {
     "remember=True": (2, 7),     # core.sounds.set_theme_dir(path, remember=True)
     "core.places": (2, 8),       # also core.places_ui
     "core.place_search": (2, 8),
+    "add_answer_actions": (2, 8),
+    "bar_settings": (2, 8),
 }
 
 
