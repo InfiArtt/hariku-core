@@ -1,0 +1,659 @@
+# Hariku V2 — accessible calendar & automation for screen-reader users.
+# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+#
+# This file is part of Hariku, released under the GNU General Public License,
+# version 3 or (at your option) any later version, with the Hariku Extension
+# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""
+Voice Control — Hariku V2 extension (needs core 2.7).
+
+Speak commands into Hariku's command bar (Ctrl+Alt+Space): "gempa terbaru",
+"jam berapa", "ingatkan aku minum obat besok jam 8". Speech is recognised on
+this computer by whisper.cpp (MIT) with OpenAI's Whisper models (MIT); the
+program and the models are downloaded only when the user presses Download in
+Preferences, Voice Control.
+
+  voice_control_audio.py     the microphone (winmm waveIn), voice activity, WAV
+  voice_control_download.py  pinned, checked downloads from GitHub and Hugging Face
+  voice_control_store.py     files and settings
+  voice_control_engine.py    whisper-server: start, recognise, stop when idle
+  voice_control_text.py      text in the user's language
+  voice_control_ui.py        the Preferences page
+
+How a command is heard: the screen reader and Hariku Voice are silenced (with
+speakers they would talk into the microphone), the start tone plays, and the
+recording begins about 150 ms after it ends. It ends after about a second of
+silence once speech started (Preferences: the silence length), after 12
+seconds, when the hotkey or Enter is pressed again, or after 5 seconds with no
+speech (then Hariku says so). The end tone plays, whisper-server recognises
+the recording (in memory, over 127.0.0.1), and the text goes to the command
+bar. With the model set to Automatic, words that look like a reminder are
+recognised again with a more accurate model, when one is installed. The
+recording is then dropped: it is never saved or sent anywhere.
+
+The command bar gets this recogniser through core.commands.register_listener.
+"""
+import logging
+import threading
+import time
+import wave
+
+import wx
+
+import core.api
+import core.commands
+import core.preferences
+import core.sounds
+import core.speech
+import core.voice
+from core.i18n import get_current_language
+
+import voice_control_audio as audio
+import voice_control_download as download
+import voice_control_engine as engine
+import voice_control_store as store
+import voice_control_text as text
+import voice_control_ui
+from voice_control_text import _
+
+logger = logging.getLogger(__name__)
+
+EXT_NAME = "Voice Control"      # fixed, whatever the language
+TONE_GAP_SECONDS = 0.15         # start recording this long after the tone ends
+DEFAULT_TONE_SECONDS = 0.25
+MAX_TONE_SECONDS = 1.5
+START_TIMEOUT_MS = 5000         # no speech this long: stop and say so
+MAX_RECORD_MS = 12000
+MIC_TEST_SECONDS = 3.0
+MILESTONES = (25, 50, 75, 100)
+
+_panel = None
+
+
+def _call_after(fn, *args):
+    """wx.CallAfter from a worker thread, unless Hariku is already closing."""
+    try:
+        if wx.GetApp() is not None:
+            wx.CallAfter(fn, *args)
+    except Exception:
+        pass
+
+
+def _say(message, interrupt=True):
+    try:
+        core.speech.speak(message, interrupt=interrupt)
+    except Exception:
+        logger.exception(f"[{EXT_NAME}] Speaking a message failed")
+
+
+# ------------------------------------------------------------
+# What is installed, and the settings (kept in memory: is_available() and
+# listen_on_open() are asked on the UI thread and must be quick)
+# ------------------------------------------------------------
+
+_state_lock = threading.Lock()
+_available = False
+_settings = dict(store.DEFAULT_SETTINGS)
+
+
+def refresh_state():
+    """Look at the disk again; returns the installed models."""
+    global _available
+    root = store.root_dir()
+    models = store.installed_models(root)
+    with _state_lock:
+        _available = bool(models) and store.runtime_installed(root)
+    return models
+
+
+def is_available():
+    """The program and at least one model are installed."""
+    return _available
+
+
+def get_settings():
+    with _state_lock:
+        return dict(_settings, speeds=dict(_settings["speeds"]))
+
+
+def reload_settings():
+    global _settings
+    settings = store.load_settings()
+    with _state_lock:
+        _settings = settings
+    return settings
+
+
+def save_settings(model, listen_on_open, silence_ms):
+    settings = get_settings()
+    settings.update(model=model, listen_on_open=bool(listen_on_open), silence_ms=silence_ms)
+    store.save_settings(settings)
+    reload_settings()
+
+
+def listen_on_open():
+    return get_settings()["listen_on_open"]
+
+
+def _record_speed(model, seconds):
+    try:
+        store.record_speed(model, seconds)
+        reload_settings()
+    except Exception:
+        logger.exception(f"[{EXT_NAME}] Keeping the measured speed failed")
+
+
+# ------------------------------------------------------------
+# whisper-server
+# ------------------------------------------------------------
+
+def language():
+    return engine.whisper_language(get_current_language())
+
+
+def prompt():
+    """The vocabulary prompt: the words the command bar expects."""
+    try:
+        phrases = core.commands.vocabulary()
+    except Exception:
+        logger.exception(f"[{EXT_NAME}] Reading the commands failed")
+        phrases = []
+    return engine.build_prompt(text.prompt_words() + phrases)
+
+
+def _make_server(model):
+    root = store.root_dir()
+    return engine.Server(model, store.server_exe(root), store.model_path(root, model),
+                         language=language(), prompt=prompt(), log_path=store.log_path(root))
+
+
+_engine = engine.Engine(_make_server)
+
+
+# ------------------------------------------------------------
+# Sounds and silence
+# ------------------------------------------------------------
+
+def tone_seconds(sound_name):
+    """How long a (theme's) sound plays, to start recording after it."""
+    try:
+        with wave.open(core.sounds.sound_path(sound_name), "rb") as w:
+            seconds = w.getnframes() / float(w.getframerate())
+        return max(0.0, min(MAX_TONE_SECONDS, seconds))
+    except Exception:
+        return DEFAULT_TONE_SECONDS
+
+
+def play_tone(sound_name):
+    """Play a (theme's) sound on the UI thread, where Hariku's other sounds
+    play, so their MCI devices never meet on two threads."""
+    if threading.current_thread() is threading.main_thread():
+        core.sounds.play_internal_sound(sound_name)
+    else:
+        _call_after(core.sounds.play_internal_sound, sound_name)
+
+
+def quiet():
+    """Silence the screen reader and Hariku Voice (they would talk into the
+    microphone through speakers)."""
+    silence = getattr(core.speech, "silence", None)
+    if silence is not None:
+        try:
+            silence()
+        except Exception:
+            logger.debug("Silencing the screen reader failed", exc_info=True)
+    try:
+        core.voice.stop()
+    except Exception:
+        logger.debug("Stopping Hariku Voice failed", exc_info=True)
+
+
+# ------------------------------------------------------------
+# Listening: one session at a time, on a worker thread
+# ------------------------------------------------------------
+
+class Session:
+    def __init__(self, listener, on_event):
+        self.listener = listener
+        self.on_event = on_event
+        self.stop_event = threading.Event()
+        self.discard = False
+        self.alive = True
+
+    def stop(self, discard=False):
+        if discard:
+            self.discard = True
+        self.stop_event.set()
+
+    def send(self, kind, value=None):
+        if self.discard and kind != "stopped":
+            return
+        try:
+            self.on_event(kind, value)
+        except Exception:
+            logger.exception(f"[{EXT_NAME}] The command bar's callback failed")
+
+    def run(self):
+        try:
+            self._listen()
+        except audio.MicrophoneError as e:
+            logger.info(f"[{EXT_NAME}] Microphone: {e}")
+            self.send("error", text.mic_error(e.kind))
+        except engine.EngineError as e:
+            logger.warning(f"[{EXT_NAME}] Recognition failed: {e}")
+            self.send("error", text.engine_error(e))
+        except Exception:
+            logger.exception(f"[{EXT_NAME}] Listening failed")
+            self.send("error", _("err_unexpected"))
+        finally:
+            self.alive = False
+            self.listener._finished(self)
+
+    def _listen(self):
+        listener = self.listener
+        blocked = listener.blocked()
+        if blocked:
+            raise audio.MicrophoneError(blocked)
+        settings = get_settings()
+        installed = store.installed_models(store.root_dir())
+        model = engine.choose_model(settings["model"], installed, settings["speeds"], "command")
+        if model is None:
+            raise engine.EngineError("missing", "no model")
+        # The model loads while the user speaks.
+        threading.Thread(target=listener.engine.warm_up, args=(model,), daemon=True,
+                         name="hariku-voice-control-warm-up").start()
+
+        listener.quiet()
+        listener.play(core.commands.LISTEN_SOUND)
+        listener.sleep(listener.tone_seconds(core.commands.LISTEN_SOUND) + TONE_GAP_SECONDS)
+        if self.stop_event.is_set():
+            self.send("stopped")
+            return
+        listener.quiet()        # the screen reader may have started talking meanwhile
+        self.send("listening")
+        vad = audio.VoiceActivity(silence_ms=settings["silence_ms"],
+                                  start_timeout_ms=START_TIMEOUT_MS, max_ms=MAX_RECORD_MS)
+        recorder = listener.make_recorder()
+        try:
+            pcm = recorder.record(lambda chunk: vad.feed(chunk) in vad.FINISHED,
+                                  stop=self.stop_event, max_seconds=MAX_RECORD_MS / 1000.0 + 1)
+        finally:
+            listener.play(core.commands.LISTEN_END_SOUND)
+        if self.discard:
+            self.send("stopped")
+            return
+        if pcm and vad.peak <= 0:
+            raise audio.MicrophoneError("silent")
+        if not vad.heard_speech:
+            self.send("error", _("err_no_speech"))
+            return
+        self.send("recognising")
+        wav = audio.wav_bytes(vad.speech_bytes(pcm))
+        del pcm
+        words, prompt_text = language(), prompt()
+        heard, seconds = listener.engine.transcribe(model, wav, prompt=prompt_text,
+                                                    language=words)
+        listener.record_speed(model, seconds)
+        better = engine.reminder_model(settings["model"], installed, settings["speeds"], model)
+        if better and heard and not self.discard and core.commands.looks_like_reminder(heard):
+            # A reminder: worth a more careful listen; the read-back confirms anyway.
+            again, seconds = listener.engine.transcribe(better, wav, prompt=prompt_text,
+                                                        language=words)
+            listener.record_speed(better, seconds)
+            if again:
+                heard = again
+        del wav
+        if self.discard:
+            self.send("stopped")
+            return
+        self.send("text", heard)
+
+
+class Listener:
+    """The command bar's speech recogniser. Everything slow it uses can be
+    replaced for tests: the recorder, the engine, the privacy check, the
+    sounds and the waiting."""
+
+    def __init__(self, make_recorder=None, engine_=None, blocked=None, play=None, sleep=None,
+                 quiet_=None, tones=None, record_speed=None, available=None):
+        self.make_recorder = make_recorder or audio.Recorder
+        self.engine = engine_ or _engine
+        self.blocked = blocked or audio.microphone_blocked
+        self.play = play or play_tone
+        self.sleep = sleep or time.sleep
+        self.quiet = quiet_ or quiet
+        self.tone_seconds = tones or tone_seconds
+        self.record_speed = record_speed or _record_speed
+        self._available = available or is_available
+        self._lock = threading.Lock()
+        self._session = None
+
+    def is_available(self):
+        return bool(self._available())
+
+    def listen_on_open(self):
+        return listen_on_open()
+
+    def busy(self):
+        with self._lock:
+            return self._session is not None
+
+    def start(self, on_event):
+        with self._lock:
+            if self._session is not None:
+                busy = True
+            else:
+                busy = False
+                if self.is_available():
+                    session = Session(self, on_event)
+                    self._session = session
+                else:
+                    session = None
+        if busy:
+            on_event("error", _("err_busy"))
+            return False
+        if session is None:
+            on_event("error", _("err_not_ready"))
+            return False
+        threading.Thread(target=session.run, daemon=True,
+                         name="hariku-voice-control-listen").start()
+        return True
+
+    def stop(self, discard=False):
+        with self._lock:
+            session = self._session
+        if session is not None:
+            session.stop(discard)
+
+    def _finished(self, session):
+        with self._lock:
+            if self._session is session:
+                self._session = None
+
+
+_listener = Listener()
+
+
+# ------------------------------------------------------------
+# The microphone test (Preferences): 3 seconds, the level, nothing played back
+# ------------------------------------------------------------
+
+def test_microphone(listener=None, seconds=MIC_TEST_SECONDS):
+    """Record `seconds` and say how loud it was and whether it sounded like
+    speech: {"level": dB, "speech": bool, "seconds": s}. The recording is
+    dropped; nothing is played back. Raises audio.MicrophoneError."""
+    listener = listener or _listener
+    blocked = listener.blocked()
+    if blocked:
+        raise audio.MicrophoneError(blocked)
+    listener.quiet()
+    listener.play(core.commands.LISTEN_SOUND)
+    listener.sleep(listener.tone_seconds(core.commands.LISTEN_SOUND) + TONE_GAP_SECONDS)
+    vad = audio.VoiceActivity(start_timeout_ms=int(seconds * 1000), max_ms=int(seconds * 1000))
+    try:
+        pcm = listener.make_recorder().record(lambda chunk: (vad.feed(chunk), False)[1],
+                                              max_seconds=seconds)
+    finally:
+        listener.play(core.commands.LISTEN_END_SOUND)
+    if pcm and vad.peak <= 0:
+        raise audio.MicrophoneError("silent")
+    return {"level": audio.level_db(vad.peak), "speech": vad.heard_speech,
+            "seconds": audio.seconds_of(pcm)}
+
+
+# ------------------------------------------------------------
+# Downloads: one at a time, on a worker thread
+# ------------------------------------------------------------
+
+class Download:
+    """The program or a model being downloaded (a model brings the program
+    along when it isn't installed)."""
+
+    def __init__(self, item, need_runtime):
+        self.item = item
+        self.need_runtime = need_runtime or item == "runtime"
+        self.total = (download.RUNTIME_SIZE if self.need_runtime else 0) + (
+            0 if item == "runtime" else download.MODELS[item]["size"])
+        self.percent = 0
+        self.spoken = 0
+        self.reported = -1
+        self.cancel_event = threading.Event()
+
+    @property
+    def title(self):
+        return text.item_name(self.item)
+
+
+class Downloads:
+    def __init__(self, install_runtime=None, install_model=None):
+        self._install_runtime = install_runtime or download.install_runtime
+        self._install_model = install_model or download.install_model
+        self._lock = threading.Lock()
+        self._current = None
+        self._listeners = []
+
+    def current(self):
+        with self._lock:
+            return self._current
+
+    def add_listener(self, listener):
+        if listener not in self._listeners:
+            self._listeners.append(listener)
+
+    def remove_listener(self, listener):
+        if listener in self._listeners:
+            self._listeners.remove(listener)
+
+    def start(self, item):
+        """Start downloading `item` ("runtime" or a model). False when
+        another download is running."""
+        with self._lock:
+            if self._current is not None:
+                return False
+            job = Download(item, not store.runtime_installed(store.root_dir()))
+            self._current = job
+        _say(_("download_started", name=job.title, size=text.size_label(job.total)))
+        threading.Thread(target=self._run, args=(job,), daemon=True,
+                         name="hariku-voice-control-download").start()
+        return True
+
+    def cancel(self):
+        job = self.current()
+        if job is None:
+            return False
+        job.cancel_event.set()
+        return True
+
+    def _run(self, job):
+        root = store.root_dir()
+        error = None
+        try:
+            store.cleanup_partials(root)
+            done_before = 0
+            if job.need_runtime:
+                _engine.stop_all()          # its files may be replaced
+                self._install_runtime(root, progress=lambda n: self._progress(job, n),
+                                      cancelled=job.cancel_event.is_set)
+                done_before = download.RUNTIME_SIZE
+            if job.item != "runtime":
+                self._install_model(job.item, root,
+                                    progress=lambda n: self._progress(job, done_before + n),
+                                    cancelled=job.cancel_event.is_set)
+        except download.Cancelled as e:
+            error = e
+        except download.DownloadError as e:
+            error = download.Cancelled() if job.cancel_event.is_set() else e
+            logger.info(f"[{EXT_NAME}] Downloading {job.item} failed: {e}")
+        except Exception as e:
+            error = e
+            logger.exception(f"[{EXT_NAME}] Downloading {job.item} failed")
+        try:
+            refresh_state()
+        except Exception:
+            logger.exception(f"[{EXT_NAME}] Reading what is installed failed")
+        _call_after(self._finished, job, error)
+
+    def _progress(self, job, done):
+        percent = max(0, min(100, int(done * 100 / job.total))) if job.total else 100
+        if percent != job.reported:
+            job.reported = percent
+            _call_after(self._on_progress, job, percent)
+
+    # --- UI thread ---------------------------------------------------------------
+
+    def _on_progress(self, job, percent):
+        if job.cancel_event.is_set() or self.current() is not job:
+            return
+        job.percent = percent
+        reached = [m for m in MILESTONES if job.spoken < m <= percent]
+        if reached:
+            job.spoken = reached[-1]
+            _say(_("progress_spoken", percent=reached[-1]), interrupt=False)
+        self._notify("progress", job, percent)
+
+    def _finished(self, job, error):
+        with self._lock:
+            if self._current is job:
+                self._current = None
+        if error is None:
+            _say(_("download_done", name=job.title))
+        elif isinstance(error, download.Cancelled):
+            _say(_("download_cancelled"))
+        else:
+            _say(_("download_failed", error=text.download_error(error)))
+        self._notify("finished", job, error)
+
+    def _notify(self, event, job, value):
+        for listener in list(self._listeners):
+            try:
+                listener(event, job, value)
+            except Exception:
+                logger.exception(f"[{EXT_NAME}] A download listener failed")
+
+
+_downloads = Downloads()
+
+
+# ------------------------------------------------------------
+# What the Preferences page uses
+# ------------------------------------------------------------
+
+def _in_thread(work, done, name):
+    """Run work() on a worker thread; done(result, error) on the UI thread."""
+    def runner():
+        result, error = None, None
+        try:
+            result = work()
+        except Exception as e:
+            error = e
+            if not isinstance(e, (audio.MicrophoneError, download.DownloadError, OSError)):
+                logger.exception(f"[{EXT_NAME}] {name} failed")
+        _call_after(done, result, error)
+
+    threading.Thread(target=runner, daemon=True, name=f"hariku-voice-control-{name}").start()
+
+
+class Controller:
+    """The page's way to everything slow; results come back on the UI thread."""
+
+    downloads = _downloads
+
+    @staticmethod
+    def installed():
+        """{item: True/False} for the program and each model (a quick look at the disk)."""
+        root = store.root_dir()
+        models = set(store.installed_models(root))
+        state = {"runtime": store.runtime_installed(root)}
+        state.update({name: name in models for name in store.MODEL_NAMES})
+        return state
+
+    @staticmethod
+    def settings():
+        return get_settings()
+
+    @staticmethod
+    def save_settings(model, listen_on_open_, silence_ms):
+        save_settings(model, listen_on_open_, silence_ms)
+
+    @staticmethod
+    def remove(item):
+        """Delete the program or a model (its server is stopped first: Windows
+        can't delete a file in use)."""
+        _engine.stop_all()
+        root = store.root_dir()
+        try:
+            if item == "runtime":
+                return store.remove_runtime(root)
+            removed = store.remove_model(root, item)
+            store.forget_speed(item)
+            reload_settings()
+            return removed
+        finally:
+            refresh_state()
+
+    @staticmethod
+    def test_microphone(done):
+        """done(result, error) on the UI thread; see test_microphone()."""
+        if _listener.busy():
+            done(None, RuntimeError("busy"))
+            return
+        _in_thread(test_microphone, done, "microphone-test")
+
+
+controller = Controller()
+
+
+def _create_panel(parent):
+    global _panel
+    _panel = voice_control_ui.VoiceControlPanel(parent, controller)
+    return _panel
+
+
+def _apply_panel():
+    if _panel is not None:
+        try:
+            _panel.ApplyChanges()
+        except RuntimeError:
+            pass     # the page is gone
+
+
+# ------------------------------------------------------------
+# Registration
+# ------------------------------------------------------------
+
+def register(bus):
+    global _panel
+    _panel = None
+    if not hasattr(core.commands, "register_listener"):
+        logger.warning(f"[{EXT_NAME}] This Hariku has no command bar; Voice Control needs core 2.7.")
+        return
+    try:
+        store.cleanup_partials(store.root_dir())
+        refresh_state()
+        reload_settings()
+    except Exception:
+        logger.exception(f"[{EXT_NAME}] Reading what is installed failed")
+    _engine.restart()
+    core.commands.register_listener(_listener.start, _listener.stop, _listener.is_available,
+                                    _listener.listen_on_open, name=EXT_NAME)
+    core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
+    logger.info(f"[{EXT_NAME}] Extension loaded.")
+
+
+def _shutdown():
+    _listener.stop(discard=True)
+    _downloads.cancel()
+    _engine.shutdown()
+
+
+def teardown():
+    global _panel
+    _panel = None
+    try:
+        core.commands.unregister_listener(_listener.start)
+    except Exception:
+        pass
+    _shutdown()
+    logger.info(f"[{EXT_NAME}] Extension unloaded.")

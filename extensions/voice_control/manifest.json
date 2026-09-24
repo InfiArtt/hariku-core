@@ -1,0 +1,10 @@
+{
+    "id": "voice_control",
+    "name": "Voice Control",
+    "version": "1.0",
+    "description": "Speak commands into Hariku's command bar (Ctrl+Alt+Space): \"latest earthquake\", \"what time is it\", or \"remind me to take medicine tomorrow at 8\", in Indonesian or English. Speech is recognised on this computer by whisper.cpp and is never saved or sent anywhere. Download the program and a speech model in Preferences, Voice Control; each shows its size before you download it. A headset is recommended.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.7"
+}

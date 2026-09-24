@@ -7,10 +7,11 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Hariku Voice (since core 2.7): three kinds of Hariku's own announcements, the
-startup greeting, the Briefing and evening summary, and fired reminders, can be
-spoken by a voice the user picks instead of their screen reader. Everything
-else stays with the screen reader, and a braille display still gets the text.
+Hariku Voice (since core 2.7): four kinds of Hariku's own announcements, the
+startup greeting, the Briefing and evening summary, fired reminders and the
+answers to commands (the command bar, Ctrl+Alt+Space), can be spoken by a
+voice the user picks instead of their screen reader. Everything else stays
+with the screen reader, and a braille display still gets the text.
 
 Voices come from providers. "windows" (SAPI 5, core/voice_sapi.py) is built in
 and is the fallback; extensions add more with register_provider() (Edge Voices
@@ -22,6 +23,17 @@ to core.speech.speak() as before. With it on, the chosen voice speaks; when
 that fails, the fallback Windows voice, then the screen reader. One worker
 thread speaks one announcement at a time; while it does, it watches
 GetLastInputInfo so a key press can stop it. No keyboard hook is ever used.
+
+The kinds are off until the user turns them on, except "command": the user
+asked for command answers in their Hariku Voice, so it is on by default, but
+only once they have set up Hariku Voice (saved its page); before that the
+screen reader speaks them.
+
+route_speech(kind, seconds) sends core.speech.speak() to Hariku Voice for a
+short while: an action run from the command bar speaks through speak(),
+often seconds later after a download, and that answer should come in the
+same voice. The window ends at the next key press (GetLastInputInfo again),
+after `seconds`, or with stop_routing().
 
 Settings live in Core.json under "hariku_voice" (see DEFAULT_SETTINGS).
 """
@@ -43,14 +55,19 @@ _ = get_translator("core")
 
 logger = logging.getLogger(__name__)
 
-KINDS = ("greeting", "briefing", "reminder")
+KINDS = ("greeting", "briefing", "reminder", "command")
+# Off until the user turns them on; "command" is on by default (see above).
+DEFAULT_KINDS = {"greeting": False, "briefing": False, "reminder": False, "command": True}
+# Kinds that are on by default speak with Hariku Voice only once the user has
+# set it up (the settings exist in Core.json); before that, the screen reader.
+NEEDS_SETUP = frozenset(kind for kind, on in DEFAULT_KINDS.items() if on)
 GENDERS = ("female", "male")        # a voice's "gender", or "" when it has none
 WINDOWS = "windows"                 # the built-in provider, also the fallback
 SETTINGS_KEY = "hariku_voice"       # in Core.json
 RATE_MIN, RATE_MAX = -10, 10        # 0 is the voice's normal rate
 VOLUME_MIN, VOLUME_MAX = 0, 100
 DEFAULT_SETTINGS = {
-    "kinds": {kind: False for kind in KINDS},   # nothing changes until the user opts in
+    "kinds": dict(DEFAULT_KINDS),   # nothing changes until the user sets it up
     "provider": WINDOWS,
     "voice": "",            # "" = the provider's default voice
     "rate": 0,
@@ -65,6 +82,8 @@ KEY_GRACE_SECONDS = 0.5       # input right after speech starts (the key that
 KEY_HELD_GRACE_SECONDS = 3.0  # started it being released) doesn't stop it
 MOUSE_MOVE_SECONDS = 0.3      # input this soon after the pointer moved is the mouse
 PLAYER_POLL_SECONDS = 0.05
+ROUTE_SECONDS = 20.0          # route_speech(): how long speech goes to Hariku Voice
+ROUTE_MAX_SECONDS = 60.0
 
 _PROVIDER_ID_RE = re.compile(r"[a-z0-9_]{1,32}\Z")
 
@@ -310,7 +329,7 @@ def normalize_settings(raw):
     voice = raw.get("voice")
     fallback = raw.get("fallback")
     return {
-        "kinds": {kind: bool(kinds.get(kind, False)) for kind in KINDS},
+        "kinds": {kind: bool(kinds.get(kind, DEFAULT_KINDS[kind])) for kind in KINDS},
         "provider": provider,
         "voice": voice if isinstance(voice, str) else "",
         "rate": _int_in(raw.get("rate"), RATE_MIN, RATE_MAX, 0),
@@ -337,9 +356,18 @@ def save_settings(settings):
     return core.api.save_data("Core", config)
 
 
+def is_configured(config=None):
+    """Whether the user has set up Hariku Voice (saved its page)."""
+    config = _core_config() if config is None else config
+    return isinstance(config.get(SETTINGS_KEY), dict)
+
+
 def is_enabled(kind):
     """Whether Hariku Voice speaks this kind of announcement."""
-    return get_settings()["kinds"].get(kind, False)
+    config = _core_config()
+    if kind in NEEDS_SETUP and not is_configured(config):
+        return False
+    return normalize_settings(config.get(SETTINGS_KEY))["kinds"].get(kind, False)
 
 
 def cache_dir(provider_id):
@@ -695,35 +723,55 @@ def _voice_chain(settings):
     return chain
 
 
+def _voiced(kind, config):
+    """(settings, voice chain) when Hariku Voice speaks this kind now, else
+    None (the kind is off, not set up yet, or no voice is available)."""
+    settings = normalize_settings(config.get(SETTINGS_KEY))
+    if not settings["kinds"][kind]:
+        return None
+    if kind in NEEDS_SETUP and not is_configured(config):
+        return None
+    chain = _voice_chain(settings)
+    if not chain:
+        _log_once(("reader", settings["provider"]),
+                  "Hariku Voice: no voice is available; the screen reader speaks instead.")
+        return None
+    return settings, chain
+
+
+def _clean_text(text):
+    return text.strip() if isinstance(text, str) else str(text or "").strip()
+
+
 def announce(text, kind, interrupt=True):
-    """Say one of Hariku's own announcements. `kind` is "greeting", "briefing"
-    or "reminder". With Hariku Voice off for that kind this is
-    core.speech.speak(text, interrupt). With it on, the chosen voice speaks and
-    the braille display gets the text; on failure the fallback Windows voice,
-    then the screen reader. `interrupt` stops a Hariku voice that is speaking,
-    otherwise this one waits its turn. These are the user's own content, so
-    quiet hours don't apply.
+    """Say one of Hariku's own announcements. `kind` is "greeting",
+    "briefing", "reminder" or "command". With Hariku Voice off for that kind
+    this is core.speech.speak(text, interrupt). With it on, the chosen voice
+    speaks and the braille display gets the text; on failure the fallback
+    Windows voice, then the screen reader. `interrupt` stops a Hariku voice
+    that is speaking, otherwise this one waits its turn. These are the user's
+    own content, so quiet hours don't apply.
 
     Returns True when a Hariku voice speaks it (the screen reader is not given
     the text), False when the screen reader speaks it."""
     if kind not in KINDS:
         raise ValueError(f"unknown announcement kind: {kind!r}")
-    text = text.strip() if isinstance(text, str) else str(text or "").strip()
+    text = _clean_text(text)
     if not text:
         return False
     import core.speech
     config = _core_config()
-    settings = normalize_settings(config.get(SETTINGS_KEY))
-    if not settings["kinds"][kind]:
+    voiced = _voiced(kind, config)
+    if voiced is None:
         core.speech.speak(text, interrupt=interrupt)
         return False
-    chain = _voice_chain(settings)
-    if not chain:
-        _log_once(("reader", settings["provider"]),
-                  "Hariku Voice: no voice is available; the screen reader speaks instead.")
-        core.speech.speak(text, interrupt=interrupt)
-        return False
+    return _speak_voiced(text, kind, interrupt, config, *voiced)
 
+
+def _speak_voiced(text, kind, interrupt, config, settings, chain):
+    """on_before_speak (once, with the kind and voice), braille, then the
+    voice. Returns True: the screen reader is not given the text."""
+    import core.speech
     payload = {"text": text, "interrupt": interrupt, "cancel": False, "kind": kind,
                "voice": chain[0][0]}
     bus.emit("on_before_speak", payload)
@@ -738,6 +786,108 @@ def announce(text, kind, interrupt=True):
                reader_fallback=True, interrupt=interrupt, kind=kind)
     _announcer.submit(job, interrupt and config.get("interrupt_speech", True))
     return True
+
+
+# ------------------------------------------------------------
+# Routing screen reader speech to Hariku Voice for a while
+# ------------------------------------------------------------
+
+class _Route:
+    def __init__(self, kind, seconds):
+        self.kind = kind
+        self.deadline = time.monotonic() + seconds
+        self.watch = _KeyWatch()
+
+
+_route_lock = threading.Lock()
+_route = None
+_route_thread = None
+
+
+def route_speech(kind, seconds=ROUTE_SECONDS):
+    """From now until the next key press, or `seconds` at most (20 by
+    default, 60 at most), core.speech.speak() speaks with Hariku Voice as if
+    it were an announcement of `kind`, when that kind is on and a voice is
+    available; otherwise the screen reader speaks as usual. Braille still gets
+    every text. The command bar calls route_speech("command") right before it
+    runs an action, whose answer often comes seconds later (after a
+    download). A new call replaces the previous window. No keyboard hook:
+    key presses are noticed with GetLastInputInfo, as for "Stop when I press
+    a key", and the key that ran the command doesn't count."""
+    global _route, _route_thread
+    if kind not in KINDS:
+        raise ValueError(f"unknown announcement kind: {kind!r}")
+    try:
+        seconds = max(0.0, min(float(seconds), ROUTE_MAX_SECONDS))
+    except (TypeError, ValueError):
+        seconds = ROUTE_SECONDS
+    route = _Route(kind, seconds)
+    with _route_lock:
+        _route = route
+        if _route_thread is None:
+            _route_thread = threading.Thread(target=_watch_routes, daemon=True,
+                                             name="hariku-voice-route")
+            _route_thread.start()
+    return True
+
+
+def stop_routing():
+    """End the window route_speech() opened, if any."""
+    global _route
+    with _route_lock:
+        _route = None
+
+
+def _end_route(route):
+    global _route
+    with _route_lock:
+        if _route is route:
+            _route = None
+
+
+def routed_kind():
+    """The kind speech is routed to Hariku Voice as right now, or None."""
+    with _route_lock:
+        route = _route
+    if route is None:
+        return None
+    if time.monotonic() >= route.deadline:
+        _end_route(route)
+        return None
+    return route.kind
+
+
+def _watch_routes():
+    """Ends the routing window at a key press or when its time is up."""
+    global _route_thread
+    while True:
+        with _route_lock:
+            route = _route
+            if route is None:
+                _route_thread = None
+                return
+        if time.monotonic() >= route.deadline or route.watch.key_pressed():
+            _end_route(route)
+        else:
+            time.sleep(POLL_SECONDS)
+
+
+def speak_routed(text, interrupt=False):
+    """core.speech.speak() asks this first: while route_speech() is in effect
+    and the voice speaks that kind, say `text` with it (on_before_speak fires
+    here, with "kind" and "voice") and return True. False: the screen reader
+    should speak it as usual."""
+    kind = routed_kind()
+    if kind is None:
+        return False
+    text = _clean_text(text)
+    if not text:
+        return False
+    config = _core_config()
+    voiced = _voiced(kind, config)
+    if voiced is None:
+        return False
+    return _speak_voiced(text, kind, bool(interrupt), config, *voiced)
 
 
 def preview(text, provider_id, voice_id="", rate=0, volume=100, stop_on_key=True,

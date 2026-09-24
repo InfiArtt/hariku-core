@@ -143,6 +143,11 @@ def apply_global_hotkeys(window):
                 success = window.RegisterHotKey(hid, modifiers, kc)
                 if success:
                     _registered_hotkeys[hid] = act_id
+                else:
+                    # Another program (or Windows) already has this key; the
+                    # user can move the action in Input Gestures.
+                    logger.warning(f"Global hotkey {format_key_name(kc, ctrl, shift, alt, win)} "
+                                   f"for {act_id} is taken by another program.")
             except Exception as e:
                 logger.error(f"Exception registering global hotkey {act_id}: {e}")
 

@@ -116,6 +116,7 @@ def voice(tmp_data_dir, tmp_path, monkeypatch):
     # The built-in Windows provider is replaced by a fake for every test.
     voice.windows = FakeProvider("windows").register(voice)
     yield voice
+    voice.stop_routing()
     voice.stop()
     assert wait_until(lambda: not voice.is_speaking()), "the announcer did not stop"
     with voice._providers_lock:
@@ -265,9 +266,13 @@ class TestRegistry:
 class TestSettings:
     def test_defaults_change_nothing(self, voice):
         settings = voice.get_settings()
-        assert settings == {"kinds": {"greeting": False, "briefing": False, "reminder": False},
+        # Answers to commands are on by default (the user asked for them in
+        # their Hariku Voice), but only once Hariku Voice is set up.
+        assert settings == {"kinds": {"greeting": False, "briefing": False, "reminder": False,
+                                      "command": True},
                             "provider": "windows", "voice": "", "rate": 0, "volume": 100,
                             "fallback": "", "stop_on_key": True}
+        assert not voice.is_configured()
         assert not any(voice.is_enabled(kind) for kind in voice.KINDS)
 
     def test_round_trip_keeps_other_settings(self, voice):
@@ -279,7 +284,7 @@ class TestSettings:
         stored = core.api.load_data("Core")
         assert stored["user_nickname"] == "Bro" and stored["volume"] == 40
         assert stored["hariku_voice"] == {
-            "kinds": {"greeting": False, "briefing": False, "reminder": True},
+            "kinds": {"greeting": False, "briefing": False, "reminder": True, "command": True},
             "provider": "edge", "voice": "id-ID-GadisNeural", "rate": 3, "volume": 70,
             "fallback": "HKLM\\voice", "stop_on_key": False}
         assert voice.is_enabled("reminder") and not voice.is_enabled("greeting")
@@ -290,7 +295,7 @@ class TestSettings:
         ({"provider": "Bad Id"}, "provider", "windows"), ({"voice": 5}, "voice", ""),
         ({"fallback": ["x"]}, "fallback", ""), ({"kinds": "all"}, "kinds",
                                                 {"greeting": False, "briefing": False,
-                                                 "reminder": False}),
+                                                 "reminder": False, "command": True}),
     ])
     def test_hand_edited_values(self, voice, raw, key, expected):
         assert voice.normalize_settings(raw)[key] == expected
@@ -316,7 +321,7 @@ class TestAnnounce:
         finally:
             bus.unsubscribe("on_before_speak", handler)
         assert voice.said["speak"] == [("greeting text", False), ("briefing text", True),
-                                       ("reminder text", True)]
+                                       ("reminder text", True), ("command text", True)]
         assert voice.said["braille"] == [] and voice.said["announced"] == []
         assert voice.windows.calls == [] and edge.calls == []
         assert events == []   # speech.speak (faked here) emits it itself
@@ -1435,3 +1440,194 @@ class TestVoicePicker:
         assert panel.language_label("") == PICKER_TEXT[ui]["unknown"]
         assert [panel.gender_label(g) for g in ("", "female", "male")] == [
             PICKER_TEXT[ui]["all"], PICKER_TEXT[ui]["female"], PICKER_TEXT[ui]["male"]]
+
+
+# ------------------------------------------------------------
+# Answers to commands: the "command" kind and routing speech for a while
+# ------------------------------------------------------------
+
+import core.speech as _speech_module     # noqa: E402
+
+REAL_SPEAK = _speech_module.speak       # before any fixture replaces it
+
+
+class TestCommandAnswers:
+    def test_on_by_default_but_only_once_set_up(self, voice):
+        assert voice.get_settings()["kinds"]["command"] is True
+        assert voice.is_enabled("command") is False            # nothing saved yet
+        assert voice.announce("Maksudnya: cuaca?", "command") is False
+        assert voice.said["speak"] == [("Maksudnya: cuaca?", True)]
+        enable(voice)                                          # the page was saved
+        assert voice.is_configured() and voice.is_enabled("command")
+        assert voice.announce("Maksudnya: cuaca?", "command") is True
+        assert wait_until(lambda: voice.windows.texts() == ["Maksudnya: cuaca?"])
+        assert voice.said["braille"] == [("Maksudnya: cuaca?", True)]
+
+    def test_the_user_can_turn_it_off(self, voice):
+        voice.save_settings({"kinds": {"command": False}})
+        assert not voice.is_enabled("command")
+        assert voice.announce("Oke, batal.", "command") is False
+        assert voice.windows.calls == []
+
+    def test_an_old_saved_setting_gets_it_on(self, voice):
+        import core.api
+        core.api.save_data("Core", {"hariku_voice": {"kinds": {"reminder": True},
+                                                     "provider": "windows"}})
+        assert voice.is_enabled("command") and voice.is_enabled("reminder")
+
+
+class TestRouting:
+    def test_routed_speech_uses_the_voice(self, voice):
+        from core.events import bus
+        enable(voice, provider="edge", voice="id-ID-GadisNeural")
+        edge = FakeProvider("edge").register(voice)
+        seen = []
+        handler = lambda payload: seen.append(dict(payload))   # noqa: E731
+        bus.subscribe("on_before_speak", handler)
+        try:
+            assert voice.route_speech("command") is True
+            assert voice.routed_kind() == "command"
+            assert voice.speak_routed("  Gempa M5,2 di Maluku.  ", interrupt=True) is True
+        finally:
+            bus.unsubscribe("on_before_speak", handler)
+        assert wait_until(lambda: edge.texts() == ["Gempa M5,2 di Maluku."])
+        assert edge.calls[0][1] == "id-ID-GadisNeural"
+        assert voice.said["braille"] == [("Gempa M5,2 di Maluku.", True)]
+        assert voice.said["speak"] == []
+        assert [(s["kind"], s["voice"]) for s in seen] == [("command", "edge")]
+
+    def test_without_a_route_nothing_changes(self, voice):
+        enable(voice)
+        voice.stop_routing()
+        assert voice.routed_kind() is None
+        assert voice.speak_routed("Hello") is False
+        assert voice.windows.calls == []
+
+    def test_not_set_up_or_turned_off_stays_with_the_reader(self, voice):
+        voice.route_speech("command")
+        assert voice.speak_routed("Hello") is False               # not set up
+        voice.save_settings({"kinds": {"command": False}})
+        assert voice.speak_routed("Hello") is False               # turned off
+        assert voice.windows.calls == []
+
+    def test_no_voice_available_stays_with_the_reader(self, voice):
+        enable(voice)
+        voice.windows.available = False
+        voice.route_speech("command")
+        assert voice.speak_routed("Hello") is False
+
+    def test_a_key_press_ends_it(self, voice, monkeypatch):
+        monkeypatch.setattr(voice, "KEY_GRACE_SECONDS", 0.0)
+        enable(voice)
+        voice.route_speech("command")
+        voice.inputs["tick"] += 5                  # the user pressed a key
+        assert wait_until(lambda: voice.routed_kind() is None)
+        assert voice.speak_routed("Too late") is False
+
+    def test_the_key_that_ran_the_command_does_not_end_it(self, voice, monkeypatch):
+        monkeypatch.setattr(voice, "KEY_GRACE_SECONDS", 0.3)
+        enable(voice)
+        voice.route_speech("command")
+        voice.inputs["tick"] += 1                  # Enter being released
+        time.sleep(0.4)
+        assert voice.routed_kind() == "command"
+        voice.inputs["tick"] += 1                  # then a real key press
+        assert wait_until(lambda: voice.routed_kind() is None)
+
+    def test_moving_the_mouse_does_not_end_it(self, voice, monkeypatch):
+        monkeypatch.setattr(voice, "KEY_GRACE_SECONDS", 0.0)
+        enable(voice)
+        voice.route_speech("command")
+        voice.inputs["cursor"] = (500, 400)
+        voice.inputs["tick"] += 1
+        time.sleep(0.1)
+        assert voice.routed_kind() == "command"
+
+    def test_it_ends_after_its_time(self, voice):
+        enable(voice)
+        voice.route_speech("command", seconds=0.05)
+        assert voice.routed_kind() == "command"
+        assert wait_until(lambda: voice.routed_kind() is None, timeout=1.0)
+
+    def test_a_new_command_starts_a_new_window(self, voice):
+        voice.route_speech("command", seconds=0.05)
+        voice.route_speech("command", seconds=5)
+        time.sleep(0.1)
+        assert voice.routed_kind() == "command"
+
+    def test_limits(self, voice):
+        with pytest.raises(ValueError):
+            voice.route_speech("weather")
+        started = time.monotonic()
+        voice.route_speech("command", seconds=9999)
+        assert voice._route.deadline <= started + voice.ROUTE_MAX_SECONDS + 1
+        voice.route_speech("command", seconds="soon")
+        assert voice._route.deadline <= time.monotonic() + voice.ROUTE_SECONDS + 1
+        voice.stop_routing()
+
+    def test_the_real_speak_goes_to_the_voice_while_routed(self, voice):
+        from cytolk import tolk
+        tolk.reset_mock()
+        enable(voice)
+        voice.route_speech("command")
+        REAL_SPEAK("Hujan ringan, 25 derajat.", interrupt=True)
+        assert wait_until(lambda: voice.windows.texts() == ["Hujan ringan, 25 derajat."])
+        assert voice.said["braille"] == [("Hujan ringan, 25 derajat.", True)]
+        time.sleep(0.05)
+        assert not tolk.output.called and not tolk.speak.called
+        voice.stop_routing()
+
+
+class TestSpeechRouting:
+    @pytest.fixture
+    def tolk(self, tmp_data_dir, monkeypatch):
+        import core.speech
+        from cytolk import tolk
+        time.sleep(0.05)
+        tolk.reset_mock()
+        monkeypatch.setattr(core.speech, "TOLK_LOADED", True)
+        return tolk
+
+    def test_routed_text_skips_the_screen_reader_and_the_event(self, tolk, monkeypatch):
+        import core.speech
+        import core.voice
+        from core.events import bus
+        taken = []
+        monkeypatch.setattr(core.voice, "speak_routed",
+                            lambda text, interrupt=False: taken.append(text) or True)
+        events = []
+        handler = lambda payload: events.append(payload)   # noqa: E731
+        bus.subscribe("on_before_speak", handler)
+        try:
+            core.speech.speak("Gempa terbaru", interrupt=True)
+        finally:
+            bus.unsubscribe("on_before_speak", handler)
+        time.sleep(0.05)
+        assert taken == ["Gempa terbaru"] and events == []
+        assert not tolk.output.called
+
+    def test_not_routed_is_as_before(self, tolk, monkeypatch):
+        import core.speech
+        import core.voice
+        monkeypatch.setattr(core.voice, "speak_routed", lambda text, interrupt=False: False)
+        core.speech.speak("Hello", interrupt=True)
+        assert wait_until(lambda: tolk.output.called)
+        tolk.output.assert_called_once_with("Hello", True)
+
+    def test_a_failing_voice_still_reaches_the_screen_reader(self, tolk, monkeypatch):
+        import core.speech
+        import core.voice
+
+        def broken(text, interrupt=False):
+            raise RuntimeError("oops")
+
+        monkeypatch.setattr(core.voice, "speak_routed", broken)
+        core.speech.speak("Hello")
+        assert wait_until(lambda: tolk.output.called)
+
+    def test_silence(self, tolk, monkeypatch):
+        import core.speech
+        assert core.speech.silence() is True
+        tolk.silence.assert_called_once_with()
+        monkeypatch.setattr(core.speech, "TOLK_LOADED", False)
+        assert core.speech.silence() is False

@@ -30,6 +30,8 @@
         "snd_hide": "jendela disembunyikan",
         "snd_history": "riwayat",
         "snd_info": "informasi",
+        "snd_listen": "mulai mendengarkan (bilah perintah)",
+        "snd_listen_end": "selesai mendengarkan (bilah perintah)",
         "snd_move": "berpindah hari",
         "snd_openDiary": "membuka buku harian",
         "snd_penClick": "hari yang punya pengingat",

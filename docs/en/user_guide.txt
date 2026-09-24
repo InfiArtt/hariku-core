@@ -462,6 +462,29 @@ hotkey:
 This is especially useful if Hariku is minimised to the tray and you want to
 bring it back without pressing alt tab.
 
+COMMAND BAR
+------------
+  Ctrl + Alt + Space  (default, works system-wide)
+
+Opens the command bar, a small window called "Hariku", from anywhere, even
+when Hariku is hidden in the tray. Type a command, such as "latest
+earthquake", "what time is it" or "evening summary", or a reminder, such as
+"remind me to take medicine tomorrow at 8", and press Enter:
+
+  - A command runs at once. The bar closes first, so you are back where you
+    were, and a window the command opens opens as usual.
+  - A reminder is read back first ("... Save?"). Press Enter again (or say
+    "yes") to save it, or Escape to cancel.
+  - When Hariku isn't sure, it asks "Did you mean ...?". Enter runs it,
+    Escape doesn't.
+
+Every action of Hariku and of your extensions can be run this way, in English
+or Indonesian. Tab reaches the "Last result" field, which shows what Hariku
+last said. Escape closes the bar. The answers are spoken with your Hariku
+Voice when you have set one up (Preferences, Hariku Voice, "Read answers to
+commands"). With the Voice Control extension, press Ctrl + Alt + Space again
+while the bar is open, and speak after the tone instead of typing.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on

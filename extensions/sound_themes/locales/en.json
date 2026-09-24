@@ -30,6 +30,8 @@
         "snd_hide": "window hidden",
         "snd_history": "history",
         "snd_info": "information",
+        "snd_listen": "listening starts (command bar)",
+        "snd_listen_end": "listening ends (command bar)",
         "snd_move": "moving between days",
         "snd_openDiary": "opening the diary",
         "snd_penClick": "a day with reminders",

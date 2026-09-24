@@ -223,15 +223,16 @@ def _theme_sound_path(sound_name):
     return candidate
 
 
+def sound_path(sound_name):
+    """The file play_internal_sound(sound_name) plays (core 2.7): the active
+    theme's copy when it has one, otherwise Hariku's own. For reading a
+    sound's length, say (the command bar's listening tone)."""
+    return _theme_sound_path(sound_name) or os.path.join(get_builtin_sounds_dir(), sound_name)
+
+
 def play_internal_sound(sound_name):
     """
     Play a sound file from the hariku2/sounds/ folder, or the active sound
     theme's copy of it when the theme has one.
     """
-    theme_path = _theme_sound_path(sound_name)
-    if theme_path:
-        return play_sound(theme_path)
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sounds_dir = os.path.join(base_dir, "sounds")
-    filepath = os.path.join(sounds_dir, sound_name)
-    return play_sound(filepath)
+    return play_sound(sound_path(sound_name))

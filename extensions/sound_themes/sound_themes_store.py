@@ -54,6 +54,8 @@ SOUNDS = (
     ("hide.wav", "snd_hide"),
     ("history.wav", "snd_history"),
     ("info.wav", "snd_info"),
+    ("listen.wav", "snd_listen"),
+    ("listen_end.wav", "snd_listen_end"),
     ("move.wav", "snd_move"),
     ("openDiary.wav", "snd_openDiary"),
     ("penClick.wav", "snd_penClick"),
