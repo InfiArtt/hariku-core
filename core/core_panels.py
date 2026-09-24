@@ -345,6 +345,29 @@ class ProfileSettingsPanel(wx.Panel):
                                      lambda: wx.TextCtrl(self, value=profile["nickname"]))
         self.txt_nickname.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
 
+        # Birthday: day and month together, the year optional.
+        day, month, year = profile["birthday"] or (0, 0, None)
+        not_set = _("profile_not_set")
+        hbox_bday = wx.BoxSizer(wx.HORIZONTAL)
+        self.choice_day = self._labeled_row(
+            hbox_bday, _("profile_lbl_bday_day"),
+            wx.Choice(self, choices=[not_set] + [str(d) for d in range(1, 32)]))
+        self.choice_day.SetSelection(day)
+        self.choice_month = self._labeled_row(
+            hbox_bday, _("profile_lbl_bday_month"),
+            wx.Choice(self, choices=[not_set] + [_(f"month_{m}") for m in range(1, 13)]))
+        self.choice_month.SetSelection(month)
+        self.txt_year = self._labeled_row(
+            hbox_bday, _("profile_lbl_bday_year"),
+            wx.TextCtrl(self, value=str(year) if year else "", size=(70, -1)))
+        self.txt_year.SetMaxLength(4)
+        vbox.Add(hbox_bday, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        self.chk_greet = wx.CheckBox(self, label=_("profile_chk_greet"))
+        self.chk_greet.SetName(_plain_label(_("profile_chk_greet")))
+        self.chk_greet.SetValue(profile["greet_on_startup"])
+        vbox.Add(self.chk_greet, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
         self.list_fields = _labeled(
             self, vbox, _("profile_lbl_fields"),
             lambda: wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN),
@@ -367,6 +390,17 @@ class ProfileSettingsPanel(wx.Panel):
         self.list_fields.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_edit)
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
         self._refresh(0)
+
+    def _labeled_row(self, sizer, label, ctrl):
+        """A label, then `ctrl` beside it with the same accessible name."""
+        sizer.Add(wx.StaticText(self, label=label), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        ctrl.SetName(_plain_label(label))
+        sizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 15)
+        return ctrl
+
+    def _birthday_input(self):
+        return (self.choice_day.GetSelection(), self.choice_month.GetSelection(),
+                self.txt_year.GetValue())
 
     def _refresh(self, select=None):
         self.list_fields.DeleteAllItems()
@@ -437,12 +471,24 @@ class ProfileSettingsPanel(wx.Panel):
         key = self._fields.pop(index)[0]
         self._changed(index, _("profile_removed", token=key))
 
+    def ValidateChanges(self):
+        """None, or (message, control) for input Preferences must not save."""
+        try:
+            core.personal.check_birthday(*self._birthday_input())
+        except core.personal.ProfileError as e:
+            ctrl = {"birthday_month": self.choice_month,
+                    "birthday_year": self.txt_year}.get(e.field, self.choice_day)
+            return str(e), ctrl
+        return None
+
     def ApplyChanges(self):
         try:
             core.personal.set_profile(self.txt_name.GetValue(), self.txt_nickname.GetValue(),
-                                      self._fields)
+                                      self._fields,
+                                      birthday=core.personal.check_birthday(*self._birthday_input()))
         except core.personal.ProfileError as e:
             wx.MessageBox(str(e), _("error"), wx.OK | wx.ICON_ERROR, self)
+        core.personal.set_startup_greeting(self.chk_greet.GetValue())
 
 
 def create_profile_panel(parent):
@@ -455,6 +501,72 @@ def apply_profile_settings():
     if _profile_panel_instance:
         try:
             _profile_panel_instance.ApplyChanges()
+        except RuntimeError:
+            pass  # panel already destroyed
+
+# ---------------------------------------------------------------------------
+# Quiet Hours Panel: when extensions keep their alerts to themselves
+# ---------------------------------------------------------------------------
+_quiet_panel_instance = None
+QUIET_TIMES = ["%02d:%02d" % divmod(minutes, 60) for minutes in range(0, 24 * 60, 30)]
+
+
+class QuietHoursPanel(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        quiet = core.personal.get_quiet_hours()
+        # A stored time between the half hours is offered too.
+        self._times = sorted(set(QUIET_TIMES) | {quiet["start"], quiet["end"]})
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # Right before the checkbox, so screen readers say it with it.
+        lbl_help = wx.StaticText(self, label=_("quiet_help"))
+        lbl_help.Wrap(500)
+        vbox.Add(lbl_help, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        self.chk_enabled = wx.CheckBox(self, label=_("quiet_chk"))
+        self.chk_enabled.SetName(_plain_label(_("quiet_chk")))
+        self.chk_enabled.SetValue(quiet["enabled"])
+        vbox.Add(self.chk_enabled, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        self.choice_start = _labeled(self, vbox, _("quiet_lbl_start"),
+                                     lambda: wx.Choice(self, choices=self._times))
+        self.choice_start.SetSelection(self._times.index(quiet["start"]))
+        self.choice_end = _labeled(self, vbox, _("quiet_lbl_end"),
+                                   lambda: wx.Choice(self, choices=self._times))
+        self.choice_end.SetSelection(self._times.index(quiet["end"]))
+        self.SetSizer(vbox)
+
+    def _values(self):
+        return (self.chk_enabled.GetValue(),
+                self._times[max(0, self.choice_start.GetSelection())],
+                self._times[max(0, self.choice_end.GetSelection())])
+
+    def ValidateChanges(self):
+        """None, or (message, control) for input Preferences must not save."""
+        try:
+            core.personal.check_quiet_hours(*self._values())
+        except core.personal.ProfileError as e:
+            return str(e), self.choice_start if e.field == "quiet_start" else self.choice_end
+        return None
+
+    def ApplyChanges(self):
+        try:
+            core.personal.set_quiet_hours(*self._values())
+        except core.personal.ProfileError as e:
+            wx.MessageBox(str(e), _("error"), wx.OK | wx.ICON_ERROR, self)
+
+
+def create_quiet_panel(parent):
+    global _quiet_panel_instance
+    _quiet_panel_instance = QuietHoursPanel(parent)
+    return _quiet_panel_instance
+
+
+def apply_quiet_settings():
+    if _quiet_panel_instance:
+        try:
+            _quiet_panel_instance.ApplyChanges()
         except RuntimeError:
             pass  # panel already destroyed
 
@@ -676,6 +788,7 @@ def register():
     import core.preferences
     core.preferences.register_panel("General",             "", create_panel,             apply_general_settings)
     core.preferences.register_panel(_("prefs_tab_profile"), "", create_profile_panel,    apply_profile_settings)
+    core.preferences.register_panel(_("prefs_tab_quiet"),  "", create_quiet_panel,      apply_quiet_settings)
     core.preferences.register_panel("Extensions",          "", create_ext_settings_panel, apply_ext_settings)
     core.preferences.register_panel("Advanced",            "", create_adv_panel,          apply_adv_settings)
 

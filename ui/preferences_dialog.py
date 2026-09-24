@@ -108,7 +108,30 @@ class PreferencesDialog(wx.Dialog):
         else:
             event.Skip()
             
+    def _validate(self):
+        """A page with ValidateChanges() returning (message, control) keeps the
+        dialog open: its page is shown, the message said, and focus put on the
+        control to fix. Nothing is saved."""
+        for index, p in enumerate(self.panels):
+            check = getattr(p["panel"], "ValidateChanges", None)
+            if check is None:
+                continue
+            try:
+                problem = check()
+            except Exception as e:
+                logger.error(f"Error validating preferences: {e}")
+                continue
+            if problem:
+                message, ctrl = problem
+                self.treebook.SetSelection(index)
+                wx.MessageBox(message, _("error"), wx.OK | wx.ICON_ERROR, self)
+                ctrl.SetFocus()
+                return False
+        return True
+
     def OnApply(self, event):
+        if not self._validate():
+            return False
         for p in self.panels:
             if p["apply"]:
                 try:
@@ -120,9 +143,11 @@ class PreferencesDialog(wx.Dialog):
         self.Layout()
         self.is_dirty = False
         # Do not close window
-        
+        return True
+
     def OnOK(self, event):
-        self.OnApply(None)
+        if self.OnApply(None) is False:
+            return   # a page refused its input; the dialog stays open on it
         self.EndModal(wx.ID_OK)
         
     def OnCancel(self, event):

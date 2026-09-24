@@ -7,11 +7,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Tests for core.personal (the Profile: name, nickname, own placeholders and
-# %token% expansion) and for reminders being announced with it filled in.
+# Tests for core.personal (the Profile: name, nickname, birthday, own
+# placeholders and %token% expansion; the greeting; quiet hours) and for
+# reminders being announced with it filled in.
 # Every test runs on a temporary data folder, never the user's real Core.json.
 
 import ast
+import datetime
 import json
 import os
 import re
@@ -99,8 +101,9 @@ class TestNameAndNickname:
 
     def test_get_profile_keeps_the_nickname_as_typed(self, personal):
         _save_core({"user_name": "Rafli", "user_fields": [{"key": "kantor", "value": "Jl. A"}]})
-        assert personal.get_profile() == {"name": "Rafli", "nickname": "",
-                                          "fields": [("kantor", "Jl. A")]}
+        assert personal.get_profile() == {"name": "Rafli", "nickname": "", "birthday": None,
+                                          "fields": [("kantor", "Jl. A")],
+                                          "greet_on_startup": True}
 
 
 # ------------------------------------------------------------
@@ -224,8 +227,8 @@ class TestValidation:
         assert personal.check_key(raw) == stored
 
     @pytest.mark.parametrize("key", sorted(
-        ["myname", "mynickname", "time", "date", "battery", "app", "clipboard",
-         "ssid", "ram", "cpu", "events", "var", "MyName", "%TIME%"]))
+        ["myname", "mynickname", "mybirthday", "myage", "time", "date", "battery", "app",
+         "clipboard", "ssid", "ram", "cpu", "events", "var", "MyName", "%TIME%", "MyAge"]))
     def test_reserved_keys(self, personal, key):
         with pytest.raises(personal.ProfileError) as e:
             personal.check_key(key)
@@ -345,7 +348,10 @@ def _literal_keys(path, prefixes):
 def test_profile_messages_exist_in_both_languages():
     panels = os.path.join(ROOT, "core", "core_panels.py")
     personal_py = os.path.join(ROOT, "core", "personal.py")
-    used = _literal_keys(panels, ("profile_", "prefs_tab_profile", "prefs_btn_", "error"))
+    used = _literal_keys(panels, ("profile_", "prefs_tab_", "prefs_btn_", "error", "quiet_"))
+    used |= _literal_keys(personal_py, ("greet_", "month_", "profile_"))
+    used |= {f"{key}_name" for key in ("greet_morning", "greet_midday", "greet_afternoon",
+                                       "greet_evening")}
     with open(personal_py, encoding="utf-8") as f:
         source = f.read()
     codes = set(re.findall(r'ProfileError\("(\w+)"', source))
@@ -495,3 +501,309 @@ def test_routines_open_actions_fill_in_windows_variables(personal, monkeypatch):
     _save_core({"user_name": "Rafli"})
     routines_actions._a_open_file({"path": r"%HARIKUTESTDIR%\%myname%.txt"}, {}, {})
     assert opened == [r"C:\Data\.txt", r"C:\Data\Rafli.txt"]
+
+
+# ------------------------------------------------------------
+# Birthday
+# ------------------------------------------------------------
+
+class TestBirthday:
+    def test_check_birthday(self, personal):
+        this_year = datetime.date.today().year
+        assert personal.check_birthday(None, None) is None
+        assert personal.check_birthday(0, 0, "") is None
+        assert personal.check_birthday(24, 9) == (24, 9, None)
+        assert personal.check_birthday("24", "9", " 1999 ") == (24, 9, 1999)
+        assert personal.check_birthday(29, 2) == (29, 2, None)       # no year: fine
+        assert personal.check_birthday(29, 2, 2000) == (29, 2, 2000)
+        assert personal.check_birthday(1, 1, this_year) == (1, 1, this_year)
+
+    @pytest.mark.parametrize("day, month, year, code, field", [
+        (24, 0, None, "birthday_incomplete", "birthday_month"),
+        (0, 9, None, "birthday_incomplete", "birthday_day"),
+        (31, 4, None, "birthday_invalid", "birthday_day"),
+        (32, 1, None, "birthday_invalid", "birthday_day"),
+        (1, 13, None, "birthday_invalid", "birthday_day"),
+        (29, 2, 1999, "birthday_invalid", "birthday_day"),
+        (24, 9, "abc", "birthday_year", "birthday_year"),
+        (24, 9, 1899, "birthday_year", "birthday_year"),
+        (24, 9, 9999, "birthday_year", "birthday_year"),
+    ])
+    def test_bad_birthdays(self, personal, day, month, year, code, field):
+        with pytest.raises(personal.ProfileError) as e:
+            personal.check_birthday(day, month, year)
+        assert e.value.code == code and e.value.field == field
+
+    def test_messages(self, personal, lang):
+        with pytest.raises(personal.ProfileError) as e:
+            personal.check_birthday(24, None)
+        assert str(e.value) == "Choose both the day and the month of your birthday, or neither."
+        lang("id")
+        with pytest.raises(personal.ProfileError) as e:
+            personal.check_birthday(24, 9, "1800")
+        assert str(e.value).startswith("Tahun kelahiran harus berupa angka dari 1900 sampai ")
+
+    def test_set_get_and_clear(self, personal):
+        _save_core({"user_name": "Rafli", "date_format": "%d/%m/%Y"})
+        assert personal.get_birthday() is None
+        assert personal.set_birthday(24, 9, 1999) is True
+        assert personal.get_birthday() == (24, 9, 1999)
+        assert _load_core()["user_birthday"] == {"day": 24, "month": 9, "year": 1999}
+        assert _load_core()["date_format"] == "%d/%m/%Y"
+        personal.set_birthday(24, 9)
+        assert personal.get_birthday() == (24, 9, None)
+        personal.set_birthday(None, None)
+        assert personal.get_birthday() is None and "user_birthday" not in _load_core()
+
+    def test_broken_stored_birthdays_are_ignored(self, personal):
+        for raw in ("24-09", {"day": 31, "month": 2}, {"day": 24}, {"day": "x", "month": 9},
+                    {"day": 24, "month": 9, "year": "soon"}):
+            _save_core({"user_birthday": raw})
+            assert personal.get_birthday() is None, raw
+
+    def test_set_profile_keeps_or_changes_the_birthday(self, personal):
+        personal.set_birthday(24, 9, 1999)
+        personal.set_profile("Rafli", "Bro", [])                  # not given: kept
+        assert personal.get_birthday() == (24, 9, 1999)
+        personal.set_profile("Rafli", "Bro", [], birthday=(1, 1, None))
+        assert personal.get_birthday() == (1, 1, None)
+        personal.set_profile("Rafli", "Bro", [], birthday=None)   # removed
+        assert personal.get_birthday() is None
+        with pytest.raises(personal.ProfileError):
+            personal.set_profile("Other", "", [], birthday=(31, 4, None))
+        assert personal.get_name() == "Rafli"                     # nothing saved
+
+    def test_text(self, personal, lang):
+        assert personal.birthday_text((24, 9, None)) == "24 September"
+        assert personal.birthday_text((5, 8, 1999)) == "5 August 1999"
+        assert personal.birthday_text(None) == ""
+        lang("id")
+        assert personal.birthday_text((5, 8, 1999)) == "5 Agustus 1999"
+
+    def test_age(self, personal):
+        bday = (24, 9, 1999)
+        assert personal.get_age(datetime.date(2026, 9, 23), bday) == 26
+        assert personal.get_age(datetime.date(2026, 9, 24), bday) == 27
+        assert personal.get_age(datetime.datetime(2026, 12, 31, 23, 0), bday) == 27
+        assert personal.get_age(datetime.date(2026, 9, 24), (24, 9, None)) is None
+        assert personal.get_age(datetime.date(2026, 9, 24), None) is None
+        leap = (29, 2, 2000)
+        assert personal.get_age(datetime.date(2025, 2, 27), leap) == 24
+        assert personal.get_age(datetime.date(2025, 2, 28), leap) == 25
+
+    def test_is_birthday(self, personal):
+        assert personal.is_birthday(datetime.date(2026, 9, 24), (24, 9, 1999))
+        assert personal.is_birthday(datetime.datetime(2030, 9, 24, 7, 0), (24, 9, None))
+        assert not personal.is_birthday(datetime.date(2026, 9, 25), (24, 9, 1999))
+        assert not personal.is_birthday(datetime.date(2026, 9, 24), None)
+        # 29 February is celebrated on the 28th in other years.
+        assert personal.is_birthday(datetime.date(2025, 2, 28), (29, 2, None))
+        assert not personal.is_birthday(datetime.date(2024, 2, 28), (29, 2, None))
+        assert personal.is_birthday(datetime.date(2024, 2, 29), (29, 2, None))
+
+    def test_is_birthday_reads_the_profile(self, personal):
+        today = datetime.date.today()
+        personal.set_birthday(today.day, today.month)
+        assert personal.is_birthday()
+        personal.set_birthday(None, None)
+        assert not personal.is_birthday()
+
+    def test_tokens(self, personal, lang):
+        today = datetime.date.today()
+        _save_core({"user_birthday": {"day": 24, "month": 9, "year": 1999}})
+        age = personal.get_age()
+        assert age == today.year - 1999 - (today < datetime.date(today.year, 9, 24))
+        assert personal.expand("%mybirthday% (%MyAge%)") == f"24 September 1999 ({age})"
+        _save_core({"user_birthday": {"day": 24, "month": 9, "year": None}})
+        assert personal.expand("[%mybirthday%][%myage%]") == "[24 September][]"
+        _save_core({})
+        assert personal.expand("[%mybirthday%][%myage%]") == "[][]"
+
+    def test_profile_includes_the_birthday(self, personal):
+        personal.set_birthday(24, 9)
+        assert personal.get_profile()["birthday"] == (24, 9, None)
+
+
+# ------------------------------------------------------------
+# Greeting
+# ------------------------------------------------------------
+
+MORNING = datetime.datetime(2026, 9, 23, 7, 30)
+
+
+class TestGreeting:
+    @pytest.mark.parametrize("hour, key", [
+        (0, "greet_evening"), (4, "greet_morning"), (10, "greet_morning"), (11, "greet_midday"),
+        (15, "greet_afternoon"), (17, "greet_afternoon"), (18, "greet_evening"),
+    ])
+    def test_key(self, personal, hour, key):
+        assert personal.greeting_key(hour) == key
+
+    def test_with_nickname_name_or_nothing(self, personal, lang):
+        _save_core({"user_name": "Rafli", "user_nickname": "Bro"})
+        assert personal.greeting(MORNING) == "Good morning, Bro."
+        _save_core({"user_name": "Rafli"})
+        assert personal.greeting(MORNING.replace(hour=12)) == "Good day, Rafli."
+        _save_core({"user_name": "User"})
+        assert personal.greeting(MORNING.replace(hour=16)) == "Good afternoon."
+        assert personal.greeting(MORNING.replace(hour=21), nickname="Bro!") == "Good evening, Bro!"
+        lang("id")
+        _save_core({"user_nickname": "Bro"})
+        assert personal.greeting(MORNING) == "Selamat pagi, Bro."
+        assert personal.greeting(MORNING.replace(hour=20)) == "Selamat malam, Bro."
+
+    def test_birthday_line(self, personal, lang):
+        _save_core({"user_nickname": "Bro", "user_birthday": {"day": 23, "month": 9}})
+        assert personal.greeting(MORNING) == "Good morning, Bro. Happy birthday!"
+        assert personal.greeting(MORNING + datetime.timedelta(days=1)) == "Good morning, Bro."
+        lang("id")
+        assert personal.greeting(MORNING) == "Selamat pagi, Bro. Selamat ulang tahun!"
+        _save_core({"user_birthday": {"day": 23, "month": 9}})
+        assert personal.greeting(MORNING) == "Selamat pagi. Selamat ulang tahun!"
+
+    def test_startup_greeting_setting(self, personal):
+        assert personal.startup_greeting_enabled() is True         # on by default
+        personal.set_startup_greeting(False)
+        assert personal.startup_greeting_enabled() is False
+        assert personal.get_profile()["greet_on_startup"] is False
+        personal.set_startup_greeting(True)
+        assert _load_core()["greet_on_startup"] is True
+
+    def test_startup_speech_is_one_announcement(self, personal, lang):
+        _save_core({"user_nickname": "Bro"})
+        assert personal.startup_speech("Welcome to Hariku version 2.7.0", MORNING) == (
+            "Good morning, Bro. Welcome to Hariku version 2.7.0.")
+        assert personal.startup_speech("", MORNING) == "Good morning, Bro."
+        _save_core({"user_nickname": "Bro", "user_birthday": {"day": 23, "month": 9}})
+        assert personal.startup_speech("Welcome.", MORNING) == (
+            "Good morning, Bro. Happy birthday! Welcome.")
+
+    def test_speak_startup_greeting(self, personal, lang, monkeypatch):
+        import core.speech
+        spoken = []
+        monkeypatch.setattr(core.speech, "speak",
+                            lambda text, interrupt=False: spoken.append((text, interrupt)))
+        _save_core({"user_nickname": "Bro"})
+        personal.speak_startup_greeting("Welcome to Hariku version 2.7.0")
+        [(text, interrupt)] = spoken
+        assert text.startswith("Good ") and ", Bro. " in text
+        assert text.endswith("Welcome to Hariku version 2.7.0.") and interrupt is False
+
+
+def test_hariku_merges_the_welcome_into_the_greeting():
+    # The startup speech is one announcement after the window is ready, on a
+    # timer so startup never waits for it.
+    with open(os.path.join(ROOT, "hariku.py"), encoding="utf-8") as f:
+        source = f.read()
+    assert "if core.personal.startup_greeting_enabled():" in source
+    assert ("wx.CallLater(core.personal.STARTUP_GREETING_DELAY_MS,\n"
+            "                         core.personal.speak_startup_greeting, welcome)") in source
+    assert source.index("self.frame.Show(True)") < source.index("speak_startup_greeting")
+
+
+# ------------------------------------------------------------
+# Quiet hours
+# ------------------------------------------------------------
+
+def _at(hour, minute=0):
+    return datetime.datetime(2026, 9, 23, hour, minute)
+
+
+class TestQuietHours:
+    def test_off_by_default(self, personal):
+        assert personal.get_quiet_hours() == {"enabled": False, "start": "22:00", "end": "05:00"}
+        assert not any(personal.is_quiet_time(_at(h)) for h in range(24))
+
+    @pytest.mark.parametrize("hour, minute, quiet", [
+        (21, 59, False), (22, 0, True), (23, 59, True), (0, 0, True), (3, 0, True),
+        (4, 59, True), (5, 0, False), (12, 0, False),
+    ])
+    def test_range_past_midnight(self, personal, hour, minute, quiet):
+        personal.set_quiet_hours(True, "22:00", "05:00")
+        assert personal.is_quiet_time(_at(hour, minute)) is quiet
+
+    @pytest.mark.parametrize("hour, minute, quiet", [
+        (12, 59, False), (13, 0, True), (14, 30, True), (15, 0, False), (23, 0, False),
+    ])
+    def test_range_within_a_day(self, personal, hour, minute, quiet):
+        personal.set_quiet_hours(True, "13:00", "15:00")
+        assert personal.is_quiet_time(_at(hour, minute)) is quiet
+
+    def test_uses_the_clock_by_default(self, personal, monkeypatch):
+        personal.set_quiet_hours(True, "00:00", "23:59")
+        now = datetime.datetime.now()
+        assert personal.is_quiet_time() is (now.hour * 60 + now.minute < 23 * 60 + 59)
+
+    def test_turned_off_keeps_the_times(self, personal):
+        personal.set_quiet_hours(False, "21:30", "06:00")
+        assert personal.get_quiet_hours() == {"enabled": False, "start": "21:30", "end": "06:00"}
+        assert not personal.is_quiet_time(_at(23))
+
+    def test_times_are_normalized(self, personal):
+        personal.set_quiet_hours(True, " 9:05 ", "17:00")
+        assert personal.get_quiet_hours()["start"] == "09:05"
+        assert personal.is_quiet_time(_at(9, 5))
+
+    @pytest.mark.parametrize("start, end, code, field", [
+        ("25:00", "05:00", "quiet_time", "quiet_start"),
+        ("22:00", "5pm", "quiet_time", "quiet_end"),
+        ("", "05:00", "quiet_time", "quiet_start"),
+        ("22:00", "22:00", "quiet_same", "quiet_end"),
+    ])
+    def test_invalid(self, personal, start, end, code, field):
+        with pytest.raises(personal.ProfileError) as e:
+            personal.set_quiet_hours(True, start, end)
+        assert e.value.code == code and e.value.field == field
+        assert "quiet_hours" not in _load_core()
+
+    def test_same_times_are_fine_while_off(self, personal):
+        personal.set_quiet_hours(False, "22:00", "22:00")
+        assert personal.get_quiet_hours()["enabled"] is False
+
+    def test_broken_stored_values(self, personal):
+        _save_core({"quiet_hours": {"enabled": True, "start": "late", "end": 5}})
+        assert personal.get_quiet_hours() == {"enabled": True, "start": "22:00", "end": "05:00"}
+        assert personal.is_quiet_time(_at(23))
+        _save_core({"quiet_hours": "yes"})
+        assert personal.get_quiet_hours()["enabled"] is False
+        # Equal times saved by hand mean never quiet.
+        _save_core({"quiet_hours": {"enabled": True, "start": "08:00", "end": "08:00"}})
+        assert not personal.is_quiet_time(_at(8))
+
+
+def test_quiet_hours_messages(personal, lang):
+    with pytest.raises(personal.ProfileError) as e:
+        personal.set_quiet_hours(True, "22:00", "22:00")
+    assert str(e.value) == "Quiet hours can't start and end at the same time."
+    lang("id")
+    with pytest.raises(personal.ProfileError) as e:
+        personal.set_quiet_hours(True, "x", "05:00")
+    assert str(e.value) == "Pilih waktu dalam jam dan menit, misalnya 22:00."
+
+
+def test_preferences_pages_follow_general(monkeypatch):
+    import core.core_panels
+    import core.preferences
+    pages = []
+    monkeypatch.setattr(core.preferences, "register_panel",
+                        lambda category, name, create, apply=None: pages.append(
+                            (category, create, apply)))
+    core.core_panels.register()
+    assert [p[0] for p in pages][:3] == ["General", core.core_panels._("prefs_tab_profile"),
+                                          core.core_panels._("prefs_tab_quiet")]
+    assert pages[1][1] is core.core_panels.create_profile_panel
+    assert pages[2][1:] == (core.core_panels.create_quiet_panel,
+                            core.core_panels.apply_quiet_settings)
+    assert core.core_panels.QUIET_TIMES[:3] == ["00:00", "00:30", "01:00"]
+    assert len(core.core_panels.QUIET_TIMES) == 48 and "22:00" in core.core_panels.QUIET_TIMES
+
+
+def test_preferences_refuse_invalid_pages_before_saving():
+    # OK and Apply first ask each page's ValidateChanges(); a problem keeps the
+    # dialog open on that page and saves nothing.
+    with open(os.path.join(ROOT, "ui", "preferences_dialog.py"), encoding="utf-8") as f:
+        source = f.read()
+    apply_body = source[source.index("def OnApply"):source.index("def OnOK")]
+    assert apply_body.index("self._validate()") < apply_body.index('p["apply"]()')
+    ok_body = source[source.index("def OnOK"):source.index("def OnCancel")]
+    assert "if self.OnApply(None) is False:" in ok_body

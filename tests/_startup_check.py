@@ -194,6 +194,43 @@ assert dlg.btn_insert is None
 dlg.Destroy()
 print(f"OK routines_insert_placeholder (focus {'checked' if insert_focus else 'not observable here'})")
 
+# Hariku's startup greeting, scheduled the way hariku.py does once the window
+# is shown: the call returns at once, focus doesn't move, and the greeting and
+# the welcome come as one announcement. Speech is captured, not spoken.
+import time
+from core.events import bus
+
+greetings = []
+
+
+def _capture_speech(payload):
+    greetings.append(payload["text"])
+    payload["cancel"] = True
+
+
+bus.subscribe("on_before_speak", _capture_speech)
+focus_before = wx.Window.FindFocus()
+started = time.monotonic()
+wx.CallLater(core.personal.STARTUP_GREETING_DELAY_MS,
+             core.personal.speak_startup_greeting, "Welcome to Hariku version 2.7.0")
+assert time.monotonic() - started < 0.5, "scheduling the greeting held up startup"
+loop = wx.GUIEventLoop()
+previous_loop = wx.EventLoop.GetActive()
+wx.EventLoop.SetActive(loop)
+end = time.monotonic() + core.personal.STARTUP_GREETING_DELAY_MS / 1000 + 5
+while not greetings and time.monotonic() < end:
+    while loop.Pending():
+        loop.Dispatch()
+    app.ProcessPendingEvents()
+    time.sleep(0.02)
+wx.EventLoop.SetActive(previous_loop)
+bus.unsubscribe("on_before_speak", _capture_speech)
+assert len(greetings) == 1, greetings
+assert greetings[0].startswith("Good ") and ", Bro. " in greetings[0], greetings
+assert greetings[0].endswith("Welcome to Hariku version 2.7.0."), greetings
+assert wx.Window.FindFocus() is focus_before, "the greeting moved focus"
+print("OK startup_greeting")
+
 frame.tb_icon.Destroy()
 frame.Destroy()
 wx.CallLater(300, app.ExitMainLoop)

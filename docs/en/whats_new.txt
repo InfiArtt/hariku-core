@@ -1,18 +1,30 @@
 Version 2.7.0 (Core Update - September 24, 2026)
 ================================================================================
 - Your profile: Preferences has a new Profile page for your name, what Hariku
-  should call you, and your own placeholders, such as %kantor% for your office
-  address. It stays on your computer, but it is saved unencrypted, so don't
-  store passwords there.
-- Placeholders: write %myname%, %mynickname% or one of your own in a reminder
-  or a routine, and Hariku fills it in when the reminder is announced or the
-  routine runs. Morning Briefing 1.1 greets you by name ("Good morning,
-  Budi.").
+  should call you, your birthday and your own placeholders, such as %kantor%
+  for your office address. It stays on your computer, but it is saved
+  unencrypted, so don't store passwords there.
+- Hariku greets you when it starts ("Good morning, Budi."), and on your
+  birthday it also says "Happy birthday!". You can turn the greeting off on
+  the Profile page.
+- Placeholders: write %myname%, %mynickname%, %mybirthday%, %myage% or one of
+  your own in a reminder or a routine, and Hariku fills it in when the
+  reminder is announced or the routine runs.
+- Quiet hours: in Preferences, Quiet Hours, choose when extension alerts stay
+  silent, for example from 22:00 to 05:00: aircraft overhead, high waves,
+  unhealthy air and earthquakes. Tsunami warnings, your own reminders and
+  routines still sound.
+- Morning Briefing 1.1 greets you by name and adds an evening summary
+  (Shift+B): how many of today's reminders you finished, the ones left, and
+  tomorrow's first reminder and weather. It can play by itself every evening.
 - Routines 1.1 also accepts %time%, %date%, %battery% and its other
   placeholders written this way; the old {time} form keeps working. Its
   builder has an "Insert placeholder" button that lists them all, and its
-  open actions understand Windows variables such as %USERPROFILE%. Update
-  both extensions in the Extension Manager.
+  open actions understand Windows variables such as %USERPROFILE%.
+- Lumina 1.1 uses the birthday from your profile, and doesn't wish you a happy
+  birthday twice.
+- Update Morning Briefing, Routines, Weather, Lumina, Flight Radar, Sea
+  Conditions, Air Quality and Earthquakes & Tsunami in the Extension Manager.
 - New in the Extension Store: Earthquakes & Tsunami (G), Sea Conditions (O),
   Air Quality (U), Space (A).
 
