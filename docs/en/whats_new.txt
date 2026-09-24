@@ -36,7 +36,9 @@ Version 2.7.0 (Core Update - September 24, 2026)
 - Update Morning Briefing, Routines, Weather, Lumina, Flight Radar, Sea
   Conditions, Air Quality and Earthquakes & Tsunami in the Extension Manager.
 - New in the Extension Store: Earthquakes & Tsunami (G), Sea Conditions (O),
-  Air Quality (U), Space (A).
+  Air Quality (U), Space (A), and Sleep Pattern: it estimates when you slept
+  and when you stayed up late from when you used the computer (Z for last
+  night, Shift+Z for the history), without recording what you typed.
 
 Version 2.6.0 (Core Update - September 23, 2026)
 ================================================================================

@@ -112,6 +112,10 @@ def _is_note(ctrl):
 def check(window, page, problems):
     children = [c for c in window.GetChildren() if not isinstance(c, wx.TopLevelWindow)]
     for index, ctrl in enumerate(children):
+        if isinstance(ctrl, (wx.FilePickerCtrl, wx.DirPickerCtrl)):
+            problems.append(f"PROBLEM [{page}] {type(ctrl).__name__} hides an unlabelled text "
+                            f"field; use a labelled TextCtrl and a Browse button")
+            continue
         if isinstance(ctrl, NEEDS_LABEL) and ctrl.IsShown() and not _is_note(ctrl):
             before = children[index - 1] if index else None
             kind = type(ctrl).__name__
