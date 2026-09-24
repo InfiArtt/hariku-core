@@ -48,6 +48,8 @@ import pydoc        # Developer Toolkit
 import zoneinfo     # World Clock (zone data comes from tzdata, below)
 import wave         # Sound Themes (checks imported WAV files)
 import struct       # Cockpit (writes the samples of its sound theme)
+import tarfile      # Voice Control 1.1 (unpacks the wake phrase listener's .tar.bz2)
+import bz2          # (and its bzip2 compression; _bz2 comes with it)
 
 try:
     import cryptography
