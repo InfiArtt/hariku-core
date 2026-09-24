@@ -1631,3 +1631,27 @@ class TestSpeechRouting:
         tolk.silence.assert_called_once_with()
         monkeypatch.setattr(core.speech, "TOLK_LOADED", False)
         assert core.speech.silence() is False
+
+
+def test_sapi_shutdown_waits_for_the_worker_to_finish():
+    # Hariku must not tear its windows down while the Windows-voice worker is
+    # still releasing COM objects (a race suspected of a heap-corruption crash
+    # at exit), so shutdown(wait) joins the thread.
+    import threading
+    import time as _time
+    from core import voice_sapi
+
+    closed = threading.Event()
+
+    class SlowEngine:
+        def close(self):
+            _time.sleep(0.3)
+            closed.set()
+
+        def list_voices(self):
+            return []
+
+    worker = voice_sapi.Worker(engine_factory=SlowEngine)
+    assert worker.call(lambda engine: engine.list_voices()) == []
+    worker.shutdown(wait=5)
+    assert closed.is_set(), "shutdown returned before the worker released SAPI"

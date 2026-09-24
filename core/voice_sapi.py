@@ -434,8 +434,15 @@ class Worker:
     def stop(self):
         self._post(("stop",), start=False)
 
-    def shutdown(self):
+    def shutdown(self, wait=0.0):
+        """Ask the worker to release SAPI and end. With `wait`, block up to that
+        many seconds until it has, so Hariku doesn't tear its windows down while
+        the worker is still releasing COM objects."""
+        with self._lock:
+            thread = self._thread
         self._post(("exit",), start=False)
+        if wait and thread is not None and thread is not threading.current_thread():
+            thread.join(wait)
 
     def _run(self):
         from core.voice import _pump_messages
@@ -546,5 +553,5 @@ def is_available():
     return _worker.available()
 
 
-def shutdown():
-    _worker.shutdown()
+def shutdown(wait=2.0):
+    _worker.shutdown(wait)

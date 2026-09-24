@@ -223,6 +223,13 @@ def settle_workers(timeout=10.0):
         app.ProcessPendingEvents()
     finally:
         wx.EventLoop.SetActive(previous)
+    # What Hariku does on exit: release the Windows voice and wait for its thread.
+    import core.voice
+    core.voice.shutdown()
+    import core.voice_sapi
+    thread = core.voice_sapi._worker._thread
+    if thread is not None:
+        thread.join(5)
 
 
 stray_timer.Stop()
