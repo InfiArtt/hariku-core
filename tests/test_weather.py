@@ -583,8 +583,10 @@ def test_register_and_teardown(wmain, fresh_event_bus, monkeypatch, tmp_data_dir
         with open(core.api.get_data_path(key), "w", encoding="utf-8") as f:
             f.write("{not json")
 
+    import core.personal
     wmain.register(fresh_event_bus)
     assert wmain.get_location() is None and wmain._cache is None
+    assert core.personal.is_placeholder_registered("weather")       # %weather% (core 2.7)
     for event_name, handler in wmain._SUBSCRIPTIONS:
         assert handler in fresh_event_bus._listeners[event_name]
     by_name = {args[1]: (args, kwargs) for args, kwargs in actions}
@@ -598,6 +600,7 @@ def test_register_and_teardown(wmain, fresh_event_bus, monkeypatch, tmp_data_dir
     for event_name, handler in wmain._SUBSCRIPTIONS:
         assert handler not in fresh_event_bus._listeners.get(event_name, [])
     assert not wmain._active
+    assert not core.personal.is_placeholder_registered("weather")
 
 
 # --- Evening summary (Weather 1.1) --------------------------------------------------
@@ -637,3 +640,48 @@ def test_evening_contribution_uses_the_cache_only(wmain, api, forecast, lang, mo
     _set_location(wmain, None)
     wmain._on_evening_collect(lines)
     assert lines == [] and calls == []
+
+
+# --- %weather% and refreshing when back online (core 2.7) ------------------------------
+
+def test_placeholder_text(text, lang, forecast):
+    assert text.placeholder_text(forecast, "metric") == "light rain, 27 degrees"
+    lang("id")
+    assert text.placeholder_text(forecast, "metric") == "hujan ringan, 27 derajat"
+    forecast["current"]["code"] = None
+    assert text.placeholder_text(forecast, "metric") == "27 derajat"
+    forecast["current"]["temperature"] = None
+    assert text.placeholder_text(forecast, "metric") == ""
+
+
+def test_weather_placeholder_uses_the_cache_only(wmain, api, forecast, lang, monkeypatch):
+    import time
+    import core.personal
+    calls = _fetch_calls(monkeypatch, api, error="offline")
+    _set_location(wmain)
+    wmain._cache = api.make_cache(JAKARTA, forecast)
+    assert wmain.placeholder_text() == "light rain, 27 degrees"
+    core.personal.register_placeholder("weather", wmain.placeholder_text)
+    try:
+        assert core.personal.expand("It is %weather% in %mynickname%land.").startswith(
+            "It is light rain, 27 degrees in ")
+    finally:
+        core.personal.unregister_placeholder("weather")
+    wmain._cache = api.make_cache(JAKARTA, forecast, now=time.time() - 4 * 3600)
+    assert wmain.placeholder_text() == ""            # too old to be "now"
+    _set_location(wmain, None)
+    assert wmain.placeholder_text() == "" and calls == []
+
+
+def test_back_online_refreshes_a_stale_forecast(wmain, api, forecast, monkeypatch):
+    import time
+    calls = _fetch_calls(monkeypatch, api, error="offline")
+    _set_location(wmain)
+    wmain._cache = api.make_cache(JAKARTA, forecast)
+    wmain._on_network_changed(True)
+    assert calls == []                               # fresh: nothing to do
+    wmain._cache = api.make_cache(JAKARTA, forecast, now=time.time() - 3600)
+    wmain._on_network_changed(False)
+    assert calls == []                               # offline: nothing to do
+    wmain._on_network_changed(True)
+    assert len(calls) == 1

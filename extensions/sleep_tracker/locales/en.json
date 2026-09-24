@@ -43,6 +43,8 @@
 
         "briefing": "Last night you slept about {duration}, from {start} to {end}.",
         "briefing_day": "Today you slept about {duration}, from {start} to {end}.",
+        "placeholder_desc": "how long you slept last night",
+        "placeholder_value": "about {duration}",
 
         "summary_week": "Last 7 nights: {duration} of sleep on average, usually from about {bedtime} to {wake}.",
         "summary_week_none": "No sleep found in the last 7 nights.",

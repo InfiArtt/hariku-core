@@ -40,6 +40,7 @@ import uuid
 import wx
 
 import core.api
+import core.core_panels
 import core.personal
 from core.speech import speak
 
@@ -304,16 +305,14 @@ class ItemDialog(wx.Dialog):
         return engine.placeholder_menu_entries(
             profile["name"], profile["nickname"], profile["fields"], self._variables,
             birthday=core.personal.birthday_text(profile["birthday"]),
-            age="" if age is None else str(age))
+            age="" if age is None else str(age), title=profile["title"])
 
     def _on_insert_placeholder(self, event=None):
         if self.target_text_field() is None:
             return
-        menu = wx.Menu()
-        for token, label in self.placeholder_entries():
-            # Menus treat & as a mnemonic and a tab as an accelerator.
-            item = menu.Append(wx.ID_ANY, label.replace("&", "&&").replace("\t", " "))
-            menu.Bind(wx.EVT_MENU, lambda e, t=token: self.insert_placeholder(t), item)
+        # The same menu as the Profile page's greeting field.
+        menu = core.core_panels.placeholder_menu(self.placeholder_entries(),
+                                                 self.insert_placeholder)
         self._show_menu(menu)
         menu.Destroy()
 

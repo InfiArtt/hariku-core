@@ -274,6 +274,19 @@ class TestPlaceholdersBothSyntaxes:
             assert eng.process_placeholders(text, ctx, {"user": "Rafli"}) == expected, text
 
 
+@pytest.fixture
+def core_en(monkeypatch):
+    """The core's English messages (the menu's profile labels come from
+    core.personal), and no real reminders read for %reminders%."""
+    import core.personal
+    from core import i18n
+    monkeypatch.setitem(i18n._language_cache, "core", {})
+    i18n._load_domain("core", i18n.CORE_LOCALES_DIR)
+    monkeypatch.setattr(i18n, "_current_language", "en")
+    monkeypatch.setattr(core.personal, "reminders_today_count", lambda day=None: 2)
+
+
+@pytest.mark.usefixtures("core_en")
 class TestInsertPlaceholderMenu:
     def test_entries(self, eng):
         entries = eng.placeholder_menu_entries(
@@ -281,8 +294,8 @@ class TestInsertPlaceholderMenu:
             ["greeting", "_routine_depth", "greeting", "", "50%"])
         tokens = [t for t, _label in entries]
         labels = dict(entries)
-        assert tokens[:6] == ["%myname%", "%mynickname%", "%mybirthday%", "%myage%",
-                              "%kantor%", "%kosong%"]
+        assert tokens[:7] == ["%myname%", "%mynickname%", "%mytitle%", "%mybirthday%",
+                              "%myage%", "%kantor%", "%kosong%"]
         assert labels["%myname%"] == "%myname%: your name (Rafli)"
         assert labels["%mynickname%"] == "%mynickname%: what Hariku calls you (Bro)"
         assert labels["%kantor%"] == "%kantor%: your placeholder (Jl. Sudirman 1)"
@@ -290,6 +303,13 @@ class TestInsertPlaceholderMenu:
         assert labels["%time%"] == "%time%: current time"
         for token in ("time", "date", "battery", "app", "clipboard", "ssid", "ram", "cpu", "events"):
             assert "%" + token + "%" in labels
+        # Hariku's dynamic placeholders the Routines tokens don't cover, once each.
+        assert tokens.count("%time%") == 1 and tokens.count("%date%") == 1
+        for token in ("greeting", "day", "zulu", "reminders"):
+            assert "%" + token + "%" in labels, token
+        assert labels["%reminders%"] == ("%reminders%: how many reminders you still have today "
+                                         "(2 reminders today)")
+        assert tokens.index("%events%") < tokens.index("%zulu%") < tokens.index("%var:greeting%")
         # Internal, empty, duplicate and unusable variable names are left out.
         assert [t for t in tokens if t.startswith("%var:")] == ["%var:greeting%"]
         assert labels["%var:greeting%"] == "%var:greeting%: the variable greeting"
@@ -298,6 +318,20 @@ class TestInsertPlaceholderMenu:
         labels = dict(eng.placeholder_menu_entries())
         assert labels["%myname%"] == "%myname%: your name (not set)"
         assert labels["%mynickname%"] == "%mynickname%: what Hariku calls you (not set)"
+        assert labels["%mytitle%"] == "%mytitle%: your title (not set)"
+
+    def test_title_and_registered_placeholders(self, eng):
+        import core.personal
+        core.personal.register_placeholder("weather", lambda: "light rain, 25 degrees",
+                                           "the weather now in your city")
+        try:
+            labels = dict(eng.placeholder_menu_entries("Rafli", "Bro", title="Kapten"))
+        finally:
+            core.personal.unregister_placeholder("weather")
+        assert labels["%mytitle%"] == "%mytitle%: your title (Kapten)"
+        assert labels["%weather%"] == ("%weather%: the weather now in your city "
+                                       "(light rain, 25 degrees)")
+        assert "%weather%" not in dict(eng.placeholder_menu_entries())
 
     def test_nickname_falls_back_to_the_name(self, eng):
         assert dict(eng.placeholder_menu_entries("Rafli", ""))["%mynickname%"] == \
@@ -407,6 +441,7 @@ def test_birthday_tokens_in_routines(eng, tmp_data_dir, monkeypatch):
     assert out == f"Born 24 September 1999, age {age}, at 08:00"
 
 
+@pytest.mark.usefixtures("core_en")
 def test_birthday_menu_entries(eng):
     labels = dict(eng.placeholder_menu_entries("Rafli", birthday="24 September 1999", age="27"))
     assert labels["%mybirthday%"] == "%mybirthday%: your birthday (24 September 1999)"

@@ -60,6 +60,7 @@ NUDGE_UNTIL_OFFSET = 12 * 60          # no reminder from 06:00 on
 NUDGE_SOUND = "info.wav"
 ACTIVE_WITHIN_SECONDS = 60            # "still using the computer"
 BRIEFING_MAX_HOURS = 12               # older sleeps aren't news in the briefing
+PLACEHOLDER = "sleep"                 # %sleep%: last night's sleep (core 2.7)
 
 _bus = None
 _active = False
@@ -335,6 +336,20 @@ def _on_briefing_collect(lines):
     lines.append(text.briefing_sentence(result))
 
 
+def placeholder_text():
+    """%sleep%: "about 6 hours 25 minutes" of last night's sleep, from what is
+    already recorded (nothing is sampled), or "" when it isn't known."""
+    if not (_active and _settings["enabled"]):
+        return ""
+    now = _now()
+    result = last_night_result(now)
+    if result["status"] != "sleep":
+        return ""
+    if now - result["main"]["end"] > datetime.timedelta(hours=BRIEFING_MAX_HOURS):
+        return ""
+    return text.placeholder_text(result)
+
+
 _SUBSCRIPTIONS = (
     ("on_minute_tick", _on_minute_tick),
     ("on_briefing_collect", _on_briefing_collect),
@@ -423,11 +438,17 @@ def register(bus):
     core.hotkeys.register_action(EXT_NAME, "history", _("action_history"),
                                  ord("Z"), False, show_history, default_shift=True)
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
+    personal = getattr(core, "personal", None)
+    if personal is not None and hasattr(personal, "register_placeholder"):
+        personal.register_placeholder(PLACEHOLDER, placeholder_text, _("placeholder_desc"))
     logger.info("Sleep Pattern extension loaded.")
 
 
 def teardown():
     global _active, _panel
+    personal = getattr(core, "personal", None)
+    if personal is not None and hasattr(personal, "unregister_placeholder"):
+        personal.unregister_placeholder(PLACEHOLDER)
     if _bus is not None:
         for event_name, handler in _SUBSCRIPTIONS:
             try:

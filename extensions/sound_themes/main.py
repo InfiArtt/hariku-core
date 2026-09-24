@@ -80,6 +80,7 @@ def teardown():
     global _panel
     _panel = None
     # This extension subscribes to no bus events; it only has to hand the
-    # sounds back to the core.
+    # sounds back to the core. Without remember=True, so the core still
+    # remembers the user's theme for the next start.
     core.sounds.set_theme_dir(None)
     logger.info("Sound Themes extension unloaded.")

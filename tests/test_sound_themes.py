@@ -529,9 +529,11 @@ def test_apply_saves_and_restores(env, store):
     core.sounds.set_theme_dir(None)
     assert store.restore_active() == "Ocean"
     assert core.sounds.get_theme_dir() == str(env["root"] / "Ocean")
+    assert core.api.load_data("Core")["sound_theme_dir"] == str(env["root"] / "Ocean")
     assert store.apply_theme(None) is None
     assert core.api.load_data(store.DATA_KEY) == {"active": ""}
     assert core.sounds.get_theme_dir() is None
+    assert "sound_theme_dir" not in core.api.load_data("Core")   # Default: forgotten
 
 
 def test_a_theme_folder_that_disappeared_means_default(env, store):
@@ -595,6 +597,8 @@ def test_register_restores_the_theme_and_teardown_resets_it(main, store, env):
     main.teardown()
     assert core.sounds.get_theme_dir() is None
     assert store.get_active() == "Ocean"  # the choice itself is kept for next time
+    # ...and the core still remembers it, so the next start plays its start.wav.
+    assert core.api.load_data("Core")["sound_theme_dir"] == str(env["root"] / "Ocean")
 
 
 def test_next_theme_hotkey(main, store, env):
@@ -643,3 +647,10 @@ def test_rows(text):
 def core_error(code, **params):
     store, _text = _import_helpers()
     return store.ThemeError(code, **params)
+
+
+def test_manifest_needs_core_2_7_to_remember_the_theme():
+    import json
+    with open(os.path.join(EXT_DIR, "manifest.json"), encoding="utf-8") as f:
+        manifest = json.load(f)
+    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"

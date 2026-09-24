@@ -31,6 +31,8 @@
         "today_prefix": "Hari ini: {text}.",
         "tomorrow_prefix": "Besok: {text}.",
         "weather_in": "Cuaca di {place}: {text}.",
+        "placeholder_desc": "cuaca sekarang di kota Anda, dari prakiraan terakhir",
+        "placeholder_temp": "{temp} derajat",
         "day_today": "Hari ini, {date}",
         "day_tomorrow": "Besok, {date}",
         "unit_celsius": "derajat Celsius",

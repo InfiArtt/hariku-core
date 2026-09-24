@@ -462,20 +462,24 @@ def get_active():
 
 
 def apply_theme(name):
-    """Use theme `name` (None for Default) from now on, and at every start."""
+    """Use theme `name` (None for Default) from now on, and at every start. The
+    core remembers the folder too (core 2.7), so the next start plays the
+    theme's start.wav before this extension has loaded."""
     name = None if name is None else _require_theme(name)
     data = core.api.load_data(DATA_KEY)
     data = data if isinstance(data, dict) else {}
     data["active"] = name or ""
     core.api.save_data(DATA_KEY, data)
-    core.sounds.set_theme_dir(theme_dir(name))
+    core.sounds.set_theme_dir(theme_dir(name), remember=True)
     return name
 
 
 def restore_active():
-    """Apply the saved theme (at startup). Returns its name, or None."""
+    """Apply the saved theme (at startup). Returns its name, or None. Also
+    brings the core's remembered folder in line (a theme picked with Sound
+    Themes 1.0, or a folder that has gone)."""
     name = get_active()
-    core.sounds.set_theme_dir(theme_dir(name))
+    core.sounds.set_theme_dir(theme_dir(name), remember=True)
     return name
 
 

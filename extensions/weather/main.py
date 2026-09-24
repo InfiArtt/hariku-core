@@ -25,6 +25,9 @@ network calls run on worker threads; results come back via wx.CallAfter.
 Also adds a one-sentence summary to the Morning Briefing through the
 "on_briefing_collect" event, and tomorrow's forecast to its evening summary
 through "on_evening_collect", both from the cache only (see briefing_core.py).
+With core 2.7 it also fills in %weather% ("light rain, 25 degrees") wherever
+Hariku expands placeholders, again from the cache only, and refreshes when the
+network comes back (a start with Windows greets once that is done).
 """
 
 import logging
@@ -43,6 +46,11 @@ import weather_text
 import weather_ui
 from weather_text import _
 
+try:
+    import core.personal as _personal   # core 2.7: %weather%
+except ImportError:
+    _personal = None
+
 logger = logging.getLogger(__name__)
 
 DATA_KEY = "Weather"         # {"location": {...} or None, "units": "metric" | "imperial"}
@@ -53,6 +61,7 @@ REFRESH_SECONDS = 30 * 60    # background refresh interval
 RETRY_SECONDS = 10 * 60      # minimum gap between background attempts
 STALE_MAX_AGE = 12 * 3600    # oldest cache still offered when offline
 BRIEFING_MAX_AGE = 3 * 3600  # oldest cache used in the Morning Briefing
+PLACEHOLDER = "weather"      # %weather%, from the cache (core 2.7)
 
 _bus = None
 _active = False
@@ -235,6 +244,24 @@ def _on_briefing_collect(lines):
         lines.append(weather_text.briefing_sentence(location, cache["forecast"], get_units()))
 
 
+def _on_network_changed(online=True, *_args, **_kwargs):
+    # Back online (after a start with Windows, say): refresh a stale forecast at
+    # once rather than at the next retry, so %weather% and the Briefing are current.
+    if online and get_location() and not _loading \
+            and not weather_api.is_fresh(current_cache(), REFRESH_SECONDS):
+        refresh()
+
+
+def placeholder_text():
+    """%weather%: the current conditions from the cache, "light rain, 25
+    degrees", or "" without a recent forecast."""
+    location = get_location()
+    cache = current_cache()
+    if not (location and cache and weather_api.is_fresh(cache, BRIEFING_MAX_AGE)):
+        return ""
+    return weather_text.placeholder_text(cache["forecast"], get_units())
+
+
 def _on_evening_collect(lines):
     # Evening summary contract (the same as the briefing's): tomorrow's weather.
     location = get_location()
@@ -250,6 +277,7 @@ _SUBSCRIPTIONS = (
     ("on_minute_tick", _on_minute_tick),
     ("on_briefing_collect", _on_briefing_collect),
     ("on_evening_collect", _on_evening_collect),
+    ("on_network_changed", _on_network_changed),
 )
 
 
@@ -306,6 +334,8 @@ def register(bus):
     core.hotkeys.register_action("Weather", "show_forecast", _("action_forecast"),
                                  None, False, show_forecast)
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
+    if _personal is not None and hasattr(_personal, "register_placeholder"):
+        _personal.register_placeholder(PLACEHOLDER, placeholder_text, _("placeholder_desc"))
     logger.info("Weather extension loaded.")
 
 
@@ -313,6 +343,8 @@ def teardown():
     global _active
     _active = False
     del _waiters[:]
+    if _personal is not None and hasattr(_personal, "unregister_placeholder"):
+        _personal.unregister_placeholder(PLACEHOLDER)
     if _bus is not None:
         for event_name, handler in _SUBSCRIPTIONS:
             try:

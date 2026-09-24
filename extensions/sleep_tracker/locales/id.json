@@ -43,6 +43,8 @@
 
         "briefing": "Semalam kamu tidur sekitar {duration}, dari {start} sampai {end}.",
         "briefing_day": "Hari ini kamu tidur sekitar {duration}, dari {start} sampai {end}.",
+        "placeholder_desc": "lama tidurmu semalam",
+        "placeholder_value": "sekitar {duration}",
 
         "summary_week": "7 malam terakhir: rata-rata tidur {duration}, biasanya dari sekitar {bedtime} sampai {wake}.",
         "summary_week_none": "Tidak ada tidur yang ditemukan dalam 7 malam terakhir.",

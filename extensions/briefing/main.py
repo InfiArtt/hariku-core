@@ -78,7 +78,7 @@ def briefing_text(now=None, greet=True):
     core_config = core.api.load_data("Core")
     date_format = core_config.get("date_format") if isinstance(core_config, dict) else None
     return " ".join(briefing_core.build_briefing(now, reminders, date_format, _bus,
-                                                 nickname=core.personal.get_nickname(),
+                                                 nickname=core.personal.get_addressed_name(),
                                                  expand=core.personal.expand,
                                                  birthday=core.personal.is_birthday(now),
                                                  greet=greet))
@@ -89,7 +89,7 @@ def evening_text(now=None):
     return " ".join(briefing_core.build_evening(now, _reminders_on(now),
                                                 _reminders_on(now + datetime.timedelta(days=1)),
                                                 _bus,
-                                                nickname=core.personal.get_nickname(),
+                                                nickname=core.personal.get_addressed_name(),
                                                 expand=core.personal.expand,
                                                 birthday=core.personal.is_birthday(now)))
 

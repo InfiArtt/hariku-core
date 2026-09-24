@@ -106,6 +106,21 @@ def briefing_sentence(location, forecast, units, now_utc=None):
     return _("weather_in", place=location["name"], text=", ".join(p for p in parts if p))
 
 
+def placeholder_text(forecast, units):
+    """%weather%: "light rain, 25 degrees" (no capital, no full stop, so it
+    fits inside the user's own sentence), or "" without current conditions."""
+    cur = (forecast or {}).get("current") or {}
+    temp = _temp(cur.get("temperature"), units)
+    condition = condition_text(cur.get("code")) if cur.get("code") is not None else None
+    if condition:
+        condition = condition[:1].lower() + condition[1:]
+    if condition and temp is not None:
+        return _("piece_condition_temp", condition=condition, temp=temp)
+    if temp is not None:
+        return _("placeholder_temp", temp=temp)
+    return condition or ""
+
+
 def evening_sentence(forecast, units, now_utc=None):
     """Tomorrow for the evening summary, e.g. "Tomorrow: light rain, 31
     degrees.", or "" without tomorrow in the forecast."""

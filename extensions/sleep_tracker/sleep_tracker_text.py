@@ -137,6 +137,11 @@ def row_text(result):
     return _("row", label=night_label(result["night"]), text=night_text(result))
 
 
+def placeholder_text(result):
+    """%sleep%: "about 6 hours 25 minutes" (the main sleep of `result`)."""
+    return _("placeholder_value", duration=duration(result["main"]["asleep"]))
+
+
 def briefing_sentence(result):
     main = result["main"]
     key = "briefing_day" if result["daytime"] else "briefing"

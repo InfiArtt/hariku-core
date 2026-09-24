@@ -329,35 +329,20 @@ def process_placeholders(text, ctx, variables=None):
 
 
 # --------------------------------------------------------------------------- #
-# The builder's "Insert placeholder" menu (pure, so it's testable without wx)
+# The builder's "Insert placeholder" menu (pure, so it's testable without wx).
+# The profile part and Hariku's dynamic placeholders come from core.personal,
+# which the Profile page's greeting field uses too.
 # --------------------------------------------------------------------------- #
-_MENU_VALUE_MAX = 40
-
-
-def _menu_value(value, empty="not set"):
-    value = " ".join(str(value or "").split())
-    if not value:
-        return empty
-    return value if len(value) <= _MENU_VALUE_MAX else value[:_MENU_VALUE_MAX - 1] + "…"
-
-
 def placeholder_menu_entries(name="", nickname="", fields=(), variables=(), birthday="",
-                             age=""):
+                             age="", title="", dynamic=None):
     """(token, label) pairs for the builder's Insert placeholder menu: the
-    profile, the user's own keys, the Routines tokens, then this routine's
-    variables. E.g. ("%myname%", "%myname%: your name (Rafli)")."""
-    entries = [
-        ("%myname%", "%%myname%%: your name (%s)" % _menu_value(name)),
-        ("%mynickname%", "%%mynickname%%: what Hariku calls you (%s)"
-         % _menu_value(nickname or name)),
-        ("%mybirthday%", "%%mybirthday%%: your birthday (%s)" % _menu_value(birthday)),
-        ("%myage%", "%%myage%%: your age (%s)" % _menu_value(age)),
-    ]
-    for key, value in fields or ():
-        entries.append(("%%%s%%" % key, "%%%s%%: your placeholder (%s)"
-                        % (key, _menu_value(value, "empty"))))
-    for key, description in ROUTINE_TOKENS:
-        entries.append(("%%%s%%" % key, "%%%s%%: %s" % (key, description)))
+    profile, the user's own keys, the Routines tokens, Hariku's dynamic
+    placeholders and those extensions registered (core.personal.menu_entries),
+    then this routine's variables. E.g. ("%myname%", "%myname%: your name (Rafli)")."""
+    import core.personal  # core 2.7+
+    entries = core.personal.menu_entries(name=name, nickname=nickname, title=title,
+                                         birthday=birthday, age=age, fields=fields,
+                                         tokens=ROUTINE_TOKENS, dynamic=dynamic)
     seen = set()
     for var in variables or ():
         var = str(var or "").strip()
@@ -371,15 +356,10 @@ def placeholder_menu_entries(name="", nickname="", fields=(), variables=(), birt
 
 def insert_placeholder(value, start, end, token):
     """Put `token` into `value` at the caret, or in place of a partly selected
-    stretch start..end. When all the text is selected, as tabbing into a field
-    does, the token goes at the end instead, so no text is lost. Returns
+    stretch start..end (core.personal.insert_placeholder). Returns
     (new_value, caret after the token)."""
-    value = str(value or "")
-    start = max(0, min(int(start), len(value)))
-    end = max(start, min(int(end), len(value)))
-    if start == 0 and end == len(value):
-        start = end = len(value)
-    return value[:start] + token + value[end:], start + len(token)
+    import core.personal  # core 2.7+
+    return core.personal.insert_placeholder(value, start, end, token)
 
 
 def is_event_routine(routine):

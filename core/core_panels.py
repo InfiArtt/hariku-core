@@ -257,6 +257,30 @@ def _labeled(parent, sizer, label, make, proportion=0):
     return ctrl
 
 
+def placeholder_menu(entries, on_pick):
+    """A wx.Menu of Insert placeholder entries ((token, label) pairs, see
+    core.personal.menu_entries); choosing one calls on_pick(token). The Profile
+    page and Routines' builder both use it. The caller shows and destroys it."""
+    menu = wx.Menu()
+    for token, label in entries:
+        # Menus treat & as a mnemonic and a tab as an accelerator.
+        item = menu.Append(wx.ID_ANY, label.replace("&", "&&").replace("\t", " "))
+        menu.Bind(wx.EVT_MENU, lambda e, t=token: on_pick(t), item)
+    return menu
+
+
+def insert_into_field(ctrl, token, at_end=False):
+    """Put `token` at the caret of text field `ctrl` (see
+    core.personal.insert_placeholder), or at its end when `at_end`, then put
+    focus back there: the user asked for it, so moving focus is expected."""
+    value = ctrl.GetValue()
+    start, end = (len(value), len(value)) if at_end else ctrl.GetSelection()
+    value, caret = core.personal.insert_placeholder(value, start, end, token)
+    ctrl.ChangeValue(value)
+    ctrl.SetFocus()
+    ctrl.SetInsertionPoint(caret)
+
+
 class ProfileFieldDialog(wx.Dialog):
     """Adds or edits one of the user's own placeholders. Invalid input is shown
     and spoken; the dialog stays open with focus on the field to fix."""
@@ -327,11 +351,21 @@ def ask_profile_field(parent, title, key="", value="", taken=()):
         dlg.Destroy()
 
 
-class ProfileSettingsPanel(wx.Panel):
+# The page can be taller than the Preferences dialog with large text, so it
+# scrolls. A plain panel where wx is not the real one (the unit tests).
+_ScrollingPage = wx.ScrolledWindow if isinstance(getattr(wx, "ScrolledWindow", None), type) else wx.Panel
+
+
+class ProfileSettingsPanel(_ScrollingPage):
     def __init__(self, parent):
         super().__init__(parent)
         profile = core.personal.get_profile()
         self._fields = list(profile["fields"])   # [(key, value)], saved on OK/Apply
+        # Saved only when changed on this page, so what another page (Cockpit's
+        # Captain mode) sets in the same Preferences session isn't overwritten.
+        self._loaded_title = profile["title"]
+        self._loaded_greeting = (profile["custom_greeting"], profile["custom_greeting_boot_only"])
+        self._greeting_focused = False
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         lbl_help = wx.StaticText(self, label=_("profile_help"))
@@ -344,6 +378,9 @@ class ProfileSettingsPanel(wx.Panel):
         self.txt_nickname = _labeled(self, vbox, _("profile_lbl_nickname"),
                                      lambda: wx.TextCtrl(self, value=profile["nickname"]))
         self.txt_nickname.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
+        self.txt_title = _labeled(self, vbox, _("profile_lbl_title"),
+                                  lambda: wx.TextCtrl(self, value=profile["title"]))
+        self.txt_title.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
 
         # Birthday: day and month together, the year optional.
         day, month, year = profile["birthday"] or (0, 0, None)
@@ -368,10 +405,32 @@ class ProfileSettingsPanel(wx.Panel):
         self.chk_greet.SetValue(profile["greet_on_startup"])
         vbox.Add(self.chk_greet, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
+        # The user's own startup greeting: its label, the field, then the
+        # Insert placeholder button beside it (a button names itself).
+        label = _("profile_lbl_greeting")
+        vbox.Add(wx.StaticText(self, label=label), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        hbox_greeting = wx.BoxSizer(wx.HORIZONTAL)
+        self.txt_greeting = wx.TextCtrl(self, value=profile["custom_greeting"])
+        self.txt_greeting.SetName(_plain_label(label))
+        self.txt_greeting.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
+        hbox_greeting.Add(self.txt_greeting, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.btn_insert = wx.Button(self, label=_("profile_btn_insert"))
+        hbox_greeting.Add(self.btn_insert, 0, wx.ALIGN_CENTER_VERTICAL)
+        vbox.Add(hbox_greeting, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
+        self.chk_boot_only = wx.CheckBox(self, label=_("profile_chk_boot_only"))
+        self.chk_boot_only.SetName(_plain_label(_("profile_chk_boot_only")))
+        self.chk_boot_only.SetValue(profile["custom_greeting_boot_only"])
+        vbox.Add(self.chk_boot_only, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        lbl_greeting_note = wx.StaticText(self, label=_("profile_greeting_note"))
+        lbl_greeting_note.Wrap(500)
+        vbox.Add(lbl_greeting_note, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
         self.list_fields = _labeled(
             self, vbox, _("profile_lbl_fields"),
-            lambda: wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN),
+            lambda: wx.ListCtrl(self, size=(-1, 110),
+                                style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN),
             proportion=1)
+        self.list_fields.SetMinSize((-1, 110))
         self.list_fields.InsertColumn(0, _("profile_col_placeholder"), width=180)
         self.list_fields.InsertColumn(1, _("profile_col_value"), width=320)
 
@@ -385,9 +444,15 @@ class ProfileSettingsPanel(wx.Panel):
             hbox.Add(btn, 0, wx.RIGHT, 5)
         vbox.Add(hbox, 0, wx.ALL, 10)
         self.SetSizer(vbox)
+        if hasattr(self, "SetScrollRate"):
+            self.SetScrollRate(0, 20)
+            core.ui_scale.apply_appearance(self)
+            self.FitInside()   # after scaling, so large text can still be scrolled to
 
         # Enter edits and Delete removes; selecting a row never moves focus.
         self.list_fields.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_edit)
+        self.btn_insert.Bind(wx.EVT_BUTTON, self.on_insert_placeholder)
+        self.txt_greeting.Bind(wx.EVT_SET_FOCUS, self._on_greeting_focus)
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
         self._refresh(0)
 
@@ -400,6 +465,38 @@ class ProfileSettingsPanel(wx.Panel):
         ctrl.SetName(_plain_label(label))
         sizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 15)
         return ctrl
+
+    def _on_greeting_focus(self, event):
+        self._greeting_focused = True
+        event.Skip()
+
+    def placeholder_entries(self):
+        """The Insert placeholder menu, showing what is typed on this page."""
+        try:
+            birthday = core.personal.check_birthday(*self._birthday_input())
+        except core.personal.ProfileError:
+            birthday = None
+        age = core.personal.get_age(birthday=birthday) if birthday else None
+        return core.personal.menu_entries(
+            name=self.txt_name.GetValue(), nickname=self.txt_nickname.GetValue(),
+            title=self.txt_title.GetValue(),
+            birthday=core.personal.birthday_text(birthday) if birthday else "",
+            age="" if age is None else str(age), fields=self._fields)
+
+    def on_insert_placeholder(self, event=None):
+        menu = placeholder_menu(self.placeholder_entries(), self.insert_placeholder)
+        self._show_menu(menu)
+        menu.Destroy()
+
+    def _show_menu(self, menu):
+        self.btn_insert.PopupMenu(menu, (0, self.btn_insert.GetSize().height))
+
+    def insert_placeholder(self, token):
+        """Put `token` at the greeting field's caret (at its end if it was never
+        focused), then return focus there."""
+        insert_into_field(self.txt_greeting, token, at_end=not self._greeting_focused)
+        self._greeting_focused = True
+        self._mark_dirty()
 
     def _birthday_input(self):
         return (self.choice_day.GetSelection(), self.choice_month.GetSelection(),
@@ -485,13 +582,24 @@ class ProfileSettingsPanel(wx.Panel):
         return None
 
     def ApplyChanges(self):
+        title = " ".join(self.txt_title.GetValue().split())
+        changed = {"title": title} if title != self._loaded_title else {}
         try:
             core.personal.set_profile(self.txt_name.GetValue(), self.txt_nickname.GetValue(),
                                       self._fields,
-                                      birthday=core.personal.check_birthday(*self._birthday_input()))
+                                      birthday=core.personal.check_birthday(*self._birthday_input()),
+                                      **changed)
+            self._loaded_title = title
         except core.personal.ProfileError as e:
             wx.MessageBox(str(e), _("error"), wx.OK | wx.ICON_ERROR, self)
         core.personal.set_startup_greeting(self.chk_greet.GetValue())
+        greeting = (self.txt_greeting.GetValue().strip(), self.chk_boot_only.GetValue())
+        if greeting != self._loaded_greeting:
+            try:
+                core.personal.set_custom_greeting(*greeting)
+                self._loaded_greeting = greeting
+            except core.personal.ProfileError as e:
+                wx.MessageBox(str(e), _("error"), wx.OK | wx.ICON_ERROR, self)
 
 
 def create_profile_panel(parent):

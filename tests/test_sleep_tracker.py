@@ -945,6 +945,8 @@ def test_register_and_teardown(smain, fresh_event_bus):
     assert history_kwargs == {"default_shift": True}
     assert len(smain.panels) == 1 and smain.panels[0][0] == "Sleep Pattern"
     assert smain.clock.reads == 1      # the gap since Hariku last ran is filled in at once
+    import core.personal
+    assert core.personal.is_placeholder_registered("sleep")         # %sleep% (core 2.7)
 
     smain.clock.when += 5 * MINUTE
     smain.teardown()
@@ -953,6 +955,7 @@ def test_register_and_teardown(smain, fresh_event_bus):
     saved = core.api.load_data(smain.ACTIVITY_KEY)
     assert saved["last"]["final"] is True
     assert saved["last"]["wall"] == smain.clock.when.timestamp()     # flushed on the way out
+    assert not core.personal.is_placeholder_registered("sleep")
 
 
 def test_minute_tick_buffers_and_saves_every_10_minutes(smain, fresh_event_bus, monkeypatch):
@@ -995,11 +998,13 @@ def test_a_night_with_the_computer_off(smain, fresh_event_bus, text):
     lines = []
     smain._on_briefing_collect(lines)
     assert lines == ["Last night you slept about 7 hours 50 minutes, from 23:50 to 07:40."]
+    assert smain.placeholder_text() == "about 7 hours 50 minutes"        # %sleep%
     clock.when = at(0, "20:00")             # too long ago for the briefing
     smain._on_minute_tick(clock.when)
     lines = []
     smain._on_briefing_collect(lines)
     assert lines == []
+    assert smain.placeholder_text() == ""
 
 
 def test_briefing_says_nothing_without_a_detected_sleep(smain, fresh_event_bus, store):

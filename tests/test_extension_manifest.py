@@ -68,6 +68,7 @@ CORE_FEATURES_SINCE = {
     "stop_sound": (2, 6),
     "core.personal": (2, 7),
     "core.voice": (2, 7),
+    "remember=True": (2, 7),     # core.sounds.set_theme_dir(path, remember=True)
 }
 
 

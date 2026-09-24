@@ -31,6 +31,8 @@
         "today_prefix": "Today: {text}.",
         "tomorrow_prefix": "Tomorrow: {text}.",
         "weather_in": "Weather in {place}: {text}.",
+        "placeholder_desc": "the weather now in your city, from the last forecast",
+        "placeholder_temp": "{temp} degrees",
         "day_today": "Today, {date}",
         "day_tomorrow": "Tomorrow, {date}",
         "unit_celsius": "degrees Celsius",

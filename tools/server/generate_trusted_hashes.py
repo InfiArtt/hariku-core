@@ -91,6 +91,7 @@ OFFICIAL_EXTENSION_IDS = {
     "edge_voices",
     "sleep_tracker",
     "piper_voices",
+    "cockpit",
     # add new official extension IDs here
 }
 
