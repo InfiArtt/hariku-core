@@ -793,10 +793,14 @@ def test_preferences_pages_follow_general(monkeypatch):
                         lambda category, name, create, apply=None: pages.append(
                             (category, create, apply)))
     core.core_panels.register()
-    assert [p[0] for p in pages][:3] == ["General", core.core_panels._("prefs_tab_profile"),
+    # Places (core 2.8) comes right after Profile.
+    assert [p[0] for p in pages][:4] == ["General", core.core_panels._("prefs_tab_profile"),
+                                          core.core_panels._("prefs_tab_places"),
                                           core.core_panels._("prefs_tab_quiet")]
     assert pages[1][1] is core.core_panels.create_profile_panel
-    assert pages[2][1:] == (core.core_panels.create_quiet_panel,
+    assert pages[2][1:] == (core.core_panels.create_places_panel,
+                            core.core_panels.apply_places_settings)
+    assert pages[3][1:] == (core.core_panels.create_quiet_panel,
                             core.core_panels.apply_quiet_settings)
     assert core.core_panels.QUIET_TIMES[:3] == ["00:00", "00:30", "01:00"]
     assert len(core.core_panels.QUIET_TIMES) == 48 and "22:00" in core.core_panels.QUIET_TIMES

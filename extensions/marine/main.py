@@ -13,9 +13,10 @@ Sea Conditions — Hariku V2 extension.
 Speaks the waves, swell, sea temperature and the tide (rising or falling, the
 next high and low tide) for a beach, port or coastal town, and shows the next
 days and tides in a window. Data from Open-Meteo's Marine API (no account or
-API key). The place defaults to the Weather extension's city; another one is
-chosen in Preferences, Sea Conditions, along with an optional once-a-day
-high-wave announcement.
+API key), which gets the place rounded to about 1 km. The place is the main
+place from Preferences, Places (core 2.8) unless another place, or a beach or
+port of its own, is chosen in Preferences, Sea Conditions, along with an
+optional once-a-day high-wave announcement.
 
   marine_api.py   - requests, parsing, settings, cache and the alert rule (no wx)
   marine_tides.py - high and low tides from the hourly sea level
@@ -41,6 +42,7 @@ import wx
 import core.api
 import core.hotkeys
 import core.personal
+import core.places
 import core.preferences
 from core.speech import speak
 
@@ -54,7 +56,6 @@ logger = logging.getLogger(__name__)
 EXT_NAME = "Sea Conditions"  # fixed, so saved hotkeys survive a language change
 DATA_KEY = "Marine"          # settings, see marine_api.normalize_settings()
 CACHE_KEY = "MarineCache"    # last answer, see marine_api.make_cache()
-WEATHER_DATA_KEY = "Weather"
 
 FRESH_SECONDS = 10 * 60      # answer from the cache without fetching
 REFRESH_SECONDS = 30 * 60    # background refresh interval
@@ -101,14 +102,10 @@ def _today():
 # State
 # ------------------------------------------------------------
 
-def weather_location():
-    """The Weather extension's city, used when no sea location is chosen."""
-    data = core.api.load_data(WEATHER_DATA_KEY)
-    return api.normalize_location(data.get("location")) if isinstance(data, dict) else None
-
-
 def get_location():
-    return _settings.get("location") or weather_location()
+    """The place in use: the chosen place from Preferences, Places (the main
+    place by default), or the beach or port of its own; None without one."""
+    return core.places.location_for(_settings.get("place"), _settings.get("location"))
 
 
 def get_settings():
@@ -324,10 +321,23 @@ def _on_briefing_collect(lines):
             lines.append(sentence)
 
 
+def _on_places_changed(*_args, **_kwargs):
+    """The places changed (Preferences, Places): show them on the settings
+    page, and fetch the new place when the one in use moved."""
+    if _panel:
+        try:
+            _panel.refresh_places()
+        except RuntimeError:
+            pass  # panel already destroyed
+    if _active and get_location() and current_cache() is None:
+        refresh()
+
+
 _SUBSCRIPTIONS = (
     ("on_app_startup", _on_app_startup),
     ("on_minute_tick", _on_minute_tick),
     ("on_briefing_collect", _on_briefing_collect),
+    ("on_places_changed", _on_places_changed),
 )
 
 
@@ -337,7 +347,7 @@ _SUBSCRIPTIONS = (
 
 def _create_panel(parent):
     global _panel
-    _panel = marine_ui.MarinePanel(parent, get_settings(), weather_location())
+    _panel = marine_ui.MarinePanel(parent, get_settings())
     return _panel
 
 
@@ -349,7 +359,7 @@ def _apply_panel():
     except RuntimeError:
         return  # panel already destroyed
     _save_settings(new_settings)
-    _panel.set_location(_settings["location"], weather_location())
+    _panel.set_location(_settings["location"])
 
 
 # ------------------------------------------------------------
@@ -366,6 +376,11 @@ def register(bus):
     _panel = None
     del _waiters[:]
     _settings = api.normalize_settings(core.api.load_data(DATA_KEY))
+    if _settings["place"] is None and _settings["location"]:
+        # First start with core 2.8: a place of its own stays in use, unless it
+        # is the main place anyway.
+        _settings["place"] = core.places.initial_choice(_settings["location"])
+        _store_settings()
     _cache = api.normalize_cache(core.api.load_data(CACHE_KEY))
 
     for event_name, handler in _SUBSCRIPTIONS:

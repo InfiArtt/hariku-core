@@ -162,7 +162,8 @@ def _fake_fetch_json(url):
     if url.startswith(marine_api.GEOCODING_URL):
         return PLACES
     if url.startswith(marine_api.MARINE_URL):
-        return INLAND if "latitude=-6.9175" in url else MARINE
+        # Only ever the rounded point (core 2.8): Bandung is -6.92, 107.62.
+        return INLAND if "latitude=-6.92&" in url else MARINE
     raise AssertionError(f"unexpected URL {url}")
 
 
@@ -272,8 +273,14 @@ assert run_and_close("Sea Conditions.show_forecast") == []
 assert spoken == [NO_LOCATION, NO_LOCATION], spoken
 print("OK no_location_hint")
 
-# --- The Weather city is the default; an inland one has no sea data ------------------
+# --- The main place (Preferences, Places) is the default; an inland one has no sea data --
+import core.places
 core.api.save_data("Weather", {"location": BANDUNG, "units": "metric"})
+assert main.get_location() is None, "the Weather city is no longer used by itself"
+bandung_place, = core.places.set_places([{
+    "name": "Bandung", "lat": BANDUNG["latitude"], "lon": BANDUNG["longitude"],
+    "label": "Bandung, West Java, Indonesia", "timezone": "Asia/Jakarta", "source": "city",
+    "city": "Bandung", "region": "West Java", "country": "Indonesia"}])
 assert main.get_location()["name"] == "Bandung"
 spoken.clear()
 assert run_and_close("Sea Conditions.speak_sea") == []
@@ -288,9 +295,9 @@ assert dlg.list_days.GetStrings() == [_("forecast_no_data")], dlg.list_days.GetS
 assert dlg.list_tides.GetStrings() == [_("tides_empty")], dlg.list_tides.GetStrings()
 dlg.Destroy()
 wx.Yield()
-print("OK weather_default_inland")
+print("OK main_place_inland")
 
-# --- Preferences page: search, browse, the Weather button, save ----------------------
+# --- Preferences page: the place choice, search, browse, save -------------------------
 from ui.preferences_dialog import PreferencesDialog
 
 prefs = PreferencesDialog(frame, select_tab="Sea Conditions")
@@ -298,13 +305,25 @@ prefs.Show()
 wx.Yield()
 panel = main._panel
 assert panel is not None and panel.IsShown(), "Sea Conditions settings page was not created"
-assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia (from the Weather settings)", \
-    panel.txt_location.GetValue()
+choice = panel.place_choice.ctrl
+assert choice.GetName() == "Place", choice.GetName()
+assert choice.GetStrings() == ["The main place (Bandung)", "Bandung", "Its own place\u2026"], \
+    choice.GetStrings()
+assert panel.place_choice.key() == "main" and choice.GetSelection() == 0
+assert panel.txt_location.GetValue() == _("location_not_set"), panel.txt_location.GetValue()
+# The place search is for its own place only: skipped while another place is chosen.
+assert not panel.txt_search.IsEnabled() and not panel.list_results.IsEnabled()
 labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
 assert "Data: Open-Meteo.com" in labels, labels
 assert any("roughly 5 to 25 kilometres across" in label for label in labels), labels
 assert any("navigation or safety at sea" in label for label in labels), labels
+assert any("rounded to about 1 kilometre" in label for label in labels), labels
 assert not panel.chk_alert.GetValue()
+# Arrowing through the places: focus stays; the last one, "Its own place", opens the search.
+checked = browse(choice, wx.EVT_CHOICE)
+assert panel.place_choice.key() == "own", panel.place_choice.key()
+assert panel.txt_search.IsEnabled() and panel.btn_search.IsEnabled()
+assert panel.list_results.IsEnabled()
 assert panel.choice_height.GetString(panel.choice_height.GetSelection()) == "2.5 metres, rough"
 
 panel.txt_search.SetValue("P")
@@ -320,19 +339,17 @@ assert pump(lambda: panel.list_results.GetCount() == 2), "search results never a
 assert panel.list_results.GetString(0) == "Pelabuhan Ratu, West Java, Indonesia"
 if search_focused:
     assert wx.Window.FindFocus() is panel.list_results, "focus did not move to the results"
-checked = browse(panel.list_results, wx.EVT_LISTBOX)
+checked = browse(panel.list_results, wx.EVT_LISTBOX) and checked
 checked = browse(panel.choice_height, wx.EVT_CHOICE) and checked
 checked = toggle(panel.chk_alert) and checked
 
-panel.btn_use_weather.SetFocus()
-wx.Yield()
-button_focused = wx.Window.FindFocus() is panel.btn_use_weather
-fire(panel.btn_use_weather, wx.EVT_BUTTON)
-assert spoken[-1] == _("use_weather_done", place="Bandung, West Java, Indonesia"), spoken[-1]
-assert panel.chosen_location() is None
-assert panel.txt_location.GetValue().endswith("(from the Weather settings)")
-if button_focused:
-    assert wx.Window.FindFocus() is panel.btn_use_weather, "focus moved after the button"
+# Back to the main place and to its own place again: the search follows.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
 panel.list_results.SetSelection(0)
 fire(panel.list_results, wx.EVT_LISTBOX, 0)
 assert panel.chosen_location()["name"] == "Pelabuhan Ratu"
@@ -344,6 +361,7 @@ spoken.clear()
 sounds.clear()
 prefs.OnApply(None)
 saved = core.api.load_data("Marine")
+assert saved["place"] == "own", saved
 assert saved["location"]["name"] == "Pelabuhan Ratu" and saved["location"]["admin1"] == "West Java", saved
 assert saved["alert"] is True and saved["alert_height"] == 1.0, saved
 assert panel.txt_location.GetValue() == "Pelabuhan Ratu, West Java, Indonesia"
@@ -360,6 +378,46 @@ bus.emit("on_app_startup")
 pump(lambda: False, timeout=0.3)
 assert sum(s.startswith("Sea alert") for s in spoken) == 1, spoken   # once a day
 print("OK panel_apply_alert")
+
+# --- The places change while the page is open: the list follows, the choice stays -----
+prefs = PreferencesDialog(frame, select_tab="Sea Conditions")
+prefs.Show()
+wx.Yield()
+panel = main._panel
+choice = panel.place_choice.ctrl
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
+assert panel.txt_location.GetValue() == "Pelabuhan Ratu, West Java, Indonesia"
+choice.SetFocus()
+wx.Yield()
+choice_focused = wx.Window.FindFocus() is choice
+beach = {"name": "Pantai Pangandaran", "lat": -7.7, "lon": 108.65, "label": "", "source": "coordinates"}
+core.places.set_places([bandung_place, beach])      # what the Places page does on OK
+assert choice.GetStrings() == ["The main place (Bandung)", "Bandung", "Pantai Pangandaran",
+                               "Its own place\u2026"], choice.GetStrings()
+assert panel.place_choice.key() == "own" and choice.GetSelection() == 3
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when the places changed"
+# Choosing a saved place skips its own search again, and is what OK saves.
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert not panel.txt_search.IsEnabled()
+before = len(stub_requests)
+prefs.OnApply(None)
+saved = core.api.load_data("Marine")
+assert saved["place"] == core.places.get_places()[1]["id"], saved
+assert saved["location"]["name"] == "Pelabuhan Ratu", "its own place is kept for later"
+assert main.get_location()["name"] == "Pantai Pangandaran"
+assert pump(lambda: len(stub_requests) > before), "the chosen place was not fetched"
+assert "latitude=-7.70&longitude=108.65" in stub_requests[-1], stub_requests[-1]
+# Back to its own place for the checks below.
+panel.place_choice.set_key("own")
+panel._update_own()
+prefs.OnApply(None)
+assert pump(lambda: main.current_cache() is not None and not main._loading)
+assert main.get_location()["name"] == "Pelabuhan Ratu"
+prefs.Destroy()
+wx.Yield()
+print(f"OK places_changed ({focus_note(choice_focused)})")
 
 # --- Hotkey actions with a place ------------------------------------------------------
 spoken.clear()

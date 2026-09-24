@@ -118,6 +118,15 @@ class HarikuApp(wx.App):
         import core.core_panels
         core.core_panels.register()
 
+        # Core 2.8: the first time, make "Home" from the place the user already
+        # had (Flight Radar's exact home, else the Weather city), before the
+        # extensions that use it load.
+        import core.places
+        try:
+            core.places.migrate()
+        except Exception as e:
+            logger.error(f"Places migration failed: {e}")
+
         # Initialize the hotkey / input-gesture system.
         core.hotkeys.init_hotkeys()
 

@@ -9,8 +9,8 @@
 
 # Tests for the Sea Conditions extension: Marine API parsing (inland nulls
 # included), high and low tides, text in both languages, the high-wave alert,
-# the cache, the briefing, and the actions. No test touches the network; the
-# fetch functions are replaced.
+# the cache, the briefing, the actions, and which place it uses (core 2.8
+# Places). No test touches the network; the fetch functions are replaced.
 
 import datetime
 import importlib.util
@@ -265,7 +265,7 @@ def test_request_urls_send_only_the_place_and_what_is_needed(api):
     assert url.startswith("https://marine-api.open-meteo.com/v1/marine?")
     query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
     assert query == {
-        "latitude": ["-6.1000"], "longitude": ["106.8800"],
+        "latitude": ["-6.10"], "longitude": ["106.88"],
         "current": ["wave_height,wave_direction,wave_period,swell_wave_height,sea_surface_temperature"],
         "hourly": ["sea_level_height_msl"],
         "daily": ["wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max"],
@@ -576,15 +576,18 @@ def test_alert_text(text, lang):
     {"alert": "yes", "alert_height": 2.7, "alert_date": 20260923},
 ])
 def test_settings_survive_corrupt_data(api, raw):
-    assert api.normalize_settings(raw) == {"location": None, "alert": False,
+    assert api.normalize_settings(raw) == {"place": None, "location": None, "alert": False,
                                            "alert_height": 2.5, "alert_date": ""}
 
 
 def test_settings_keep_valid_values(api):
-    raw = {"location": PRIOK, "alert": True, "alert_height": 1.25, "alert_date": "2026-09-23",
-           "extra": 1}
-    assert api.normalize_settings(raw) == {"location": PRIOK, "alert": True, "alert_height": 1.25,
-                                           "alert_date": "2026-09-23"}
+    raw = {"place": "own", "location": PRIOK, "alert": True, "alert_height": 1.25,
+           "alert_date": "2026-09-23", "extra": 1}
+    assert api.normalize_settings(raw) == {"place": "own", "location": PRIOK, "alert": True,
+                                           "alert_height": 1.25, "alert_date": "2026-09-23"}
+    for place in ("main", "abc12345"):
+        assert api.normalize_settings({"place": place})["place"] == place
+    assert api.normalize_settings({"place": "../x"})["place"] is None
 
 
 def test_cache_freshness(api, forecast):
@@ -627,20 +630,33 @@ def test_no_location_speaks_where_to_set_it(mmain, lang, monkeypatch):
     monkeypatch.setattr(mmain.marine_ui, "SeaForecastDialog", no_dialog)
     mmain.speak_sea_conditions()
     mmain.show_forecast()
-    hint = "No sea location is set. Choose a beach or port in Preferences, Sea Conditions."
+    hint = ("No sea location is set. Add a place in Preferences, Places, or choose a beach "
+            "or port in Preferences, Sea Conditions.")
     assert mmain.spoken == [hint, hint]
     lang("id")
     mmain.speak_sea_conditions()
     assert mmain.spoken[-1].startswith("Lokasi laut belum diatur.")
 
 
-def test_the_weather_city_is_the_default(mmain, api, tmp_data_dir):
+def _place(location, name=None):
+    """A saved place (core 2.8) at `location`."""
+    return {"name": name or location["name"], "lat": location["latitude"],
+            "lon": location["longitude"], "label": location["name"], "timezone": None,
+            "source": "city", "city": location["name"]}
+
+
+def test_the_main_place_is_the_default(mmain, api, tmp_data_dir):
     import core.api
+    import core.places
     _set(mmain, None)
     assert mmain.get_location() is None
+    # The Weather city is no longer used by itself.
     core.api.save_data("Weather", {"location": BANDUNG, "units": "metric"})
-    assert mmain.get_location() == BANDUNG
-    _set(mmain, PRIOK)
+    assert mmain.get_location() is None
+    core.places.set_places([_place(BANDUNG, "Home")])
+    location = mmain.get_location()
+    assert location["name"] == "Home" and location["latitude"] == BANDUNG["latitude"]
+    _set(mmain, PRIOK)                    # a place of its own, from before 2.8
     assert mmain.get_location() == PRIOK
 
 
@@ -659,7 +675,7 @@ def test_stale_cache_is_refreshed_then_spoken(mmain, api, forecast, lang, monkey
     _set(mmain)
     mmain._cache = api.make_cache(PRIOK, forecast, now=1.0)
     mmain.speak_sea_conditions()
-    assert len(calls) == 1 and "latitude=-6.1000" in calls[0]
+    assert len(calls) == 1 and "latitude=-6.10&" in calls[0]
     assert mmain.spoken[0] == "Getting the sea conditions..."
     assert mmain.spoken[1].startswith("Tanjung Priok: Waves 0.3 metres, smooth")
     assert api.is_fresh(mmain._cache, 60)
@@ -774,14 +790,15 @@ def test_changing_the_place_fetches_it(mmain, api, forecast, monkeypatch):
     _set(mmain)
     mmain._cache = api.make_cache(PRIOK, forecast)
     mmain._save_settings({"location": BANDUNG, "alert": False, "alert_height": 2.5})
-    assert len(calls) == 1 and "latitude=-6.9175" in calls[0]
+    assert len(calls) == 1 and "latitude=-6.92&longitude=107.62" in calls[0]
     saved = core.api.load_data(mmain.DATA_KEY)
     assert saved["location"]["name"] == "Bandung" and saved["alert"] is False
-    # Back to the Weather city: nothing saved of our own, the Weather city is used.
-    core.api.save_data("Weather", {"location": PRIOK})
-    mmain._save_settings({"location": None})
-    assert core.api.load_data(mmain.DATA_KEY)["location"] is None
-    assert mmain.get_location() == PRIOK
+    # The main place instead: its own place is kept for later.
+    import core.places
+    core.places.set_places([_place(PRIOK)])
+    mmain._save_settings({"place": "main"})
+    assert core.api.load_data(mmain.DATA_KEY)["location"]["name"] == "Bandung"
+    assert mmain.get_location()["name"] == "Tanjung Priok" and len(calls) == 2
 
 
 def test_high_waves_are_announced_once_a_day(mmain, api, forecast, lang, monkeypatch):
@@ -904,7 +921,118 @@ def test_quiet_hours_hold_the_high_wave_alert(mmain, api, forecast, lang, monkey
     assert mmain.spoken == ["Sea alert for Tanjung Priok: waves up to 2.8 metres today, rough."]
 
 
-def test_manifest_needs_core_2_7_for_quiet_hours():
+def test_manifest_needs_core_2_8_for_places():
     with open(os.path.join(MARINE_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"
+    assert manifest["version"] == "1.2" and manifest["minimum_core_version"] == "2.8"
+
+
+# ------------------------------------------------------------
+# Places (Sea Conditions 1.2, core 2.8)
+# ------------------------------------------------------------
+
+def test_the_place_choice(mmain, api, tmp_data_dir):
+    import core.places
+    home, beach = core.places.set_places([_place(BANDUNG, "Home"), _place(PRIOK, "Pantai")])
+    _set(mmain, dict(PRIOK, name="Pelabuhan"), place="main")
+    assert mmain.get_location()["name"] == "Home"
+    _set(mmain, dict(PRIOK, name="Pelabuhan"), place=beach["id"])
+    assert mmain.get_location()["name"] == "Pantai"
+    _set(mmain, dict(PRIOK, name="Pelabuhan"), place="own")
+    assert mmain.get_location()["name"] == "Pelabuhan"
+    # Its own place chosen but none found yet: no place.
+    _set(mmain, None, place="own")
+    assert mmain.get_location() is None
+    # A place that was removed: the main place.
+    core.places.set_places([home])
+    _set(mmain, None, place=beach["id"])
+    assert mmain.get_location()["name"] == "Home"
+
+
+def test_the_exact_point_never_leaves_the_computer(mmain, api, lang, monkeypatch):
+    import core.api
+    import core.places
+    calls = _fetch_calls(monkeypatch, api, response=MARINE_JSON)
+    core.places.set_places([{"name": "Home", "lat": -6.108812, "lon": 106.885613,
+                             "source": "coordinates"}])
+    _set(mmain, None, place="main")
+    mmain.speak_sea_conditions()
+    assert len(calls) == 1
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(calls[0]).query)
+    assert (query["latitude"], query["longitude"]) == (["-6.11"], ["106.89"])
+    assert "6.1088" not in calls[0] and "106.8856" not in calls[0]
+    # The cache keeps the rounded point too, and answers for the exact one.
+    stored = core.api.load_data(mmain.CACHE_KEY)
+    assert (stored["latitude"], stored["longitude"]) == (-6.11, 106.89)
+    assert mmain.current_cache() is not None
+    assert mmain.spoken[-1].startswith("Home: Waves 0.3 metres")
+
+
+def test_a_place_of_its_own_from_before_is_kept(mmain, fresh_event_bus, monkeypatch, tmp_data_dir):
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    # Home is somewhere else: the beach stays its own place.
+    core.places.set_places([_place(BANDUNG, "Home")])
+    core.api.save_data(mmain.DATA_KEY, {"location": PRIOK, "alert": True})
+    mmain.register(fresh_event_bus)
+    assert mmain._settings["place"] == "own" and mmain.get_location() == PRIOK
+    assert core.api.load_data(mmain.DATA_KEY)["place"] == "own"
+    mmain.teardown()
+    # Its place is the main place anyway: it follows the main place.
+    core.api.save_data(mmain.DATA_KEY, {"location": BANDUNG})
+    mmain.register(fresh_event_bus)
+    assert mmain._settings["place"] == "main"
+    mmain.teardown()
+    # Nothing of its own: the main place, and nothing written.
+    core.api.save_data(mmain.DATA_KEY, {"alert": True})
+    mmain.register(fresh_event_bus)
+    assert mmain._settings["place"] is None and mmain.get_location()["name"] == "Home"
+    assert "place" not in core.api.load_data(mmain.DATA_KEY)
+    mmain.teardown()
+
+
+def test_places_changing_refreshes_the_page_and_the_data(mmain, api, forecast, monkeypatch):
+    import core.places
+    from core.events import bus
+    calls = _fetch_calls(monkeypatch, api, response=MARINE_JSON)
+    home, = core.places.set_places([_place(PRIOK, "Home")])
+    _set(mmain, None, place="main")
+    mmain._cache = api.make_cache(PRIOK, forecast)
+
+    class Page:
+        refreshed = 0
+
+        def refresh_places(self):
+            Page.refreshed += 1
+
+    monkeypatch.setattr(mmain, "_panel", Page())
+    bus.subscribe("on_places_changed", mmain._on_places_changed)
+    try:
+        # The main place moves: the page lists the places again, the new one is fetched.
+        core.places.set_places([dict(home, lat=BANDUNG["latitude"], lon=BANDUNG["longitude"])])
+        assert Page.refreshed == 1 and len(calls) == 1 and "latitude=-6.92" in calls[0]
+        # A change that doesn't move the place in use fetches nothing.
+        mmain._cache = api.make_cache(BANDUNG, forecast)
+        core.places.set_places(core.places.get_places() + [_place(PRIOK, "Office")])
+        assert Page.refreshed == 2 and len(calls) == 1
+        # Its own place: the places don't matter.
+        _set(mmain, PRIOK, place="own")
+        mmain._cache = api.make_cache(PRIOK, forecast)
+        core.places.set_places([])
+        assert len(calls) == 1
+    finally:
+        bus.unsubscribe("on_places_changed", mmain._on_places_changed)
+
+
+def test_the_weather_button_is_gone():
+    with open(os.path.join(MARINE_DIR, "marine_ui.py"), encoding="utf-8") as f:
+        source = f.read()
+    assert "use_weather" not in source and "PlaceChoice(" in source
+    for code, word in (("en", "Places"), ("id", "Tempat")):
+        with open(os.path.join(MARINE_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
+            messages = json.load(f)["messages"]
+        assert "btn_use_weather" not in messages and word in messages["no_location"]

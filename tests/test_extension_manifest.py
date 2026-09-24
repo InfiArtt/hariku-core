@@ -70,6 +70,8 @@ CORE_FEATURES_SINCE = {
     "core.personal": (2, 7),
     "core.voice": (2, 7),
     "remember=True": (2, 7),     # core.sounds.set_theme_dir(path, remember=True)
+    "core.places": (2, 8),       # also core.places_ui
+    "core.place_search": (2, 8),
 }
 
 

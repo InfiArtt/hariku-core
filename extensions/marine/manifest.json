@@ -1,10 +1,10 @@
 {
     "id": "marine",
     "name": "Sea Conditions",
-    "version": "1.1",
-    "description": "Hear the waves, swell, sea temperature and the tide (rising or falling, the next high and low tide) for a beach or port, and see the next days and tides. Choose the place in Preferences, Sea Conditions; it starts with your Weather city. Sea data by Open-Meteo.com (no account or API key needed).",
+    "version": "1.2",
+    "description": "Hear the waves, swell, sea temperature and the tide (rising or falling, the next high and low tide) for a beach or port, and see the next days and tides. It uses your main place from Preferences, Places, or another place or a beach or port you choose in Preferences, Sea Conditions. Sea data by Open-Meteo.com (no account or API key needed).",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.7"
+    "minimum_core_version": "2.8"
 }

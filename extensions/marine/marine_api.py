@@ -13,6 +13,9 @@ fetch, and turning the Marine API JSON into plain dicts, plus the pure helpers
 for settings, the cache and the high-wave alert. No wx and no translated text,
 so tests can drive it with sample responses.
 
+Privacy (core 2.8): the Marine API gets the place rounded to 2 decimals
+(about 1 km), never more; the cache is kept for that rounded point.
+
 fetch_json(), fetch_marine() and search_places() block on the network: call
 them from a worker thread only.
 """
@@ -25,6 +28,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import core.places
 from core.constants import CORE_VERSION
 
 logger = logging.getLogger(__name__)
@@ -44,6 +48,8 @@ HOURLY_FIELDS = ("sea_level_height_msl",)
 DAILY_FIELDS = ("wave_height_max", "wave_direction_dominant", "wave_period_max",
                 "swell_wave_height_max")
 
+QUERY_DECIMALS = 2   # the point Open-Meteo gets: about 1 km
+
 ALERT_HEIGHTS = (1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0)   # metres
 DEFAULT_ALERT_HEIGHT = 2.5
 
@@ -60,10 +66,17 @@ class MarineError(Exception):
 # Requests
 # ------------------------------------------------------------
 
+def query_point(latitude, longitude):
+    """The rounded point sent instead of the exact one."""
+    return round(float(latitude), QUERY_DECIMALS), round(float(longitude), QUERY_DECIMALS)
+
+
 def build_marine_url(latitude, longitude, timezone=""):
+    # Always rounded here, so an exact point can never reach the URL.
+    lat, lon = query_point(latitude, longitude)
     params = {
-        "latitude": f"{float(latitude):.4f}",
-        "longitude": f"{float(longitude):.4f}",
+        "latitude": f"{lat:.{QUERY_DECIMALS}f}",
+        "longitude": f"{lon:.{QUERY_DECIMALS}f}",
         "current": ",".join(CURRENT_FIELDS),
         "hourly": ",".join(HOURLY_FIELDS),
         "daily": ",".join(DAILY_FIELDS),
@@ -249,6 +262,8 @@ def normalize_settings(raw):
     height = to_float(raw.get("alert_height"))
     alert_date = raw.get("alert_date")
     return {
+        # "main", a place id or "own" (core.places); None until decided.
+        "place": core.places.normalize_choice(raw.get("place")),
         "location": normalize_location(raw.get("location")),
         "alert": raw.get("alert") is True,
         "alert_height": height if height in ALERT_HEIGHTS else DEFAULT_ALERT_HEIGHT,
@@ -257,10 +272,12 @@ def normalize_settings(raw):
 
 
 def make_cache(location, forecast, now=None):
+    # Kept for the point that was asked about (rounded), not the exact one.
+    lat, lon = query_point(location["latitude"], location["longitude"])
     return {
         "fetched_at": time.time() if now is None else now,
-        "latitude": location["latitude"],
-        "longitude": location["longitude"],
+        "latitude": lat,
+        "longitude": lon,
         "forecast": forecast,
     }
 
@@ -294,11 +311,13 @@ def normalize_cache(raw):
 
 
 def cache_matches(cache, location):
+    """Whether the cache answers for `location` (compared at the rounded point)."""
     if not cache or not location:
         return False
     try:
-        return (abs(float(cache["latitude"]) - float(location["latitude"])) < 1e-4
-                and abs(float(cache["longitude"]) - float(location["longitude"])) < 1e-4)
+        lat, lon = query_point(location["latitude"], location["longitude"])
+        return (abs(float(cache["latitude"]) - lat) < 1e-4
+                and abs(float(cache["longitude"]) - lon) < 1e-4)
     except (KeyError, TypeError, ValueError):
         return False
 

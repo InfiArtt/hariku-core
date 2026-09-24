@@ -9,8 +9,9 @@
 
 """
 Windows for the Sea Conditions extension:
-  * MarinePanel       - the Preferences page: place search (or the Weather
-                        city), the high-wave announcement, notes, attribution.
+  * MarinePanel       - the Preferences page: the place (one from Preferences,
+                        Places, or its own, found with the place search), the
+                        high-wave announcement, notes, attribution.
   * SeaForecastDialog - two read-only lists: the next days, and the next tides.
 Selection changes never move keyboard focus. Focus only moves after the user
 asks for something (opening the dialog, pressing Search).
@@ -21,8 +22,10 @@ import threading
 
 import wx
 
+import core.places
 import core.ui_scale
 from core.i18n import apply_rtl_layout, get_current_language
+from core.places_ui import PlaceChoice
 from core.speech import speak
 
 import marine_api as api
@@ -59,18 +62,23 @@ _PageBase = wx.ScrolledWindow if isinstance(getattr(wx, "ScrolledWindow", None),
 
 
 class MarinePanel(_PageBase):
-    """OK saves the search result selected last, or the Weather city after
-    "Use the Weather location", or keeps the saved place."""
+    """OK saves which place to use ("Place:"), and as its own place the
+    search result selected last, or keeps the saved one. The place search is
+    only available while "Its own place" is chosen."""
 
-    def __init__(self, parent, settings, weather_location=None):
+    def __init__(self, parent, settings):
         super().__init__(parent)
         self._location = settings.get("location")
-        self._weather_location = weather_location
         self._results = []
-        self._pending = None     # "place" or "weather"
+        self._pending = None     # "place" after a search result was selected
         self._search_id = 0
 
         vbox = wx.BoxSizer(wx.VERTICAL)
+
+        choice = (core.places.normalize_choice(settings.get("place"))
+                  or core.places.initial_choice(self._location))
+        self.place_choice = PlaceChoice(self, vbox, choice, own=True,
+                                        on_change=lambda key: self._update_own())
 
         self.txt_location = _labelled(self, vbox, _("lbl_current_location"),
                                       lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
@@ -90,9 +98,6 @@ class MarinePanel(_PageBase):
         self.list_results.SetName(_("lbl_results").rstrip(":"))
         vbox.Add(self.list_results, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
-        self.btn_use_weather = wx.Button(self, label=_("btn_use_weather"))
-        vbox.Add(self.btn_use_weather, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-
         self.chk_alert = wx.CheckBox(self, label=_("chk_alert"))
         self.chk_alert.SetValue(bool(settings.get("alert")))
         vbox.Add(self.chk_alert, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
@@ -105,7 +110,7 @@ class MarinePanel(_PageBase):
                                         else api.ALERT_HEIGHTS.index(api.DEFAULT_ALERT_HEIGHT))
         vbox.Add(self.choice_height, 0, wx.LEFT | wx.RIGHT, 10)
 
-        for note in (_("note_area"), _("note_tides"), _("attribution")):
+        for note in (_("note_area"), _("note_tides"), _("note_privacy"), _("attribution")):
             vbox.Add(wx.StaticText(self, label=note), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
         vbox.AddSpacer(10)
 
@@ -116,38 +121,42 @@ class MarinePanel(_PageBase):
         self.txt_search.Bind(wx.EVT_TEXT_ENTER, self._on_search)
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search)
         self.list_results.Bind(wx.EVT_LISTBOX, self._on_result_selected)
-        self.btn_use_weather.Bind(wx.EVT_BUTTON, self._on_use_weather)
-        self.set_location(self._location, weather_location)
+        self.set_location(self._location)
+        self._update_own()
         core.ui_scale.apply_appearance(self)
         if hasattr(self, "FitInside"):
             self.FitInside()  # after scaling, so large text can still be scrolled to
 
-    def _location_text(self, place, weather_location):
-        if place:
-            return api.place_label(place)
-        if weather_location:
-            return _("location_from_weather", place=api.place_label(weather_location))
-        return _("location_not_set")
-
-    def set_location(self, place, weather_location=None):
+    def set_location(self, place):
+        """Show the saved place of its own (after OK)."""
         self._location = place
-        self._weather_location = weather_location
-        self.txt_location.ChangeValue(self._location_text(place, weather_location))
+        self._pending = None
+        self.txt_location.ChangeValue(api.place_label(place) if place else _("location_not_set"))
+
+    def _update_own(self):
+        """The place search is for "Its own place" only; other choices skip it."""
+        own = self.place_choice.is_own()
+        for ctrl in (self.txt_location, self.txt_search, self.btn_search, self.list_results):
+            ctrl.Enable(own)
+
+    def refresh_places(self):
+        """The places changed (Preferences, Places): list them again."""
+        self.place_choice.refresh()
+        self._update_own()
 
     def chosen_location(self):
-        """The location OK would save (None means the Weather city)."""
+        """Its own place, as OK would save it."""
         if self._pending == "place":
             sel = self.list_results.GetSelection()
             if 0 <= sel < len(self._results):
                 return self._results[sel]
-        elif self._pending == "weather":
-            return None
         return self._location
 
     def get_settings(self):
         """Settings to save."""
         sel = self.choice_height.GetSelection()
         return {
+            "place": self.place_choice.key(),
             "location": self.chosen_location(),
             "alert": self.chk_alert.GetValue(),
             "alert_height": api.ALERT_HEIGHTS[sel] if 0 <= sel < len(api.ALERT_HEIGHTS)
@@ -157,17 +166,6 @@ class MarinePanel(_PageBase):
     def _on_result_selected(self, event):
         self._pending = "place"   # state only; focus stays where it is
         event.Skip()
-
-    def _on_use_weather(self, event):
-        self._pending = "weather"
-        self.list_results.SetSelection(wx.NOT_FOUND)
-        # SetValue (not ChangeValue) so Preferences knows there is something to save.
-        self.txt_location.SetValue(self._location_text(None, self._weather_location))
-        if self._weather_location:
-            speak(_("use_weather_done", place=api.place_label(self._weather_location)),
-                  interrupt=True)
-        else:
-            speak(_("use_weather_none"), interrupt=True)
 
     def _on_search(self, event):
         query = self.txt_search.GetValue().strip()
