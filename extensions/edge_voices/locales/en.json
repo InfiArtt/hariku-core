@@ -1,0 +1,19 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.7",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Edge Voices",
+        "provider_name": "Microsoft Edge neural voices (online)",
+        "privacy_note": "Edge voices send the text being read (for example your reminder titles) to Microsoft's online speech service. This service is meant for the Edge browser and may stop working at any time; Hariku then uses your fallback voice.",
+        "voice_female": "{name} (female)",
+        "voice_male": "{name} (male)",
+        "err_paused": "The Edge speech service failed several times, so Hariku is not using it for a few minutes."
+    }
+}

@@ -67,6 +67,7 @@ CORE_FEATURES_SINCE = {
     "get_builtin_sounds_dir": (2, 6),
     "stop_sound": (2, 6),
     "core.personal": (2, 7),
+    "core.voice": (2, 7),
 }
 
 

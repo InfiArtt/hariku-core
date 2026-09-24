@@ -14,6 +14,16 @@ Version 2.7.0 (Core Update - September 24, 2026)
   silent, for example from 22:00 to 05:00: aircraft overhead, high waves,
   unhealthy air and earthquakes. Tsunami warnings, your own reminders and
   routines still sound.
+- Hariku Voice: in Preferences, Hariku Voice, you can have the startup
+  greeting, the Briefing and evening summary, and your reminders read by a
+  voice you choose instead of your screen reader. Everything else stays with
+  your screen reader, and a braille display still shows the text. The Windows
+  voices on your computer are built in. Press S in Hariku, or any key, to stop
+  the voice. Nothing changes until you turn it on.
+- New in the Extension Store: Edge Voices, the Microsoft Edge online voices
+  for Hariku Voice, including the Indonesian voices Ardi and Gadis. They send
+  the text being read to Microsoft, and the service may stop working at any
+  time; Hariku then uses your fallback voice.
 - Morning Briefing 1.1 greets you by name and adds an evening summary
   (Shift+B): how many of today's reminders you finished, the ones left, and
   tomorrow's first reminder and weather. It can play by itself every evening.

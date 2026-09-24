@@ -1,0 +1,10 @@
+{
+    "id": "edge_voices",
+    "name": "Edge Voices",
+    "version": "1.0",
+    "description": "Adds the Microsoft Edge online neural voices, including the Indonesian voices Ardi and Gadis, to Hariku Voice. Choose them in Preferences, Hariku Voice. The text being read is sent to Microsoft's online speech service, which is meant for the Edge browser and may stop working at any time; Hariku then uses your fallback voice.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.7"
+}

@@ -65,7 +65,14 @@ def lang(monkeypatch, core_mod):
 def bmain(monkeypatch, tmp_data_dir, core_mod, fresh_event_bus):
     module = _load_main("briefing_main_under_test", BRIEFING_DIR)
     spoken = []
-    monkeypatch.setattr(module, "speak", lambda msg, interrupt=False: spoken.append(msg))
+
+    def fake_announce(msg, kind, interrupt=True):
+        # Everything the Briefing says is a "briefing" for Hariku Voice.
+        assert kind == "briefing"
+        spoken.append(msg)
+        return False
+
+    monkeypatch.setattr(module, "announce", fake_announce)
     module._bus = fresh_event_bus
     module._active = True
     module.spoken = spoken

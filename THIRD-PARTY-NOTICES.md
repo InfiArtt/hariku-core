@@ -24,6 +24,14 @@ each component.
 - **pyvda**: vendored under `extensions/window_teleporter/lib/pyvda/`.
   License: MIT. Used for Windows virtual-desktop control.
 
+## Protocol references
+
+- **edge-tts** (https://github.com/rany2/edge-tts, LGPL-3.0): the Edge Voices
+  extension (`extensions/edge_voices/`) is an independent implementation of the
+  Microsoft Edge "Read Aloud" speech protocol, written from the details edge-tts
+  documents (the endpoint, trusted client token, Sec-MS-GEC token and message
+  formats). No edge-tts code is included; it is credited here for the research.
+
 ## Native components
 
 - **nvdaControllerClient64.dll**: the NVDA Controller Client from NV Access,

@@ -351,15 +351,15 @@ class ProfileSettingsPanel(wx.Panel):
         hbox_bday = wx.BoxSizer(wx.HORIZONTAL)
         self.choice_day = self._labeled_row(
             hbox_bday, _("profile_lbl_bday_day"),
-            wx.Choice(self, choices=[not_set] + [str(d) for d in range(1, 32)]))
+            lambda: wx.Choice(self, choices=[not_set] + [str(d) for d in range(1, 32)]))
         self.choice_day.SetSelection(day)
         self.choice_month = self._labeled_row(
             hbox_bday, _("profile_lbl_bday_month"),
-            wx.Choice(self, choices=[not_set] + [_(f"month_{m}") for m in range(1, 13)]))
+            lambda: wx.Choice(self, choices=[not_set] + [_(f"month_{m}") for m in range(1, 13)]))
         self.choice_month.SetSelection(month)
         self.txt_year = self._labeled_row(
             hbox_bday, _("profile_lbl_bday_year"),
-            wx.TextCtrl(self, value=str(year) if year else "", size=(70, -1)))
+            lambda: wx.TextCtrl(self, value=str(year) if year else "", size=(70, -1)))
         self.txt_year.SetMaxLength(4)
         vbox.Add(hbox_bday, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
@@ -391,9 +391,12 @@ class ProfileSettingsPanel(wx.Panel):
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
         self._refresh(0)
 
-    def _labeled_row(self, sizer, label, ctrl):
-        """A label, then `ctrl` beside it with the same accessible name."""
+    def _labeled_row(self, sizer, label, make):
+        """A label, then the control `make()` creates beside it. The label must be
+        created first: screen readers name a control after the static text
+        created just before it, not after SetName."""
         sizer.Add(wx.StaticText(self, label=label), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        ctrl = make()
         ctrl.SetName(_plain_label(label))
         sizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 15)
         return ctrl
@@ -784,11 +787,26 @@ def apply_ext_settings():
     if _ext_settings_panel_instance:
         _ext_settings_panel_instance.ApplyChanges()
 
+# ---------------------------------------------------------------------------
+# Hariku Voice Panel (core/voice_panel.py), imported when Preferences opens
+# ---------------------------------------------------------------------------
+
+def create_voice_panel(parent):
+    import core.voice_panel
+    return core.voice_panel.create_voice_panel(parent)
+
+
+def apply_voice_settings():
+    import core.voice_panel
+    core.voice_panel.apply_voice_settings()
+
+
 def register():
     import core.preferences
     core.preferences.register_panel("General",             "", create_panel,             apply_general_settings)
     core.preferences.register_panel(_("prefs_tab_profile"), "", create_profile_panel,    apply_profile_settings)
     core.preferences.register_panel(_("prefs_tab_quiet"),  "", create_quiet_panel,      apply_quiet_settings)
+    core.preferences.register_panel(_("prefs_tab_voice"),  "", create_voice_panel,      apply_voice_settings)
     core.preferences.register_panel("Extensions",          "", create_ext_settings_panel, apply_ext_settings)
     core.preferences.register_panel("Advanced",            "", create_adv_panel,          apply_adv_settings)
 

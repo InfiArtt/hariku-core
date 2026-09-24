@@ -15,6 +15,17 @@ Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
   extension tidak berbunyi, misalnya dari 22:00 sampai 05:00: pesawat yang
   melintas, gelombang tinggi, udara tidak sehat, dan gempa. Peringatan
   tsunami, pengingatmu sendiri, dan rutinitas tetap berbunyi.
+- Suara Hariku: di Pengaturan, Suara Hariku, kamu bisa memilih suara yang
+  membacakan sapaan saat Hariku dimulai, Briefing dan ringkasan malam, serta
+  pengingatmu, menggantikan screen reader. Selain itu semuanya tetap dibacakan
+  screen reader-mu, dan layar braille tetap menampilkan teksnya. Suara Windows
+  di komputermu langsung bisa dipakai. Tekan S di Hariku, atau tombol apa
+  saja, untuk menghentikan suaranya. Tidak ada yang berubah sampai kamu
+  menyalakannya.
+- Baru di store extension: Edge Voices, suara online Microsoft Edge untuk
+  Suara Hariku, termasuk suara bahasa Indonesia Ardi dan Gadis. Teks yang
+  dibacakan dikirim ke Microsoft, dan layanan ini bisa berhenti berfungsi
+  kapan saja; kalau begitu, Hariku memakai suara cadanganmu.
 - Briefing Pagi 1.1 menyapamu dengan nama dan punya ringkasan malam baru
   (Shift+B): berapa pengingat hari ini yang sudah kamu selesaikan, mana yang
   belum, serta pengingat pertama dan cuaca besok. Ringkasan ini bisa diputar

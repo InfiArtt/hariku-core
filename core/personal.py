@@ -300,8 +300,10 @@ def startup_speech(welcome="", now=None):
 
 
 def speak_startup_greeting(welcome=""):
-    from core.speech import speak
-    speak(startup_speech(welcome), interrupt=False)
+    # Hariku Voice speaks it when the user chose a voice for the greeting;
+    # otherwise the screen reader does, as before.
+    import core.voice
+    core.voice.announce(startup_speech(welcome), "greeting", interrupt=False)
 
 
 # ------------------------------------------------------------

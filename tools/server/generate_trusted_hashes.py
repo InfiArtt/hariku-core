@@ -88,6 +88,7 @@ OFFICIAL_EXTENSION_IDS = {
     "marine",
     "air_quality",
     "space",
+    "edge_voices",
     # add new official extension IDs here
 }
 

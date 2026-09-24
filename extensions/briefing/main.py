@@ -33,7 +33,7 @@ import core.personal
 import core.preferences
 import core.reminders
 import core.ui_scale
-from core.speech import speak
+from core.voice import announce   # Hariku Voice when chosen, else the screen reader
 
 import briefing_core
 from briefing_core import _
@@ -97,13 +97,13 @@ def evening_text(now=None):
 def play_briefing():
     if _bus is None:
         return
-    speak(briefing_text(), interrupt=True)
+    announce(briefing_text(), "briefing", interrupt=True)
 
 
 def play_evening_summary():
     if _bus is None:
         return
-    speak(evening_text(), interrupt=True)
+    announce(evening_text(), "briefing", interrupt=True)
 
 
 # ------------------------------------------------------------
@@ -130,7 +130,9 @@ def _auto_play():
     if _bus is None:
         return
     # Hariku's startup greeting has just said "Good morning": don't say it twice.
-    speak(briefing_text(greet=not core.personal.startup_greeting_enabled()), interrupt=True)
+    # It waits for the greeting instead of cutting it off.
+    announce(briefing_text(greet=not core.personal.startup_greeting_enabled()), "briefing",
+             interrupt=False)
 
 
 # ------------------------------------------------------------

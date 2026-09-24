@@ -1,0 +1,19 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.7",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Suara Edge",
+        "provider_name": "Suara neural Microsoft Edge (online)",
+        "privacy_note": "Suara Edge mengirim teks yang dibacakan (misalnya judul pengingat Anda) ke layanan suara online Microsoft. Layanan ini dibuat untuk browser Edge dan bisa berhenti berfungsi kapan saja; jika itu terjadi, Hariku memakai suara cadangan Anda.",
+        "voice_female": "{name} (perempuan)",
+        "voice_male": "{name} (laki-laki)",
+        "err_paused": "Layanan suara Edge beberapa kali gagal, jadi Hariku tidak memakainya selama beberapa menit."
+    }
+}

@@ -24,6 +24,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Reminders](#reminders)
   - [Personal Profile](#personal-profile)
   - [Quiet Hours](#quiet-hours)
+  - [Hariku Voice](#hariku-voice)
   - [Morning Briefing and Evening Summary](#morning-briefing-and-evening-summary)
   - [Translation (i18n)](#translation-i18n)
   - [Constants](#constants)
@@ -125,6 +126,7 @@ from core.speech import speak, TOLK_LOADED
 | Function / Variable | Description |
 |---|---|
 | `speak(text, interrupt=False)` | Speak text through the active screen reader (NVDA, JAWS, etc.). Set `interrupt=True` to cut off any current speech. |
+| `braille(text, interrupt=False)` | *(core 2.7)* Show text on a braille display without speaking it (for text something else reads aloud). Follows the user's braille setting. |
 | `TOLK_LOADED` | Boolean — `True` if the Tolk speech engine loaded successfully, `False` otherwise. Useful for checking screen reader availability. |
 
 **Example:**
@@ -703,6 +705,94 @@ def _on_new_alert(message):
 
 ---
 
+### Hariku Voice
+
+*(Available since core 2.7. Declare `"minimum_core_version": "2.7"` to use it.)*
+
+```python
+import core.voice
+```
+
+In Preferences, Hariku Voice, the user can have three kinds of Hariku's own announcements spoken by a voice they choose instead of their screen reader: the startup greeting, the Briefing and evening summary, and reminders when they fire. Everything else stays with the screen reader, and a braille display still gets the text. All three are off by default. The voices come from *providers*: "Windows voices" (SAPI 5, every voice installed on the computer) is built in and is the fallback; extensions add more (the Edge Voices extension adds Microsoft Edge's online voices).
+
+#### Announcing
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.voice.announce(text, kind, interrupt=True)` | `bool` | Say one of the three announcements. `kind` is `"greeting"`, `"briefing"` or `"reminder"`. When the user hasn't chosen a voice for that kind, this is exactly `core.speech.speak(text, interrupt)`. Otherwise the chosen voice speaks and the braille display gets the text; if the voice fails, the user's fallback Windows voice, then the screen reader. `interrupt=True` stops a Hariku voice that is speaking; `False` waits for it. Returns `True` when a Hariku voice speaks it (the screen reader was not given the text), `False` when the screen reader did. |
+| `core.voice.is_enabled(kind)` | `bool` | Whether the user chose a voice for this kind. |
+| `core.voice.stop()` | None | Stop the Hariku voice now and drop what was waiting. The "Stop Hariku Voice" action (S) does this; so does any key press, unless the user turned that off. |
+| `core.voice.is_speaking()` | `bool` | Whether a Hariku voice is speaking or has announcements waiting. |
+
+**Rules:**
+- Use `announce()` only for these three kinds; the Morning Briefing uses `"briefing"`. Everything else goes through `core.speech.speak()`, so the user's screen reader stays in charge.
+- When `announce()` returns `True`, don't also speak the text. If you show a window for it, keep the text out of what the screen reader reads when the window opens: the core's reminder popup puts it in a read-only field after the buttons, so the screen reader says only the title and the focused button.
+- `on_before_speak` fires once for a voiced announcement too (with `"kind"` and `"voice"` in the payload); cancelling it silences the voice.
+- Quiet hours don't apply: these are the user's own greeting, briefing and reminders.
+- The settings are in `Core.json` under `"hariku_voice"`; read them with `core.voice.get_settings()`, but only the Hariku Voice page changes them.
+
+#### Adding a voice source (provider)
+
+```python
+core.voice.register_provider(provider_id, name, list_voices, speak, stop,
+                             is_available=None, privacy_note="")
+core.voice.unregister_provider(provider_id)      # in teardown()
+```
+
+| Argument | What Hariku expects |
+|---|---|
+| `provider_id` | 1–32 characters of `a`–`z`, `0`–`9` and `_`, e.g. `"piper"`. Registering the same id again replaces the provider. `"windows"` is the built-in one and can't be removed. |
+| `name` | Shown in the Source list, in the user's language, e.g. `"Piper voices (offline)"`. |
+| `list_voices()` | Returns `[{"id", "name", "language"}]`: your own voice id, a name for the list, and a BCP-47 tag such as `"id-ID"` (the page shows the language in each row and lists the user's language first). Extra keys are kept. It may be slow or use the network: Hariku only calls it on a worker thread. Raise when it can't list them; the page says so. |
+| `speak(text, voice_id, rate, volume, on_done)` | Start speaking and **return at once**. `voice_id` is `""` when the user picked none: use a default voice (ideally one for Hariku's language). `rate` is -10 to 10 (0 is the voice's normal rate; map it to your own range), `volume` 0 to 100. Call `on_done(None)` when the speech has finished or was stopped, or `on_done(error)` when you could not speak, so Hariku falls back. Call it **exactly once**, from any thread. |
+| `stop()` | Stop the current speech now. It must be thread-safe and must not block. After it, call the pending `on_done(None)`; Hariku waits up to 2 seconds for it. |
+| `is_available()` | Optional. Return `False` while you know you can't speak (offline, blocked, too many failures), and Hariku goes straight to the fallback. It is asked before every announcement, so it must be fast: no network, no disk. |
+| `privacy_note` | Shown on the Hariku Voice page when your source is selected. Say plainly what leaves the computer, e.g. "The text being read is sent to ...". |
+
+Hariku speaks one announcement at a time and doesn't call `speak()` again before your `on_done` (or `stop()`). It also watches for key presses and handles the queue, the fallback and braille itself, so a provider only speaks.
+
+**Providers that make audio files** can let Hariku play them:
+
+| Function | Description |
+|---|---|
+| `core.voice.play_file(path, volume, on_done)` | Play an MP3 or WAV file at `volume` (0–100) without blocking; `on_done(None)` when it ends or is stopped, `on_done(error)` when it can't be played, exactly once. Pass your own `on_done` straight through. One file plays at a time, on its own MCI device, so Hariku's UI sounds never cut it off. |
+| `core.voice.stop_playback()` | Stop that file. Hariku calls it itself when it stops a voice. |
+| `core.voice.cache_dir(provider_id)` | A folder for your saved audio, `%APPDATA%\Hariku2\voice_cache\<provider_id>`, created if missing. Keep it small and delete the oldest files first. |
+
+Also available: `core.voice.get_providers()` (`[{"id", "name", "privacy_note"}]`, Windows first), `core.voice.list_voices(provider_id)`, `core.voice.order_voices(voices)` (the user's languages first), `core.voice.language_name(tag)` and `core.voice.preview(text, provider_id, voice_id, rate, volume, stop_on_key=True, on_done=None)` (what the page's Test button does).
+
+```python
+import threading
+import core.voice
+
+PROVIDER_ID = "piper"
+
+def _list_voices():
+    return [{"id": "id_ID-news-medium", "name": "News", "language": "id-ID"}]
+
+def _speak(text, voice_id, rate, volume, on_done):
+    def work():
+        try:
+            path = _synthesize_to_wav(text, voice_id or "id_ID-news-medium", rate)
+        except Exception as e:
+            on_done(e)                      # Hariku falls back
+            return
+        core.voice.play_file(path, volume, on_done)
+    threading.Thread(target=work, daemon=True).start()
+
+def _stop():
+    _cancel_synthesis()                     # its on_done(None) follows
+
+def register(bus):
+    core.voice.register_provider(PROVIDER_ID, "Piper voices (offline)", _list_voices,
+                                 _speak, _stop, privacy_note="Piper voices run on this computer.")
+
+def teardown():
+    core.voice.unregister_provider(PROVIDER_ID)
+```
+
+---
+
 ### Morning Briefing and Evening Summary
 
 The Morning Briefing extension speaks a morning briefing (B) and an evening summary (Shift+B), and lets other extensions add a sentence to each through two events. Subscribe in `register(bus)`; the Morning Briefing emits them with a new, empty list:
@@ -1052,7 +1142,7 @@ These events are emitted by the Hariku core at specific moments. Subscribe to th
 | `on_user_active` | `float` | Fired when the user returns from being idle (touches mouse/keyboard after being AFK). Payload is the current idle time (close to 0). |
 | `on_power_changed` | `dict` | Fired when the laptop is plugged in, unplugged, or battery percentage changes. Payload is `{"ac_line_status": 0/1, "battery_percent": 0-100, "charging": bool}`. |
 | `on_network_changed` | `bool` | Fired when the system connects or disconnects from the internet. Payload is `True` (Online) or `False` (Offline). |
-| `on_before_speak` | `payload` | Fired immediately before Hariku speaks. `payload` is a dict with `"text"`, `"interrupt"`, and `"cancel"`. Extensions can modify the text, toggle interrupt, or set `"cancel": True` to prevent speech. |
+| `on_before_speak` | `payload` | Fired immediately before Hariku speaks. `payload` is a dict with `"text"`, `"interrupt"`, and `"cancel"`. Extensions can modify the text, toggle interrupt, or set `"cancel": True` to prevent speech. *(Since 2.7)* When a [Hariku Voice](#hariku-voice) speaks instead of the screen reader, it fires once too, with `"kind"` (`"greeting"`, `"briefing"` or `"reminder"`) and `"voice"` (the provider id) added; cancelling it silences the voice. |
 | `on_date_changed` | `date_str` | When the user navigates to a different date on the calendar. |
 | `on_ui_ready` | `main_window` | When the main window is fully initialized. You receive the `MainWindow` instance as an argument. |
 | `on_unload` | None | When the application is shutting down. Save state here. |

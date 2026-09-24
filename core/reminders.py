@@ -145,32 +145,52 @@ def snooze_reminder(rem_id, minutes=5):
             break
 
 class ReminderDialog(wx.Dialog):
-    def __init__(self, parent, reminder_data):
+    def __init__(self, parent, reminder_data, voiced=False):
+        """`voiced`: Hariku Voice is reading the reminder aloud. The screen
+        reader reads a dialog's static text when the dialog opens, so the text
+        then sits in a read-only field after the buttons instead: the screen
+        reader says only the title and the focused button, the voice says the
+        reminder, and the text stays on screen and one Tab away (for braille)."""
         super().__init__(parent, title="Hariku Reminder", size=(350, 150))
         self.reminder_data = reminder_data
-        
+
         vbox = wx.BoxSizer(wx.VERTICAL)
-        
-        lbl = wx.StaticText(self, label=f"Reminder: {reminder_data['title']}")
+
+        message = f"Reminder: {reminder_data['title']}"
+        if voiced:
+            lbl = wx.TextCtrl(self, value=message, size=(300, -1),
+                              style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_NO_VSCROLL
+                              | wx.BORDER_NONE)
+            lbl.SetBackgroundColour(self.GetBackgroundColour())
+        else:
+            lbl = wx.StaticText(self, label=message)
         font = lbl.GetFont()
         font.SetPointSize(12)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
         lbl.SetFont(font)
-        
+
         # Wrap the label text if it is too long.
-        lbl.Wrap(300)
+        if voiced:
+            lines = min(6, max(2, len(message) // 28 + 1))
+            lbl.SetMinSize((300, lbl.GetCharHeight() * lines + 8))
+        else:
+            lbl.Wrap(300)
         vbox.Add(lbl, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
-        
+
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         btn_snooze = wx.Button(self, label="Snooze (5 min)")
         btn_done = wx.Button(self, label="Mark as Done")
         btn_done.SetDefault()
-        
+
         hbox.Add(btn_snooze, 0, wx.RIGHT, 10)
         hbox.Add(btn_done, 0, wx.LEFT, 10)
-        
+
         vbox.Add(hbox, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 15)
-        
+        if voiced:
+            # Focus still starts on the buttons, as without the voice.
+            lbl.MoveAfterInTabOrder(btn_done)
+        self.message_ctrl = lbl
+
         self.SetSizer(vbox)
         self.CentreOnParent()
         
@@ -197,14 +217,18 @@ def show_notification(r):
 
     top_window = wx.GetApp().GetTopWindow()
     if not top_window: return
-    
-    from core.speech import speak
-    speak(message, interrupt=True)
-    
+
+    # Hariku Voice reads it when the user chose a voice for reminders (the
+    # braille display still gets the text); otherwise the screen reader does.
+    import core.voice
+    voiced = core.voice.announce(message, "reminder", interrupt=True)
+
     from core.sounds import play_sound
     play_sound(r"C:\Windows\Media\Windows Notify Calendar.wav")
-    
-    dlg = ReminderDialog(top_window, shown)
+
+    # With the voice reading it, the dialog keeps the text out of what the
+    # screen reader announces when it opens, so it isn't read twice.
+    dlg = ReminderDialog(top_window, shown, voiced=True) if voiced else ReminderDialog(top_window, shown)
     dlg.Raise()
     result = dlg.ShowModal()
     
