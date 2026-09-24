@@ -455,9 +455,13 @@ assert bar.btn_listen.IsShown()
 played.clear()
 core.hotkeys.actions["Hariku Core.command_bar"].callback()          # again: listen
 assert pump(lambda: ran, timeout=10), "what was heard did not run"
-assert ran == [True], ran
-assert played == ["listen.wav", "listen_end.wav"], played
+# The latest earthquake only answers, so Aruna stays open for it (core 2.8's
+# "Keep Aruna open after an answer", on by default).
+assert ran == [False] and cb.current_bar() is bar, ran
+assert played == ["listen.wav", "listen_end.wav"], played    # no send sound for speech
 assert ("transcribe", "tiny", "en") in fake_engine.calls, fake_engine.calls
+bar.close(restore=False)
+assert pump(lambda: cb.current_bar() is None), "the command bar did not close"
 print("OK listening")
 
 # --------------------------------------------------------------------------- #
