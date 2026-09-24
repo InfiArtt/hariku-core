@@ -32,6 +32,21 @@ each component.
   documents (the endpoint, trusted client token, Sec-MS-GEC token and message
   formats). No edge-tts code is included; it is credited here for the research.
 
+## Downloaded on request (not bundled)
+
+- **Piper** (https://github.com/rhasspy/piper, MIT): the Piper Voices extension
+  (`extensions/piper_voices/`) downloads the official Windows build of Piper
+  (`piper_windows_amd64.zip`, release 2023.11.14-2, which also contains
+  espeak-ng and ONNX Runtime under their own licenses) from GitHub when the
+  user downloads their first voice, and checks it against a SHA-256 pinned in
+  the extension. It runs `piper.exe` as a separate program. Neither Piper nor
+  any voice is included in Hariku or its installer.
+- **Piper voices** (https://huggingface.co/rhasspy/piper-voices): each voice
+  has its own license, which depends on the dataset it was trained on. The
+  extension shows each voice's model card (dataset and license) and its size
+  before the user chooses to download it; some cards, such as the Indonesian
+  `id_ID-news_tts-medium`, don't name a clear license, and the extension says so.
+
 ## Native components
 
 - **nvdaControllerClient64.dll**: the NVDA Controller Client from NV Access,
