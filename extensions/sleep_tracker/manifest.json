@@ -1,0 +1,10 @@
+{
+    "id": "sleep_tracker",
+    "name": "Sleep Pattern",
+    "version": "1.0",
+    "description": "Estimates when you slept from when you used the computer, like a phone's sleep tracker: hear last night's sleep, see your sleep history and averages, and find out when you stayed up late. Hariku records only whether the keyboard or mouse was used in each minute, never what you typed or which apps you used, and nothing leaves your computer. An estimate, not a medical measurement.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.7"
+}
