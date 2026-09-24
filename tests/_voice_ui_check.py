@@ -338,7 +338,7 @@ def interact():
     # their Hariku Voice); every control is named by the label before it.
     assert [chk.GetValue() for chk in panel.chk_kinds.values()] == [False, False, False, True]
     assert panel.chk_kinds["command"].GetName() == \
-        "Read answers to commands (the command bar) with Hariku Voice"
+        "Read Aruna's answers with Hariku Voice"
     assert panel.chk_kinds["reminder"].GetName() == \
         "Read reminders with Hariku Voice when they are due"
     assert panel.chk_stop_on_key.GetValue() is True

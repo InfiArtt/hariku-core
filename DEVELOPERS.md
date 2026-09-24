@@ -27,7 +27,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Placeholders from Extensions](#placeholders-from-extensions)
   - [Quiet Hours](#quiet-hours)
   - [Hariku Voice](#hariku-voice)
-  - [The Command Bar](#the-command-bar)
+  - [The Command Bar (Aruna)](#the-command-bar-aruna)
   - [Morning Briefing and Evening Summary](#morning-briefing-and-evening-summary)
   - [Translation (i18n)](#translation-i18n)
   - [Constants](#constants)
@@ -890,7 +890,10 @@ def teardown():
 
 ---
 
-### The Command Bar
+### The Command Bar (Aruna)
+
+Users know the command bar as **Aruna** (Sanskrit for dawn). Code keeps the
+generic names (`core.commands`, `ui/command_bar.py`, `Hariku Core.command_bar`).
 
 *(Available since core 2.7.)*
 

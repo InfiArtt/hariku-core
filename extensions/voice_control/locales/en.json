@@ -32,7 +32,7 @@
         "sensitivity_high": "High",
         "sensitivity_very_high": "Very high",
 
-        "page_help": "Speak commands in the command bar (Ctrl+Alt+Backspace): for example \"latest earthquake\", \"what time is it\" or \"remind me to take medicine tomorrow at 8\". Your speech is recognised on this computer by whisper.cpp; it is never saved or sent anywhere. First download the tiny model below (the program comes with it). The base model makes reminders more accurate.",
+        "page_help": "Talk to Aruna (Ctrl+Alt+Backspace): for example \"latest earthquake\", \"what time is it\" or \"remind me to take medicine tomorrow at 8\". Your speech is recognised on this computer by whisper.cpp; it is never saved or sent anywhere. First download the tiny model below (the program comes with it). The base model makes reminders more accurate.",
         "page_headset": "A headset is recommended: with speakers, the microphone can hear your screen reader. Hariku silences the screen reader and Hariku Voice while it listens. If you have to speak loudly, press Test microphone and say a sentence at your normal volume: Hariku measures your voice and the room and sets the microphone sensitivity for you.",
         "lbl_downloads": "Program and speech models:",
         "col_name": "Name",
@@ -44,7 +44,7 @@
         "lbl_progress": "Download progress:",
         "lbl_status": "Status:",
         "lbl_model": "Recognition &model:",
-        "chk_listen_on_open": "Start &listening as soon as the command bar opens",
+        "chk_listen_on_open": "Start &listening as soon as Aruna opens",
         "lbl_silence": "Stop listening after this much &silence:",
         "lbl_sensitivity": "Microphone s&ensitivity:",
         "btn_test_mic": "&Test microphone",

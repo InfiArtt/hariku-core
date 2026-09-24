@@ -147,9 +147,9 @@ field read what you type on your computer, with rules built into Hariku. No AI
 and no online service is involved: the sentence is never sent anywhere, and it
 is not stored. Only the reminder you save is kept, like any other reminder.
 
-## The command bar
+## Aruna, the command bar
 
-The command bar (Ctrl+Alt+Backspace) works out what you typed or said on your
+Aruna (Ctrl+Alt+Backspace) works out what you typed or said on your
 computer, with rules built into Hariku: it compares your words with the names
 of Hariku's actions. No AI and no online service is involved, and what you
 type is not stored. A command you run makes the connections that command
@@ -233,7 +233,7 @@ voice on the Piper Voices page, or delete those folders to remove everything.
 
 ## Voice Control
 
-The Voice Control extension lets you speak commands into the command bar. Your
+The Voice Control extension lets you talk to Aruna, Hariku's command bar. Your
 speech is recognised on your computer by whisper.cpp, a program that runs
 without the internet:
 
@@ -243,7 +243,7 @@ without the internet:
   can reach, and then dropped. It is never saved to disk and never sent
   anywhere. What was recognised is handled like text you typed.
 - It listens only after you press Ctrl+Alt+Backspace (or, if you turned that on,
-  when the command bar opens), and it stops on its own after a second or two of
+  when Aruna opens), and it stops on its own after a second or two of
   silence, after 12 seconds, or when you press the key again. There is no wake
   word and nothing listens in the background. Hariku plays a tone when
   listening starts and another when it ends.

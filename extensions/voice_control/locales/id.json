@@ -32,7 +32,7 @@
         "sensitivity_high": "Tinggi",
         "sensitivity_very_high": "Sangat tinggi",
 
-        "page_help": "Ucapkan perintah di bilah perintah (Ctrl+Alt+Backspace), misalnya \"gempa terbaru\", \"jam berapa\", atau \"ingatkan aku minum obat besok jam 8\". Ucapanmu dikenali di komputer ini oleh whisper.cpp; tidak pernah disimpan atau dikirim ke mana pun. Unduh dulu model tiny di bawah (programnya ikut terunduh). Model base membuat pengingat lebih akurat.",
+        "page_help": "Bicara ke Aruna (Ctrl+Alt+Backspace), misalnya \"gempa terbaru\", \"jam berapa\", atau \"ingatkan aku minum obat besok jam 8\". Ucapanmu dikenali di komputer ini oleh whisper.cpp; tidak pernah disimpan atau dikirim ke mana pun. Unduh dulu model tiny di bawah (programnya ikut terunduh). Model base membuat pengingat lebih akurat.",
         "page_headset": "Sebaiknya pakai headset: kalau pakai speaker, mikrofon bisa mendengar screen reader-mu. Hariku mendiamkan screen reader dan Suara Hariku selama mendengarkan. Kalau kamu harus bicara keras, tekan Tes mikrofon lalu ucapkan satu kalimat dengan suara biasa: Hariku mengukur suaramu dan ruangan, lalu mengatur kepekaan mikrofon untukmu.",
         "lbl_downloads": "Program dan model ucapan:",
         "col_name": "Nama",
@@ -44,7 +44,7 @@
         "lbl_progress": "Kemajuan unduhan:",
         "lbl_status": "Status:",
         "lbl_model": "&Model pengenal:",
-        "chk_listen_on_open": "Langsung &mendengarkan saat bilah perintah dibuka",
+        "chk_listen_on_open": "Langsung &mendengarkan saat Aruna dibuka",
         "lbl_silence": "Berhenti mendengarkan setelah &hening selama:",
         "lbl_sensitivity": "&Kepekaan mikrofon:",
         "btn_test_mic": "&Tes mikrofon",
