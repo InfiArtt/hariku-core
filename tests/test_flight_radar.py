@@ -10,8 +10,9 @@
 # Tests for the Flight Radar extension: adsb.fi / adsb.lol parsing and fallback,
 # units, names, sentences in both languages, request pacing, overhead alerts,
 # emergencies, adsbdb routes, the airport table, Listen to ATC, exact locations
-# (pasted coordinates, map links, address search, privacy rounding) and the
-# actions.
+# (privacy rounding; pasted coordinates, map links and the address search are
+# tested with the core, in tests/test_place_search.py), the actions, and which
+# place it uses (core 2.8 Places).
 # No test touches the network or opens a browser: the fetch functions and the
 # browser call are replaced. All aircraft samples are synthetic.
 
@@ -785,20 +786,23 @@ def test_emergency_tracker(api):
     {"location": {"name": "X", "latitude": 95, "longitude": 1}}, {"emergency_watch": "on"},
 ])
 def test_settings_survive_corrupt_data(api, raw):
-    assert api.normalize_settings(raw) == {"location": None, "radius_km": 25, "units": "metric",
-                                           "include_ground": False, "alerts": False,
-                                           "alert_km": 5, "emergency_watch": False,
-                                           "tracked": []}
+    assert api.normalize_settings(raw) == {"place": None, "location": None, "radius_km": 25,
+                                           "units": "metric", "include_ground": False,
+                                           "alerts": False, "alert_km": 5,
+                                           "emergency_watch": False, "tracked": []}
 
 
 def test_settings_keep_valid_values(api):
     raw = {"location": dict(JAKARTA, timezone="Asia/Jakarta"), "radius_km": 50,
            "units": "aviation", "include_ground": True, "alerts": True, "alert_km": 2,
            "emergency_watch": True, "x": 1}
-    assert api.normalize_settings(raw) == {"location": JAKARTA, "radius_km": 50,
+    assert api.normalize_settings(raw) == {"place": None, "location": JAKARTA, "radius_km": 50,
                                            "units": "aviation", "include_ground": True,
                                            "alerts": True, "alert_km": 2,
                                            "emergency_watch": True, "tracked": []}
+    for place in ("main", "own", "abc12345"):
+        assert api.normalize_settings({"place": place})["place"] == place
+    assert api.normalize_settings({"place": "Home"})["place"] is None
 
 
 # ------------------------------------------------------------
@@ -1081,25 +1085,36 @@ def test_no_location_speaks_where_to_set_it(frmain, api, lang, monkeypatch):
     calls = _fake_sources(monkeypatch, api, fi=ADSBFI_JSON)
     frmain.speak_nearby()
     frmain.show_list()
-    hint = "No flight radar location is set. Choose your city in Preferences, Flight Radar."
+    hint = ("No flight radar location is set. Add a place in Preferences, Places, or choose "
+            "one in Preferences, Flight Radar.")
     assert frmain.spoken == [hint, hint] and calls == []
     assert frmain.refresh() is False
     lang("id")
     frmain.speak_nearby()
-    assert frmain.spoken[-1] == ("Lokasi radar pesawat belum diatur. "
-                                 "Pilih kota Anda di Pengaturan, Radar Pesawat.")
+    assert frmain.spoken[-1] == ("Lokasi radar pesawat belum diatur. Tambahkan tempat di "
+                                 "Pengaturan, Tempat, atau pilih di Pengaturan, Radar Pesawat.")
 
 
-def test_weather_city_is_the_default(frmain, api, lang, monkeypatch):
+def _home(**changes):
+    """A saved place (core 2.8): the user's exact home."""
+    return dict({"name": "Home", "lat": -6.208812, "lon": 106.845613, "label": "",
+                 "source": "coordinates"}, **changes)
+
+
+def test_the_main_place_is_the_default(frmain, api, lang, monkeypatch):
     import core.api
+    import core.places
     core.api.save_data("Weather", {"location": dict(JAKARTA, name="Bandung", latitude=-6.9,
                                                     longitude=107.6), "units": "metric"})
     _set(frmain, api, location=None)
-    assert frmain.get_location()["name"] == "Bandung"
+    assert frmain.get_location() is None, "the Weather city is no longer used by itself"
+    core.places.set_places([_home(lat=-6.9, lon=107.6, name="Rumah")])
+    assert frmain.get_location()["name"] == "Rumah"
     calls = _fake_sources(monkeypatch, api, fi=ADSBFI_JSON)
     frmain.speak_nearby()
     assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.90/lon/107.60/dist/15"]
-    # A radar city of its own wins.
+    assert api.place_label(frmain.get_location()) == "Rumah"
+    # A radar city of its own, from before 2.8, stays in use.
     _set(frmain, api)
     assert frmain.get_location()["name"] == "Jakarta"
 
@@ -1422,8 +1437,9 @@ def test_list_emergency_intro_marks_them_heard(frmain, api, lang, monkeypatch):
 def test_listen_to_atc_opens_liveatc_only(frmain, api, lang):
     _set(frmain, api, location=None)
     frmain.listen_to_atc()
-    assert frmain.spoken == ["No flight radar location is set. Choose your city in "
-                             "Preferences, Flight Radar."] and frmain.opened == []
+    assert frmain.spoken == ["No flight radar location is set. Add a place in Preferences, "
+                             "Places, or choose one in Preferences, Flight Radar."]
+    assert frmain.opened == []
     _set(frmain, api)
     frmain.listen_to_atc()
     assert frmain.spoken[-1] == "Opening LiveATC for Jakarta Soekarno-Hatta in your browser."
@@ -1523,7 +1539,8 @@ def test_register_and_teardown(frmain, fresh_event_bus, monkeypatch, tmp_data_di
 
 
 # ------------------------------------------------------------
-# Exact locations (1.2): maths, privacy, pasted coordinates, links, addresses
+# Exact locations (1.2): maths and privacy (pasted coordinates, links and
+# addresses moved to the core: tests/test_place_search.py)
 # ------------------------------------------------------------
 
 def test_distance_and_bearing_against_known_values(api, airports):
@@ -2296,7 +2313,140 @@ def test_quiet_hours_checks_skip_even_with_fresh_data(frmain, api, lang, monkeyp
     assert frmain.spoken == [] and frmain.sounds == []
 
 
-def test_manifest_needs_core_2_7_for_quiet_hours():
+def test_manifest_needs_core_2_8_for_places():
     with open(os.path.join(FR_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["version"] == "1.6" and manifest["minimum_core_version"] == "2.7"
+    assert manifest["version"] == "1.7" and manifest["minimum_core_version"] == "2.8"
+
+
+# ------------------------------------------------------------
+# Places (Flight Radar 1.7, core 2.8)
+# ------------------------------------------------------------
+
+def test_the_place_choice(frmain, api, lang):
+    import core.places
+    home, office = core.places.set_places([_home(), _home(name="Office", lat=-6.17, lon=106.82)])
+    _set(frmain, api, place="main")
+    assert frmain.get_location()["name"] == "Home"
+    _set(frmain, api, place=office["id"])
+    assert frmain.get_location()["name"] == "Office"
+    _set(frmain, api, place="own")
+    assert frmain.get_location()["name"] == "Jakarta"
+    _set(frmain, api, place="own", location=None)
+    assert frmain.get_location() is None
+    core.places.set_places([home])
+    _set(frmain, api, place=office["id"])            # removed: the main place
+    assert frmain.get_location()["name"] == "Home"
+
+
+def test_places_keep_the_privacy_rules(frmain, api, lang, monkeypatch):
+    import core.api
+    import core.places
+    calls = _fake_sources(monkeypatch, api, fi={"aircraft": [
+        _plane(**_at(3.0, 90, origin=(-6.208812, 106.845613)))]})
+    core.places.set_places([_home()])
+    _set(frmain, api, place="main", location=None)
+    frmain.speak_nearby()
+    # Rounded to about 1 km, the radius widened; distances from the exact point.
+    assert calls == ["https://opendata.adsb.fi/api/v2/lat/-6.21/lon/106.85/dist/15"]
+    assert frmain.spoken[-1].startswith("Garuda Indonesia 155, Boeing 737-800, "
+                                        "3 kilometres east,")
+    # The exact point is kept in Places only, not copied into Flight Radar's settings.
+    frmain._save_settings({"radius_km": 50})
+    assert core.api.load_data(frmain.DATA_KEY)["location"] is None
+
+
+def test_the_exact_home_from_before_becomes_the_main_place(frmain, api, fresh_event_bus,
+                                                           monkeypatch):
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    exact = {"name": "Home", "admin1": "", "country": "", "latitude": -6.208812,
+             "longitude": 106.845613, "kind": "coordinates", "detail": ""}
+    core.api.save_data(frmain.DATA_KEY, {"location": exact, "radius_km": 25})
+    home = core.places.migrate()                  # what the core does at startup
+    assert (home["lat"], home["lon"]) == (-6.208812, 106.845613)
+    frmain.register(fresh_event_bus)
+    assert frmain._settings["place"] == "main"
+    assert core.api.load_data(frmain.DATA_KEY)["place"] == "main"
+    assert frmain.get_location()["place_id"] == home["id"]
+    frmain.teardown()
+    # A radar city somewhere else stays its own place.
+    core.api.save_data(frmain.DATA_KEY, {"location": JAKARTA})
+    frmain.register(fresh_event_bus)
+    assert frmain._settings["place"] == "own" and frmain.get_location() == JAKARTA
+    frmain.teardown()
+
+
+def test_places_changing_refreshes_the_page_and_the_alerts(frmain, api, lang, monkeypatch):
+    import core.places
+    from core.events import bus
+    _fake_sources(monkeypatch, api, fi=ADSBFI_JSON)
+    home, = core.places.set_places([_home(lat=-6.2, lon=106.8)])
+    _set(frmain, api, place="main", location=None, alerts=True)
+    frmain.refresh()
+    assert frmain.current_cache() is not None
+    frmain._tracker.check(frmain.current_cache()["aircraft"], 10, frmain.clock())
+
+    class Page:
+        refreshed = 0
+
+        def refresh_places(self):
+            Page.refreshed += 1
+
+    monkeypatch.setattr(frmain, "_panel", Page())
+    bus.subscribe("on_places_changed", frmain._on_places_changed)
+    try:
+        # Another place added: the main place didn't move, nothing is forgotten.
+        core.places.set_places([home, _home(name="Office", lat=-6.17, lon=106.82)])
+        assert Page.refreshed == 1 and frmain._tracker._announced
+        # The main place moves: aircraft announced near the old one may be announced again.
+        core.places.set_places(core.places.get_places(), core.places.get_places()[1]["id"])
+        assert Page.refreshed == 2 and not frmain._tracker._announced
+        assert frmain.current_cache() is None
+        # No place any more: polling stops.
+        assert _poll_timers(frmain)
+        core.places.set_places([])
+        assert frmain.get_location() is None and not frmain._polling_wanted()
+    finally:
+        bus.unsubscribe("on_places_changed", frmain._on_places_changed)
+
+
+def test_address_results_come_from_the_core(api):
+    # Flight Radar's own module moved to core.place_search.
+    assert not os.path.exists(os.path.join(FR_DIR, "flight_radar_location.py"))
+    import flight_radar_ui
+    import core.place_search
+    assert flight_radar_ui.location is core.place_search
+    found = core.place_search.parse_addresses([
+        {"lat": "-6.1753924", "lon": "106.8271528",
+         "display_name": "Monumen Nasional, Jalan Medan Merdeka, Gambir, Jakarta Pusat",
+         "address": {"city": "Jakarta Pusat"}}])
+    assert flight_radar_ui.address_location(found[0]) == {
+        "name": "Monumen Nasional", "admin1": "", "country": "", "latitude": -6.1753924,
+        "longitude": 106.8271528, "kind": "address",
+        "detail": "Monumen Nasional, Jalan Medan Merdeka, Gambir, Jakarta Pusat"}
+    assert api.normalize_location(dict(flight_radar_ui.address_location(found[0]),
+                                       name="Home"))["kind"] == "address"
+
+
+def test_address_search_goes_through_the_shared_pacing(monkeypatch):
+    import core.place_search
+    import flight_radar_ui
+    got = []
+    monkeypatch.setattr(core.place_search, "search_addresses", lambda query, language: [
+        core.place_search.candidate(-6.2, 106.8, "address", name="Jalan A", label="Jalan A, X")])
+    flight_radar_ui._address_worker(lambda *args: got.append(args), 1, "Jalan A", "en")
+    assert got == [(1, "Jalan A", [{"name": "Jalan A", "admin1": "", "country": "",
+                                    "latitude": -6.2, "longitude": 106.8, "kind": "address",
+                                    "detail": "Jalan A, X"}], None)]
+
+    def busy(query, language):
+        raise core.place_search.LocationError("address_busy")
+
+    monkeypatch.setattr(core.place_search, "search_addresses", busy)
+    flight_radar_ui._address_worker(lambda *args: got.append(args), 2, "Jalan A", "en")
+    assert got[-1] == (2, "Jalan A", [], "address_busy")

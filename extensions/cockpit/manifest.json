@@ -1,10 +1,10 @@
 {
     "id": "cockpit",
     "name": "Cockpit",
-    "version": "1.0",
-    "description": "Pilot vibes: hear the aviation weather (METAR and TAF) of your favourite airports decoded into plain sentences with Q, open them all with Shift+Q, and turn on Captain mode to get the airport weather in your Morning Briefing and evening summary, be called Captain, get a cockpit greeting when Hariku starts and a Cockpit sound theme. Without favourites it uses the airport nearest to your Weather city. Aviation weather by the NOAA Aviation Weather Center (aviationweather.gov, no account or key needed). For information only, not for flight planning.",
+    "version": "1.1",
+    "description": "Pilot vibes: hear the aviation weather (METAR and TAF) of your favourite airports decoded into plain sentences with Q, open them all with Shift+Q, and turn on Captain mode to get the airport weather in your Morning Briefing and evening summary, be called Captain, get a cockpit greeting when Hariku starts and a Cockpit sound theme. Without favourites it uses the airport nearest to your main place from Preferences, Places, or another place you choose. Aviation weather by the NOAA Aviation Weather Center (aviationweather.gov, no account or key needed). For information only, not for flight planning.",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.7"
+    "minimum_core_version": "2.8"
 }

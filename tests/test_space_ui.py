@@ -25,9 +25,9 @@ def test_space_windows(tmp_path):
         timeout=180, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK main_window", "OK load", "OK no_location", "OK weather_default",
+    for stage in ("OK main_window", "OK load", "OK no_location", "OK main_place_default",
                   "OK panel_browse", "OK panel_apply", "OK actions", "OK launches_dialog",
-                  "OK escape", "OK reminder", "OK briefing", "OK use_weather", "OK teardown",
+                  "OK escape", "OK reminder", "OK briefing", "OK place_choice", "OK teardown",
                   "OK no_errors",
                   "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"

@@ -9,10 +9,11 @@
 
 """
 Windows for the Flight Radar extension:
-  * FlightRadarPanel - the Preferences page: the location (city search,
-                       street-address search, or pasted coordinates / map
-                       link, with a name), radius, units, ground traffic,
-                       overhead alerts, the emergency watch, notes, credits.
+  * FlightRadarPanel - the Preferences page: the place (one from Preferences,
+                       Places, or its own: city search, street-address search,
+                       or pasted coordinates / map link, with a name), radius,
+                       units, ground traffic, overhead alerts, the emergency
+                       watch, notes, credits.
   * RadarListDialog  - every aircraft in range, one sentence per row, nearest
                        first, with Details (Enter), Refresh, Listen to ATC
                        and Track.
@@ -28,12 +29,14 @@ import threading
 
 import wx
 
+import core.place_search as location
+import core.places
 import core.ui_scale
 from core.i18n import apply_rtl_layout, get_current_language
+from core.places_ui import PlaceChoice
 from core.speech import speak
 
 import flight_radar_api as api
-import flight_radar_location as location
 import flight_radar_text as text
 from flight_radar_text import _
 
@@ -52,10 +55,18 @@ def _search_worker(done, search_id, query, language):
     wx.CallAfter(done, search_id, query, places, error)
 
 
+def address_location(found):
+    """A core address search result (core.place_search) as a radar location."""
+    return {"name": found["name"], "admin1": "", "country": "",
+            "latitude": found["latitude"], "longitude": found["longitude"],
+            "kind": "address", "detail": found["label"]}
+
+
 def _address_worker(done, search_id, query, language):
-    # Worker thread: Nominatim, paced and cached by flight_radar_location.
+    # Worker thread: Nominatim, paced and cached for all of Hariku by core.place_search.
     try:
-        places, error = location.search_addresses(query, language), None
+        places = [address_location(p) for p in location.search_addresses(query, language)]
+        error = None
     except location.LocationError as e:
         places, error = [], e.kind
     except Exception:
@@ -96,13 +107,14 @@ _PageBase = wx.ScrolledWindow if isinstance(getattr(wx, "ScrolledWindow", None),
 
 
 class FlightRadarPanel(_PageBase):
-    """What OK saves as the location is whatever the user chose last: a city
-    or address result (the one selected in its list) or pasted coordinates."""
+    """OK saves which place to use ("Place:") and, as its own place, whatever
+    the user chose last: a city or address result (the one selected in its
+    list) or pasted coordinates. Those are only available while "Its own
+    place" is chosen."""
 
-    def __init__(self, parent, settings, weather_location=None):
+    def __init__(self, parent, settings):
         super().__init__(parent)
         self._location = settings.get("location")
-        self._weather_location = weather_location
         self._results = []       # cities
         self._addresses = []
         self._point = None       # (latitude, longitude) from the last Use
@@ -110,6 +122,11 @@ class FlightRadarPanel(_PageBase):
         self._search_id = self._address_id = self._link_id = 0
 
         vbox = wx.BoxSizer(wx.VERTICAL)
+
+        choice = (core.places.normalize_choice(settings.get("place"))
+                  or core.places.initial_choice(self._location))
+        self.place_choice = PlaceChoice(self, vbox, choice, own=True,
+                                        on_change=lambda key: self._update_own())
 
         self.txt_location = _labelled(self, vbox, _("lbl_current_location"),
                                       lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
@@ -206,21 +223,34 @@ class FlightRadarPanel(_PageBase):
         self.list_addresses.Bind(wx.EVT_LISTBOX, self._on_address_selected)
         self.txt_coords.Bind(wx.EVT_TEXT_ENTER, self._on_use)
         self.btn_use.Bind(wx.EVT_BUTTON, self._on_use)
-        self.set_location(self._location, weather_location)
+        self.set_location(self._location)
+        self._update_own()
         core.ui_scale.apply_appearance(self)
         if hasattr(self, "FitInside"):
             self.FitInside()  # after scaling, so large text can still be scrolled to
 
-    def set_location(self, place, weather_location=None):
+    def set_location(self, place):
+        """Show the saved place of its own (after OK)."""
         self._location = place
-        self._weather_location = weather_location
-        if place:
-            value = text.location_text(place)
-        elif weather_location:
-            value = _("location_from_weather", place=api.place_label(weather_location))
-        else:
-            value = _("location_not_set")
-        self.txt_location.ChangeValue(value)
+        self.txt_location.ChangeValue(text.location_text(place) if place
+                                      else _("location_not_set"))
+
+    def _own_controls(self):
+        return (self.txt_location, self.txt_search, self.btn_search, self.list_results,
+                self.txt_address, self.btn_address, self.list_addresses, self.txt_coords,
+                self.btn_use, self.txt_name)
+
+    def _update_own(self):
+        """Finding a place of its own is for "Its own place" only; other
+        choices skip those controls."""
+        own = self.place_choice.is_own()
+        for ctrl in self._own_controls():
+            ctrl.Enable(own)
+
+    def refresh_places(self):
+        """The places changed (Preferences, Places): list them again."""
+        self.place_choice.refresh()
+        self._update_own()
 
     def _place_name(self):
         return self.txt_name.GetValue().strip()[:100] or _("default_place_name")
@@ -229,7 +259,7 @@ class FlightRadarPanel(_PageBase):
         return "aviation" if self.choice_units.GetSelection() == 1 else "metric"
 
     def chosen_location(self):
-        """The location OK would save."""
+        """Its own place, as OK would save it."""
         if self._pending == "city":
             sel = self.list_results.GetSelection()
             if 0 <= sel < len(self._results):
@@ -249,6 +279,7 @@ class FlightRadarPanel(_PageBase):
     def get_settings(self):
         """Settings to save."""
         return {
+            "place": self.place_choice.key(),
             "location": self.chosen_location(),
             "radius_km": api.RADIUS_CHOICES_KM[max(0, self.choice_radius.GetSelection())],
             "units": self._units(),

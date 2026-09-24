@@ -22,6 +22,10 @@ ICAO alphabet and offers to call the user Captain.
   cockpit_sounds.py - the generated "Cockpit" sound theme and its installer
   cockpit_ui.py     - the Preferences page and the Airport weather window
 
+With no favourite airports, it uses the airport with a METAR nearest to a
+place from Preferences, Places (core 2.8): the main place unless another one
+is chosen in Preferences, Cockpit.
+
 Network: worker threads only, one request at a time and at least 2 seconds
 apart, 10-second timeouts. A METAR is fetched on demand at most every 10
 minutes and a TAF every 30; after errors, requests pause (longer each time).
@@ -39,6 +43,7 @@ import wx
 import core.api
 import core.hotkeys
 import core.personal
+import core.places
 import core.preferences
 import core.sounds
 from core.speech import speak
@@ -55,7 +60,6 @@ logger = logging.getLogger(__name__)
 EXT_NAME = "Cockpit"        # fixed, so saved hotkeys survive a language change
 DATA_KEY = "Cockpit"        # settings, see cockpit_api.normalize_settings()
 CACHE_KEY = "CockpitCache"  # reports, see cockpit_api.normalize_cache()
-WEATHER_DATA_KEY = "Weather"
 PLACEHOLDER = "airportweather"
 
 METAR_FRESH = 10 * 60       # on demand: answer from the cache when younger
@@ -105,10 +109,10 @@ def _ask_yes_no(message):
 # State
 # ------------------------------------------------------------
 
-def weather_location():
-    """The Weather extension's city (read the way Sea Conditions does)."""
-    data = core.api.load_data(WEATHER_DATA_KEY)
-    return api.normalize_location(data.get("location")) if isinstance(data, dict) else None
+def place_location():
+    """The place the nearest airport is found for: the chosen place from
+    Preferences, Places (the main place by default), or None."""
+    return core.places.location_for(_settings.get("place") or core.places.CHOICE_MAIN)
 
 
 def get_settings():
@@ -135,10 +139,10 @@ def favourites():
 
 
 def auto_airport():
-    """The nearest airport found for the current Weather city, or None."""
+    """The nearest airport found for the current place, or None."""
     auto = _settings.get("auto")
-    location = weather_location()
-    if auto and location and api.same_place(auto["for"], location):
+    location = place_location()
+    if auto and location and api.same_place(auto["for"], api.for_point(location)):
         return {"icao": auto["icao"], "name": auto["name"], "auto": True,
                 "city": location["name"]}
     return None
@@ -153,8 +157,8 @@ def airports():
 
 
 def default_airport():
-    """The first favourite, else the airport nearest to the Weather city
-    (once found), else None."""
+    """The first favourite, else the airport nearest to the place (once
+    found), else None."""
     listed = airports()
     return listed[0] if listed else None
 
@@ -294,10 +298,10 @@ def request_taf(ids, callback=None, force=False):
 
 
 def find_nearest(callback):
-    """Find the airport with a METAR nearest to the Weather city: a box of
-    about 110 km around it, then 330 km. callback(airport, error) on the UI
-    thread; error "none_near" when there is none, "no_location" without a city."""
-    location = weather_location()
+    """Find the airport with a METAR nearest to the place: a box of about
+    110 km around it, then 330 km. callback(airport, error) on the UI thread;
+    error "none_near" when there is none, "no_location" without a place."""
+    location = place_location()
     if not location:
         callback(None, "no_location")
         return
@@ -323,7 +327,7 @@ def find_nearest(callback):
             _cache["no_metar"].pop(report["icao"], None)
             _save_cache()
             _settings["auto"] = {"icao": report["icao"], "name": report["name"],
-                                 "km": round(km, 1), "for": location}
+                                 "km": round(km, 1), "for": api.for_point(location)}
             _save_settings()
             callback(auto_airport(), None)
 
@@ -408,12 +412,12 @@ def make_default(icao):
 
 def speak_pilot_weather():
     """Speak the decoded METAR of the default airport; with no favourites,
-    find the airport nearest to the Weather city first and say so."""
+    find the airport nearest to the place first and say so."""
     airport = default_airport()
     if airport is not None:
         _speak_airport(airport)
         return
-    location = weather_location()
+    location = place_location()
     if not location:
         speak(_("no_airport"), interrupt=True)
         return
@@ -422,7 +426,7 @@ def speak_pilot_weather():
 
 
 def _after_nearest(airport, error):
-    location = weather_location()
+    location = place_location()
     city = location["name"] if location else ""
     if error == "none_near":
         speak(_("nearest_none", city=city), interrupt=True)
@@ -483,15 +487,16 @@ def show_airport_weather():
     if _dialog:
         _dialog.Raise()
         return
-    if not airports() and weather_location():
+    location = place_location()
+    if not airports() and location:
         # Nothing to list yet: find the nearest airport first, then open.
-        speak(_("finding_nearest", city=weather_location()["name"]), interrupt=True)
+        speak(_("finding_nearest", city=location["name"]), interrupt=True)
 
         def opened(airport, error):
             if error and error not in ("none_near", "no_location"):
                 speak(text.error_text(error), interrupt=True)
             elif error == "none_near":
-                speak(_("nearest_none", city=weather_location()["name"]), interrupt=True)
+                speak(_("nearest_none", city=location["name"]), interrupt=True)
             _open_dialog()
 
         find_nearest(opened)
@@ -656,7 +661,14 @@ def apply_settings(new_settings, offers=True):
     for key in ("captain", "raw", "briefing"):
         if key in new_settings:
             _settings[key] = bool(new_settings[key])
+    moved = False
+    if "place" in new_settings:
+        place = api.normalize_settings({"place": new_settings["place"]})["place"]
+        moved = place != _settings.get("place")
+        _settings["place"] = place
     _save_settings()
+    if moved:
+        _place_moved()
     if not offers:
         return
     if _settings["captain"] and not was_captain:
@@ -682,7 +694,7 @@ def _background_refresh(force=False):
         return False
     airport = default_airport()
     if airport is None:
-        if weather_location():
+        if place_location():
             _last_background = now
             find_nearest(lambda _airport, _error: None)
             return True
@@ -763,12 +775,35 @@ def _on_network_changed(online=True, *_args, **_kwargs):
         _background_refresh(force=True)
 
 
+def _place_moved():
+    """The place for the nearest airport may have changed: the settings page
+    shows the airports again, and Captain mode keeps the new one fresh."""
+    if _panel:
+        try:
+            _panel.refresh()
+        except RuntimeError:
+            pass  # panel already destroyed
+    if _settings["captain"] and not _settings["favourites"] and auto_airport() is None:
+        _background_refresh(force=True)
+
+
+def _on_places_changed(*_args, **_kwargs):
+    """The places changed (Preferences, Places)."""
+    if _panel:
+        try:
+            _panel.refresh_places()
+        except RuntimeError:
+            pass  # panel already destroyed
+    _place_moved()
+
+
 _SUBSCRIPTIONS = (
     ("on_app_startup", _on_app_startup),
     ("on_minute_tick", _on_minute_tick),
     ("on_network_changed", _on_network_changed),
     ("on_briefing_collect", _on_briefing_collect),
     ("on_evening_collect", _on_evening_collect),
+    ("on_places_changed", _on_places_changed),
 )
 
 

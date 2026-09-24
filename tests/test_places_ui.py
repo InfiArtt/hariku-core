@@ -7,29 +7,33 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Opens the Earthquakes & Tsunami windows with real wxPython, in a separate
-# process (conftest.py mocks wx here). Network access is stubbed there.
+# Uses the Places page (core 2.8) and its Add/Edit dialog with real wxPython,
+# in a separate process (conftest.py mocks wx here). Nominatim, Open-Meteo and
+# the short-link redirect are stubbed there, so nothing leaves the machine.
 
 import os
 import subprocess
 import sys
 
+import pytest
+
+# Opens real windows: skipped unless HARIKU_UI_TESTS=1 (CI sets it).
+pytestmark = pytest.mark.window
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def test_earthquake_windows(tmp_path):
+def test_places_page(tmp_path):
     env = dict(os.environ, APPDATA=str(tmp_path), PYTHONIOENCODING="utf-8")
     result = subprocess.run(
-        [sys.executable, os.path.join(ROOT, "tests", "_earthquake_ui_check.py")],
+        [sys.executable, os.path.join(ROOT, "tests", "_places_ui_check.py")],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
-        timeout=180, env=env,
+        timeout=200, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK main_window", "OK load", "OK latest_action", "OK tsunami_alert",
-                  "OK panel_browse", "OK panel_apply", "OK places_changed", "OK recent_action",
-                  "OK list_dialog",
-                  "OK nearby_alert", "OK world_alert", "OK briefing", "OK teardown",
-                  "OK no_errors", "OK shutdown"):
+    for stage in ("OK main_window", "OK places_page", "OK add_by_address",
+                  "OK add_by_coordinates", "OK add_by_city_and_link", "OK edit_main_remove",
+                  "OK saved", "OK reopen", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
     assert "Traceback" not in result.stderr, output

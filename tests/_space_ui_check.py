@@ -274,15 +274,24 @@ assert spoken[-1].startswith("Moon phase: ") and spoken[-1].endswith(_("sun_no_l
     spoken[-1]
 print("OK no_location")
 
-# --- The Weather city is offered as the default ----------------------------------
+# --- The main place (Preferences, Places) is the default -------------------------
+import core.places
 core.api.save_data("Weather", {"location": {"name": "Bandung", "admin1": "West Java",
                                             "country": "Indonesia", "latitude": -6.9175,
                                             "longitude": 107.6191,
                                             "timezone": "Asia/Jakarta"}, "units": "metric"})
+assert main.get_location() is None, "the Weather city is no longer used by itself"
+bandung_place, = core.places.set_places([{
+    "name": "Bandung", "lat": -6.9175, "lon": 107.6191,
+    "label": "Bandung, West Java, Indonesia", "timezone": "Asia/Jakarta", "source": "city",
+    "city": "Bandung", "region": "West Java", "country": "Indonesia"}])
 assert main.get_location()["name"] == "Bandung"
-print("OK weather_default")
+spoken.clear()
+assert run_and_close("Space.sun_and_moon") == []
+assert spoken and spoken[-1].startswith("Bandung, ") and "Sunrise at " in spoken[-1], spoken
+print("OK main_place_default")
 
-# --- Preferences page: search, browse, save -------------------------------------
+# --- Preferences page: the place choice, search, browse, save ---------------------
 from ui.preferences_dialog import PreferencesDialog
 
 prefs = PreferencesDialog(frame, select_tab="Space")
@@ -290,13 +299,25 @@ prefs.Show()
 wx.Yield()
 panel = main._panel
 assert panel is not None and panel.IsShown(), "Space settings page was not created"
-assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia (from the Weather settings)", \
-    panel.txt_location.GetValue()
+choice = panel.place_choice.ctrl
+assert choice.GetName() == "Place", choice.GetName()
+assert choice.GetStrings() == ["The main place (Bandung)", "Bandung", "Its own place…"], \
+    choice.GetStrings()
+assert panel.place_choice.key() == "main" and choice.GetSelection() == 0
+assert panel.txt_location.GetValue() == _("location_not_set"), panel.txt_location.GetValue()
+# The city search is for its own place only: skipped while another place is chosen.
+assert not panel.txt_search.IsEnabled() and not panel.list_results.IsEnabled()
 assert panel.choice_lead.GetString(panel.choice_lead.GetSelection()) == "30 minutes"
 labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
 for credit in ("ISS position: wheretheiss.at", "Launch data: The Space Devs Launch Library 2",
                "City search: Open-Meteo.com"):
     assert credit in labels, labels
+assert any("stays on this computer" in label for label in labels), labels
+# Arrowing through the places: focus stays; the last one, "Its own place", opens the search.
+checked = browse(choice, wx.EVT_CHOICE)
+assert panel.place_choice.key() == "own", panel.place_choice.key()
+assert panel.txt_search.IsEnabled() and panel.btn_search.IsEnabled()
+assert panel.list_results.IsEnabled() and panel.txt_location.IsEnabled()
 
 panel.txt_search.SetValue("J")
 fire(panel.txt_search, wx.EVT_TEXT_ENTER)
@@ -311,14 +332,23 @@ assert pump(lambda: panel.list_results.GetCount() == 2), "search results never a
 assert panel.list_results.GetString(0) == "Jakarta, Indonesia"
 if search_focused:
     assert wx.Window.FindFocus() is panel.list_results, "focus did not move to the results"
-checked = browse(panel.list_results, wx.EVT_LISTBOX)
+checked = browse(panel.list_results, wx.EVT_LISTBOX) and checked
 checked = browse(panel.choice_lead, wx.EVT_CHOICE) and checked
+# Back to the main place and to its own place again: the search follows.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
 print(f"OK panel_browse ({focus_note(checked)})")
 
 panel.list_results.SetSelection(0)
+fire(panel.list_results, wx.EVT_LISTBOX, 0)
 panel.choice_lead.SetSelection(0)
 prefs.OnApply(None)
 saved = core.api.load_data("Space")
+assert saved["place"] == "own", saved
 assert saved["location"]["name"] == "Jakarta" and saved["location"]["country"] == "Indonesia", saved
 assert saved["location"]["timezone"] == "Asia/Jakarta" and saved["lead_minutes"] == 10, saved
 assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
@@ -484,34 +514,52 @@ if space_text.local(SOON, tz).date() == today:
     assert "Rocket launch today at " in lines[0], lines
 print("OK briefing")
 
-# --- Use the Weather location: the Space city is dropped, focus stays put ---------------
+# --- The places change while the page is open; a saved place is chosen ------------------
 prefs = PreferencesDialog(frame, select_tab="Space")
 prefs.Show()
 wx.Yield()
 panel = main._panel
+choice = panel.place_choice.ctrl
+assert panel.place_choice.key() == "own" and choice.GetSelection() == 2, choice.GetSelection()
 assert panel.txt_location.GetValue() == "Jakarta, Indonesia", panel.txt_location.GetValue()
-assert panel.btn_use_weather.GetLabel().replace("&", "") == "Use the Weather location"
-panel.btn_use_weather.SetFocus()
+assert panel.txt_search.IsEnabled()
+choice.SetFocus()
 wx.Yield()
-button_focused = wx.Window.FindFocus() is panel.btn_use_weather
-spoken.clear()
-fire(panel.btn_use_weather, wx.EVT_BUTTON)
-assert spoken == ["Bandung, West Java, Indonesia, the Weather location, will be used. "
-                  "Press OK to save."], spoken
-assert panel.txt_location.GetValue() == \
-    "Bandung, West Java, Indonesia (from the Weather settings)", panel.txt_location.GetValue()
-if button_focused:
-    assert wx.Window.FindFocus() is panel.btn_use_weather, "focus moved after Use the Weather location"
+choice_focused = wx.Window.FindFocus() is choice
+makassar = {"name": "Makassar", "lat": -5.1477, "lon": 119.4327,
+            "label": "Makassar, South Sulawesi, Indonesia", "timezone": "Asia/Makassar",
+            "source": "city", "city": "Makassar", "region": "South Sulawesi",
+            "country": "Indonesia"}
+core.places.set_places([bandung_place, makassar])     # what the Places page does on OK
+assert choice.GetStrings() == ["The main place (Bandung)", "Bandung", "Makassar",
+                               "Its own place…"], choice.GetStrings()
+assert panel.place_choice.key() == "own" and choice.GetSelection() == 3
+assert panel.txt_search.IsEnabled()
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when the places changed"
+browse(choice, wx.EVT_CHOICE)
+# Choosing a saved place skips the city search, and is what OK saves.
+makassar_id = core.places.get_places()[1]["id"]
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert panel.place_choice.key() == makassar_id, panel.place_choice.key()
+assert not panel.txt_search.IsEnabled() and not panel.list_results.IsEnabled()
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus left the Place list"
 prefs.OnApply(None)
-assert core.api.load_data("Space")["location"] is None, core.api.load_data("Space")
-assert main.get_location()["name"] == "Bandung"
-assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia (from the Weather settings)"
+saved = core.api.load_data("Space")
+assert saved["place"] == makassar_id, saved
+assert saved["location"]["name"] == "Jakarta", "its own city is kept for later"
+assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
+assert main.get_location()["name"] == "Makassar"
+# The place's own time zone is used for its times.
+assert str(space_api.zone_for(main.get_location())) == "Asia/Makassar"
 prefs.Destroy()
 wx.Yield()
 spoken.clear()
 assert run_and_close("Space.sun_and_moon") == []
-assert spoken and spoken[-1].startswith("Bandung, "), spoken
-print(f"OK use_weather ({focus_note(button_focused)})")
+assert spoken and spoken[-1].startswith("Makassar, ") and "Sunrise at " in spoken[-1], spoken
+print(f"OK place_choice ({focus_note(choice_focused)})")
 
 # --- Teardown, and nothing went wrong along the way -----------------------------------
 em.unload_all_extensions()
@@ -523,9 +571,9 @@ assert not network_attempts, f"real network access attempted: {network_attempts}
 allowed = ("https://api.wheretheiss.at/", "https://ll.thespacedevs.com/",
            "https://geocoding-api.open-meteo.com/")
 assert all(u.startswith(allowed) for u in stub_requests), stub_requests
-# The user's location never reaches any service.
+# The user's location (its own city or a saved place) never reaches any service.
 for url in stub_requests:
-    for fragment in ("-6.2", "106.8", "-6.9", "107.6"):
+    for fragment in ("-6.2", "106.8", "-6.9", "107.6", "-5.1", "119.4"):
         assert fragment not in url, f"location in {url}"
 assert not problems, "\n".join(problems)
 print("OK no_errors")

@@ -13,6 +13,9 @@ turning the JSON into plain dicts, plus the pure helpers for settings, the cache
 and unit conversion. No wx and no translated text, so tests can drive it with
 sample responses.
 
+Privacy (core 2.8): the forecast request gets the place rounded to 2 decimals
+(about 1 km), never more; the cache is kept for that rounded point.
+
 fetch_json(), fetch_forecast() and search_places() block on the network: call
 them from a worker thread only.
 """
@@ -25,6 +28,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import core.places
 from core.constants import CORE_VERSION
 
 logger = logging.getLogger(__name__)
@@ -44,6 +48,8 @@ DAILY_FIELDS = ("weather_code", "temperature_2m_max", "temperature_2m_min",
 
 UNITS = ("metric", "imperial")   # metric: Celsius + km/h, imperial: Fahrenheit + mph
 
+QUERY_DECIMALS = 2   # the point Open-Meteo gets: about 1 km
+
 
 class WeatherError(Exception):
     """A failed request. `kind` is "offline", "service" or "bad_response"."""
@@ -57,12 +63,19 @@ class WeatherError(Exception):
 # Requests
 # ------------------------------------------------------------
 
+def query_point(latitude, longitude):
+    """The rounded point sent instead of the exact one."""
+    return round(float(latitude), QUERY_DECIMALS), round(float(longitude), QUERY_DECIMALS)
+
+
 def build_forecast_url(latitude, longitude, timezone=""):
     # Always metric; weather_text converts for imperial users, so a unit change
-    # never needs a new request.
+    # never needs a new request. Always rounded here, so an exact point can
+    # never reach the URL.
+    lat, lon = query_point(latitude, longitude)
     params = {
-        "latitude": f"{float(latitude):.4f}",
-        "longitude": f"{float(longitude):.4f}",
+        "latitude": f"{lat:.{QUERY_DECIMALS}f}",
+        "longitude": f"{lon:.{QUERY_DECIMALS}f}",
         "current": ",".join(CURRENT_FIELDS),
         "daily": ",".join(DAILY_FIELDS),
         "timezone": timezone or "auto",
@@ -223,16 +236,21 @@ def normalize_settings(raw):
     raw = raw if isinstance(raw, dict) else {}
     units = raw.get("units")
     return {
+        # "main", a place id or "own" (core.places); None until decided.
+        "place": core.places.normalize_choice(raw.get("place")),
+        # The city of its own ("Its own place"), kept even while another place is used.
         "location": normalize_location(raw.get("location")),
         "units": units if units in UNITS else "metric",
     }
 
 
 def make_cache(location, forecast, now=None):
+    # Kept for the point that was asked about (rounded), not the exact one.
+    lat, lon = query_point(location["latitude"], location["longitude"])
     return {
         "fetched_at": time.time() if now is None else now,
-        "latitude": location["latitude"],
-        "longitude": location["longitude"],
+        "latitude": lat,
+        "longitude": lon,
         "forecast": forecast,
     }
 
@@ -259,11 +277,13 @@ def normalize_cache(raw):
 
 
 def cache_matches(cache, location):
+    """Whether the cache answers for `location` (compared at the rounded point)."""
     if not cache or not location:
         return False
     try:
-        return (abs(float(cache["latitude"]) - float(location["latitude"])) < 1e-4
-                and abs(float(cache["longitude"]) - float(location["longitude"])) < 1e-4)
+        lat, lon = query_point(location["latitude"], location["longitude"])
+        return (abs(float(cache["latitude"]) - lat) < 1e-4
+                and abs(float(cache["longitude"]) - lon) < 1e-4)
     except (KeyError, TypeError, ValueError):
         return False
 

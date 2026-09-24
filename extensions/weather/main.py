@@ -10,9 +10,13 @@
 """
 Weather — Hariku V2 extension.
 
-Speaks the current weather and shows a 7-day forecast for one city, using
-Open-Meteo (https://open-meteo.com; no account or API key). The city and units
-are chosen in Preferences, Weather.
+Speaks the current weather and shows a 7-day forecast for one place, using
+Open-Meteo (https://open-meteo.com; no account or API key), which gets the
+place rounded to about 1 km. The place is the main place from Preferences,
+Places (core 2.8) unless another place, or a city of its own, is chosen in
+Preferences, Weather, along with the units. A city saved before core 2.8
+(where the core may have made "Home" from it) follows the main place when it
+is the main place, and otherwise stays its own (see register()).
 
   weather_api.py  - requests, parsing, cache and unit helpers (no wx)
   weather_text.py - spoken/displayed text in the user's language
@@ -38,6 +42,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.places
 import core.preferences
 from core.speech import speak
 
@@ -53,7 +58,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-DATA_KEY = "Weather"         # {"location": {...} or None, "units": "metric" | "imperial"}
+DATA_KEY = "Weather"         # settings, see weather_api.normalize_settings()
 CACHE_KEY = "WeatherCache"   # last forecast, see weather_api.make_cache()
 
 FRESH_SECONDS = 10 * 60      # answer from the cache without fetching
@@ -65,7 +70,7 @@ PLACEHOLDER = "weather"      # %weather%, from the cache (core 2.7)
 
 _bus = None
 _active = False
-_settings = {"location": None, "units": "metric"}
+_settings = {"place": None, "location": None, "units": "metric"}
 _cache = None
 _loading = False
 _waiters = []        # callbacks run on the UI thread when the running fetch ends
@@ -78,7 +83,9 @@ _panel = None
 # ------------------------------------------------------------
 
 def get_location():
-    return _settings.get("location")
+    """The place in use: the chosen place from Preferences, Places (the main
+    place by default), or the city of its own; None without one."""
+    return core.places.location_for(_settings.get("place"), _settings.get("location"))
 
 
 def get_units():
@@ -86,22 +93,27 @@ def get_units():
 
 
 def current_cache():
-    """The cached forecast for the configured location, or None."""
+    """The cached forecast for the place in use, or None."""
     location = get_location()
     if location and _cache and weather_api.cache_matches(_cache, location):
         return _cache
     return None
 
 
-def _save_settings(new_settings):
-    global _settings
-    new_settings = weather_api.normalize_settings(new_settings)
+def _store_settings():
     data = core.api.load_data(DATA_KEY)
     data = data if isinstance(data, dict) else {}
-    data.update(new_settings)
+    data.update(_settings)
     core.api.save_data(DATA_KEY, data)
-    _settings = new_settings
-    location = new_settings["location"]
+
+
+def _save_settings(new_settings):
+    global _settings
+    merged = dict(_settings)
+    merged.update(new_settings or {})
+    _settings = weather_api.normalize_settings(merged)
+    _store_settings()
+    location = get_location()   # the place in use, which may not be its own city
     if location and not weather_api.cache_matches(_cache, location):
         refresh()
 
@@ -272,12 +284,25 @@ def _on_evening_collect(lines):
             lines.append(sentence)
 
 
+def _on_places_changed(*_args, **_kwargs):
+    """The places changed (Preferences, Places): show them on the settings
+    page, and fetch the new place when the one in use moved."""
+    if _panel:
+        try:
+            _panel.refresh_places()
+        except RuntimeError:
+            pass  # panel already destroyed
+    if _active and get_location() and current_cache() is None:
+        refresh()
+
+
 _SUBSCRIPTIONS = (
     ("on_app_startup", _on_app_startup),
     ("on_minute_tick", _on_minute_tick),
     ("on_briefing_collect", _on_briefing_collect),
     ("on_evening_collect", _on_evening_collect),
     ("on_network_changed", _on_network_changed),
+    ("on_places_changed", _on_places_changed),
 )
 
 
@@ -299,7 +324,7 @@ def _apply_panel():
     except RuntimeError:
         return  # panel already destroyed
     _save_settings(new_settings)
-    _panel.set_location(get_location())
+    _panel.set_location(_settings["location"])
 
 
 # ------------------------------------------------------------
@@ -323,6 +348,11 @@ def register(bus):
     _loading = False
     _last_attempt = 0.0
     _settings = weather_api.normalize_settings(core.api.load_data(DATA_KEY))
+    if _settings["place"] is None and _settings["location"]:
+        # First start with core 2.8: the city of its own stays in use, unless
+        # it is the main place anyway (the core made "Home" from it).
+        _settings["place"] = core.places.initial_choice(_settings["location"])
+        _store_settings()
     _cache = weather_api.normalize_cache(core.api.load_data(CACHE_KEY))
 
     for event_name, handler in _SUBSCRIPTIONS:

@@ -32,6 +32,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import core.places
 from core.constants import CORE_VERSION
 
 logger = logging.getLogger(__name__)
@@ -429,6 +430,8 @@ def normalize_settings(raw):
     alert = raw.get("alert_km")
     units = raw.get("units")
     return {
+        # "main", a place id or "own" (core.places, core 2.8); None until decided.
+        "place": core.places.normalize_choice(raw.get("place")),
         "location": normalize_location(raw.get("location")),
         "radius_km": radius if radius in RADIUS_CHOICES_KM and not isinstance(radius, bool)
         else DEFAULT_RADIUS_KM,

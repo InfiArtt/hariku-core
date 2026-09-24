@@ -14,8 +14,9 @@ settings, the cache and backing off after errors. No wx and no translated
 text, so tests can drive it with sample responses.
 
 What is sent (see PRIVACY.md): the ICAO codes of the airports asked about, or,
-to find the nearest airport, a box of a degree or three around the Weather
-city rounded to 0.1 degree. Never the user's own location.
+to find the nearest airport, a box of a degree or three around the chosen
+place (Preferences, Places) rounded to 0.1 degree. Never the user's own
+location.
 
 The fetch_* functions block on the network: call them from a worker thread.
 The API allows 100 requests a minute; Cockpit sends one at a time, at least
@@ -30,6 +31,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import core.places
 from core.constants import CORE_VERSION
 
 import cockpit_metar as metar
@@ -45,7 +47,8 @@ USER_AGENT = (f"HarikuV2/{CORE_VERSION} (Cockpit extension; "
 TIMEOUT_SECONDS = 10
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MIN_GAP_SECONDS = 2.0
-BOX_DEGREES = (1.0, 3.0)      # about 110 km, then 330 km around the Weather city
+BOX_DEGREES = (1.0, 3.0)      # about 110 km, then 330 km around the place
+FOR_DECIMALS = 2              # the place a nearest airport was found for, as kept
 MAX_FAVOURITES = 20
 
 # Back-off. On demand: a pause after a failure, 15 s doubling to 5 minutes, or
@@ -251,7 +254,7 @@ def normalize_airport(raw):
 
 
 def normalize_location(raw):
-    """A Weather city ({"name", "latitude", "longitude", ...}), or None."""
+    """A place ({"name", "latitude", "longitude", ...}), or None."""
     if not isinstance(raw, dict):
         return None
     lat, lon = to_float(raw.get("latitude")), to_float(raw.get("longitude"))
@@ -261,8 +264,16 @@ def normalize_location(raw):
     return {"name": name, "latitude": lat, "longitude": lon}
 
 
+def for_point(location):
+    """What is kept of the place a nearest airport was found for: its name and
+    the point rounded to about 1 km (the exact point stays in Places)."""
+    return {"name": _text(location.get("name")),
+            "latitude": round(float(location["latitude"]), FOR_DECIMALS),
+            "longitude": round(float(location["longitude"]), FOR_DECIMALS)}
+
+
 def _normalize_auto(raw):
-    """The nearest airport found for a Weather city."""
+    """The nearest airport found for a place."""
     airport = normalize_airport(raw)
     if not airport:
         return None
@@ -282,7 +293,11 @@ def normalize_settings(raw):
         if airport and airport["icao"] not in seen and len(favourites) < MAX_FAVOURITES:
             seen.add(airport["icao"])
             favourites.append(airport)
+    place = core.places.normalize_choice(raw.get("place"))
     return {"favourites": favourites,
+            # The place for the nearest airport: "main" or a place id (core
+            # 2.8); Cockpit has no place of its own (its airports are).
+            "place": None if place == core.places.CHOICE_OWN else place,
             "captain": raw.get("captain") is True,
             "raw": raw.get("raw") is True,
             "briefing": raw.get("briefing") is True,

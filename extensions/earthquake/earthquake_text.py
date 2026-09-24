@@ -295,16 +295,13 @@ def time_text(timestamp, now=None):
     return f"{format_date(when.date(), '%d %B')} {clock}"
 
 
-def location_text(location, weather_location=None):
-    """How the settings page shows the location."""
-    if location:
-        return api.place_label(location)
-    if weather_location:
-        return _("location_from_weather", place=api.place_label(weather_location))
-    return _("location_not_set")
+def location_text(location):
+    """How the settings page shows its own place (a city search result)."""
+    return api.place_label(location) if location else _("location_not_set")
 
 
 def felt_note(location, extra):
+    """Which names felt alerts look for, for the location in use."""
     names = api.region_names(location, extra)
     if not names:
         return _("felt_note_none")

@@ -14,7 +14,7 @@
         "action_airports": "Airport weather: open your airports with their METAR and TAF",
         "placeholder_desc": "the weather at your default airport, from the last report",
 
-        "no_airport": "No airport chosen yet. Add one in Preferences, Cockpit, or choose your city in Preferences, Weather, so Hariku can find the nearest.",
+        "no_airport": "No airport chosen yet. Add one in Preferences, Cockpit, or add a place in Preferences, Places, so Hariku can find the nearest.",
         "finding_nearest": "Looking for the airport nearest to {city}...",
         "nearest_chosen": "No favourite airports yet, so Hariku uses {name}, {code}, the nearest airport with a weather report to {city}.",
         "nearest_none": "No airport with a weather report was found within about 300 kilometres of {city}. Add one in Preferences, Cockpit.",
@@ -234,12 +234,13 @@
         "note_captain": "Turning Captain mode on offers to call you Captain and to set a cockpit greeting for when Hariku starts.",
         "lbl_favourites": "Favourite airports (the first one is your default):",
         "lbl_add_code": "ICAO code of an airport to add (press Enter to add):",
+        "lbl_place": "Place, for the nearest airport when you have no favourites:",
         "btn_add_code": "&Add",
         "chk_raw": "Also read the &raw report",
         "chk_briefing": "Add airport weather to the Morning &Briefing (without Captain mode)",
         "attribution": "Aviation weather: NOAA Aviation Weather Center (aviationweather.gov)",
         "disclaimer": "For information only, not for flight planning.",
-        "note_privacy": "Hariku sends aviationweather.gov only airport codes, or a box around your Weather city to find the nearest airport, never your own location.",
+        "note_privacy": "Hariku sends aviationweather.gov only airport codes, or a box of about 110 or 330 kilometres around your place (rounded to 0.1 degree) to find the nearest airport, never your own location.",
 
         "captain_title": "Captain Mode",
         "captain_word": "Captain",

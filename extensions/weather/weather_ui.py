@@ -9,7 +9,9 @@
 
 """
 Windows for the Weather extension:
-  * WeatherPanel   - the Preferences page: city search, units, attribution.
+  * WeatherPanel   - the Preferences page: the place (one from Preferences,
+                     Places, or a city of its own, found with the city
+                     search), units, notes, attribution.
   * ForecastDialog - a read-only list with one row per day.
 Selection changes never move keyboard focus. Focus only moves after the user
 asks for something (opening the dialog, pressing Search).
@@ -20,8 +22,10 @@ import threading
 
 import wx
 
+import core.places
 import core.ui_scale
 from core.i18n import apply_rtl_layout, get_current_language
+from core.places_ui import PlaceChoice
 from core.speech import speak
 
 import weather_api
@@ -44,6 +48,10 @@ def _search_worker(done, search_id, query, language):
 
 
 class WeatherPanel(wx.Panel):
+    """OK saves which place to use ("Place:"), and as its own city the
+    selected search result, or keeps the saved one. The city search is only
+    available while "Its own place" is chosen."""
+
     def __init__(self, parent, settings):
         super().__init__(parent)
         self._location = settings.get("location")
@@ -51,6 +59,11 @@ class WeatherPanel(wx.Panel):
         self._search_id = 0
 
         vbox = wx.BoxSizer(wx.VERTICAL)
+
+        choice = (core.places.normalize_choice(settings.get("place"))
+                  or core.places.initial_choice(self._location))
+        self.place_choice = PlaceChoice(self, vbox, choice, own=True,
+                                        on_change=lambda key: self._update_own())
 
         label = _("lbl_current_location")
         vbox.Add(wx.StaticText(self, label=label), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
@@ -81,6 +94,7 @@ class WeatherPanel(wx.Panel):
         self.choice_units.SetSelection(1 if settings.get("units") == "imperial" else 0)
         vbox.Add(self.choice_units, 0, wx.LEFT | wx.RIGHT, 10)
 
+        vbox.Add(wx.StaticText(self, label=_("note_privacy")), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
         # Required by Open-Meteo's licence (CC BY 4.0).
         vbox.Add(wx.StaticText(self, label=_("attribution")), 0, wx.ALL, 10)
 
@@ -89,21 +103,35 @@ class WeatherPanel(wx.Panel):
         self.txt_search.Bind(wx.EVT_TEXT_ENTER, self._on_search)
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search)
         self.set_location(self._location)
+        self._update_own()
         core.ui_scale.apply_appearance(self)
 
     def set_location(self, location):
+        """Show the saved city of its own (after OK)."""
         self._location = location
         self.txt_location.SetValue(weather_api.place_label(location) if location
                                    else _("location_not_set"))
 
+    def _update_own(self):
+        """The city search is for "Its own place" only; other choices skip it."""
+        own = self.place_choice.is_own()
+        for ctrl in (self.txt_location, self.txt_search, self.btn_search, self.list_results):
+            ctrl.Enable(own)
+
+    def refresh_places(self):
+        """The places changed (Preferences, Places): list them again."""
+        self.place_choice.refresh()
+        self._update_own()
+
     def get_settings(self):
-        """Settings to save: the selected search result (if any) becomes the location."""
+        """Settings to save: which place to use, and as its own city the
+        selected search result (if any) or the saved one."""
         location = self._location
         sel = self.list_results.GetSelection()
         if 0 <= sel < len(self._results):
             location = self._results[sel]
         units = "imperial" if self.choice_units.GetSelection() == 1 else "metric"
-        return {"location": location, "units": units}
+        return {"place": self.place_choice.key(), "location": location, "units": units}
 
     def _on_search(self, event):
         query = self.txt_search.GetValue().strip()

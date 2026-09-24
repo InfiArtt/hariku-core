@@ -13,6 +13,9 @@ and turning the Air Quality API JSON into plain dicts, plus the pure helpers
 for categories, settings, the cache and the unhealthy-air alert. No wx and no
 translated text, so tests can drive it with sample responses.
 
+Privacy (core 2.8): the Air Quality API gets the place rounded to 2 decimals
+(about 1 km), never more; the cache is kept for that rounded point.
+
 fetch_json(), fetch_air() and search_places() block on the network: call them
 from a worker thread only.
 """
@@ -25,6 +28,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import core.places
 from core.constants import CORE_VERSION
 
 logger = logging.getLogger(__name__)
@@ -42,6 +46,8 @@ POLLUTANTS = ("pm2_5", "pm10", "ozone", "nitrogen_dioxide", "carbon_monoxide",
               "sulphur_dioxide")
 CURRENT_FIELDS = ("us_aqi", "pm2_5", "pm10", "uv_index") + tuple(f"us_aqi_{p}" for p in POLLUTANTS)
 HOURLY_FIELDS = ("us_aqi", "pm2_5", "uv_index")
+
+QUERY_DECIMALS = 2   # the point Open-Meteo gets: about 1 km
 
 # US AQI (U.S. EPA): highest index of each category.
 AQI_CATEGORIES = ((50, "good"), (100, "moderate"), (150, "sensitive"), (200, "unhealthy"),
@@ -63,10 +69,17 @@ class AirError(Exception):
 # Requests
 # ------------------------------------------------------------
 
+def query_point(latitude, longitude):
+    """The rounded point sent instead of the exact one."""
+    return round(float(latitude), QUERY_DECIMALS), round(float(longitude), QUERY_DECIMALS)
+
+
 def build_air_url(latitude, longitude, timezone=""):
+    # Always rounded here, so an exact point can never reach the URL.
+    lat, lon = query_point(latitude, longitude)
     params = {
-        "latitude": f"{float(latitude):.4f}",
-        "longitude": f"{float(longitude):.4f}",
+        "latitude": f"{lat:.{QUERY_DECIMALS}f}",
+        "longitude": f"{lon:.{QUERY_DECIMALS}f}",
         "current": ",".join(CURRENT_FIELDS),
         "hourly": ",".join(HOURLY_FIELDS),
         "timezone": timezone or "auto",
@@ -280,6 +293,8 @@ def normalize_settings(raw):
     raw = raw if isinstance(raw, dict) else {}
     alert_date = raw.get("alert_date")
     return {
+        # "main", a place id or "own" (core.places); None until decided.
+        "place": core.places.normalize_choice(raw.get("place")),
         "location": normalize_location(raw.get("location")),
         "alert": raw.get("alert") is True,
         "alert_date": alert_date if isinstance(alert_date, str) and len(alert_date) == 10 else "",
@@ -287,10 +302,12 @@ def normalize_settings(raw):
 
 
 def make_cache(location, forecast, now=None):
+    # Kept for the point that was asked about (rounded), not the exact one.
+    lat, lon = query_point(location["latitude"], location["longitude"])
     return {
         "fetched_at": time.time() if now is None else now,
-        "latitude": location["latitude"],
-        "longitude": location["longitude"],
+        "latitude": lat,
+        "longitude": lon,
         "forecast": forecast,
     }
 
@@ -324,11 +341,13 @@ def normalize_cache(raw):
 
 
 def cache_matches(cache, location):
+    """Whether the cache answers for `location` (compared at the rounded point)."""
     if not cache or not location:
         return False
     try:
-        return (abs(float(cache["latitude"]) - float(location["latitude"])) < 1e-4
-                and abs(float(cache["longitude"]) - float(location["longitude"])) < 1e-4)
+        lat, lon = query_point(location["latitude"], location["longitude"])
+        return (abs(float(cache["latitude"]) - lat) < 1e-4
+                and abs(float(cache["longitude"]) - lon) < 1e-4)
     except (KeyError, TypeError, ValueError):
         return False
 

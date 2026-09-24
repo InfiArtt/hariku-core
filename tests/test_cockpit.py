@@ -196,8 +196,8 @@ def test_indonesian_is_casual():
 def test_manifest():
     with open(os.path.join(EXT_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["id"] == "cockpit" and manifest["version"] == "1.0"
-    assert manifest["minimum_core_version"] == "2.7" and manifest["main"] == "main.py"
+    assert manifest["id"] == "cockpit" and manifest["version"] == "1.1"
+    assert manifest["minimum_core_version"] == "2.8" and manifest["main"] == "main.py"
 
 
 def test_every_code_has_a_word(text, lang, mt):
@@ -626,6 +626,10 @@ def test_settings_keep_valid_values(api):
     assert [a["icao"] for a in settings["favourites"]] == ["WIDD", "WIII"]
     assert settings["captain"] and settings["raw"] and settings["briefing"] is False
     assert settings["auto"]["for"]["name"] == "Batam"
+    # The place for the nearest airport (core 2.8): the main place or a saved one.
+    assert settings["place"] is None
+    for place, kept in (("main", "main"), ("abc12345", "abc12345"), ("own", None), ("?", None)):
+        assert api.normalize_settings({"place": place})["place"] == kept
 
 
 def test_cache_round_trip_and_corruption(api):
@@ -721,8 +725,10 @@ def cmain(monkeypatch, tmp_data_dir, api, text, lang):
 
 
 def _weather_city(location=BATAM):
-    import core.api
-    core.api.save_data("Weather", {"location": location, "units": "metric"})
+    """The main place (core 2.8; the Weather city before)."""
+    import core.places
+    core.places.set_places([{"name": location["name"], "lat": location["latitude"],
+                             "lon": location["longitude"], "label": "", "source": "city"}])
 
 
 def _favourites(cmain, *codes):
@@ -760,7 +766,7 @@ def test_no_airport_and_no_city(cmain):
     assert cmain.spoken == [cmain._("no_airport")] and cmain.requests == []
 
 
-def test_the_nearest_airport_to_the_weather_city(cmain):
+def test_the_nearest_airport_to_the_main_place(cmain):
     _weather_city()
     cmain.speak_pilot_weather()
     assert cmain.spoken[0] == "Looking for the airport nearest to Batam..."
@@ -1054,6 +1060,82 @@ def test_captain_mode_finds_the_nearest_airport_in_the_background(cmain):
     cmain._on_app_startup()
     assert "bbox=" in cmain.requests[0]
     assert cmain.default_airport()["icao"] == "WIDD"
+
+
+# --- Places (Cockpit 1.1, core 2.8) --------------------------------------------
+
+def test_the_weather_city_alone_is_not_used(cmain):
+    import core.api
+    core.api.save_data("Weather", {"location": BATAM, "units": "metric"})
+    cmain.speak_pilot_weather()
+    assert cmain.spoken == [cmain._("no_airport")] and cmain.requests == []
+
+
+def test_the_nearest_airport_to_a_chosen_place(cmain):
+    import core.places
+    home, mum = core.places.set_places([
+        {"name": "Home", "lat": -40.0, "lon": -120.0, "source": "coordinates"},
+        {"name": "Mum's house", "lat": 1.130112, "lon": 104.052871, "source": "coordinates"}])
+    cmain.apply_settings({"place": mum["id"]}, offers=False)
+    cmain.speak_pilot_weather()
+    assert cmain.spoken[0] == "Looking for the airport nearest to Mum's house..."
+    # Only a box rounded to 0.1 degree, never the point.
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(cmain.requests[0]).query)
+    assert query == {"bbox": ["0.1,103.1,2.1,105.1"], "format": ["json"]}
+    assert "1.1301" not in cmain.requests[0] and "104.0528" not in cmain.requests[0]
+    # What is kept of the place: rounded to about 1 km, not the exact point.
+    import core.api
+    stored = core.api.load_data(cmain.DATA_KEY)
+    assert stored["place"] == mum["id"]
+    assert stored["auto"]["for"] == {"name": "Mum's house", "latitude": 1.13, "longitude": 104.05}
+    assert cmain.default_airport()["city"] == "Mum's house"
+    # Back to the main place: that airport no longer counts.
+    cmain.apply_settings({"place": "main"}, offers=False)
+    assert cmain.auto_airport() is None
+    # A removed place: the main place.
+    core.places.set_places([home])
+    cmain.apply_settings({"place": mum["id"]}, offers=False)
+    assert cmain.place_location()["name"] == "Home"
+
+
+def test_an_airport_found_before_2_8_is_found_again_once(cmain):
+    # Kept with the Weather city's exact centre: not the rounded place, so it
+    # is looked up again (one request), then kept.
+    _weather_city()
+    cmain._settings["auto"] = {"icao": "WIDD", "name": "x", "km": 11.0, "for": BATAM}
+    assert cmain.auto_airport() is None
+    cmain.speak_pilot_weather()
+    assert len(cmain.requests) == 1 and cmain.default_airport()["icao"] == "WIDD"
+
+
+def test_places_changing_refreshes_the_page_and_captain_mode(cmain, monkeypatch):
+    import core.places
+    from core.events import bus
+    _weather_city()
+
+    class Page:
+        places = 0
+        airports = 0
+
+        def refresh_places(self):
+            Page.places += 1
+
+        def refresh(self, select_icao=None):
+            Page.airports += 1
+
+    monkeypatch.setattr(cmain, "_panel", Page())
+    bus.subscribe("on_places_changed", cmain._on_places_changed)
+    try:
+        core.places.set_places(core.places.get_places() + [
+            {"name": "Office", "lat": -6.2, "lon": 106.8, "source": "coordinates"}])
+        assert (Page.places, Page.airports) == (1, 1) and cmain.requests == []
+        # In Captain mode, the nearest airport to a new main place is found at once.
+        cmain._settings["captain"] = True
+        places = core.places.get_places()
+        core.places.set_places(places, places[1]["id"])
+        assert Page.places == 2 and len(cmain.requests) == 1 and "bbox=" in cmain.requests[0]
+    finally:
+        bus.unsubscribe("on_places_changed", cmain._on_places_changed)
 
 
 # --- Captain mode's offers ---------------------------------------------------

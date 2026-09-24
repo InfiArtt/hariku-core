@@ -26,8 +26,10 @@ Space (Antariksa) — Hariku V2 extension.
   space_text.py      - spoken/displayed text in the user's language
   space_ui.py        - Preferences page and the launches list
 
-The city is chosen in Preferences, Space, and defaults to the Weather city. It
-never leaves the computer. All network calls run on worker threads; results
+The place is the main place from Preferences, Places (core 2.8) unless another
+place, or a city of its own, is chosen in Preferences, Space. It never leaves
+the computer; a place without a time zone (an address or pasted coordinates)
+uses the computer's own. All network calls run on worker threads; results
 come back via wx.CallAfter. At most one request per service is in flight; the
 ISS is asked at most every 10 seconds, launches at most once an hour
 (the Refresh button: when the list is older than 15 minutes), and failures
@@ -44,6 +46,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.places
 import core.preferences
 from core.speech import speak
 
@@ -55,10 +58,9 @@ from space_text import _
 logger = logging.getLogger(__name__)
 
 EXT_NAME = "Space"               # fixed, so saved hotkeys survive a language change
-DATA_KEY = "Space"               # {"location": {...} or None, "lead_minutes": 10 | 30 | 60}
+DATA_KEY = "Space"               # see space_api.normalize_settings()
 LAUNCH_KEY = "SpaceLaunches"     # the launch cache and its back-off state
 REMINDER_KEY = "SpaceReminders"  # {"reminders": [...]}
-WEATHER_DATA_KEY = "Weather"
 BRIEFING_LAUNCH_MAX_AGE = 24 * 3600   # older launch lists are not used in the briefing
 REMINDER_SOUND = "info.wav"
 
@@ -116,27 +118,27 @@ def _play_sound(name):
 # State
 # ------------------------------------------------------------
 
-def weather_location():
-    """The Weather extension's city, used when Space has none of its own."""
-    data = core.api.load_data(WEATHER_DATA_KEY)
-    return api.normalize_location(data.get("location")) if isinstance(data, dict) else None
-
-
 def get_location():
-    return _settings.get("location") or weather_location()
+    """The place in use: the chosen place from Preferences, Places (the main
+    place by default), or the city of its own; None without one."""
+    return core.places.location_for(_settings.get("place"), _settings.get("location"))
 
 
 def get_settings():
     return dict(_settings)
 
 
-def _save_settings(new_settings):
-    global _settings
-    _settings = api.normalize_settings(dict(_settings, **new_settings))
+def _store_settings():
     data = core.api.load_data(DATA_KEY)
     data = data if isinstance(data, dict) else {}
     data.update(_settings)
     core.api.save_data(DATA_KEY, data)
+
+
+def _save_settings(new_settings):
+    global _settings
+    _settings = api.normalize_settings(dict(_settings, **new_settings))
+    _store_settings()
 
 
 # ------------------------------------------------------------
@@ -405,11 +407,22 @@ def _on_network_changed(online=True, *_args, **_kwargs):
         _iss_gate.reset()
 
 
+def _on_places_changed(*_args, **_kwargs):
+    """The places changed (Preferences, Places): show them on the settings
+    page. Everything else reads the place when it is needed."""
+    if _panel:
+        try:
+            _panel.refresh_places()
+        except RuntimeError:
+            pass  # panel already destroyed
+
+
 _SUBSCRIPTIONS = (
     ("on_app_startup", _on_app_startup),
     ("on_minute_tick", _on_minute_tick),
     ("on_briefing_collect", _on_briefing_collect),
     ("on_network_changed", _on_network_changed),
+    ("on_places_changed", _on_places_changed),
 )
 
 
@@ -419,7 +432,7 @@ _SUBSCRIPTIONS = (
 
 def _create_panel(parent):
     global _panel
-    _panel = space_ui.SpacePanel(parent, get_settings(), weather_location())
+    _panel = space_ui.SpacePanel(parent, get_settings())
     return _panel
 
 
@@ -431,7 +444,7 @@ def _apply_panel():
     except RuntimeError:
         return  # panel already destroyed
     _save_settings(new_settings)
-    _panel.set_location(_settings["location"], weather_location())
+    _panel.set_location(_settings["location"])
 
 
 # ------------------------------------------------------------
@@ -450,6 +463,11 @@ def register(bus):
     del _iss_waiters[:]
     del _launch_waiters[:]
     _settings = api.normalize_settings(core.api.load_data(DATA_KEY))
+    if _settings["place"] is None and _settings["location"]:
+        # First start with core 2.8: a city of its own stays in use, unless it
+        # is the main place anyway.
+        _settings["place"] = core.places.initial_choice(_settings["location"])
+        _store_settings()
     _launch_state = api.normalize_launch_state(core.api.load_data(LAUNCH_KEY))
     _index_launches()
     stored = core.api.load_data(REMINDER_KEY)

@@ -13,7 +13,7 @@
         "action_speak": "Speak the current weather",
         "action_forecast": "Open the weather forecast",
 
-        "no_location": "No weather location is set. Choose your city in Preferences, Weather.",
+        "no_location": "No weather location is set. Add a place in Preferences, Places, or choose your city in Preferences, Weather.",
         "fetching": "Getting the weather...",
         "stale_notice": "Showing the last weather from {time}.",
         "err_offline": "Could not reach the weather service. Check your internet connection.",
@@ -38,9 +38,9 @@
         "unit_celsius": "degrees Celsius",
         "unit_fahrenheit": "degrees Fahrenheit",
 
-        "lbl_current_location": "Current weather location:",
+        "lbl_current_location": "Its own place:",
         "location_not_set": "Not set",
-        "lbl_search": "City to search for (press Enter to search):",
+        "lbl_search": "City to search for, for its own place (press Enter to search):",
         "btn_search": "&Search",
         "lbl_results": "Search results:",
         "lbl_results_count": "Search results, {count} found. Select your city, then press OK:",
@@ -48,6 +48,7 @@
         "units_metric": "Celsius, kilometres per hour",
         "units_imperial": "Fahrenheit, miles per hour",
         "attribution": "Weather data by Open-Meteo.com",
+        "note_privacy": "Open-Meteo gets the place rounded to about 1 kilometre, never the exact point.",
         "search_too_short": "Type at least 2 letters of the city name.",
         "searching": "Searching for {query}...",
         "search_found_one": "1 place found. Select it in the search results, then press OK.",

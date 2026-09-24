@@ -20,6 +20,10 @@ Hariku is not an official warning system; the settings page and the first
 alert of each session say so. During the user's quiet hours only tsunami alerts
 sound; the others are dropped, not saved for later.
 
+Distances, nearby alerts and felt reports use the main place from Preferences,
+Places (core 2.8) unless another place, or a city of its own, is chosen in
+Preferences, Earthquakes & Tsunami.
+
   earthquake_api.py    - requests, parsing, settings, the cache, distances
   earthquake_alerts.py - when to announce, and remembering what was announced
   earthquake_text.py   - spoken/displayed text in the user's language
@@ -42,6 +46,7 @@ import wx
 import core.api
 import core.hotkeys
 import core.personal
+import core.places
 import core.preferences
 from core.speech import speak
 
@@ -57,7 +62,6 @@ EXT_NAME = "Earthquakes"          # fixed, so saved hotkeys survive a language c
 DATA_KEY = "Earthquake"           # settings
 CACHE_KEY = "EarthquakeCache"     # last BMKG/USGS data, see earthquake_api.normalize_cache()
 ALERTS_KEY = "EarthquakeAlerts"   # what was announced, see earthquake_alerts.AlertTracker
-WEATHER_DATA_KEY = "Weather"
 
 POLL_SECONDS = 60                 # BMKG latest quake
 WORLD_POLL_SECONDS = 300          # USGS past hour
@@ -126,28 +130,28 @@ def _play_sound(name):
 # State
 # ------------------------------------------------------------
 
-def weather_location():
-    """The Weather extension's city, used when no location is set here."""
-    data = core.api.load_data(WEATHER_DATA_KEY)
-    return api.normalize_location(data.get("location")) if isinstance(data, dict) else None
-
-
 def get_location():
-    return _settings.get("location") or weather_location()
+    """The place in use: the chosen place from Preferences, Places (the main
+    place by default), or the city of its own; None without one."""
+    return core.places.location_for(_settings.get("place"), _settings.get("location"))
 
 
 def get_settings():
     return dict(_settings)
 
 
-def _save_settings(new_settings):
-    """Save settings; keys not given keep their current values."""
-    global _settings
-    _settings = api.normalize_settings(dict(_settings, **new_settings))
+def _store_settings():
     data = core.api.load_data(DATA_KEY)
     data = data if isinstance(data, dict) else {}
     data.update(_settings)
     core.api.save_data(DATA_KEY, data)
+
+
+def _save_settings(new_settings):
+    """Save settings; keys not given keep their current values."""
+    global _settings
+    _settings = api.normalize_settings(dict(_settings, **new_settings))
+    _store_settings()
     _update_polling()
 
 
@@ -466,9 +470,21 @@ def _on_briefing_collect(lines):
         lines.append(text.briefing_sentence(quake, location, now))
 
 
+def _on_places_changed(*_args, **_kwargs):
+    """The places changed (Preferences, Places): show them on the settings
+    page. Distances and alerts read get_location() each time, so the new
+    place is used from the next check on."""
+    if _panel:
+        try:
+            _panel.refresh_places()
+        except RuntimeError:
+            pass  # panel already destroyed
+
+
 _SUBSCRIPTIONS = (
     ("on_network_changed", _on_network_changed),
     ("on_briefing_collect", _on_briefing_collect),
+    ("on_places_changed", _on_places_changed),
 )
 
 
@@ -478,7 +494,7 @@ _SUBSCRIPTIONS = (
 
 def _create_panel(parent):
     global _panel
-    _panel = earthquake_ui.EarthquakePanel(parent, get_settings(), weather_location())
+    _panel = earthquake_ui.EarthquakePanel(parent, get_settings())
     return _panel
 
 
@@ -490,7 +506,7 @@ def _apply_panel():
     except RuntimeError:
         return  # panel already destroyed
     _save_settings(new_settings)
-    _panel.set_location(_settings["location"], weather_location())
+    _panel.set_location(_settings["location"])
 
 
 # ------------------------------------------------------------
@@ -510,6 +526,15 @@ def register(bus):
     _poll_failures = _world_failures = 0
     _disclaimer_given = False
     _settings = api.normalize_settings(core.api.load_data(DATA_KEY))
+    if _settings["place"] is None and _settings["location"]:
+        # First start with core 2.8: a city of its own stays in use, unless it
+        # is the main place anyway. Then its regency, which felt reports name,
+        # is kept as a region name to look for.
+        _settings["place"] = core.places.initial_choice(_settings["location"])
+        if _settings["place"] == core.places.CHOICE_MAIN:
+            _settings["felt_names"] = api.with_regency(
+                _settings["felt_names"], _settings["location"], get_location())
+        _store_settings()
     _cache = api.normalize_cache(core.api.load_data(CACHE_KEY))
     _tracker = alerts.AlertTracker.from_json(core.api.load_data(ALERTS_KEY))
 

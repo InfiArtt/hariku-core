@@ -316,11 +316,19 @@ ATTRIBUTION = ("Earthquake data: BMKG (Badan Meteorologi, Klimatologi, dan Geofi
                "and USGS")
 assert _("disclaimer") == DISCLAIMER and _("attribution") == ATTRIBUTION
 
-# The Weather city is the default location.
+# The main place (Preferences, Places) is the default location; the Weather
+# city is no longer used by itself. The place is called "Rumah" by the user,
+# in the town of Ruteng: distances name the place, felt reports look for the town.
+import core.places
 core.api.save_data("Weather", {"location": {"name": "Ruteng", "admin1": "East Nusa Tenggara",
                                             "country": "Indonesia", "latitude": -8.6136,
                                             "longitude": 120.4721}, "units": "metric"})
-assert main.get_location()["name"] == "Ruteng"
+assert main.get_location() is None, "the Weather city is no longer used by itself"
+rumah_place, = core.places.set_places([{
+    "name": "Rumah", "lat": -8.6136, "lon": 120.4721,
+    "label": "Ruteng, East Nusa Tenggara, Indonesia", "timezone": "Asia/Makassar",
+    "source": "city", "city": "Ruteng", "region": "East Nusa Tenggara", "country": "Indonesia"}])
+assert main.get_location()["name"] == "Rumah" and main.get_location()["city"] == "Ruteng"
 
 # --- G: the latest earthquake, spoken; no window -------------------------------
 heard.clear()
@@ -331,7 +339,7 @@ report, interrupt = heard[-1]
 assert interrupt, "the report should interrupt"
 assert report.startswith("Latest earthquake according to BMKG: magnitude 4.7, depth 9 kilometres, "
                          "Pusat gempa berada di laut 48 km utara Ruteng-Manggarai. "
-                         "47 kilometres north of Ruteng. Time: "), report
+                         "47 kilometres north of Rumah. Time: "), report
 assert report.endswith("Felt, on the MMI scale: II - III Kab. Manggarai. "
                        "BMKG says: Gempa ini dirasakan untuk diteruskan pada masyarakat."), report
 assert sounds == [], sounds
@@ -347,7 +355,7 @@ alert, interrupt = heard[-1]
 assert interrupt is True, "a tsunami alert must interrupt"
 assert alert.startswith("Tsunami potential, according to BMKG. BMKG says: Berpotensi tsunami "
                         "untuk diteruskan pada masyarakat. Earthquake: magnitude 7.1"), alert
-assert "850 kilometres west of Ruteng" in alert, alert
+assert "850 kilometres west of Rumah" in alert, alert
 assert alert.endswith(DISCLAIMER), "the first alert of the session carries the disclaimer"
 assert sounds == ["error.wav"], sounds
 assert pump(lambda: not main._poll_running and main._poll_timer is not None)
@@ -359,27 +367,43 @@ assert len(heard) == 1, heard
 stop_polls()
 print("OK tsunami_alert")
 
-# --- Preferences page: disclaimer, credits, search, browse, save ---------------
+# --- Preferences page: disclaimer, credits, the place choice, search, browse, save --
 from ui.preferences_dialog import PreferencesDialog
+
+FELT_NOTE = "Felt alerts look for these names in BMKG's felt reports: {}."
+OWN = "Its own place…"
 
 prefs = PreferencesDialog(frame, select_tab="Earthquakes")
 prefs.Show()
 wx.Yield()
 panel = main._panel
 assert panel is not None and panel.IsShown(), "Earthquakes settings page was not created"
-assert panel.txt_location.GetValue() == \
-    "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)", panel.txt_location.GetValue()
+choice = panel.place_choice.ctrl
+assert choice.GetName() == "Place", choice.GetName()
+assert choice.GetStrings() == ["The main place (Rumah)", "Rumah", OWN], choice.GetStrings()
+assert panel.place_choice.key() == "main" and choice.GetSelection() == 0
+assert panel.txt_location.GetValue() == _("location_not_set"), panel.txt_location.GetValue()
+# The city search is for its own place only: skipped while another place is chosen.
+assert not panel.txt_search.IsEnabled() and not panel.btn_search.IsEnabled()
+assert not panel.list_results.IsEnabled() and not panel.txt_location.IsEnabled()
 labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
 assert DISCLAIMER in labels, labels
 assert ATTRIBUTION in labels, labels
-assert panel.lbl_felt_note.GetLabel() == \
-    "Felt alerts look for these names in BMKG's felt reports: Ruteng.", panel.lbl_felt_note.GetLabel()
+# Felt reports are searched for the main place's town, never its name ("Rumah").
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Ruteng"), panel.lbl_felt_note.GetLabel()
 assert panel.chk_tsunami.GetValue() is True
 assert not panel.chk_nearby.GetValue() and not panel.chk_felt.GetValue()
 assert not panel.chk_world.GetValue() and panel.chk_sounds.GetValue()
 assert panel.choice_distance.GetString(panel.choice_distance.GetSelection()) == "300 kilometres"
 assert panel.choice_magnitude.GetString(panel.choice_magnitude.GetSelection()) == "4.0"
 assert panel.choice_distance.GetCount() == 4 and panel.choice_magnitude.GetCount() == 7
+
+# Arrowing through the places: focus stays; the last one, "Its own place", opens the search.
+checked = browse(choice, wx.EVT_CHOICE)
+assert panel.place_choice.key() == "own", panel.place_choice.key()
+assert panel.txt_search.IsEnabled() and panel.btn_search.IsEnabled()
+assert panel.list_results.IsEnabled() and panel.txt_location.IsEnabled()
+assert panel.lbl_felt_note.GetLabel() == _("felt_note_none"), panel.lbl_felt_note.GetLabel()
 
 panel.txt_search.SetValue("R")
 fire(panel.txt_search, wx.EVT_TEXT_ENTER)
@@ -394,29 +418,26 @@ assert pump(lambda: panel.list_results.GetCount() == 2), "search results never a
 assert panel.list_results.GetString(0) == "Ruteng, East Nusa Tenggara, Indonesia"
 if search_focused:
     assert wx.Window.FindFocus() is panel.list_results, "focus did not move to the results"
-checked = browse(panel.list_results, wx.EVT_LISTBOX)
-for choice in (panel.choice_distance, panel.choice_magnitude):
-    checked = browse(choice, wx.EVT_CHOICE) and checked
+checked = browse(panel.list_results, wx.EVT_LISTBOX) and checked
+for choice_ctrl in (panel.choice_distance, panel.choice_magnitude):
+    checked = browse(choice_ctrl, wx.EVT_CHOICE) and checked
 for checkbox in (panel.chk_tsunami, panel.chk_nearby, panel.chk_felt, panel.chk_world,
                  panel.chk_sounds):
     checked = toggle(checkbox) and checked
 
-# "Use the Weather location" drops the search result; focus stays on the button.
-panel.btn_use_weather.SetFocus()
-wx.Yield()
-button_focused = wx.Window.FindFocus() is panel.btn_use_weather
-fire(panel.btn_use_weather, wx.EVT_BUTTON)
-assert texts()[-1] == _("use_weather_done", place="Ruteng, East Nusa Tenggara, Indonesia"), heard[-1]
-assert heard[-1][1] is True
-assert panel.chosen_location() is None
-assert panel.txt_location.GetValue() == \
-    "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)", panel.txt_location.GetValue()
-assert panel.list_results.GetSelection() == wx.NOT_FOUND
-if button_focused:
-    assert wx.Window.FindFocus() is panel.btn_use_weather, "focus moved after the button"
+# Back to the main place and to its own place again: the search and the felt note follow.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Ruteng"), panel.lbl_felt_note.GetLabel()
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
 panel.list_results.SetSelection(0)
 fire(panel.list_results, wx.EVT_LISTBOX, 0)
 assert panel.chosen_location()["admin2"] == "Kabupaten Manggarai", panel.chosen_location()
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Ruteng, Manggarai"), \
+    panel.lbl_felt_note.GetLabel()
 print(f"OK panel_browse ({focus_note(checked)})")
 
 panel.list_results.SetSelection(0)
@@ -427,38 +448,88 @@ panel.chk_felt.SetValue(True)
 panel.txt_felt_names.SetValue("Kota Bima")
 prefs.OnApply(None)
 saved = core.api.load_data("Earthquake")
+assert saved["place"] == "own", saved
 assert saved["location"]["name"] == "Ruteng" and saved["location"]["admin2"] == "Kabupaten Manggarai", saved
 assert saved["tsunami_alerts"] is True and saved["nearby_alerts"] is True, saved
 assert saved["felt_alerts"] is True and saved["world_alerts"] is False, saved
 assert saved["alert_km"] == 300 and saved["min_magnitude"] == 4.0, saved
 assert saved["felt_names"] == "Kota Bima", saved
+assert main.get_location()["name"] == "Ruteng" and "place_id" not in main.get_location()
 assert panel.txt_location.GetValue() == "Ruteng, East Nusa Tenggara, Indonesia"
-assert panel.lbl_felt_note.GetLabel() == \
-    "Felt alerts look for these names in BMKG's felt reports: Ruteng, Manggarai, Bima."
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Ruteng, Manggarai, Bima"), \
+    panel.lbl_felt_note.GetLabel()
 prefs.Destroy()
 wx.Yield()
 stop_polls()
 
-# Back to the Weather city: press the button, then OK saves no city of its own.
+# Back to the main place: choose it, then OK keeps its own city for later.
 prefs = PreferencesDialog(frame, select_tab="Earthquakes")
 prefs.Show()
 wx.Yield()
 panel = main._panel
+choice = panel.place_choice.ctrl
+assert panel.place_choice.key() == "own" and choice.GetSelection() == 2
 assert panel.txt_location.GetValue() == "Ruteng, East Nusa Tenggara, Indonesia"
-fire(panel.btn_use_weather, wx.EVT_BUTTON)
-assert texts()[-1] == _("use_weather_done", place="Ruteng, East Nusa Tenggara, Indonesia"), heard[-1]
+assert panel.txt_search.IsEnabled()
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert not panel.txt_search.IsEnabled()
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Ruteng, Bima"), \
+    panel.lbl_felt_note.GetLabel()
 prefs.OnApply(None)
 saved = core.api.load_data("Earthquake")
-assert saved["location"] is None and saved["nearby_alerts"] is True, saved
-assert main.get_location()["name"] == "Ruteng"      # the Weather city
-assert panel.txt_location.GetValue() == \
-    "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)", panel.txt_location.GetValue()
-assert panel.lbl_felt_note.GetLabel() == \
-    "Felt alerts look for these names in BMKG's felt reports: Ruteng, Bima."
+assert saved["place"] == "main" and saved["nearby_alerts"] is True, saved
+assert saved["location"]["name"] == "Ruteng", "its own city is kept for later"
+assert main.get_location()["name"] == "Rumah"      # the main place
+assert panel.txt_location.GetValue() == "Ruteng, East Nusa Tenggara, Indonesia"
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Ruteng, Bima"), \
+    panel.lbl_felt_note.GetLabel()
 prefs.Destroy()
 wx.Yield()
 stop_polls()
 print("OK panel_apply")
+
+# --- The places change while the page is open: the list follows, the choice stays -----
+prefs = PreferencesDialog(frame, select_tab="Earthquakes")
+prefs.Show()
+wx.Yield()
+panel = main._panel
+choice = panel.place_choice.ctrl
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+choice.SetFocus()
+wx.Yield()
+choice_focused = wx.Window.FindFocus() is choice
+office = {"name": "Kantor", "lat": -8.66, "lon": 121.05, "label": "", "source": "coordinates"}
+core.places.set_places([rumah_place, office])      # what the Places page does on OK
+assert choice.GetStrings() == ["The main place (Rumah)", "Rumah", "Kantor", OWN], \
+    choice.GetStrings()
+assert panel.place_choice.key() == "main" and choice.GetSelection() == 0
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when the places changed"
+# Choosing a saved place is what OK saves. Pasted coordinates have no town, so
+# only the names typed in are looked for.
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert panel.place_choice.key() == core.places.get_places()[1]["id"]
+assert not panel.txt_search.IsEnabled()
+assert panel.lbl_felt_note.GetLabel() == FELT_NOTE.format("Bima"), panel.lbl_felt_note.GetLabel()
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when a place was chosen"
+prefs.OnApply(None)
+saved = core.api.load_data("Earthquake")
+assert saved["place"] == core.places.get_places()[1]["id"], saved
+assert saved["location"]["name"] == "Ruteng", "its own city is kept for later"
+assert main.get_location()["name"] == "Kantor"
+# Back to the main place for the checks below.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+prefs.OnApply(None)
+assert core.api.load_data("Earthquake")["place"] == "main"
+assert main.get_location()["name"] == "Rumah"
+prefs.Destroy()
+wx.Yield()
+stop_polls()
+print(f"OK places_changed ({focus_note(choice_focused)})")
 
 # --- Shift+G opens the list; Escape closes it -----------------------------------
 assert run_and_close("Earthquakes.show_recent") == ["RecentDialog"]
@@ -503,7 +574,7 @@ assert len(rows) == 5, rows
 assert rows[0].startswith("Tsunami potential, according to BMKG. Magnitude 7.1"), rows[0]
 assert rows[1].startswith("Magnitude 4.7, Pusat gempa berada di laut 48 km utara Ruteng-Manggarai, "
                           "depth 9 kilometres, "), rows[1]
-assert rows[1].endswith("47 kilometres north of Ruteng. Felt: II - III Kab. Manggarai."), rows[1]
+assert rows[1].endswith("47 kilometres north of Rumah. Felt: II - III Kab. Manggarai."), rows[1]
 assert rows[2].startswith("Magnitude 5.2, 127 km BaratLaut TAHUNA"), rows[2]
 assert not any("USGS" in r for r in rows), rows
 assert dlg.lbl_status.GetLabel().startswith("Last updated "), dlg.lbl_status.GetLabel()

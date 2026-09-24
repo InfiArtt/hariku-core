@@ -14,8 +14,10 @@ Hear the aircraft flying near your city: the nearest few on a hotkey, a list of
 everything in range, optional announcements when one passes overhead or
 reports an emergency (both silent during the user's quiet hours), and a
 shortcut to LiveATC's web page for the nearby airport. Aircraft positions come from adsb.fi (adsb.lol when adsb.fi fails),
-routes from adsbdb.com; none need an account or key. The city, radius and
-units are chosen in Preferences, Flight Radar.
+routes from adsbdb.com; none need an account or key. The place is the main
+place from Preferences, Places (core 2.8) unless another place, or a place of
+its own (a city, an address or pasted coordinates), is chosen in Preferences,
+Flight Radar, with the radius and units.
 
   flight_radar_api.py      - aircraft requests, parsing, settings, units, pacing,
                              emergencies
@@ -23,14 +25,16 @@ units are chosen in Preferences, Flight Radar.
   flight_radar_names.py    - airline and aircraft type names
   flight_radar_airports.py - airports near Indonesia (OurAirports data)
   flight_radar_atc.py      - which airport to listen to, and its LiveATC page
-  flight_radar_location.py - pasted coordinates and map links, address search
   flight_radar_flights.py  - "Track a flight": flight numbers and what to announce
   flight_radar_text.py     - spoken/displayed text in the user's language
   flight_radar_registrations.py - the country of a registration prefix
   flight_radar_ui.py       - Preferences page, the aircraft list, Track a flight
 
-The user's exact location is stored only in the FlightRadar data key; the
-aircraft services get it rounded to about 1 km (see flight_radar_api.py).
+Pasted coordinates, map links and the address search come from the core
+(core.place_search, which Flight Radar's own module moved to). The user's
+exact location stays on this computer (Places.json, or the FlightRadar data
+key for a place of its own); the aircraft services get it rounded to about
+1 km (see flight_radar_api.py).
 All network calls run on worker threads; results come back via wx.CallAfter.
 At most one aircraft request (area or tracked flight) is in flight, requests
 are at least 5 seconds apart, answers are reused for 15 seconds, and failures
@@ -47,6 +51,7 @@ import wx
 import core.api
 import core.hotkeys
 import core.personal
+import core.places
 import core.preferences
 from core.speech import speak
 
@@ -63,7 +68,6 @@ logger = logging.getLogger(__name__)
 
 EXT_NAME = "Flight Radar"   # fixed, so saved hotkeys survive a language change
 DATA_KEY = "FlightRadar"    # settings only; aircraft and routes are never saved
-WEATHER_DATA_KEY = "Weather"
 
 CACHE_SECONDS = 15          # answer from the last result without fetching
 STALE_MAX_AGE = 120         # oldest result still offered after a failure
@@ -147,14 +151,10 @@ def _open_url(url):
 # State
 # ------------------------------------------------------------
 
-def weather_location():
-    """The Weather extension's city, offered when no radar city is set."""
-    data = core.api.load_data(WEATHER_DATA_KEY)
-    return api.normalize_location(data.get("location")) if isinstance(data, dict) else None
-
-
 def get_location():
-    return _settings.get("location") or weather_location()
+    """The place in use: the chosen place from Preferences, Places (the main
+    place by default), or the place of its own; None without one."""
+    return core.places.location_for(_settings.get("place"), _settings.get("location"))
 
 
 def get_settings():
@@ -875,9 +875,25 @@ def _on_network_changed(online=True, *_args, **_kwargs):
         _schedule_poll(FIRST_POLL_SECONDS)  # back online: don't sit out the back-off
 
 
+def _on_places_changed(*_args, **_kwargs):
+    """The places changed (Preferences, Places): show them on the settings
+    page; when the place in use moved, forget what was announced for the old
+    one, and start or stop polling."""
+    if _panel:
+        try:
+            _panel.refresh_places()
+        except RuntimeError:
+            pass  # panel already destroyed
+    if _cache is not None and current_cache() is None:
+        _tracker.reset()
+        _emergency_tracker.reset()
+    _update_polling()
+
+
 _SUBSCRIPTIONS = (
     ("on_app_startup", _on_app_startup),
     ("on_network_changed", _on_network_changed),
+    ("on_places_changed", _on_places_changed),
 )
 
 
@@ -887,7 +903,7 @@ _SUBSCRIPTIONS = (
 
 def _create_panel(parent):
     global _panel
-    _panel = flight_radar_ui.FlightRadarPanel(parent, get_settings(), weather_location())
+    _panel = flight_radar_ui.FlightRadarPanel(parent, get_settings())
     return _panel
 
 
@@ -899,7 +915,7 @@ def _apply_panel():
     except RuntimeError:
         return  # panel already destroyed
     _save_settings(new_settings)
-    _panel.set_location(_settings["location"], weather_location())
+    _panel.set_location(_settings["location"])
 
 
 # ------------------------------------------------------------
@@ -926,6 +942,14 @@ def register(bus):
     _emergency_tracker = api.EmergencyTracker(EMERGENCY_COOLDOWN)
     _routes = routes.RouteLookup()
     _settings = api.normalize_settings(core.api.load_data(DATA_KEY))
+    if _settings["place"] is None and _settings["location"]:
+        # First start with core 2.8: a place of its own stays in use, unless it
+        # is the main place anyway (the exact home Places was made from).
+        _settings["place"] = core.places.initial_choice(_settings["location"])
+        data = core.api.load_data(DATA_KEY)
+        data = data if isinstance(data, dict) else {}
+        data["place"] = _settings["place"]
+        core.api.save_data(DATA_KEY, data)
 
     for event_name, handler in _SUBSCRIPTIONS:
         bus.subscribe(event_name, handler)

@@ -1,10 +1,10 @@
 {
     "id": "space",
     "name": "Space",
-    "version": "1.0",
-    "description": "Where is the ISS right now, upcoming rocket launches with a reminder, and today's sunrise, sunset and moon phase. Choose your city in Preferences, Space. ISS position: wheretheiss.at. Launch data: The Space Devs Launch Library 2. Sun and Moon are calculated offline.",
+    "version": "1.1",
+    "description": "Where is the ISS right now, upcoming rocket launches with a reminder, and today's sunrise, sunset and moon phase. It uses your main place from Preferences, Places, or another place or a city you choose in Preferences, Space; your location never leaves your computer. ISS position: wheretheiss.at. Launch data: The Space Devs Launch Library 2. Sun and Moon are calculated offline.",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.5"
+    "minimum_core_version": "2.8"
 }

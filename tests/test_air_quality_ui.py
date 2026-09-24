@@ -31,8 +31,9 @@ def test_air_quality_windows(tmp_path):
         timeout=200, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK main_window", "OK load", "OK no_location_hint", "OK weather_default",
-                  "OK panel_browse", "OK panel_apply_alert", "OK actions", "OK forecast_browse",
+    for stage in ("OK main_window", "OK load", "OK no_location_hint", "OK main_place",
+                  "OK panel_browse", "OK panel_apply_alert", "OK places_changed", "OK actions",
+                  "OK forecast_browse",
                   "OK escape", "OK briefing", "OK teardown", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output

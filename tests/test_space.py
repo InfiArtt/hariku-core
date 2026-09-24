@@ -10,8 +10,9 @@
 # Tests for the Space extension: ISS and country parsing and sentences, Launch
 # Library parsing, local times, launch reminders, the launch cache and request
 # pacing, the Sun and Moon maths against published reference values, the
-# Morning Briefing sentence, both languages, and the actions. No test touches
-# the network: the fetch function is replaced.
+# Morning Briefing sentence, both languages, the actions, and which place it
+# uses (core 2.8 Places, with the place's own time zone). No test touches the
+# network: the fetch function is replaced.
 
 import copy
 import datetime
@@ -385,13 +386,16 @@ def test_iss_report_without_a_location(api, text, lang):
     position = api.parse_iss(copy.deepcopy(ISS_JSON))
     assert text.iss_report(position, "", None, NOW) == (
         "The ISS is over the ocean. It is 434 kilometres up, moving at 27,540 kilometres per "
-        "hour. It is in sunlight. Choose your city in Preferences, Space, to hear how far "
-        "away it is.")
+        "hour. It is in sunlight. Add a place in Preferences, Places, or choose a city in "
+        "Preferences, Space, to hear how far away it is.")
     assert text.iss_report(position, None, None, NOW).startswith(
         "The ISS is above 20 degrees south, 118 degrees east.")
     lang("id")
-    assert text.iss_report(position, None, None, NOW).startswith(
+    report = text.iss_report(position, None, None, NOW)
+    assert report.startswith(
         "ISS berada di atas 20 derajat lintang selatan, 118 derajat bujur timur.")
+    assert report.endswith("Tambahkan tempat di Pengaturan, Tempat, atau pilih kota di "
+                           "Pengaturan, Antariksa, untuk mendengar seberapa jauh ISS dari Anda.")
 
 
 def test_geometry(astro):
@@ -814,8 +818,12 @@ def test_sun_and_moon_report(text, lang, jakarta_tz):
 def test_sun_and_moon_without_a_location(text, lang):
     report = text.sun_moon_report(None, WIB, NOW)
     assert report.startswith("Moon phase: Waxing gibbous, 89 percent illuminated.")
-    assert report.endswith("Choose your city in Preferences, Space, to hear sunrise and "
-                           "sunset times.")
+    assert report.endswith("Add a place in Preferences, Places, or choose a city in "
+                           "Preferences, Space, to hear sunrise and sunset times.")
+    lang("id")
+    assert text.sun_moon_report(None, WIB, NOW).endswith(
+        "Tambahkan tempat di Pengaturan, Tempat, atau pilih kota di Pengaturan, Antariksa, "
+        "untuk mendengar waktu matahari terbit dan terbenam.")
 
 
 def test_briefing_text(api, text, lang, launches, jakarta_tz):
@@ -839,15 +847,18 @@ def test_time_zones(api):
 
 
 @pytest.mark.parametrize("raw", [None, "x", {}, {"location": "Jakarta", "lead_minutes": 45},
-                                 {"lead_minutes": True},
+                                 {"lead_minutes": True}, {"place": 5}, {"place": "../x"},
                                  {"location": {"name": "X", "latitude": 95, "longitude": 1}}])
 def test_settings_survive_corrupt_data(api, raw):
-    assert api.normalize_settings(raw) == {"location": None, "lead_minutes": 30}
+    assert api.normalize_settings(raw) == {"place": None, "location": None, "lead_minutes": 30}
 
 
 def test_settings_keep_valid_values(api):
-    settings = api.normalize_settings({"location": JAKARTA, "lead_minutes": 60, "x": 1})
-    assert settings == {"location": JAKARTA, "lead_minutes": 60}
+    settings = api.normalize_settings({"place": "own", "location": JAKARTA, "lead_minutes": 60,
+                                       "x": 1})
+    assert settings == {"place": "own", "location": JAKARTA, "lead_minutes": 60}
+    for place in ("main", "abc12345"):
+        assert api.normalize_settings({"place": place})["place"] == place
 
 
 # ------------------------------------------------------------
@@ -858,21 +869,37 @@ BANDUNG = {"name": "Bandung", "admin1": "West Java", "country": "Indonesia",
            "latitude": -6.9175, "longitude": 107.6191, "timezone": "Asia/Jakarta"}
 
 
+def _place(location, name=None):
+    """A saved place (core 2.8) at `location`, with its time zone."""
+    return {"name": name or location["name"], "lat": location["latitude"],
+            "lon": location["longitude"], "label": location["name"],
+            "timezone": location.get("timezone"), "source": "city", "city": location["name"]}
+
+
 @pytest.fixture
-def make_panel(monkeypatch, api, text, lang):
+def make_panel(monkeypatch, api, text, lang, tmp_data_dir):
     """Builds the real SpacePanel with plain stand-ins for its controls, and
-    records what it speaks and every focus change."""
+    records what it speaks, every focus change and the order windows are
+    created in. The places come from a temporary data folder."""
     from unittest.mock import MagicMock
     import space_ui
-    spoken, focus_moves = [], []
+    spoken, focus_moves, created = [], [], []
 
     class _Control:
         def __init__(self, *args, value="", choices=None, label="", **kwargs):
             self.value, self.label = value, label
             self.items, self.selection, self.edits = list(choices or []), -1, 0
+            self.enabled = True
+            created.append(self)
 
         def SetName(self, name):
             self.name = name
+
+        def Enable(self, enable=True):
+            self.enabled = bool(enable)
+
+        def IsEnabled(self):
+            return self.enabled
 
         def Bind(self, *args, **kwargs):
             pass
@@ -903,7 +930,8 @@ def make_panel(monkeypatch, api, text, lang):
             focus_moves.append(self)
 
     for name in ("StaticText", "TextCtrl", "Button", "ListBox", "Choice"):
-        monkeypatch.setattr(space_ui.wx, name, _Control)
+        # A class per kind, so the creation order says which window is which.
+        monkeypatch.setattr(space_ui.wx, name, type(name, (_Control,), {}))
     monkeypatch.setattr(space_ui.wx, "BoxSizer", lambda *args, **kwargs: MagicMock())
     monkeypatch.setattr(space_ui.wx, "NOT_FOUND", -1)
     monkeypatch.setattr(space_ui.core.ui_scale, "apply_appearance", lambda window: None)
@@ -914,70 +942,143 @@ def make_panel(monkeypatch, api, text, lang):
         def _get_child_mock(self, **kwargs):
             return MagicMock(**kwargs)
 
-    def make(location=None, weather=None, lead=30):
-        panel = _Panel(None, {"location": location, "lead_minutes": lead}, weather)
-        panel.spoken, panel.focus_moves = spoken, focus_moves
+    def make(location=None, place=None, lead=30):
+        del created[:]
+        panel = _Panel(None, {"place": place, "location": location, "lead_minutes": lead})
+        panel.spoken, panel.focus_moves, panel.created = spoken, focus_moves, list(created)
         return panel
 
     return make
 
 
-def test_use_the_weather_location(make_panel, lang):
-    panel = make_panel(location=BANDUNG, weather=JAKARTA)
-    assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia"
-    assert panel.btn_use_weather.label == "Use the &Weather location"
-    assert panel.get_settings() == {"location": BANDUNG, "lead_minutes": 30}
-    panel._on_use_weather(None)
-    assert panel.spoken == ["Jakarta, Indonesia, the Weather location, will be used. "
-                            "Press OK to save."]
-    assert panel.txt_location.GetValue() == "Jakarta, Indonesia (from the Weather settings)"
-    assert panel.txt_location.edits == 1          # Preferences sees a change to save
-    assert panel.get_settings() == {"location": None, "lead_minutes": 30}
-    assert panel.focus_moves == []                # focus stays on the button
+def _own_controls(panel):
+    return (panel.txt_location, panel.txt_search, panel.btn_search, panel.list_results)
 
 
-def test_use_the_weather_location_without_one(make_panel, lang):
-    panel = make_panel(location=BANDUNG, weather=None)
-    panel._on_use_weather(None)
-    assert panel.spoken == ["No Weather location is set yet. Choose one here, or in "
-                            "Preferences, Weather."]
-    assert panel.txt_location.GetValue() == "Not set"
-    assert panel.chosen_location() is None and panel.focus_moves == []
-    lang("id")
-    assert make_panel(weather=JAKARTA).btn_use_weather.label == "&Gunakan lokasi Cuaca"
-    panel._on_use_weather(None)
-    assert panel.spoken[-1] == ("Lokasi Cuaca belum diatur. Pilih tempat di sini, atau di "
-                                "Pengaturan, Cuaca.")
-
-
-def test_search_result_and_weather_location_take_turns(make_panel, api):
+def _pick(panel, index):
+    """Select an item in the Place list the way an arrow key does."""
     from unittest.mock import MagicMock
-    panel = make_panel(location=None, weather=JAKARTA)
-    assert panel.txt_location.GetValue() == "Jakarta, Indonesia (from the Weather settings)"
+    panel.place_choice.ctrl.SetSelection(index)
+    panel.place_choice._on_choice(MagicMock())
+
+
+def test_every_control_follows_its_label(make_panel):
+    panel = make_panel(place="own")
+    order = panel.created
+    for ctrl, label in (
+            (panel.place_choice.ctrl, "Place:"),
+            (panel.txt_location, "Its own place, for the ISS distance, sunrise and sunset:"),
+            (panel.txt_search, "City to search for, for its own place (press Enter to search):"),
+            (panel.list_results, "Search results:"),
+            (panel.choice_lead, "Launch reminders, how long before the launch:")):
+        before = order[order.index(ctrl) - 1]
+        assert type(before).__name__ == "StaticText" and before.label == label, label
+    assert order[0] is order[order.index(panel.place_choice.ctrl) - 1], "Place: comes first"
+    assert panel.place_choice.ctrl.name == "Place"
+    assert not [w for w in order if w.label.replace("&", "") == "Use the Weather location"]
+
+
+def test_the_place_choice_on_the_page(make_panel, lang):
+    panel = make_panel()
+    ctrl = panel.place_choice.ctrl
+    assert ctrl.items == ["The main place (none yet: add one in Preferences, Places)",
+                          "Its own place…"]
+    assert panel.place_choice.key() == "main" and ctrl.selection == 0
+    assert panel.txt_location.GetValue() == "Not set"
+    # The city search is for its own place only: skipped while another place is chosen.
+    assert not [c for c in _own_controls(panel) if c.IsEnabled()]
+    assert panel.get_settings() == {"place": "main", "location": None, "lead_minutes": 30}
+    _pick(panel, 1)
+    assert panel.place_choice.key() == "own"
+    assert all(c.IsEnabled() for c in _own_controls(panel))
+    assert panel.get_settings()["place"] == "own"
+    _pick(panel, 0)
+    assert not panel.txt_search.IsEnabled() and not panel.list_results.IsEnabled()
+    assert panel.focus_moves == [] and panel.spoken == []   # focus stays on the list
+    lang("id")
+    panel = make_panel()
+    assert panel.place_choice.ctrl.items[-1] == "Tempat sendiri…"
+    assert panel.txt_location.GetValue() == "Belum diatur"
+
+
+def test_the_page_lists_the_saved_places(make_panel):
+    import core.places
+    home, office = core.places.set_places([_place(JAKARTA, "Home"), _place(BANDUNG, "Office")])
+    panel = make_panel(location=BANDUNG, place=office["id"])
+    ctrl = panel.place_choice.ctrl
+    assert ctrl.items == ["The main place (Home)", "Home", "Office", "Its own place…"]
+    assert panel.place_choice.key() == office["id"] and ctrl.selection == 2
+    assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia"   # kept for later
+    assert not panel.txt_search.IsEnabled()
+    assert panel.get_settings() == {"place": office["id"], "location": BANDUNG, "lead_minutes": 30}
+    # Not decided yet (saved before core 2.8): its own city, unless it is the main place.
+    assert make_panel(location=BANDUNG).place_choice.key() == "own"
+    assert make_panel(location=JAKARTA).place_choice.key() == "main"
+    assert make_panel().place_choice.key() == "main"
+    # A place that was removed: the main place.
+    core.places.set_places([home])
+    assert make_panel(location=BANDUNG, place=office["id"]).place_choice.key() == "main"
+
+
+def test_search_results_are_its_own_place(make_panel, api):
+    from unittest.mock import MagicMock
+    panel = make_panel(place="own")
+    assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
     panel._search_id = 1
     panel._on_search_done(1, "Bandung", [BANDUNG, dict(BANDUNG, name="Bandung Barat")], None)
     assert panel.chosen_location() == BANDUNG      # the first result, selected
-    panel._on_use_weather(None)
-    assert panel.list_results.GetSelection() == -1 and panel.chosen_location() is None
     panel.list_results.SetSelection(1)
     panel._on_result_selected(MagicMock())        # an arrow key in the results
-    assert panel.chosen_location()["name"] == "Bandung Barat"
+    assert panel.get_settings() == {"place": "own", "location": dict(BANDUNG, name="Bandung Barat"),
+                                    "lead_minutes": 30}
+    assert panel.focus_moves == []
+    # After OK the page shows what was saved; nothing is pending any more.
+    panel.set_location(BANDUNG)
+    assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia"
+    assert panel.chosen_location() == BANDUNG
+
+
+def test_the_page_follows_the_places(make_panel):
+    import core.places
+    home, = core.places.set_places([_place(JAKARTA, "Home")])
+    panel = make_panel(place="own")
+    ctrl = panel.place_choice.ctrl
+    assert ctrl.items == ["The main place (Home)", "Home", "Its own place…"]
+    home, office = core.places.set_places([home, _place(BANDUNG, "Office")])
+    panel.refresh_places()
+    assert ctrl.items == ["The main place (Home)", "Home", "Office", "Its own place…"]
+    assert panel.place_choice.key() == "own" and ctrl.selection == 3
+    assert panel.txt_search.IsEnabled()
+    # The chosen place is removed: the main place, and the city search is skipped.
+    _pick(panel, 2)
+    core.places.set_places([home])
+    panel.refresh_places()
+    assert ctrl.items == ["The main place (Home)", "Home", "Its own place…"]
+    assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
     assert panel.focus_moves == []
 
 
-def test_applying_the_weather_location(smain, api, make_panel):
+def test_applying_the_page(smain, api, make_panel):
     import core.api
-    core.api.save_data("Weather", {"location": BANDUNG, "units": "metric"})
-    assert smain.get_location()["name"] == "Jakarta"      # its own city
-    panel = make_panel(location=JAKARTA, weather=smain.weather_location())
+    import core.places
+    home, office = core.places.set_places([_place(BANDUNG, "Home"), _place(JAKARTA, "Office")])
+    # Its own city from before (Jakarta) is not the main place: still in use.
+    assert smain.get_location() == JAKARTA
+    panel = make_panel(location=JAKARTA, place=smain.get_settings()["place"])
+    assert panel.place_choice.key() == "own"
     smain._panel = panel
-    panel._on_use_weather(None)
+    _pick(panel, 0)                                # the main place
     smain._apply_panel()
-    assert core.api.load_data("Space")["location"] is None
-    assert smain.get_location() == BANDUNG
-    assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia (from the Weather settings)"
+    saved = core.api.load_data("Space")
+    assert saved["place"] == "main" and saved["location"] == JAKARTA   # kept for later
+    assert smain.get_location()["name"] == "Home"
+    assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
     smain.speak_sun_moon()
-    assert smain.spoken[-1].startswith("Bandung, Wednesday 23 September.")
+    assert smain.spoken[-1].startswith("Home, Wednesday 23 September. Sunrise at ")
+    _pick(panel, 2)                                # Office, by its id
+    smain._apply_panel()
+    assert core.api.load_data("Space")["place"] == office["id"]
+    assert smain.get_location()["name"] == "Office"
 
 
 # ------------------------------------------------------------
@@ -1107,16 +1208,22 @@ def test_iss_without_any_location(smain, api, monkeypatch):
     assert smain.spoken[-1].endswith("to hear how far away it is.")
 
 
-def test_weather_city_is_the_default(smain, api):
+def test_the_main_place_is_the_default(smain, api):
     import core.api
+    import core.places
     smain._settings = api.normalize_settings(None)
     assert smain.get_location() is None
+    # The Weather city is no longer used by itself.
     core.api.save_data("Weather", {"location": JAKARTA, "units": "metric"})
-    assert smain.get_location() == JAKARTA
+    assert smain.get_location() is None
+    core.places.set_places([_place(JAKARTA, "Home")])
+    location = smain.get_location()
+    assert location["name"] == "Home" and location["latitude"] == JAKARTA["latitude"]
+    assert location["timezone"] == "Asia/Jakarta"
     bandung = dict(JAKARTA, name="Bandung", latitude=-6.9175, longitude=107.6191)
-    smain._save_settings({"location": bandung})
+    smain._save_settings({"location": bandung})       # a city of its own, from before 2.8
     assert smain.get_location()["name"] == "Bandung"
-    assert core.api.load_data("Space") == {"location": bandung, "lead_minutes": 30}
+    assert core.api.load_data("Space") == {"place": None, "location": bandung, "lead_minutes": 30}
 
 
 def test_launch_refresh_is_paced(smain, api, monkeypatch):
@@ -1321,10 +1428,11 @@ def test_register_and_teardown(smain, fresh_event_bus, monkeypatch, tmp_data_dir
             f.write("{not json")
 
     smain.register(fresh_event_bus)
-    assert smain._settings == {"location": None, "lead_minutes": 30}
+    assert smain._settings == {"place": None, "location": None, "lead_minutes": 30}
     assert smain._reminders == [] and smain._launch_state["launches"] == []
     for event_name, handler in smain._SUBSCRIPTIONS:
         assert handler in fresh_event_bus._listeners[event_name]
+    assert smain._on_places_changed in fresh_event_bus._listeners["on_places_changed"]
     by_name = {args[1]: (args, kwargs) for args, kwargs in actions}
     assert set(by_name) == {"where_is_iss", "show_launches", "sun_and_moon"}
     assert all(args[0] == "Space" for args, _kwargs in by_name.values())
@@ -1337,3 +1445,193 @@ def test_register_and_teardown(smain, fresh_event_bus, monkeypatch, tmp_data_dir
     for event_name, handler in smain._SUBSCRIPTIONS:
         assert handler not in fresh_event_bus._listeners.get(event_name, [])
     assert not smain._active
+
+
+# ------------------------------------------------------------
+# Places (Space 1.1, core 2.8)
+# ------------------------------------------------------------
+
+MAKASSAR = {"name": "Makassar", "lat": -5.1477, "lon": 119.4327,
+            "label": "Makassar, South Sulawesi, Indonesia", "timezone": "Asia/Makassar",
+            "source": "city", "city": "Makassar", "region": "South Sulawesi",
+            "country": "Indonesia"}
+
+
+def _capture_launches_dialog(smain, monkeypatch):
+    """Replace the launches list; returns what it was opened with."""
+    seen = {}
+
+    class _Dialog:
+        def __init__(self, parent, label, get_data, request_refresh, has_reminder,
+                     toggle_reminder, lead_minutes, tz, now, refresh_now=False):
+            seen["label"], seen["tz"] = label, tz
+
+        def ShowModal(self):
+            return 0
+
+        def Destroy(self):
+            pass
+
+    monkeypatch.setattr(smain.space_ui, "LaunchesDialog", _Dialog)
+    return seen
+
+
+def test_the_place_choice(smain, api):
+    import core.places
+    home, office = core.places.set_places([_place(JAKARTA, "Home"), _place(BANDUNG, "Office")])
+    lembang = dict(BANDUNG, name="Lembang", latitude=-6.8117, longitude=107.6175)
+
+    def use(place, location=lembang):
+        smain._settings = api.normalize_settings({"place": place, "location": location})
+        return smain.get_location()
+
+    assert use("main")["name"] == "Home"
+    assert use(office["id"])["name"] == "Office"
+    assert use("own") == lembang
+    assert use("own", None) is None           # its own place chosen, but none found yet
+    assert use(None)["name"] == "Lembang"     # not decided yet: its own city from before
+    assert use(None, dict(lembang, latitude=JAKARTA["latitude"],
+                          longitude=JAKARTA["longitude"]))["name"] == "Home"
+    # A place that was removed: the main place.
+    core.places.set_places([home])
+    assert use(office["id"])["name"] == "Home"
+    core.places.set_places([])
+    assert use("main") is None
+
+
+def test_a_city_of_its_own_from_before_is_kept(smain, fresh_event_bus, monkeypatch,
+                                               tmp_data_dir):
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    core.places.set_places([_place(JAKARTA, "Home")])
+    # Home is somewhere else: Bandung stays its own city.
+    core.api.save_data(smain.DATA_KEY, {"location": BANDUNG, "lead_minutes": 60})
+    smain.register(fresh_event_bus)
+    assert smain._settings["place"] == "own" and smain.get_location() == BANDUNG
+    assert core.api.load_data(smain.DATA_KEY) == {"place": "own", "location": BANDUNG,
+                                                  "lead_minutes": 60}
+    smain.teardown()
+    # Its city is the main place anyway: it follows the main place.
+    core.api.save_data(smain.DATA_KEY, {"location": JAKARTA})
+    smain.register(fresh_event_bus)
+    assert smain._settings["place"] == "main" and smain.get_location()["name"] == "Home"
+    assert core.api.load_data(smain.DATA_KEY)["place"] == "main"
+    smain.teardown()
+    # Nothing of its own: the main place, and nothing written.
+    core.api.save_data(smain.DATA_KEY, {"lead_minutes": 10})
+    smain.register(fresh_event_bus)
+    assert smain._settings["place"] is None and smain.get_location()["name"] == "Home"
+    assert core.api.load_data(smain.DATA_KEY) == {"lead_minutes": 10}
+    smain.teardown()
+    # Chosen already: left as it is.
+    core.api.save_data(smain.DATA_KEY, {"place": "main", "location": BANDUNG})
+    smain.register(fresh_event_bus)
+    assert smain._settings["place"] == "main" and smain.get_location()["name"] == "Home"
+    smain.teardown()
+
+
+def test_places_changing_refreshes_the_page(smain, api, monkeypatch):
+    import core.places
+    from core.events import bus
+
+    class Page:
+        refreshed = 0
+
+        def refresh_places(self):
+            Page.refreshed += 1
+
+    class Closed:
+        def refresh_places(self):
+            raise RuntimeError("wrapped C/C++ object of type SpacePanel has been deleted")
+
+    monkeypatch.setattr(smain, "_panel", Page())
+    bus.subscribe("on_places_changed", smain._on_places_changed)
+    try:
+        core.places.set_places([_place(JAKARTA, "Home")])
+        assert Page.refreshed == 1
+        core.places.set_places(core.places.get_places() + [_place(BANDUNG, "Office")])
+        assert Page.refreshed == 2
+    finally:
+        bus.unsubscribe("on_places_changed", smain._on_places_changed)
+    # A page already closed, or none open: nothing breaks.
+    monkeypatch.setattr(smain, "_panel", Closed())
+    smain._on_places_changed()
+    monkeypatch.setattr(smain, "_panel", None)
+    smain._on_places_changed()
+    assert smain.spoken == []
+
+
+def test_a_place_uses_its_own_time_zone(smain, api, monkeypatch):
+    import core.places
+    calls = _services(monkeypatch, api)
+    core.places.set_places([MAKASSAR])
+    smain._settings = api.normalize_settings({"place": "main"})
+    location = smain.get_location()
+    assert location["timezone"] == "Asia/Makassar"
+    assert str(api.zone_for(location)) == "Asia/Makassar"
+    # 12:27 UTC is 20:27 in Makassar (UTC+8): after sunset, tomorrow's sunrise too.
+    smain.speak_sun_moon()
+    report = smain.spoken[-1]
+    assert report.startswith(
+        "Makassar, Wednesday 23 September. Sunrise at 05:52, sunset at 17:58, "
+        "12 hours 6 minutes of daylight. Tomorrow the sun rises at 05:51."), report
+    assert "Next full moon: Sunday 27 September at 00:49." in report     # 16:49 UTC
+    lines = []
+    smain._on_briefing_collect(lines)
+    assert lines[0].startswith("Sunset at 17:58; ")
+    seen = _capture_launches_dialog(smain, monkeypatch)
+    smain.show_launches()
+    assert seen["label"] == "Next rocket launches, in Makassar time:"
+    assert str(seen["tz"]) == "Asia/Makassar"
+    # The ISS distance is worked out from the place; the place is never sent.
+    smain.speak_iss()
+    assert smain.spoken[-1].startswith("The ISS is ") and " of you, over Australia." in \
+        smain.spoken[-1]
+    assert calls == [api.ISS_URL, "https://api.wheretheiss.at/v1/coordinates/-20.50,118.30"]
+
+
+def test_a_place_without_a_time_zone_uses_the_computers(smain, api, text, monkeypatch):
+    import core.places
+    # Pasted coordinates (or an address) have no time zone of their own.
+    core.places.set_places([{"name": "Office", "lat": -6.2, "lon": 106.8, "label": "",
+                             "source": "coordinates"}])
+    smain._settings = api.normalize_settings({"place": "main"})
+    location = smain.get_location()
+    assert location["name"] == "Office" and location["timezone"] == ""
+    assert api.zone_for(location) is None                 # the computer's own zone
+    smain.speak_sun_moon()
+    assert smain.spoken[-1] == text.sun_moon_report(location, None, NOW)
+    assert smain.spoken[-1].startswith("Office, ") and "Sunrise at " in smain.spoken[-1]
+    lines = []
+    smain._on_briefing_collect(lines)
+    assert lines == [text.briefing_text(location, None, NOW, [])]
+    seen = _capture_launches_dialog(smain, monkeypatch)
+    smain.show_launches()
+    assert seen["label"] == "Next rocket launches, in your computer's time:"
+    assert seen["tz"] is None
+
+
+def test_the_weather_button_is_gone():
+    for name in ("main.py", "space_ui.py"):
+        with open(os.path.join(SPACE_DIR, name), encoding="utf-8") as f:
+            source = f.read()
+        assert "weather" not in source.lower(), name
+    with open(os.path.join(SPACE_DIR, "space_ui.py"), encoding="utf-8") as f:
+        assert "PlaceChoice(" in f.read()
+    gone = ("btn_use_weather", "use_weather_done", "use_weather_none", "location_from_weather")
+    for code, where in (("en", "Preferences, Places"), ("id", "Pengaturan, Tempat")):
+        messages = _messages(code)
+        assert not [k for k in gone if k in messages], code
+        assert where in messages["iss_set_location"] and where in messages["sun_no_location"]
+    assert _messages("id")["lbl_current_location"].startswith("Tempat sendiri")
+
+
+def test_manifest_needs_core_2_8_for_places():
+    with open(os.path.join(SPACE_DIR, "manifest.json"), encoding="utf-8") as f:
+        manifest = json.load(f)
+    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.8"
+    assert "Preferences, Places" in manifest["description"]

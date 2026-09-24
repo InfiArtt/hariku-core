@@ -18,7 +18,9 @@ own text (Wilayah, Potensi, Dirasakan, Tanggal, Jam, Lintang, Bujur, Kedalaman)
 is kept as BMKG wrote it, only with runs of whitespace collapsed.
 
 Privacy: the BMKG and USGS requests are plain downloads of public files; they
-carry no location. Only a city search sends what the user typed (to Open-Meteo).
+carry no location, so distances to the user's place (core 2.8 Places, or its
+own city) are worked out on this computer. Only a city search sends what the
+user typed (to Open-Meteo).
 
 fetch_json() and the fetch_* / search_places() helpers block on the network:
 call them from a worker thread only.
@@ -34,6 +36,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import core.places
 from core.constants import CORE_VERSION
 
 logger = logging.getLogger(__name__)
@@ -609,9 +612,13 @@ def _strip_region_words(name):
 
 def region_names(location, extra=""):
     """Names to look for in BMKG's felt reports: the city, its regency (when
-    the city search gave one) and the user's own comma-separated extra names."""
+    the city search gave one) and the user's own comma-separated extra names.
+    For a place from Preferences, Places (it has "place_id"), the place's city
+    or town, never the name the user gave it (such as "Home" or "Rumah")."""
     candidates = []
-    if location:
+    if location and location.get("place_id"):
+        candidates.append(location.get("city"))
+    elif location:
         candidates += [location.get("name"), location.get("admin2")]
     candidates += str(extra or "").split(",")
     names = []
@@ -620,6 +627,20 @@ def region_names(location, extra=""):
         if len(name) >= 3 and name.lower() not in [n.lower() for n in names]:
             names.append(name)
     return names
+
+
+def with_regency(felt_names, own_location, location):
+    """`felt_names` (the region names typed in), plus the regency of its own
+    city when `location`, the place now in use, would not look for it. Used
+    once, when its own city gives way to the same main place (core 2.8): BMKG's
+    felt reports usually name the regency, and a place has none."""
+    felt_names = str(felt_names or "")
+    regency = _strip_region_words((own_location or {}).get("admin2"))
+    if len(regency) < 3 or regency.lower() in [
+            n.lower() for n in region_names(location, felt_names)]:
+        return felt_names
+    names = ", ".join(n for n in (felt_names.strip(), regency) if n)
+    return names if len(names) <= FELT_NAMES_MAX else felt_names
 
 
 def felt_in_region(felt, names):
@@ -636,6 +657,9 @@ def felt_in_region(felt, names):
 
 def default_settings():
     return {
+        # "main", a place id or "own" (core.places); None until decided.
+        "place": None,
+        # Its own place (a city search result), used when "place" is "own".
         "location": None,
         "tsunami_alerts": True,
         "nearby_alerts": False,
@@ -652,6 +676,7 @@ def default_settings():
 def normalize_settings(raw):
     raw = raw if isinstance(raw, dict) else {}
     settings = default_settings()
+    settings["place"] = core.places.normalize_choice(raw.get("place"))
     settings["location"] = normalize_location(raw.get("location"))
     for key in ("tsunami_alerts", "nearby_alerts", "felt_alerts", "world_alerts",
                 "list_world", "sounds"):

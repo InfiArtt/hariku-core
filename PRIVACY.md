@@ -2,8 +2,8 @@
 
 Hariku does not collect analytics or telemetry. Your calendar, reminders,
 routines, profile (your name, birthday and the placeholders you add in
-Preferences, Profile), settings, and extension data stay on your computer, in
-`%APPDATA%\Hariku2`. Hariku Voice with the built-in Windows voices speaks on
+Preferences, Profile), places (Preferences, Places), settings, and extension
+data stay on your computer, in `%APPDATA%\Hariku2`. Hariku Voice with the built-in Windows voices speaks on
 your computer too: the text it reads never leaves it.
 
 This page lists every case where Hariku and the official extensions in the
@@ -31,28 +31,65 @@ address and a Hariku user agent. They contain no identifier, no account
 details, and none of your data. GitHub's handling of them is covered by the
 [GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 
+## Places
+
+Your places (Preferences, Places: their names, such as Home or Office, where
+they are, and which one is your main place) are saved only on your computer, in
+`Places.json`. Hariku never sends your list of places anywhere, and never
+uses your device's location. The exact point of a place stays on your
+computer: the extensions below send a service at most the place rounded to
+about 1 kilometre (latitude and longitude to 2 decimals), and several send
+nothing about it at all.
+
+Finding a place connects only when you ask for it on the Places page (or an
+extension's own place search):
+
+- Searching for an address sends the text you typed and your Hariku language
+  to OpenStreetMap's Nominatim service (`nominatim.openstreetmap.org`), only
+  when you press Enter or the Search button, never while you type. Hariku
+  asks at most once a second, answers the same search again from memory, and
+  names itself and its website in the request, as Nominatim's usage policy
+  asks. This is covered by the
+  [OpenStreetMap Foundation privacy policy](https://osmfoundation.org/wiki/Privacy_Policy).
+- Searching for a city sends the text you typed and your Hariku language to
+  Open-Meteo's city search (`geocoding-api.open-meteo.com`).
+- Pasted coordinates and full map links (Google Maps, Apple Maps,
+  OpenStreetMap) are read on your computer. A short Google Maps link
+  (`maps.app.goo.gl` or `goo.gl/maps`) is sent to Google once, when you press
+  Use, to find the coordinates it points to; the page it leads to is never
+  opened.
+
+The first time you start Hariku 2.8, it makes "Home" from what was already
+on your computer (Flight Radar's exact home, or else the Weather city),
+without connecting to anything.
+
 ## Weather
 
-The Weather extension sends nothing until you choose a city. After that, it
-fetches the forecast from Open-Meteo (`api.open-meteo.com`) when Hariku starts,
-about every 30 minutes, and when you ask for the weather. The request contains
-the chosen city's coordinates and time zone, not your device's location.
-Searching for a city in the Weather settings sends the text you typed to
-Open-Meteo's city search (`geocoding-api.open-meteo.com`). Open-Meteo's
+The Weather extension sends nothing until it has a place: your main place,
+another of your places, or a city of its own chosen in its settings. After
+that, it fetches the forecast from Open-Meteo (`api.open-meteo.com`) when
+Hariku starts, about every 30 minutes, and when you ask for the weather. The
+request contains the place rounded to about 1 kilometre (2 decimals) and its
+time zone, never the exact point or your device's location. (Before Hariku
+2.8 it sent the chosen city's centre to 4 decimals.) Searching for a city in
+the Weather settings sends the text you typed to Open-Meteo's city search
+(`geocoding-api.open-meteo.com`). Open-Meteo's
 handling of these requests is covered by its
 [terms and privacy policy](https://open-meteo.com/en/terms#privacy). The Morning
 Briefing extension makes no connections of its own.
 
 ## Sea Conditions and Air Quality
 
-These two extensions work like Weather. Each uses its own place if you choose
-one in its settings, or the Weather city otherwise, and sends nothing until one
-of them is set. After that, each fetches its data from Open-Meteo when Hariku
-starts, about every 30 minutes, and when you ask: Sea Conditions from
-`marine-api.open-meteo.com`, Air Quality from `air-quality-api.open-meteo.com`.
-The request contains the place's coordinates and time zone, not your device's
-location. Searching for a place sends the text you typed to Open-Meteo's city
-search, as described for Weather above.
+These two extensions work like Weather. Each uses your main place, another of
+your places, or a place of its own chosen in its settings (such as a beach for
+Sea Conditions), and sends nothing until it has one. After that, each fetches
+its data from Open-Meteo when Hariku starts, about every 30 minutes, and when
+you ask: Sea Conditions from `marine-api.open-meteo.com`, Air Quality from
+`air-quality-api.open-meteo.com`. The request contains the place rounded to
+about 1 kilometre (2 decimals) and its time zone, never the exact point or your
+device's location. (Before Hariku 2.8 they sent the place to 4 decimals.)
+Searching for a place sends the text you typed to Open-Meteo's city search, as
+described for Weather above.
 
 ## Earthquakes and Tsunami
 
@@ -64,10 +101,11 @@ turn on worldwide alerts, or show worldwide earthquakes in the list, it
 downloads the U.S. Geological Survey's public feeds from
 `earthquake.usgs.gov`.
 
-These requests contain none of your data. Your location stays on your
-computer: the extension downloads the same files for everyone and works out
-distances itself. Searching for a city sends the text you typed to Open-Meteo's
-city search, as described for Weather above.
+These requests contain none of your data. Your location (your main place,
+another of your places, or a city of its own chosen in its settings) stays on
+your computer: the extension downloads the same files for everyone and works
+out distances itself. Searching for a city sends the text you typed to
+Open-Meteo's city search, as described for Weather above.
 
 ## Space
 
@@ -84,8 +122,9 @@ hour.
 - Searching for a city sends the text you typed to Open-Meteo's city search,
   as described for Weather above.
 
-Your location is never sent; distances and directions are worked out on your
-computer.
+Your location (your main place, another of your places, or a city of its own
+chosen in its settings) is never sent; distances, directions, and sunrise and
+sunset are worked out on your computer.
 
 ## Flight Radar
 
@@ -93,9 +132,9 @@ The Flight Radar extension connects only when you use it: when you ask what is
 flying nearby, open the radar list, or turn on overhead alerts or the
 emergency watch (which then check every 30 to 60 seconds).
 
-Your location is the place you set in the Flight Radar settings (a city, an
-address, or coordinates you pasted), or the Weather city if you haven't set
-one. It is never your device's location. The exact point stays on your
+Your location is your main place, another of your places, or a place of its
+own set in the Flight Radar settings (a city, an address, or coordinates you
+pasted). It is never your device's location. The exact point stays on your
 computer. Each check sends only that point rounded to about 1 km, with a
 slightly wider radius, to adsb.fi (`opendata.adsb.fi`), or to adsb.lol
 (`api.adsb.lol`) if adsb.fi doesn't answer. Hariku then works out each
@@ -105,12 +144,8 @@ aircraft's distance and direction from your exact point itself.
   adsbdb (`api.adsbdb.com`). Routes are kept in memory and never saved.
 - Searching for a city sends the text you typed to Open-Meteo's city search,
   as described for Weather above.
-- Searching for an address sends the text you typed to OpenStreetMap's
-  Nominatim service (`nominatim.openstreetmap.org`), covered by the
-  [OpenStreetMap Foundation privacy policy](https://osmfoundation.org/wiki/Privacy_Policy).
-- Pasted coordinates and full map links are read on your computer. A short
-  Google Maps link (`maps.app.goo.gl`) is sent to Google once, when you press
-  Use, to find the coordinates it points to.
+- Searching for an address, pasted coordinates and map links work as
+  described under Places above (Flight Radar uses the same search).
 - "Listen to ATC" opens a liveatc.net page in your browser. Hariku itself
   sends nothing to LiveATC.
 - Tracking a flight sends only its flight number or registration to adsb.fi
@@ -125,10 +160,12 @@ ask for them (at most every 10 minutes for a report and every 30 minutes for
 a forecast), when you add an airport (to check its code), and, only while
 Captain mode is on, in the background about every 30 minutes. These requests
 contain the ICAO codes of your airports, such as WIDD. When you have no
-favourite airports, Cockpit finds the airport nearest to your Weather city by
-sending a box of 1 degree around that city, or 3 degrees if nothing is found
-(roughly 110 or 330 kilometres), with its corners rounded to 0.1 degree. It
-never sends your own location or anything from your profile. The Cockpit sound
+favourite airports, Cockpit finds the airport nearest to your main place (or
+another of your places, chosen in its settings) by sending a box of 1 degree
+around that place, or 3 degrees if nothing is found (roughly 110 or 330
+kilometres), with its corners rounded to 0.1 degree. It keeps only that place's
+name and its point rounded to about 1 kilometre, to know the airport was found
+for it. It never sends your own location or anything from your profile. The Cockpit sound
 theme is generated on your computer. NOAA's handling of these requests is
 covered by the [National Weather Service privacy policy](https://www.weather.gov/privacy).
 

@@ -1,10 +1,10 @@
 {
     "id": "air_quality",
     "name": "Air Quality",
-    "version": "1.1",
-    "description": "Hear the air quality index, fine particles (PM2.5 and PM10) and the UV index for your city, with a short tip for the category, and see the next hours and days. Choose the city in Preferences, Air Quality; it starts with your Weather city. Air quality data by Open-Meteo.com (CAMS; no account or API key needed).",
+    "version": "1.2",
+    "description": "Hear the air quality index, fine particles (PM2.5 and PM10) and the UV index where you are, with a short tip for the category, and see the next hours and days. It uses your main place from Preferences, Places, or another place or a city you choose in Preferences, Air Quality. Air quality data by Open-Meteo.com (CAMS; no account or API key needed).",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.7"
+    "minimum_core_version": "2.8"
 }

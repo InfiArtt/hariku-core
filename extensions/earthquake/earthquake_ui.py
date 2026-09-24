@@ -9,9 +9,9 @@
 
 """
 Windows for the Earthquakes & Tsunami extension:
-  * EarthquakePanel - the Preferences page: the disclaimer, the location (city
-                      search, or the Weather city, also via "Use the Weather
-                      location"), which alerts to give, sounds, the credits.
+  * EarthquakePanel - the Preferences page: the disclaimer, the place (one
+                      from Preferences, Places, or its own, found with the
+                      city search), which alerts to give, sounds, the credits.
   * RecentDialog    - recent earthquakes, one sentence per row, newest first,
                       with Details (Enter), Refresh and an optional worldwide
                       (USGS) part.
@@ -25,8 +25,10 @@ import time
 
 import wx
 
+import core.places
 import core.ui_scale
 from core.i18n import apply_rtl_layout, get_current_language
+from core.places_ui import PlaceChoice
 from core.speech import speak
 
 import earthquake_api as api
@@ -63,21 +65,26 @@ _PageBase = wx.ScrolledWindow if isinstance(getattr(wx, "ScrolledWindow", None),
 
 
 class EarthquakePanel(_PageBase):
-    """OK saves the search result selected last, or the Weather city after
-    "Use the Weather location", or keeps the saved location."""
+    """OK saves which place to use ("Place:"), and as its own place the
+    search result selected last, or keeps the saved one. The city search is
+    only available while "Its own place" is chosen."""
 
-    def __init__(self, parent, settings, weather_location=None):
+    def __init__(self, parent, settings):
         super().__init__(parent)
         self._location = settings.get("location")
-        self._weather_location = weather_location
         self._results = []
-        self._pending = None     # "place" or "weather"
+        self._pending = None     # "place" after a search result was selected
         self._search_id = 0
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         # Safety first: shown above everything else.
         self.lbl_disclaimer = wx.StaticText(self, label=_("disclaimer"))
         vbox.Add(self.lbl_disclaimer, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        choice = (core.places.normalize_choice(settings.get("place"))
+                  or core.places.initial_choice(self._location))
+        self.place_choice = PlaceChoice(self, vbox, choice, own=True,
+                                        on_change=lambda key: self._on_place_changed())
 
         self.txt_location = _labelled(self, vbox, _("lbl_current_location"),
                                       lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
@@ -95,9 +102,6 @@ class EarthquakePanel(_PageBase):
         self.list_results = wx.ListBox(self, size=(-1, 70), style=wx.LB_SINGLE)
         self.list_results.SetName(_("lbl_results").rstrip(":"))
         vbox.Add(self.list_results, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
-
-        self.btn_use_weather = wx.Button(self, label=_("btn_use_weather"))
-        vbox.Add(self.btn_use_weather, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
 
         self.chk_tsunami = wx.CheckBox(self, label=_("chk_tsunami"))
         self.chk_tsunami.SetValue(settings["tsunami_alerts"])
@@ -147,33 +151,54 @@ class EarthquakePanel(_PageBase):
         self.txt_search.Bind(wx.EVT_TEXT_ENTER, self._on_search)
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search)
         self.list_results.Bind(wx.EVT_LISTBOX, self._on_result_selected)
-        self.btn_use_weather.Bind(wx.EVT_BUTTON, self._on_use_weather)
-        self.set_location(self._location, weather_location)
+        self.set_location(self._location)
+        self._update_own()
         core.ui_scale.apply_appearance(self)
         if hasattr(self, "FitInside"):
             self.FitInside()  # after scaling, so large text can still be scrolled to
 
-    def set_location(self, place, weather_location=None):
+    def set_location(self, place):
+        """Show the saved city of its own (after OK)."""
         self._location = place
-        self._weather_location = weather_location
-        self.txt_location.ChangeValue(text.location_text(place, weather_location))
-        self.lbl_felt_note.SetLabel(text.felt_note(place or weather_location,
-                                                   self.txt_felt_names.GetValue()))
+        self._pending = None
+        self.txt_location.ChangeValue(text.location_text(place))
+        self._update_felt_note()
+
+    def _update_own(self):
+        """The city search is for "Its own place" only; other choices skip it."""
+        own = self.place_choice.is_own()
+        for ctrl in (self.txt_location, self.txt_search, self.btn_search, self.list_results):
+            ctrl.Enable(own)
+
+    def _update_felt_note(self):
+        """Which names felt alerts look for, for the place OK would use."""
+        location = core.places.location_for(self.place_choice.key(), self.chosen_location())
+        self.lbl_felt_note.SetLabel(text.felt_note(location, self.txt_felt_names.GetValue()))
         self.Layout()
 
+    def _on_place_changed(self):
+        # State only; focus stays on the list.
+        self._update_own()
+        self._update_felt_note()
+
+    def refresh_places(self):
+        """The places changed (Preferences, Places): list them again."""
+        self.place_choice.refresh()
+        self._update_own()
+        self._update_felt_note()
+
     def chosen_location(self):
-        """The location OK would save (None means the Weather city)."""
+        """Its own place, as OK would save it."""
         if self._pending == "place":
             sel = self.list_results.GetSelection()
             if 0 <= sel < len(self._results):
                 return self._results[sel]
-        elif self._pending == "weather":
-            return None
         return self._location
 
     def get_settings(self):
         """Settings to save."""
         return {
+            "place": self.place_choice.key(),
             "location": self.chosen_location(),
             "tsunami_alerts": self.chk_tsunami.GetValue(),
             "nearby_alerts": self.chk_nearby.GetValue(),
@@ -187,22 +212,8 @@ class EarthquakePanel(_PageBase):
 
     def _on_result_selected(self, event):
         self._pending = "place"   # state only; focus stays where it is
+        self._update_felt_note()
         event.Skip()
-
-    def _on_use_weather(self, event):
-        """Drop this page's own city so the Weather city is used again. Focus
-        stays on the button."""
-        self._pending = "weather"
-        self.list_results.SetSelection(wx.NOT_FOUND)
-        # SetValue (not ChangeValue) so Preferences knows there is something to save.
-        self.txt_location.SetValue(text.location_text(None, self._weather_location))
-        self.lbl_felt_note.SetLabel(text.felt_note(self._weather_location,
-                                                   self.txt_felt_names.GetValue()))
-        if self._weather_location:
-            speak(_("use_weather_done", place=api.place_label(self._weather_location)),
-                  interrupt=True)
-        else:
-            speak(_("use_weather_none"), interrupt=True)
 
     def _on_search(self, event):
         query = self.txt_search.GetValue().strip()
@@ -233,6 +244,7 @@ class EarthquakePanel(_PageBase):
         self.Layout()
         self.list_results.SetSelection(0)
         self._pending = "place"
+        self._update_felt_note()
         # The user pressed Search and is still waiting there: take them to the results.
         if wx.Window.FindFocus() in (self.txt_search, self.btn_search):
             self.list_results.SetFocus()

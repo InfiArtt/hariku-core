@@ -9,8 +9,9 @@
 
 # Tests for the Earthquakes & Tsunami extension: BMKG and USGS parsing, the
 # tsunami wording, distances, every alert rule, text in both languages, the
-# once-per-session disclaimer, polling, the briefing and the actions. No test
-# touches the network (fetch_json and urlopen are replaced) and no sound plays.
+# once-per-session disclaimer, polling, the briefing, the actions, and which
+# place it uses (core 2.8 Places). No test touches the network (fetch_json and
+# urlopen are replaced) and no sound plays.
 
 import datetime
 import importlib.util
@@ -205,8 +206,8 @@ def test_every_python_file_has_the_licence_header():
 def test_manifest():
     with open(os.path.join(EQ_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    # 1.1: quiet hours (core.personal.is_quiet_time, core 2.7).
-    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"
+    # 1.1: quiet hours (core.personal.is_quiet_time, core 2.7); 1.2: Places (core 2.8).
+    assert manifest["version"] == "1.2" and manifest["minimum_core_version"] == "2.8"
     assert manifest["main"] == "main.py" and "BMKG" in manifest["description"]
 
 
@@ -414,7 +415,8 @@ def test_region_names_and_felt_matching(api):
 
 def test_settings_defaults(api):
     settings = api.normalize_settings(None)
-    assert settings == {"location": None, "tsunami_alerts": True, "nearby_alerts": False,
+    assert settings == {"place": None, "location": None, "tsunami_alerts": True,
+                        "nearby_alerts": False,
                         "alert_km": 300, "min_magnitude": 4.0, "felt_alerts": False,
                         "felt_names": "", "world_alerts": False, "list_world": False,
                         "sounds": True}
@@ -424,17 +426,21 @@ def test_settings_defaults(api):
     "garbage", [], {"alert_km": 250}, {"alert_km": True}, {"min_magnitude": 7.5},
     {"min_magnitude": "lots"}, {"tsunami_alerts": "no"}, {"location": "Ruteng"},
     {"location": {"name": "X", "latitude": 95, "longitude": 1}}, {"felt_names": 5},
+    {"place": "../x"}, {"place": 5}, {"place": ["main"]},
 ])
 def test_settings_survive_corrupt_data(api, raw):
     assert api.normalize_settings(raw) == api.default_settings()
 
 
 def test_settings_keep_valid_values(api):
-    raw = {"location": RUTENG, "tsunami_alerts": False, "nearby_alerts": True, "alert_km": 1000,
-           "min_magnitude": "5.5", "felt_alerts": True, "felt_names": "  Kab.  Manggarai ",
-           "world_alerts": True, "list_world": True, "sounds": False, "extra": 1}
+    raw = {"place": "own", "location": RUTENG, "tsunami_alerts": False, "nearby_alerts": True,
+           "alert_km": 1000, "min_magnitude": "5.5", "felt_alerts": True,
+           "felt_names": "  Kab.  Manggarai ", "world_alerts": True, "list_world": True,
+           "sounds": False, "extra": 1}
     settings = api.normalize_settings(raw)
-    assert settings["location"] == RUTENG
+    assert settings["place"] == "own" and settings["location"] == RUTENG
+    for place in ("main", "abc12345"):
+        assert api.normalize_settings({"place": place})["place"] == place
     assert settings["alert_km"] == 1000 and settings["min_magnitude"] == 5.5
     assert settings["felt_names"] == "Kab. Manggarai"
     assert not settings["tsunami_alerts"] and settings["nearby_alerts"] and not settings["sounds"]
@@ -611,10 +617,10 @@ def test_nearby_needs_distance_and_magnitude(api, alerts, latest):
 def test_felt_in_my_region(api, alerts, latest):
     on = _settings(api, felt_alerts=True)
     assert alerts.AlertTracker().check_bmkg(latest, on, RUTENG, NOW) == "felt"   # "Manggarai"
-    weather_city = dict(RUTENG, admin2="")
-    assert alerts.AlertTracker().check_bmkg(latest, on, weather_city, NOW) is None
+    no_regency = dict(RUTENG, admin2="")
+    assert alerts.AlertTracker().check_bmkg(latest, on, no_regency, NOW) is None
     extra = _settings(api, felt_alerts=True, felt_names="Manggarai")
-    assert alerts.AlertTracker().check_bmkg(latest, extra, weather_city, NOW) == "felt"
+    assert alerts.AlertTracker().check_bmkg(latest, extra, no_regency, NOW) == "felt"
     assert alerts.AlertTracker().check_bmkg(latest, extra, None, NOW) == "felt"
     assert alerts.AlertTracker().check_bmkg(latest, _settings(api), RUTENG, NOW) is None  # opt-in
     both = _settings(api, felt_alerts=True, nearby_alerts=True)
@@ -866,13 +872,12 @@ def test_disclaimer_attribution_and_errors(text, lang):
                                      "dan Geofisika) and USGS")
     assert "internet connection" in text.error_text("offline")
     assert text.error_text("weird") == text.error_text("bad_response")
-    assert text.location_text(None, RUTENG) == \
-        "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)"
+    assert text.location_text(RUTENG) == "Ruteng, East Nusa Tenggara, Indonesia"
     assert text.location_text(None) == "Not set"
     lang("id")
     assert text._("disclaimer") == ("Hariku bukan sistem peringatan resmi. "
                                     "Selalu ikuti BMKG dan pihak berwenang setempat.")
-    assert text.location_text(None, RUTENG).endswith("(dari pengaturan Cuaca)")
+    assert text.location_text(None) == "Belum diatur"
 
 
 # ------------------------------------------------------------
@@ -1131,14 +1136,32 @@ def test_show_recent_opens_the_list(eqmain, monkeypatch):
     assert opened[0]["refresh_now"] is True and opened[0]["list_world"] is False
 
 
-def test_weather_location_is_the_default(eqmain, api):
+def _place(location, name=None, city=None):
+    """A saved place (core 2.8) at `location`."""
+    return {"name": name or location["name"], "lat": location["latitude"],
+            "lon": location["longitude"], "label": location["name"], "timezone": None,
+            "source": "city", "city": location["name"] if city is None else city}
+
+
+def test_the_main_place_is_the_default(eqmain, api, lang, latest):
     import core.api
+    import core.places
     eqmain._settings = api.normalize_settings({})
     assert eqmain.get_location() is None
+    # The Weather city is no longer used by itself.
     core.api.save_data("Weather", {"location": JAKARTA, "units": "metric"})
-    assert eqmain.get_location()["name"] == "Jakarta"
-    eqmain._settings = api.normalize_settings({"location": RUTENG})
-    assert eqmain.get_location()["name"] == "Ruteng"
+    assert eqmain.get_location() is None
+    core.places.set_places([_place(RUTENG, "Rumah")])
+    location = eqmain.get_location()
+    assert location["name"] == "Rumah" and location["latitude"] == RUTENG["latitude"]
+    # Distances are worked out from the place, named as the user named it.
+    eqmain._cache["history"] = [latest]
+    lines = []
+    eqmain._on_briefing_collect(lines)
+    assert lines == ["Earthquake near you in the last 24 hours, according to BMKG: magnitude 4.7, "
+                     "47 kilometres north of Rumah, 09:02 WIB, 10 minutes ago."]
+    eqmain._settings = api.normalize_settings({"location": JAKARTA})   # a city of its own
+    assert eqmain.get_location() == JAKARTA
 
 
 def test_briefing_uses_the_cache_only(eqmain, api, lang, latest):
@@ -1222,9 +1245,9 @@ def test_network_back_online_polls_soon(eqmain, api):
 
 
 # ------------------------------------------------------------
-# Settings page: "Use the Weather location" (the panel's methods run on a
-# stand-in, since wx is mocked here; tests/_earthquake_ui_check.py presses the
-# real button in CI)
+# Settings page: the place choice, its own city, the felt note (the panel's
+# methods run on a stand-in, since wx is mocked here;
+# tests/_earthquake_ui_check.py uses the real page in CI)
 # ------------------------------------------------------------
 
 class _Ctrl:
@@ -1232,6 +1255,7 @@ class _Ctrl:
 
     def __init__(self, value="", selection=-1):
         self.value, self.selection, self.label, self.calls = value, selection, "", []
+        self.enabled = True
 
     def GetValue(self):
         return self.value
@@ -1257,6 +1281,26 @@ class _Ctrl:
     def SetFocus(self):
         self.calls.append("SetFocus")
 
+    def Enable(self, enable=True):
+        self.enabled = bool(enable)
+
+
+class _PlaceChoice:
+    """Stands in for core.places_ui.PlaceChoice (its real list is checked in
+    tests/test_places.py and the window check)."""
+
+    def __init__(self, key):
+        self._key, self.refreshed = key, 0
+
+    def key(self):
+        return self._key
+
+    def is_own(self):
+        return self._key == "own"
+
+    def refresh(self):
+        self.refreshed += 1
+
 
 @pytest.fixture
 def eq_ui(text):
@@ -1264,12 +1308,23 @@ def eq_ui(text):
     return earthquake_ui
 
 
-def _page(location, weather_location, results=()):
-    return types.SimpleNamespace(
-        _location=location, _weather_location=weather_location, _results=list(results),
-        _pending="place" if results else None,
-        list_results=_Ctrl(selection=0 if results else -1), txt_location=_Ctrl(),
-        txt_felt_names=_Ctrl(""), lbl_felt_note=_Ctrl(), btn_use_weather=_Ctrl())
+_PANEL_METHODS = ("set_location", "_update_own", "_update_felt_note", "_on_place_changed",
+                  "refresh_places", "chosen_location", "get_settings", "_on_result_selected")
+
+
+def _page(eq_ui, location, key="main", results=(), felt_names=""):
+    """An EarthquakePanel stand-in: its real methods on recorded controls."""
+    page = types.SimpleNamespace(
+        _location=location, _results=list(results), _pending="place" if results else None,
+        place_choice=_PlaceChoice(key), list_results=_Ctrl(selection=0 if results else -1),
+        txt_location=_Ctrl(), txt_search=_Ctrl(), btn_search=_Ctrl(),
+        txt_felt_names=_Ctrl(felt_names), lbl_felt_note=_Ctrl(),
+        chk_tsunami=_Ctrl(True), chk_nearby=_Ctrl(False), chk_felt=_Ctrl(True),
+        chk_world=_Ctrl(False), chk_sounds=_Ctrl(True), choice_distance=_Ctrl(selection=1),
+        choice_magnitude=_Ctrl(selection=2), Layout=lambda: None)
+    for name in _PANEL_METHODS:
+        setattr(page, name, types.MethodType(getattr(eq_ui.EarthquakePanel, name), page))
+    return page
 
 
 class _Event:
@@ -1280,88 +1335,304 @@ class _Event:
         self.skipped = True
 
 
-def test_use_the_weather_location_button(eq_ui, lang, monkeypatch):
-    spoken = []
-    monkeypatch.setattr(eq_ui, "speak", lambda msg, interrupt=False: spoken.append((msg, interrupt)))
-    Panel = eq_ui.EarthquakePanel
-    page = _page(JAKARTA, RUTENG, results=[JAKARTA])
-    assert Panel.chosen_location(page) is JAKARTA
+def _search_enabled(page):
+    states = {c.enabled for c in (page.txt_location, page.txt_search, page.btn_search,
+                                  page.list_results)}
+    assert len(states) == 1, "the own-place controls are enabled together"
+    return states.pop()
 
-    Panel._on_use_weather(page, None)
-    # The page's own city is dropped: OK saves None, so the Weather city is used.
-    assert Panel.chosen_location(page) is None
-    assert page.txt_location.value == \
-        "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)"
-    assert "SetValue" in page.txt_location.calls   # Preferences sees a change to save
-    assert page.list_results.selection == eq_ui.wx.NOT_FOUND
+
+def test_the_page_uses_the_chosen_place(eq_ui, lang, tmp_data_dir):
+    import core.places
+    home, office = core.places.set_places([_place(RUTENG, "Rumah", city="Ruteng"),
+                                           _place(JAKARTA, "Kantor", city="Jakarta")])
+    page = _page(eq_ui, RUTENG, key="main")
+    page.set_location(RUTENG)
+    page._update_own()
+    # Its own city is shown, but the city search is skipped for another place.
+    assert page.txt_location.value == "Ruteng, East Nusa Tenggara, Indonesia"
+    assert "SetValue" not in page.txt_location.calls
+    assert _search_enabled(page) is False
+    # The felt note is for the place in use: the main place's city, not "Rumah".
     assert page.lbl_felt_note.label == \
-        "Felt alerts look for these names in BMKG's felt reports: Ruteng, Manggarai."
-    assert spoken == [("Ruteng, East Nusa Tenggara, Indonesia, the Weather location, will be "
-                       "used. Press OK to save.", True)]
-    # Focus never moves.
-    for ctrl in (page.list_results, page.txt_location, page.btn_use_weather):
-        assert "SetFocus" not in ctrl.calls
+        "Felt alerts look for these names in BMKG's felt reports: Ruteng."
+    settings = page.get_settings()
+    assert settings["place"] == "main" and settings["location"] == RUTENG
+    assert settings["alert_km"] == 300 and settings["min_magnitude"] == 4.0
+    assert settings["felt_alerts"] is True and settings["tsunami_alerts"] is True
 
-    # Choosing a search result again takes over.
+    # Another saved place.
+    page.place_choice._key = office["id"]
+    page._on_place_changed()
+    assert _search_enabled(page) is False
+    assert page.lbl_felt_note.label.endswith(": Jakarta.")
+    assert page.get_settings()["place"] == office["id"]
+
+    # Its own place: the search comes back, the note follows its own city.
+    page.place_choice._key = "own"
+    page._on_place_changed()
+    assert _search_enabled(page) is True
+    assert page.lbl_felt_note.label.endswith(": Ruteng, Manggarai.")
+    # A search result selected: OK would save it, and the note says so.
+    page._results = [JAKARTA]
     page.list_results.selection = 0
     event = _Event()
-    Panel._on_result_selected(page, event)
-    assert event.skipped and Panel.chosen_location(page) is JAKARTA
-
-    # Without a Weather location.
-    page = _page(JAKARTA, None)
-    Panel._on_use_weather(page, None)
-    assert Panel.chosen_location(page) is None and page.txt_location.value == "Not set"
-    assert spoken[-1] == ("No Weather location is set yet. Choose one here, or in Preferences, "
-                          "Weather.", True)
+    page._on_result_selected(event)
+    assert event.skipped and page.chosen_location() is JAKARTA
+    assert page.lbl_felt_note.label.endswith(": Jakarta.")
+    assert page.get_settings()["place"] == "own" and page.get_settings()["location"] is JAKARTA
+    # After OK the saved city is shown, and nothing is pending any more.
+    page.set_location(JAKARTA)
+    assert page.txt_location.value == "Jakarta, Indonesia" and page._pending is None
+    # Focus never moves.
+    for ctrl in (page.list_results, page.txt_location, page.txt_search, page.btn_search):
+        assert "SetFocus" not in ctrl.calls
 
     lang("id")
-    Panel._on_use_weather(_page(None, RUTENG), None)
-    assert spoken[-1][0] == ("Ruteng, East Nusa Tenggara, Indonesia, lokasi Cuaca, akan digunakan. "
-                             "Tekan Oke untuk menyimpan.")
-    assert eq_ui._("btn_use_weather") == "&Gunakan lokasi Cuaca"
+    page.set_location(None)
+    assert page.txt_location.value == "Belum diatur"
+    assert page.lbl_felt_note.label == \
+        "Peringatan gempa dirasakan memerlukan nama kota atau wilayah untuk dicari."
+
+
+def test_the_felt_note_without_a_city(eq_ui, lang, tmp_data_dir):
+    import core.places
+    # Pasted coordinates have no city: only the region names typed in are used.
+    core.places.set_places([{"name": "Rumah", "lat": -8.61, "lon": 120.47,
+                             "source": "coordinates"}])
+    page = _page(eq_ui, None, key="main")
+    page._update_felt_note()
+    assert page.lbl_felt_note.label == "Felt alerts need a city or a region name to look for."
+    page = _page(eq_ui, None, key="main", felt_names="Kab. Manggarai")
+    page._update_felt_note()
+    assert page.lbl_felt_note.label.endswith(": Manggarai.")
+    # No places at all: the main place is none.
+    core.places.set_places([])
+    page = _page(eq_ui, None, key="main")
+    page._update_felt_note()
+    assert page.lbl_felt_note.label == "Felt alerts need a city or a region name to look for."
+
+
+def test_the_page_follows_the_places(eq_ui, lang, tmp_data_dir):
+    import core.places
+    home, = core.places.set_places([_place(RUTENG, "Rumah", city="Ruteng")])
+    page = _page(eq_ui, None, key="main")
+    page._update_own()
+    page._update_felt_note()
+    assert page.lbl_felt_note.label.endswith(": Ruteng.")
+    # The main place moved (Preferences, Places): the list and the note follow.
+    core.places.set_places([dict(home, lat=JAKARTA["latitude"], lon=JAKARTA["longitude"],
+                                 city="Jakarta")])
+    page.refresh_places()
+    assert page.place_choice.refreshed == 1
+    assert page.lbl_felt_note.label.endswith(": Jakarta.")
+    assert _search_enabled(page) is False
 
 
 def test_no_selection_keeps_the_saved_location(eq_ui):
-    page = _page(JAKARTA, RUTENG)
-    assert eq_ui.EarthquakePanel.chosen_location(page) is JAKARTA
-    page = _page(None, RUTENG)
-    assert eq_ui.EarthquakePanel.chosen_location(page) is None
+    page = _page(eq_ui, JAKARTA)
+    assert page.chosen_location() is JAKARTA
+    page = _page(eq_ui, None)
+    assert page.chosen_location() is None
+
+
+def test_the_weather_button_is_gone():
+    for name in ("earthquake_ui.py", "main.py", "earthquake_text.py"):
+        with open(os.path.join(EQ_DIR, name), encoding="utf-8") as f:
+            source = f.read()
+        assert "use_weather" not in source and "weather_location" not in source, name
+    with open(os.path.join(EQ_DIR, "earthquake_ui.py"), encoding="utf-8") as f:
+        assert "PlaceChoice(" in f.read()
+    for code, word in (("en", "Its own place"), ("id", "Tempat sendiri")):
+        with open(os.path.join(EQ_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
+            messages = json.load(f)["messages"]
+        for key in ("btn_use_weather", "use_weather_done", "use_weather_none",
+                    "location_from_weather"):
+            assert key not in messages, (code, key)
+        assert messages["lbl_current_location"].startswith(word)
 
 
 def test_settings_page_alt_letters_do_not_clash():
     # Every control on the settings page whose label can carry an Alt letter.
-    keys = ("btn_search", "btn_use_weather", "chk_tsunami", "chk_nearby", "chk_felt",
+    keys = ("btn_search", "chk_tsunami", "chk_nearby", "chk_felt",
             "chk_world", "chk_sounds", "lbl_current_location", "lbl_search", "lbl_results",
             "lbl_alert_distance", "lbl_min_magnitude", "lbl_felt_names", "disclaimer",
             "alerts_note", "attribution", "attribution_search")
-    expected = {"en": "w", "id": "g"}
     for code in ("en", "id"):
         with open(os.path.join(EQ_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
             messages = json.load(f)["messages"]
         letters = [m.group(1).lower() for key in keys
                    for m in re.finditer(r"&([^&\s])", messages[key])]
         assert len(letters) == len(set(letters)), (code, letters)
-        assert re.search(r"&(.)", messages["btn_use_weather"]).group(1).lower() == expected[code]
 
 
-def test_applying_use_weather_saves_no_city(eqmain, lang):
+def test_applying_the_page_saves_the_place(eqmain, lang):
     import core.api
-    core.api.save_data("Weather", {"location": RUTENG, "units": "metric"})
-    eqmain._settings = eqmain.api.normalize_settings({"location": JAKARTA})
+    import core.places
+    core.places.set_places([_place(RUTENG, "Rumah")])
+    eqmain._settings = eqmain.api.normalize_settings({"place": "own", "location": JAKARTA})
     assert eqmain.get_location()["name"] == "Jakarta"
     shown = []
     eqmain._panel = types.SimpleNamespace(
-        get_settings=lambda: dict(eqmain.get_settings(), location=None),
-        set_location=lambda place, weather: shown.append((place, weather)))
+        get_settings=lambda: dict(eqmain.get_settings(), place="main"),
+        set_location=shown.append)
     eqmain._apply_panel()
-    assert core.api.load_data(eqmain.DATA_KEY)["location"] is None
-    assert eqmain.get_location()["name"] == "Ruteng"
-    place, weather = shown[-1]
-    assert place is None and weather["name"] == "Ruteng"
-    assert eqmain.text.location_text(place, weather) == \
-        "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)"
+    saved = core.api.load_data(eqmain.DATA_KEY)
+    assert saved["place"] == "main"
+    assert saved["location"]["name"] == "Jakarta", "its own city is kept for later"
+    assert eqmain.get_location()["name"] == "Rumah"
+    assert shown == [JAKARTA]
     eqmain._panel = None
+
+
+# ------------------------------------------------------------
+# Places (Earthquakes & Tsunami 1.2, core 2.8)
+# ------------------------------------------------------------
+
+def test_the_place_choice(eqmain, api, tmp_data_dir):
+    import core.places
+    home, office = core.places.set_places([_place(RUTENG, "Rumah"), _place(JAKARTA, "Kantor")])
+    own = dict(JAKARTA, name="Monas")
+    eqmain._settings = api.normalize_settings({"place": "main", "location": own})
+    assert eqmain.get_location()["name"] == "Rumah"
+    eqmain._settings = api.normalize_settings({"place": office["id"], "location": own})
+    assert eqmain.get_location()["name"] == "Kantor"
+    eqmain._settings = api.normalize_settings({"place": "own", "location": own})
+    assert eqmain.get_location()["name"] == "Monas"
+    # Its own place chosen but no city found yet: no location.
+    eqmain._settings = api.normalize_settings({"place": "own"})
+    assert eqmain.get_location() is None
+    # A place that was removed: the main place.
+    core.places.set_places([home])
+    eqmain._settings = api.normalize_settings({"place": office["id"]})
+    assert eqmain.get_location()["name"] == "Rumah"
+
+
+def test_felt_names_for_a_place_come_from_its_city(api, tmp_data_dir):
+    import core.places
+    rumah, = core.places.set_places([_place(RUTENG, "Rumah", city="Ruteng")])
+    location = core.places.location_dict(rumah)
+    # The place's city, never the name the user gave it.
+    assert api.region_names(location) == ["Ruteng"]
+    assert api.region_names(location, "Kab. Manggarai") == ["Ruteng", "Manggarai"]
+    assert api.region_names(dict(location, city="")) == []
+    assert api.region_names(dict(location, city="Kabupaten Manggarai")) == ["Manggarai"]
+    # A place named like a region is still not looked for by its name.
+    assert api.region_names(dict(location, name="Manggarai", city="")) == []
+    # Its own city (a search result) keeps the city and its regency.
+    assert api.region_names(RUTENG) == ["Ruteng", "Manggarai"]
+
+
+def test_the_regency_is_kept_when_its_own_city_gives_way(api, tmp_data_dir):
+    import core.places
+    rumah, = core.places.set_places([_place(RUTENG, "Rumah", city="Ruteng")])
+    location = core.places.location_dict(rumah)
+    assert api.with_regency("", RUTENG, location) == "Manggarai"
+    assert api.with_regency("Kota Bima", RUTENG, location) == "Kota Bima, Manggarai"
+    # Already looked for, or nothing to add: unchanged.
+    assert api.with_regency("Kab. Manggarai", RUTENG, location) == "Kab. Manggarai"
+    assert api.with_regency("Bima", JAKARTA, location) == "Bima"
+    assert api.with_regency("", None, location) == ""
+    assert api.with_regency("", RUTENG, dict(location, city="Kabupaten Manggarai")) == ""
+    # Never past the length the field keeps.
+    long_names = "x" * (api.FELT_NAMES_MAX - 3)
+    assert api.with_regency(long_names, RUTENG, location) == long_names
+
+
+def test_felt_alerts_for_a_place(eqmain, api, lang):
+    import core.places
+    core.places.set_places([_place(RUTENG, "Rumah", city="Kabupaten Manggarai")])
+    eqmain._settings = api.normalize_settings({"place": "main", "felt_alerts": True})
+    eqmain._poll()                        # felt in "II - III Kab. Manggarai"
+    msg, _interrupt = eqmain.spoken[-1]
+    assert msg.startswith("Earthquake felt in your region, according to BMKG: magnitude 4.7")
+    assert "47 kilometres north of Rumah" in msg
+
+
+def test_felt_alerts_skip_the_name_of_a_place(eqmain, api, lang):
+    import core.places
+    # Named "Manggarai" by the user, in a town BMKG's report does not name.
+    core.places.set_places([_place(RUTENG, "Manggarai", city="Ruteng")])
+    eqmain._settings = api.normalize_settings({"place": "main", "felt_alerts": True})
+    eqmain._poll()
+    assert eqmain.spoken == []
+
+
+def test_a_city_of_its_own_from_before_is_kept(eqmain, fresh_event_bus, monkeypatch,
+                                               tmp_data_dir):
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    # Home is somewhere else: its city stays its own place.
+    core.places.set_places([_place(RUTENG, "Rumah")])
+    core.api.save_data(eqmain.DATA_KEY, {"location": JAKARTA, "nearby_alerts": True})
+    eqmain.register(fresh_event_bus)
+    assert eqmain._settings["place"] == "own" and eqmain.get_location() == JAKARTA
+    saved = core.api.load_data(eqmain.DATA_KEY)
+    assert saved["place"] == "own" and saved["nearby_alerts"] is True
+    eqmain.teardown()
+    # Its city is the main place anyway: it follows the main place, and its
+    # regency (BMKG's felt reports name it) is still looked for.
+    core.api.save_data(eqmain.DATA_KEY, {"location": RUTENG})
+    eqmain.register(fresh_event_bus)
+    assert eqmain._settings["place"] == "main" and eqmain.get_location()["name"] == "Rumah"
+    assert eqmain._settings["felt_names"] == "Manggarai"
+    assert core.api.load_data(eqmain.DATA_KEY)["felt_names"] == "Manggarai"
+    assert eqmain.api.region_names(eqmain.get_location(), eqmain._settings["felt_names"]) == \
+        ["Ruteng", "Manggarai"]
+    eqmain.teardown()
+    # Settled once: the regency is not added again.
+    eqmain.register(fresh_event_bus)
+    assert eqmain._settings["felt_names"] == "Manggarai"
+    eqmain.teardown()
+    # Nothing of its own: the main place, and nothing written.
+    core.api.save_data(eqmain.DATA_KEY, {"felt_alerts": True})
+    eqmain.register(fresh_event_bus)
+    assert eqmain._settings["place"] is None and eqmain.get_location()["name"] == "Rumah"
+    assert "place" not in core.api.load_data(eqmain.DATA_KEY)
+    eqmain.teardown()
+
+
+def test_places_changing_refreshes_the_page(eqmain, api, lang, latest, monkeypatch):
+    import core.places
+    from core.events import bus
+    home, = core.places.set_places([_place(JAKARTA, "Rumah")])
+    eqmain._settings = api.normalize_settings({"place": "main"})
+    eqmain._cache["history"] = [latest]
+
+    class Page:
+        refreshed = 0
+
+        def refresh_places(self):
+            Page.refreshed += 1
+
+    monkeypatch.setattr(eqmain, "_panel", Page())
+    bus.subscribe("on_places_changed", eqmain._on_places_changed)
+    try:
+        lines = []
+        eqmain._on_briefing_collect(lines)
+        assert lines == []                      # Jakarta is far from the quake
+        # The main place moves: the page lists the places again, and the next
+        # check uses the new place (nothing is fetched for it).
+        core.places.set_places([dict(home, lat=RUTENG["latitude"], lon=RUTENG["longitude"])])
+        assert Page.refreshed == 1 and eqmain.urls == []
+        eqmain._on_briefing_collect(lines)
+        assert "47 kilometres north of Rumah" in lines[0]
+
+        # A page already closed doesn't break it.
+        class Gone:
+            def refresh_places(self):
+                raise RuntimeError("wrapped C/C++ object has been deleted")
+
+        monkeypatch.setattr(eqmain, "_panel", Gone())
+        core.places.set_places([home])
+        monkeypatch.setattr(eqmain, "_panel", None)
+        core.places.set_places([home])
+    finally:
+        bus.unsubscribe("on_places_changed", eqmain._on_places_changed)
 
 
 # ------------------------------------------------------------

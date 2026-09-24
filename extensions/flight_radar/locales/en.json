@@ -16,7 +16,7 @@
         "action_speak_tracked": "Where are my tracked flights? Speak their positions",
         "action_track": "Track a flight",
 
-        "no_location": "No flight radar location is set. Choose your city in Preferences, Flight Radar.",
+        "no_location": "No flight radar location is set. Add a place in Preferences, Places, or choose one in Preferences, Flight Radar.",
         "checking": "Checking the radar...",
         "stale_notice": "Showing the radar from {time}.",
         "err_offline": "Could not reach the flight data service. Check your internet connection.",
@@ -143,9 +143,8 @@
         "btn_listen_atc": "&Listen to ATC",
         "btn_close": "&Close",
 
-        "lbl_current_location": "Flight radar location:",
+        "lbl_current_location": "Its own place:",
         "location_not_set": "Not set",
-        "location_from_weather": "{place} (from the Weather settings)",
         "lbl_search": "City to search for (press Enter to search):",
         "btn_search": "&Search",
         "lbl_results": "City search results:",

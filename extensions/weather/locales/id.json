@@ -13,7 +13,7 @@
         "action_speak": "Ucapkan cuaca saat ini",
         "action_forecast": "Buka prakiraan cuaca",
 
-        "no_location": "Lokasi cuaca belum diatur. Pilih kota Anda di Pengaturan, Cuaca.",
+        "no_location": "Lokasi cuaca belum diatur. Tambahkan tempat di Pengaturan, Tempat, atau pilih kota Anda di Pengaturan, Cuaca.",
         "fetching": "Mengambil data cuaca...",
         "stale_notice": "Menampilkan cuaca terakhir dari {time}.",
         "err_offline": "Tidak dapat menghubungi layanan cuaca. Periksa koneksi internet Anda.",
@@ -38,9 +38,9 @@
         "unit_celsius": "derajat Celsius",
         "unit_fahrenheit": "derajat Fahrenheit",
 
-        "lbl_current_location": "Lokasi cuaca saat ini:",
+        "lbl_current_location": "Tempat sendiri:",
         "location_not_set": "Belum diatur",
-        "lbl_search": "Kota yang dicari (tekan Enter untuk mencari):",
+        "lbl_search": "Kota yang dicari, untuk tempat sendiri (tekan Enter untuk mencari):",
         "btn_search": "&Cari",
         "lbl_results": "Hasil pencarian:",
         "lbl_results_count": "Hasil pencarian, {count} ditemukan. Pilih kota Anda, lalu tekan Oke:",
@@ -48,6 +48,7 @@
         "units_metric": "Celsius, kilometer per jam",
         "units_imperial": "Fahrenheit, mil per jam",
         "attribution": "Data cuaca oleh Open-Meteo.com",
+        "note_privacy": "Open-Meteo menerima lokasi yang dibulatkan sekitar 1 kilometer, tidak pernah titik persisnya.",
         "search_too_short": "Ketik minimal 2 huruf nama kota.",
         "searching": "Mencari {query}...",
         "search_found_one": "1 tempat ditemukan. Pilih di hasil pencarian, lalu tekan Oke.",

@@ -26,7 +26,8 @@ def test_weather_and_briefing_windows(tmp_path):
     )
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK load_extensions", "OK weather_no_city_hint",
-                  "OK weather_panel_browse", "OK weather_panel_apply", "OK weather_actions",
+                  "OK weather_panel_browse", "OK weather_panel_apply",
+                  "OK weather_places_changed", "OK weather_actions",
                   "OK weather_forecast_browse", "OK briefing_action", "OK briefing_evening",
                   "OK briefing_evening_settings", "OK briefing_evening_auto", "OK briefing_auto",
                   "OK teardown", "OK no_errors", "OK shutdown"):

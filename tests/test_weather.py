@@ -8,8 +8,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Tests for the Weather extension: Open-Meteo parsing, text in both languages,
-# units, the cache, and the actions. No test touches the network; the fetch
-# functions are replaced.
+# units, the cache, the actions, and which place it uses (core 2.8 Places). No
+# test touches the network; the fetch functions are replaced.
 
 import datetime
 import importlib.util
@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 
 import pytest
 
@@ -63,6 +64,8 @@ NOW_UTC = datetime.datetime(2026, 9, 23, 1, 0, tzinfo=datetime.timezone.utc)
 
 JAKARTA = {"name": "Jakarta", "admin1": "Jakarta", "country": "Indonesia",
            "latitude": -6.21462, "longitude": 106.84513, "timezone": "Asia/Jakarta"}
+BANDUNG = {"name": "Bandung", "admin1": "West Java", "country": "Indonesia",
+           "latitude": -6.9175, "longitude": 107.6191, "timezone": "Asia/Jakarta"}
 
 
 def _import_helpers():
@@ -225,9 +228,19 @@ def test_parse_places(api):
 def test_request_urls_send_only_what_is_needed(api):
     url = api.build_forecast_url(-6.214621234, 106.84513, "Asia/Jakarta")
     assert url.startswith("https://api.open-meteo.com/v1/forecast?")
-    assert "latitude=-6.2146" in url and "longitude=106.8451" in url
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+    assert query == {
+        # The point rounded to 2 decimals (about 1 km), never more (core 2.8).
+        "latitude": ["-6.21"], "longitude": ["106.85"],
+        "current": ["temperature_2m,relative_humidity_2m,apparent_temperature,"
+                    "weather_code,wind_speed_10m"],
+        "daily": ["weather_code,temperature_2m_max,temperature_2m_min,"
+                  "precipitation_probability_max"],
+        "timezone": ["Asia/Jakarta"], "forecast_days": ["7"],
+    }
     assert "timezone=Asia%2FJakarta" in url and "forecast_days=7" in url
     assert "timezone=auto" in api.build_forecast_url(1, 2)
+    assert "latitude=1.00&longitude=2.00&" in api.build_forecast_url(1, 2)
 
     url = api.build_search_url("  Jakarta ", "id")
     assert url.startswith("https://geocoding-api.open-meteo.com/v1/search?")
@@ -387,6 +400,10 @@ def test_cache_freshness(api, forecast):
     assert api.cache_matches(cache, JAKARTA)
     assert not api.cache_matches(cache, dict(JAKARTA, latitude=38.1))
     assert not api.cache_matches(None, JAKARTA)
+    # Kept for the rounded point (core 2.8), and compared at the rounded point.
+    assert (cache["latitude"], cache["longitude"]) == (-6.21, 106.85)
+    assert api.cache_matches(cache, dict(JAKARTA, latitude=-6.2149))
+    assert not api.cache_matches(cache, dict(JAKARTA, latitude=-6.2249))
 
 
 @pytest.mark.parametrize("raw", [
@@ -395,15 +412,19 @@ def test_cache_freshness(api, forecast):
     {"location": {"name": "X", "latitude": 95, "longitude": 1}},
     {"location": {"name": "", "latitude": 1, "longitude": 1}},
     {"units": "kelvin"},
+    {"place": "../x"}, {"place": 3}, {"place": ["main"]},
 ])
 def test_settings_survive_corrupt_data(api, raw):
     settings = api.normalize_settings(raw)
-    assert settings == {"location": None, "units": "metric"}
+    assert settings == {"place": None, "location": None, "units": "metric"}
 
 
 def test_settings_keep_valid_values(api):
-    settings = api.normalize_settings({"location": JAKARTA, "units": "imperial", "extra": 1})
-    assert settings == {"location": JAKARTA, "units": "imperial"}
+    settings = api.normalize_settings({"place": "own", "location": JAKARTA, "units": "imperial",
+                                       "extra": 1})
+    assert settings == {"place": "own", "location": JAKARTA, "units": "imperial"}
+    for place in ("main", "abc12345"):
+        assert api.normalize_settings({"place": place})["place"] == place
 
 
 @pytest.mark.parametrize("raw", [
@@ -425,8 +446,16 @@ def test_valid_cache_is_kept(api, forecast):
 # Actions (main.py)
 # ------------------------------------------------------------
 
-def _set_location(wmain, location=JAKARTA):
-    wmain._settings = {"location": dict(location) if location else None, "units": "metric"}
+def _set_location(wmain, location=JAKARTA, place=None):
+    wmain._settings = {"place": place, "location": dict(location) if location else None,
+                       "units": "metric"}
+
+
+def _place(location, name=None):
+    """A saved place (core 2.8) at `location`."""
+    return {"name": name or location["name"], "lat": location["latitude"],
+            "lon": location["longitude"], "label": location["name"],
+            "timezone": location.get("timezone"), "source": "city", "city": location["name"]}
 
 
 def test_no_city_speaks_where_to_set_it(wmain, text, lang, monkeypatch):
@@ -438,11 +467,13 @@ def test_no_city_speaks_where_to_set_it(wmain, text, lang, monkeypatch):
     monkeypatch.setattr(wmain.weather_ui, "ForecastDialog", no_dialog)
     wmain.speak_current_weather()
     wmain.show_forecast()
-    hint = "No weather location is set. Choose your city in Preferences, Weather."
+    hint = ("No weather location is set. Add a place in Preferences, Places, or choose your "
+            "city in Preferences, Weather.")
     assert wmain.spoken == [hint, hint]
     lang("id")
     wmain.speak_current_weather()
-    assert wmain.spoken[-1] == "Lokasi cuaca belum diatur. Pilih kota Anda di Pengaturan, Cuaca."
+    assert wmain.spoken[-1] == ("Lokasi cuaca belum diatur. Tambahkan tempat di Pengaturan, "
+                                "Tempat, atau pilih kota Anda di Pengaturan, Cuaca.")
 
 
 def test_fresh_cache_is_spoken_without_fetching(wmain, api, forecast, lang, monkeypatch):
@@ -460,7 +491,7 @@ def test_stale_cache_is_refreshed_then_spoken(wmain, api, forecast, lang, monkey
     _set_location(wmain)
     wmain._cache = api.make_cache(JAKARTA, forecast, now=1.0)
     wmain.speak_current_weather()
-    assert len(calls) == 1 and "latitude=-6.2146" in calls[0]
+    assert len(calls) == 1 and "latitude=-6.21&longitude=106.85&" in calls[0]
     assert wmain.spoken[0] == "Getting the weather..."
     assert wmain.spoken[1].startswith("Jakarta: Light rain, 27 degrees")
     assert api.is_fresh(wmain._cache, 60)
@@ -544,10 +575,22 @@ def test_changing_the_city_fetches_it(wmain, api, forecast, monkeypatch):
     wmain._cache = api.make_cache(JAKARTA, forecast)
     other = dict(JAKARTA, name="Bandung", latitude=-6.9175, longitude=107.6191)
     wmain._save_settings({"location": other, "units": "imperial"})
-    assert len(calls) == 1 and "latitude=-6.9175" in calls[0]
+    assert len(calls) == 1 and "latitude=-6.92&longitude=107.62" in calls[0]
     assert wmain.current_cache() is not None
     saved = core.api.load_data(wmain.DATA_KEY)
     assert saved["location"]["name"] == "Bandung" and saved["units"] == "imperial"
+    # The main place instead: its own city is kept for later, the main place is fetched.
+    import core.places
+    core.places.set_places([_place(JAKARTA, "Home")])
+    wmain._save_settings({"place": "main"})
+    saved = core.api.load_data(wmain.DATA_KEY)
+    assert saved["place"] == "main" and saved["location"]["name"] == "Bandung"
+    assert saved["units"] == "imperial"
+    assert wmain.get_location()["name"] == "Home" and len(calls) == 2
+    assert "latitude=-6.21&longitude=106.85" in calls[1]
+    # Saving again with the place in use already fetched: nothing new.
+    wmain._save_settings({"units": "metric"})
+    assert len(calls) == 2 and wmain.current_cache() is not None
 
 
 def test_briefing_contribution_uses_the_cache_only(wmain, api, forecast, lang, monkeypatch):
@@ -685,3 +728,197 @@ def test_back_online_refreshes_a_stale_forecast(wmain, api, forecast, monkeypatc
     assert calls == []                               # offline: nothing to do
     wmain._on_network_changed(True)
     assert len(calls) == 1
+
+
+# ------------------------------------------------------------
+# Places (Weather 1.2, core 2.8)
+# ------------------------------------------------------------
+
+def test_manifest_needs_core_2_8_for_places():
+    with open(os.path.join(WEATHER_DIR, "manifest.json"), encoding="utf-8") as f:
+        manifest = json.load(f)
+    assert manifest["version"] == "1.2" and manifest["minimum_core_version"] == "2.8"
+
+
+def test_the_main_place_is_the_default(wmain, tmp_data_dir):
+    import core.places
+    _set_location(wmain, None)
+    assert wmain.get_location() is None
+    core.places.set_places([_place(BANDUNG, "Home")])
+    location = wmain.get_location()
+    assert location["name"] == "Home" and location["latitude"] == BANDUNG["latitude"]
+    assert location["admin1"] == "" and location["country"] == ""   # just "Home" in labels
+    assert location["timezone"] == "Asia/Jakarta"
+    # A city of its own from before 2.8, not decided yet: it stays in use...
+    _set_location(wmain, JAKARTA)
+    assert wmain.get_location() == JAKARTA
+    # ...unless it is the main place anyway.
+    _set_location(wmain, BANDUNG)
+    assert wmain.get_location()["name"] == "Home"
+
+
+def test_the_place_choice(wmain, tmp_data_dir):
+    import core.places
+    home, office = core.places.set_places([_place(BANDUNG, "Home"), _place(JAKARTA, "Office")])
+    city = dict(JAKARTA, name="Kota")
+    _set_location(wmain, city, place="main")
+    assert wmain.get_location()["name"] == "Home"
+    _set_location(wmain, city, place=office["id"])
+    assert wmain.get_location()["name"] == "Office"
+    _set_location(wmain, city, place="own")
+    assert wmain.get_location()["name"] == "Kota"
+    # Its own place chosen but no city found yet: no place.
+    _set_location(wmain, None, place="own")
+    assert wmain.get_location() is None
+    # A place that was removed: the main place.
+    core.places.set_places([home])
+    _set_location(wmain, None, place=office["id"])
+    assert wmain.get_location()["name"] == "Home"
+
+
+def test_the_exact_point_never_leaves_the_computer(wmain, api, lang, monkeypatch):
+    import core.api
+    import core.places
+    calls = _fetch_calls(monkeypatch, api, response=FORECAST_JSON)
+    core.places.set_places([{"name": "Home", "lat": -6.108812, "lon": 106.885613,
+                             "source": "coordinates"}])
+    _set_location(wmain, None, place="main")
+    wmain.speak_current_weather()
+    assert len(calls) == 1
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(calls[0]).query)
+    assert (query["latitude"], query["longitude"]) == (["-6.11"], ["106.89"])
+    assert query["timezone"] == ["auto"]            # a pasted point has no time zone
+    assert "6.1088" not in calls[0] and "106.8856" not in calls[0]
+    # The cache keeps the rounded point too, and answers for the exact one.
+    stored = core.api.load_data(wmain.CACHE_KEY)
+    assert (stored["latitude"], stored["longitude"]) == (-6.11, 106.89)
+    assert wmain.current_cache() is not None
+    assert wmain.spoken[-1].startswith("Home: Light rain, 27 degrees")
+
+
+def test_the_briefing_and_weather_placeholder_follow_the_place_in_use(wmain, api, forecast, lang,
+                                                                      monkeypatch):
+    import core.places
+    calls = _fetch_calls(monkeypatch, api, error="offline")
+    core.places.set_places([_place(BANDUNG, "Home")])
+    _set_location(wmain, JAKARTA, place="main")
+    wmain._cache = api.make_cache(BANDUNG, forecast)
+    lines = []
+    wmain._on_briefing_collect(lines)
+    assert len(lines) == 1 and lines[0].startswith("Weather in Home: Light rain, 27 degrees")
+    assert wmain.placeholder_text() == "light rain, 27 degrees"
+    # The cache is for another point (its own city): nothing, and nothing fetched.
+    wmain._cache = api.make_cache(JAKARTA, forecast)
+    lines = []
+    wmain._on_briefing_collect(lines)
+    wmain._on_evening_collect(lines)
+    assert lines == [] and wmain.placeholder_text() == "" and calls == []
+
+
+def test_a_city_of_its_own_from_before_is_kept(wmain, fresh_event_bus, monkeypatch, tmp_data_dir):
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    # Home is somewhere else (Flight Radar's home, say): the city stays its own place.
+    core.places.set_places([_place(BANDUNG, "Home")])
+    core.api.save_data(wmain.DATA_KEY, {"location": JAKARTA, "units": "imperial"})
+    wmain.register(fresh_event_bus)
+    assert wmain._settings["place"] == "own" and wmain.get_location() == JAKARTA
+    saved = core.api.load_data(wmain.DATA_KEY)
+    assert saved["place"] == "own" and saved["units"] == "imperial"
+    wmain.teardown()
+    # Decided once: a later start keeps it.
+    wmain.register(fresh_event_bus)
+    assert wmain._settings["place"] == "own"
+    wmain.teardown()
+    # Its city is the main place anyway: it follows the main place.
+    core.api.save_data(wmain.DATA_KEY, {"location": BANDUNG, "units": "metric"})
+    wmain.register(fresh_event_bus)
+    assert wmain._settings["place"] == "main" and wmain.get_location()["name"] == "Home"
+    assert core.api.load_data(wmain.DATA_KEY)["place"] == "main"
+    wmain.teardown()
+    # Nothing of its own: the main place, and nothing written.
+    core.api.save_data(wmain.DATA_KEY, {"units": "metric"})
+    wmain.register(fresh_event_bus)
+    assert wmain._settings["place"] is None and wmain.get_location()["name"] == "Home"
+    assert "place" not in core.api.load_data(wmain.DATA_KEY)
+    wmain.teardown()
+
+
+def test_the_weather_city_becomes_home_and_the_main_place(wmain, fresh_event_bus, lang,
+                                                           monkeypatch, tmp_data_dir):
+    # The first start with core 2.8: the core makes "Home" from the Weather city
+    # (no Flight Radar home here) before the extensions load.
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    core.api.save_data(wmain.DATA_KEY, {"location": JAKARTA, "units": "metric"})
+    home = core.places.migrate()
+    assert home["name"] == "Home"
+    wmain.register(fresh_event_bus)
+    assert wmain._settings["place"] == "main"
+    location = wmain.get_location()
+    assert location["name"] == "Home" and location["place_id"] == home["id"]
+    assert (location["latitude"], location["longitude"]) == (JAKARTA["latitude"],
+                                                             JAKARTA["longitude"])
+    assert location["timezone"] == "Asia/Jakarta"
+    assert core.api.load_data(wmain.DATA_KEY)["location"] == JAKARTA   # kept as its own
+    wmain.teardown()
+
+
+def test_places_changing_refreshes_the_page_and_the_data(wmain, api, forecast, monkeypatch):
+    import core.places
+    from core.events import bus
+    calls = _fetch_calls(monkeypatch, api, response=FORECAST_JSON)
+    home, = core.places.set_places([_place(JAKARTA, "Home")])
+    _set_location(wmain, None, place="main")
+    wmain._cache = api.make_cache(JAKARTA, forecast)
+
+    class Page:
+        refreshed = 0
+
+        def refresh_places(self):
+            Page.refreshed += 1
+
+    class ClosedPage:
+        def refresh_places(self):
+            raise RuntimeError("wrapped C/C++ object has been deleted")
+
+    monkeypatch.setattr(wmain, "_panel", Page())
+    bus.subscribe("on_places_changed", wmain._on_places_changed)
+    try:
+        # The main place moves: the page lists the places again, the new one is fetched.
+        core.places.set_places([dict(home, lat=BANDUNG["latitude"], lon=BANDUNG["longitude"])])
+        assert Page.refreshed == 1 and len(calls) == 1
+        assert "latitude=-6.92&longitude=107.62" in calls[0]
+        assert wmain.current_cache() is not None
+        # A change that doesn't move the place in use fetches nothing.
+        core.places.set_places(core.places.get_places() + [_place(JAKARTA, "Office")])
+        assert Page.refreshed == 2 and len(calls) == 1
+        # Its own city: the places don't matter.
+        _set_location(wmain, JAKARTA, place="own")
+        wmain._cache = api.make_cache(JAKARTA, forecast)
+        core.places.set_places([])
+        assert Page.refreshed == 3 and len(calls) == 1
+        # A page that was closed already is skipped.
+        monkeypatch.setattr(wmain, "_panel", ClosedPage())
+        core.places.set_places([_place(BANDUNG, "Home")])
+        assert len(calls) == 1
+    finally:
+        bus.unsubscribe("on_places_changed", wmain._on_places_changed)
+
+
+def test_the_page_has_the_place_choice():
+    with open(os.path.join(WEATHER_DIR, "weather_ui.py"), encoding="utf-8") as f:
+        source = f.read()
+    assert "PlaceChoice(" in source and "refresh_places" in source
+    for code, word in (("en", "Places"), ("id", "Tempat")):
+        with open(os.path.join(WEATHER_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
+            messages = json.load(f)["messages"]
+        assert word in messages["no_location"] and messages["note_privacy"]

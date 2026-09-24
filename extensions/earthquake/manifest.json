@@ -1,10 +1,10 @@
 {
     "id": "earthquake",
     "name": "Earthquakes & Tsunami",
-    "version": "1.1",
+    "version": "1.2",
     "description": "Hear BMKG's latest earthquake, browse recent earthquakes in Indonesia (and optionally strong ones worldwide from USGS), and get spoken alerts for earthquakes BMKG says have tsunami potential, and optionally for earthquakes near you or felt in your region. Hariku is not an official warning system: always follow BMKG and your local authorities. Earthquake data by BMKG (Badan Meteorologi, Klimatologi, dan Geofisika) and USGS (no account or API key needed).",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.7"
+    "minimum_core_version": "2.8"
 }

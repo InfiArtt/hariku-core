@@ -9,8 +9,8 @@
 
 # Tests for the Air Quality extension: Air Quality API parsing, the AQI and UV
 # categories and tips in both languages, the forecast rows, the unhealthy-air
-# alert, the cache, the briefing, and the actions. No test touches the
-# network; the fetch functions are replaced.
+# alert, the cache, the briefing, the actions, and which place it uses (core
+# 2.8 Places). No test touches the network; the fetch functions are replaced.
 
 import datetime
 import importlib.util
@@ -247,7 +247,7 @@ def test_request_urls_send_only_the_place_and_what_is_needed(api):
     assert url.startswith("https://air-quality-api.open-meteo.com/v1/air-quality?")
     query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
     assert query == {
-        "latitude": ["-6.2146"], "longitude": ["106.8451"],
+        "latitude": ["-6.21"], "longitude": ["106.85"],
         "current": ["us_aqi,pm2_5,pm10,uv_index,us_aqi_pm2_5,us_aqi_pm10,us_aqi_ozone,"
                     "us_aqi_nitrogen_dioxide,us_aqi_carbon_monoxide,us_aqi_sulphur_dioxide"],
         "hourly": ["us_aqi,pm2_5,uv_index"],
@@ -448,13 +448,18 @@ def test_alert_rule(api, forecast):
     {"alert": 1, "alert_date": "yesterday"},
 ])
 def test_settings_survive_corrupt_data(api, raw):
-    assert api.normalize_settings(raw) == {"location": None, "alert": False, "alert_date": ""}
+    assert api.normalize_settings(raw) == {"place": None, "location": None, "alert": False,
+                                           "alert_date": ""}
 
 
 def test_settings_keep_valid_values(api):
-    raw = {"location": JAKARTA, "alert": True, "alert_date": "2026-09-23", "extra": 1}
-    assert api.normalize_settings(raw) == {"location": JAKARTA, "alert": True,
+    raw = {"place": "own", "location": JAKARTA, "alert": True, "alert_date": "2026-09-23",
+           "extra": 1}
+    assert api.normalize_settings(raw) == {"place": "own", "location": JAKARTA, "alert": True,
                                            "alert_date": "2026-09-23"}
+    for place in ("main", "abc12345"):
+        assert api.normalize_settings({"place": place})["place"] == place
+    assert api.normalize_settings({"place": "../x"})["place"] is None
 
 
 def test_cache_freshness(api, forecast):
@@ -499,20 +504,33 @@ def test_no_location_speaks_where_to_set_it(amain, lang, monkeypatch):
     monkeypatch.setattr(amain.air_quality_ui, "AirForecastDialog", no_dialog)
     amain.speak_air_quality()
     amain.show_forecast()
-    hint = "No air quality location is set. Choose your city in Preferences, Air Quality."
+    hint = ("No air quality location is set. Add a place in Preferences, Places, or choose "
+            "your city in Preferences, Air Quality.")
     assert amain.spoken == [hint, hint]
     lang("id")
     amain.speak_air_quality()
     assert amain.spoken[-1].startswith("Lokasi kualitas udara belum diatur.")
 
 
-def test_the_weather_city_is_the_default(amain, tmp_data_dir):
+def _place(location, name=None):
+    """A saved place (core 2.8) at `location`."""
+    return {"name": name or location["name"], "lat": location["latitude"],
+            "lon": location["longitude"], "label": location["name"], "timezone": None,
+            "source": "city", "city": location["name"]}
+
+
+def test_the_main_place_is_the_default(amain, tmp_data_dir):
     import core.api
+    import core.places
     _set(amain, None)
     assert amain.get_location() is None
+    # The Weather city is no longer used by itself.
     core.api.save_data("Weather", {"location": BANDUNG, "units": "metric"})
-    assert amain.get_location() == BANDUNG
-    _set(amain, JAKARTA)
+    assert amain.get_location() is None
+    core.places.set_places([_place(BANDUNG, "Home")])
+    location = amain.get_location()
+    assert location["name"] == "Home" and location["latitude"] == BANDUNG["latitude"]
+    _set(amain, JAKARTA)                  # a city of its own, from before 2.8
     assert amain.get_location() == JAKARTA
 
 
@@ -535,7 +553,7 @@ def test_stale_cache_is_refreshed_then_spoken(amain, api, forecast, lang, monkey
     _set(amain)
     amain._cache = api.make_cache(JAKARTA, forecast, now=1.0)
     amain.speak_air_quality()
-    assert len(calls) == 1 and "latitude=-6.2146" in calls[0]
+    assert len(calls) == 1 and "latitude=-6.21&" in calls[0]
     assert amain.spoken[0] == "Getting the air quality..."
     assert amain.spoken[1].startswith("Jakarta: Air quality index 231, very unhealthy")
     assert api.normalize_cache(core.api.load_data(amain.CACHE_KEY)) is not None
@@ -619,8 +637,14 @@ def test_changing_the_city_fetches_it(amain, api, forecast, monkeypatch):
     _set(amain)
     amain._cache = api.make_cache(JAKARTA, forecast)
     amain._save_settings({"location": BANDUNG, "alert": False})
-    assert len(calls) == 1 and "latitude=-6.9175" in calls[0]
+    assert len(calls) == 1 and "latitude=-6.92&longitude=107.62" in calls[0]
     assert core.api.load_data(amain.DATA_KEY)["location"]["name"] == "Bandung"
+    # The main place instead: its own city is kept for later.
+    import core.places
+    core.places.set_places([_place(JAKARTA)])
+    amain._save_settings({"place": "main"})
+    assert core.api.load_data(amain.DATA_KEY)["location"]["name"] == "Bandung"
+    assert amain.get_location()["name"] == "Jakarta" and len(calls) == 2
 
 
 def test_unhealthy_air_is_announced_once_a_day(amain, api, forecast, lang, monkeypatch):
@@ -738,7 +762,136 @@ def test_quiet_hours_hold_the_unhealthy_air_alert(amain, api, forecast, lang, mo
     assert amain.spoken[0].startswith("Air quality alert for Jakarta: index 231")
 
 
-def test_manifest_needs_core_2_7_for_quiet_hours():
+def test_manifest_needs_core_2_8_for_places():
     with open(os.path.join(AIR_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"
+    assert manifest["version"] == "1.2" and manifest["minimum_core_version"] == "2.8"
+
+
+# ------------------------------------------------------------
+# Places (Air Quality 1.2, core 2.8)
+# ------------------------------------------------------------
+
+def test_the_place_choice(amain, api, tmp_data_dir):
+    import core.places
+    home, office = core.places.set_places([_place(BANDUNG, "Home"), _place(JAKARTA, "Office")])
+    own = dict(JAKARTA, name="Kemayoran")
+    _set(amain, own, place="main")
+    assert amain.get_location()["name"] == "Home"
+    _set(amain, own, place=office["id"])
+    assert amain.get_location()["name"] == "Office"
+    _set(amain, own, place="own")
+    assert amain.get_location()["name"] == "Kemayoran"
+    # Its own place chosen but no city found yet: no place.
+    _set(amain, None, place="own")
+    assert amain.get_location() is None
+    # A place that was removed: the main place.
+    core.places.set_places([home])
+    _set(amain, None, place=office["id"])
+    assert amain.get_location()["name"] == "Home"
+
+
+def test_the_exact_point_never_leaves_the_computer(amain, api, lang, monkeypatch):
+    import core.api
+    import core.places
+    calls = _fetch_calls(monkeypatch, api, response=AIR_JSON)
+    core.places.set_places([{"name": "Home", "lat": -6.214621, "lon": 106.845134,
+                             "source": "coordinates"}])
+    _set(amain, None, place="main")
+    amain.speak_air_quality()
+    assert len(calls) == 1
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(calls[0]).query)
+    assert (query["latitude"], query["longitude"]) == (["-6.21"], ["106.85"])
+    assert "6.2146" not in calls[0] and "106.8451" not in calls[0]
+    # The cache keeps the rounded point too, and answers for the exact one.
+    stored = core.api.load_data(amain.CACHE_KEY)
+    assert (stored["latitude"], stored["longitude"]) == (-6.21, 106.85)
+    assert amain.current_cache() is not None
+    assert amain.spoken[-1].startswith("Home: Air quality index 231")
+
+
+def test_a_city_of_its_own_from_before_is_kept(amain, fresh_event_bus, monkeypatch, tmp_data_dir):
+    import core.api
+    import core.hotkeys
+    import core.places
+    import core.preferences
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args, **kwargs: None)
+    # Home is somewhere else: the city stays its own place.
+    core.places.set_places([_place(BANDUNG, "Home")])
+    core.api.save_data(amain.DATA_KEY, {"location": JAKARTA, "alert": True})
+    amain.register(fresh_event_bus)
+    assert amain._settings["place"] == "own" and amain.get_location() == JAKARTA
+    assert core.api.load_data(amain.DATA_KEY)["place"] == "own"
+    amain.teardown()
+    # Its city is the main place anyway: it follows the main place.
+    core.api.save_data(amain.DATA_KEY, {"location": BANDUNG})
+    amain.register(fresh_event_bus)
+    assert amain._settings["place"] == "main"
+    amain.teardown()
+    # Nothing of its own: the main place, and nothing written.
+    core.api.save_data(amain.DATA_KEY, {"alert": True})
+    amain.register(fresh_event_bus)
+    assert amain._settings["place"] is None and amain.get_location()["name"] == "Home"
+    assert "place" not in core.api.load_data(amain.DATA_KEY)
+    amain.teardown()
+
+
+def test_places_changing_refreshes_the_page_and_the_data(amain, api, forecast, monkeypatch):
+    import core.places
+    from core.events import bus
+    calls = _fetch_calls(monkeypatch, api, response=AIR_JSON)
+    home, = core.places.set_places([_place(JAKARTA, "Home")])
+    _set(amain, None, place="main")
+    amain._cache = api.make_cache(JAKARTA, forecast)
+
+    class Page:
+        refreshed = 0
+
+        def refresh_places(self):
+            Page.refreshed += 1
+
+    monkeypatch.setattr(amain, "_panel", Page())
+    bus.subscribe("on_places_changed", amain._on_places_changed)
+    try:
+        # The main place moves: the page lists the places again, the new one is fetched.
+        core.places.set_places([dict(home, lat=BANDUNG["latitude"], lon=BANDUNG["longitude"])])
+        assert Page.refreshed == 1 and len(calls) == 1 and "latitude=-6.92" in calls[0]
+        # A change that doesn't move the place in use fetches nothing.
+        amain._cache = api.make_cache(BANDUNG, forecast)
+        core.places.set_places(core.places.get_places() + [_place(JAKARTA, "Office")])
+        assert Page.refreshed == 2 and len(calls) == 1
+        # Its own city: the places don't matter.
+        _set(amain, JAKARTA, place="own")
+        amain._cache = api.make_cache(JAKARTA, forecast)
+        core.places.set_places([])
+        assert Page.refreshed == 3 and len(calls) == 1
+    finally:
+        bus.unsubscribe("on_places_changed", amain._on_places_changed)
+
+
+def test_a_closed_page_is_skipped_when_the_places_change(amain, api, forecast, monkeypatch):
+    calls = _fetch_calls(monkeypatch, api, response=AIR_JSON)
+
+    class ClosedPage:
+        def refresh_places(self):
+            raise RuntimeError("wrapped C/C++ object has been deleted")
+
+    monkeypatch.setattr(amain, "_panel", ClosedPage())
+    _set(amain)
+    amain._cache = api.make_cache(JAKARTA, forecast)
+    amain._on_places_changed()
+    assert calls == []
+
+
+def test_the_weather_button_is_gone():
+    with open(os.path.join(AIR_DIR, "air_quality_ui.py"), encoding="utf-8") as f:
+        source = f.read()
+    assert "use_weather" not in source and "PlaceChoice(" in source
+    with open(os.path.join(AIR_DIR, "main.py"), encoding="utf-8") as f:
+        assert "weather_location" not in f.read()
+    for code, word in (("en", "Places"), ("id", "Tempat")):
+        with open(os.path.join(AIR_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
+            messages = json.load(f)["messages"]
+        assert "btn_use_weather" not in messages and word in messages["no_location"]
+        assert "location_from_weather" not in messages and "1 kilomet" in messages["note_privacy"]

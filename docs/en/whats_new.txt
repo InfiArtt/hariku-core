@@ -1,3 +1,37 @@
+Version 2.8.0 (Core Update)
+================================================================================
+- Places: Preferences has a new Places page, right after Profile. Name the
+  places you use, such as Home, Office or Mum's house, and make one of them
+  your main place. To add a place, search for its street address
+  (OpenStreetMap) or its city (Open-Meteo), or paste coordinates or a map
+  link from Google Maps, Apple Maps or OpenStreetMap, including a
+  maps.app.goo.gl short link. Before you press OK, the dialog tells you the
+  point you chose in words. Enter on a place edits it, Delete removes it
+  (after asking you).
+- Weather, Sea Conditions, Air Quality, Earthquakes & Tsunami, Space, Cockpit
+  and Flight Radar now use your main place. Each of their pages has a new
+  Place list: choose another of your places, or "Its own place..." to search
+  for a place just for that extension, such as a beach for Sea Conditions.
+  The "Use the Weather location" buttons are gone. Cockpit still uses your
+  favourite airports; without them it finds the airport nearest to the
+  place you choose.
+- The first time you start 2.8, Hariku makes "Home" from what you already
+  have: Flight Radar's exact home if you set one, otherwise your Weather
+  city. An extension that had a place of its own keeps it as its own place,
+  so nothing changes until you choose something else.
+- Privacy: your places stay on your computer. Weather, Sea Conditions and Air
+  Quality now send Open-Meteo your place rounded to about 1 kilometre (before,
+  they sent the centre of your city more precisely). Earthquakes & Tsunami and
+  Space work everything out on your computer, and Flight Radar and Cockpit
+  still only send a rounded point or a wide box.
+- Extension updates in the Store, for Hariku 2.8: Weather 1.2, Sea Conditions
+  1.2, Air Quality 1.2, Earthquakes & Tsunami 1.2, Space 1.1, Cockpit 1.1 and
+  Flight Radar 1.7.
+- For extension developers: core.places gives your extension the user's
+  places, the main place, rounding, distances and time zones, and
+  core.place_search finds addresses and cities (see DEVELOPERS.md).
+
+
 Version 2.7.0 (Core Update - September 24, 2026)
 ================================================================================
 - Meet Aruna, Hariku's command bar: press Ctrl+Alt+Backspace anywhere, even with Hariku in the

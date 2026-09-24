@@ -1,10 +1,10 @@
 {
     "id": "weather",
     "name": "Weather",
-    "version": "1.1",
-    "description": "Hear the current weather and a 7-day forecast for your city. Choose the city in Preferences, Weather. Weather data by Open-Meteo.com (no account or API key needed).",
+    "version": "1.2",
+    "description": "Hear the current weather and a 7-day forecast. It uses your main place from Preferences, Places, or another place or a city you choose in Preferences, Weather. Weather data by Open-Meteo.com (no account or API key needed).",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.4"
+    "minimum_core_version": "2.8"
 }

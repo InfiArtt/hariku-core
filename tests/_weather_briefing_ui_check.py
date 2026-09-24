@@ -9,7 +9,9 @@
 """
 Load the Weather and Morning Briefing extensions through the real loader with
 real wxPython, open every window they add, run their hotkey actions, and browse
-their lists the way arrow keys do, checking focus stays put.
+their lists the way arrow keys do, checking focus stays put. Also the place
+Weather uses (core 2.8 Places): the main place, or a city of its own, and the
+page following the places while it is open.
 
 Open-Meteo is stubbed (nothing leaves the machine) and speech is captured
 through on_before_speak instead of reaching the screen reader.
@@ -219,7 +221,7 @@ assert run_and_close("Weather.show_forecast") == []
 assert spoken == [NO_LOCATION, NO_LOCATION], spoken
 print("OK weather_no_city_hint")
 
-# --- Preferences page: search, browse, save -----------------------------------
+# --- Preferences page: the place choice, search, browse, save -------------------
 from ui.preferences_dialog import PreferencesDialog
 
 prefs = PreferencesDialog(frame, select_tab="Weather")
@@ -227,7 +229,24 @@ prefs.Show()
 wx.Yield()
 panel = weather._panel
 assert panel is not None and panel.IsShown(), "Weather settings page was not created"
+choice = panel.place_choice.ctrl
+assert choice.GetName() == "Place", choice.GetName()
+# No places yet (core 2.8): the main place says where to add one.
+assert choice.GetStrings() == ["The main place (none yet: add one in Preferences, Places)",
+                               "Its own place\u2026"], choice.GetStrings()
+assert panel.place_choice.key() == "main" and choice.GetSelection() == 0
 assert panel.txt_location.GetValue() == _("location_not_set")
+# The city search is for its own place only: skipped while another place is chosen.
+assert not panel.txt_location.IsEnabled() and not panel.txt_search.IsEnabled()
+assert not panel.btn_search.IsEnabled() and not panel.list_results.IsEnabled()
+labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
+assert "Weather data by Open-Meteo.com" in labels, labels
+assert any("rounded to about 1 kilometre" in label for label in labels), labels
+# Arrowing through the places: focus stays; the last one, "Its own place", opens the search.
+checked = browse(choice, wx.EVT_CHOICE)
+assert panel.place_choice.key() == "own", panel.place_choice.key()
+assert panel.txt_search.IsEnabled() and panel.btn_search.IsEnabled()
+assert panel.list_results.IsEnabled()
 
 panel.txt_search.SetValue("J")
 fire(panel.txt_search, wx.EVT_TEXT_ENTER)
@@ -242,21 +261,101 @@ assert pump(lambda: panel.list_results.GetCount() == 2), "search results never a
 assert panel.list_results.GetString(0) == "Jakarta, Indonesia"
 if search_focused:
     assert wx.Window.FindFocus() is panel.list_results, "focus did not move to the results"
-checked = browse(panel.list_results, wx.EVT_LISTBOX)
+checked = browse(panel.list_results, wx.EVT_LISTBOX) and checked
 checked = browse(panel.choice_units, wx.EVT_CHOICE) and checked
+
+# Back to the main place and to its own place again: the search follows.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+assert not panel.list_results.IsEnabled()
+choice.SetSelection(1)
+fire(choice, wx.EVT_CHOICE, 1)
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
+assert panel.list_results.IsEnabled()
 print(f"OK weather_panel_browse ({focus_note(checked)})")
+
+
+def forecast_requests():
+    return [u for u in stub_requests if u.startswith(weather_api.FORECAST_URL)]
+
 
 panel.list_results.SetSelection(0)
 panel.choice_units.SetSelection(0)
 prefs.OnApply(None)
 saved = core.api.load_data("Weather")
+assert saved["place"] == "own", saved
 assert saved["location"]["name"] == "Jakarta" and saved["location"]["country"] == "Indonesia", saved
 assert saved["units"] == "metric"
 assert pump(lambda: weather.current_cache() is not None), "forecast was not fetched after saving"
+# Only ever the rounded point (core 2.8): Jakarta is -6.21, 106.85.
+assert "latitude=-6.21&longitude=106.85&" in forecast_requests()[-1], forecast_requests()
 assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
 prefs.Destroy()
 wx.Yield()
 print("OK weather_panel_apply")
+
+# --- The places change while the page is open: the list follows, the choice stays -
+import core.places
+
+prefs = PreferencesDialog(frame, select_tab="Weather")
+prefs.Show()
+wx.Yield()
+panel = weather._panel
+choice = panel.place_choice.ctrl
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
+assert panel.txt_location.GetValue() == "Jakarta, Indonesia"
+choice.SetFocus()
+wx.Yield()
+choice_focused = wx.Window.FindFocus() is choice
+before = len(stub_requests)
+core.places.set_places([{                          # what the Places page does on OK
+    "name": "Home", "lat": -6.9175, "lon": 107.6191,
+    "label": "Bandung, West Java, Indonesia", "timezone": "Asia/Jakarta", "source": "city",
+    "city": "Bandung", "region": "West Java", "country": "Indonesia"}])
+assert choice.GetStrings() == ["The main place (Home)", "Home", "Its own place\u2026"], \
+    choice.GetStrings()
+assert panel.place_choice.key() == "own" and choice.GetSelection() == 2
+assert panel.txt_search.IsEnabled()
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when the places changed"
+pump(lambda: False, timeout=0.3)
+assert len(stub_requests) == before, "its own city is in use: nothing to fetch"
+# Choosing the main place skips its own search again, and is what OK saves.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when choosing a place"
+prefs.OnApply(None)
+saved = core.api.load_data("Weather")
+assert saved["place"] == "main", saved
+assert saved["location"]["name"] == "Jakarta", "its own city is kept for later"
+assert weather.get_location()["name"] == "Home"
+assert pump(lambda: weather.current_cache() is not None and not weather._loading), \
+    "the main place was not fetched"
+assert "latitude=-6.92&longitude=107.62&" in forecast_requests()[-1], forecast_requests()
+# The place's name is what Weather says and shows.
+spoken.clear()
+assert run_and_close("Weather.speak_current_weather") == []
+assert spoken and spoken[-1].startswith("Home: Light rain, 27 degrees"), spoken
+dlg = weather_ui.ForecastDialog(frame, weather.get_location(), weather.get_units(),
+                                weather.current_cache, weather.refresh)
+assert dlg.list_days.GetName() == "Daily forecast for Home, temperatures in degrees Celsius:", \
+    dlg.list_days.GetName()
+dlg.Destroy()
+wx.Yield()
+# Back to its own city for the checks below.
+panel.place_choice.set_key("own")
+panel._update_own()
+prefs.OnApply(None)
+assert core.api.load_data("Weather")["place"] == "own"
+assert pump(lambda: weather.current_cache() is not None and not weather._loading), \
+    "its own city was not fetched again"
+assert weather.get_location()["name"] == "Jakarta"
+prefs.Destroy()
+wx.Yield()
+print(f"OK weather_places_changed ({focus_note(choice_focused)})")
 
 # --- Weather actions with a city ------------------------------------------------
 spoken.clear()
@@ -360,12 +459,19 @@ print("OK briefing_auto")
 em.unload_all_extensions()
 assert weather._on_minute_tick not in bus._listeners.get("on_minute_tick", [])
 assert weather._on_briefing_collect not in bus._listeners.get("on_briefing_collect", [])
+assert weather._on_places_changed not in bus._listeners.get("on_places_changed", [])
 assert briefing._on_app_startup not in bus._listeners.get("on_app_startup", [])
 print("OK teardown")
 
 assert not network_attempts, f"real network access attempted: {network_attempts}"
 assert all(u.startswith(("https://api.open-meteo.com/", "https://geocoding-api.open-meteo.com/"))
            for u in stub_requests), stub_requests
+# Open-Meteo only ever got a point rounded to 2 decimals, about 1 km (core 2.8).
+import urllib.parse
+for url in forecast_requests():
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+    for name in ("latitude", "longitude"):
+        assert len(query[name][0].split(".")[1]) == 2, url
 assert not problems, "\n".join(problems)
 print("OK no_errors")
 

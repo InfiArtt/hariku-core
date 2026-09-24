@@ -14,7 +14,7 @@
         "action_airports": "Cuaca bandara: buka daftar bandaramu beserta METAR dan TAF-nya",
         "placeholder_desc": "cuaca di bandara utamamu, dari laporan terakhir",
 
-        "no_airport": "Belum ada bandara. Tambahkan di Pengaturan, Kokpit, atau pilih kotamu di Pengaturan, Cuaca, supaya Hariku bisa mencari yang terdekat.",
+        "no_airport": "Belum ada bandara. Tambahkan di Pengaturan, Kokpit, atau tambahkan tempat di Pengaturan, Tempat, supaya Hariku bisa mencari yang terdekat.",
         "finding_nearest": "Mencari bandara terdekat dari {city}...",
         "nearest_chosen": "Belum ada bandara favorit, jadi Hariku memakai {name}, {code}, bandara terdekat dari {city} yang punya laporan cuaca.",
         "nearest_none": "Tidak ada bandara dengan laporan cuaca dalam jarak sekitar 300 kilometer dari {city}. Tambahkan bandara di Pengaturan, Kokpit.",
@@ -234,12 +234,13 @@
         "note_captain": "Saat Mode Kapten dinyalakan, Hariku menawarkan untuk memanggilmu Kapten dan memasang sapaan kokpit saat Hariku dimulai.",
         "lbl_favourites": "Bandara favorit (yang pertama jadi bandara utama):",
         "lbl_add_code": "Kode ICAO bandara yang mau ditambahkan (tekan Enter untuk menambah):",
+        "lbl_place": "Tempat, untuk bandara terdekat kalau belum ada bandara favorit:",
         "btn_add_code": "Ta&mbah",
         "chk_raw": "Bacakan juga laporan &aslinya",
         "chk_briefing": "Tambahkan cuaca bandara ke &Briefing Pagi (tanpa Mode Kapten)",
         "attribution": "Cuaca penerbangan: NOAA Aviation Weather Center (aviationweather.gov)",
         "disclaimer": "Hanya untuk informasi, bukan untuk perencanaan penerbangan.",
-        "note_privacy": "Hariku hanya mengirim kode bandara ke aviationweather.gov, atau sebuah kotak di sekitar kota Cuaca-mu untuk mencari bandara terdekat, tidak pernah lokasimu sendiri.",
+        "note_privacy": "Hariku hanya mengirim kode bandara ke aviationweather.gov, atau sebuah kotak sekitar 110 atau 330 kilometer di sekitar tempatmu (dibulatkan ke 0,1 derajat) untuk mencari bandara terdekat, tidak pernah lokasimu sendiri.",
 
         "captain_title": "Mode Kapten",
         "captain_word": "Kapten",

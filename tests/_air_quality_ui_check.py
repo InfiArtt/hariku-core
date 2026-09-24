@@ -266,8 +266,14 @@ assert run_and_close("Air Quality.show_forecast") == []
 assert spoken == [NO_LOCATION, NO_LOCATION], spoken
 print("OK no_location_hint")
 
-# --- The Weather city is the default ----------------------------------------------------
+# --- The main place (Preferences, Places) is the default ---------------------------------
+import core.places
 core.api.save_data("Weather", {"location": JAKARTA, "units": "metric"})
+assert main.get_location() is None, "the Weather city is no longer used by itself"
+jakarta_place, = core.places.set_places([{
+    "name": "Jakarta", "lat": JAKARTA["latitude"], "lon": JAKARTA["longitude"],
+    "label": "Jakarta, Indonesia", "timezone": "Asia/Jakarta", "source": "city",
+    "city": "Jakarta", "region": "Jakarta", "country": "Indonesia"}])
 assert main.get_location()["name"] == "Jakarta"
 spoken.clear()
 assert run_and_close("Air Quality.speak_air") == []
@@ -276,9 +282,13 @@ assert pump(lambda: len(spoken) >= 2), spoken
 assert spoken[-1] == ("Jakarta: Air quality index 231, very unhealthy, mostly ozone. "
                       "PM2.5 102, PM10 104 micrograms per cubic metre. UV index 0, low. " + TIP), spoken
 assert sounds == [], "no alert while the alert is off"
-print("OK weather_default")
+# Only ever the rounded point (core 2.8): Jakarta is -6.21, 106.85.
+air_urls = [u for u in stub_requests if u.startswith(air_quality_api.AIR_URL)]
+assert len(air_urls) == 1, air_urls
+assert "latitude=-6.21&longitude=106.85&" in air_urls[0], air_urls[0]
+print("OK main_place")
 
-# --- Preferences page: search, browse, the Weather button, save ------------------------
+# --- Preferences page: the place choice, search, browse, save ---------------------------
 from ui.preferences_dialog import PreferencesDialog
 
 prefs = PreferencesDialog(frame, select_tab="Air Quality")
@@ -286,14 +296,27 @@ prefs.Show()
 wx.Yield()
 panel = main._panel
 assert panel is not None and panel.IsShown(), "Air Quality settings page was not created"
-assert panel.txt_location.GetValue() == "Jakarta, Indonesia (from the Weather settings)", \
-    panel.txt_location.GetValue()
+choice = panel.place_choice.ctrl
+assert choice.GetName() == "Place", choice.GetName()
+assert choice.GetStrings() == ["The main place (Jakarta)", "Jakarta", "Its own place…"], \
+    choice.GetStrings()
+assert panel.place_choice.key() == "main" and choice.GetSelection() == 0
+assert panel.txt_location.GetValue() == _("location_not_set"), panel.txt_location.GetValue()
+# The city search is for its own place only: skipped while another place is chosen.
+assert not panel.txt_search.IsEnabled() and not panel.btn_search.IsEnabled()
+assert not panel.list_results.IsEnabled()
 labels = [w.GetLabel() for w in panel.GetChildren() if isinstance(w, wx.StaticText)]
 assert "Air quality data: Open-Meteo.com (CAMS)" in labels, labels
 assert any("about 40 kilometres across" in label for label in labels), labels
 assert any("US AQI" in label and "ISPU" in label for label in labels), labels
 assert any("not medical advice" in label for label in labels), labels
+assert any("rounded to about 1 kilometre" in label for label in labels), labels
 assert not panel.chk_alert.GetValue()
+# Arrowing through the places: focus stays; the last one, "Its own place", opens the search.
+checked = browse(choice, wx.EVT_CHOICE)
+assert panel.place_choice.key() == "own", panel.place_choice.key()
+assert panel.txt_search.IsEnabled() and panel.btn_search.IsEnabled()
+assert panel.list_results.IsEnabled()
 
 panel.txt_search.SetValue("B")
 fire(panel.txt_search, wx.EVT_TEXT_ENTER)
@@ -308,17 +331,16 @@ assert pump(lambda: panel.list_results.GetCount() == 2), "search results never a
 assert panel.list_results.GetString(0) == "Bandung, West Java, Indonesia"
 if search_focused:
     assert wx.Window.FindFocus() is panel.list_results, "focus did not move to the results"
-checked = browse(panel.list_results, wx.EVT_LISTBOX)
+checked = browse(panel.list_results, wx.EVT_LISTBOX) and checked
 checked = toggle(panel.chk_alert) and checked
 
-panel.btn_use_weather.SetFocus()
-wx.Yield()
-button_focused = wx.Window.FindFocus() is panel.btn_use_weather
-fire(panel.btn_use_weather, wx.EVT_BUTTON)
-assert spoken[-1] == _("use_weather_done", place="Jakarta, Indonesia"), spoken[-1]
-assert panel.chosen_location() is None
-if button_focused:
-    assert wx.Window.FindFocus() is panel.btn_use_weather, "focus moved after the button"
+# Back to the main place and to its own place again: the search follows.
+choice.SetSelection(0)
+fire(choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main" and not panel.txt_search.IsEnabled()
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
 panel.list_results.SetSelection(0)
 fire(panel.list_results, wx.EVT_LISTBOX, 0)
 assert panel.chosen_location()["name"] == "Bandung"
@@ -329,6 +351,7 @@ spoken.clear()
 sounds.clear()
 prefs.OnApply(None)
 saved = core.api.load_data("AirQuality")
+assert saved["place"] == "own", saved
 assert saved["location"]["name"] == "Bandung" and saved["location"]["admin1"] == "West Java", saved
 assert saved["alert"] is True, saved
 assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia"
@@ -345,6 +368,47 @@ bus.emit("on_app_startup")
 pump(lambda: False, timeout=0.3)
 assert sum(s.startswith("Air quality alert") for s in spoken) == 1, spoken   # once a day
 print("OK panel_apply_alert")
+
+# --- The places change while the page is open: the list follows, the choice stays -------
+prefs = PreferencesDialog(frame, select_tab="Air Quality")
+prefs.Show()
+wx.Yield()
+panel = main._panel
+choice = panel.place_choice.ctrl
+assert panel.place_choice.key() == "own" and panel.txt_search.IsEnabled()
+assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia"
+choice.SetFocus()
+wx.Yield()
+choice_focused = wx.Window.FindFocus() is choice
+office = {"name": "Office", "lat": -6.1754, "lon": 106.8272, "label": "", "source": "coordinates"}
+core.places.set_places([jakarta_place, office])      # what the Places page does on OK
+assert choice.GetStrings() == ["The main place (Jakarta)", "Jakarta", "Office",
+                               "Its own place…"], choice.GetStrings()
+assert panel.place_choice.key() == "own" and choice.GetSelection() == 3
+assert panel.txt_search.IsEnabled()
+if choice_focused:
+    assert wx.Window.FindFocus() is choice, "focus moved when the places changed"
+# Choosing a saved place skips its own search again, and is what OK saves.
+choice.SetSelection(2)
+fire(choice, wx.EVT_CHOICE, 2)
+assert not panel.txt_search.IsEnabled()
+before = len(stub_requests)
+prefs.OnApply(None)
+saved = core.api.load_data("AirQuality")
+assert saved["place"] == core.places.get_places()[1]["id"], saved
+assert saved["location"]["name"] == "Bandung", "its own city is kept for later"
+assert main.get_location()["name"] == "Office"
+assert pump(lambda: len(stub_requests) > before), "the chosen place was not fetched"
+assert "latitude=-6.18&longitude=106.83&" in stub_requests[-1], stub_requests[-1]
+# Back to its own city for the checks below.
+panel.place_choice.set_key("own")
+panel._update_own()
+prefs.OnApply(None)
+assert pump(lambda: main.current_cache() is not None and not main._loading)
+assert main.get_location()["name"] == "Bandung"
+prefs.Destroy()
+wx.Yield()
+print(f"OK places_changed ({focus_note(choice_focused)})")
 
 # --- Hotkey actions with a city ---------------------------------------------------------
 spoken.clear()
@@ -431,12 +495,15 @@ print("OK teardown")
 assert not network_attempts, f"real network access attempted: {network_attempts}"
 assert all(u.startswith((air_quality_api.AIR_URL + "?", air_quality_api.GEOCODING_URL + "?"))
            for u in stub_requests), stub_requests
-# The Air Quality API only ever gets the city's coordinates, its time zone and the fields.
+# The Air Quality API only ever gets the place's coordinates, rounded to 2 decimals
+# (about 1 km), its time zone and the fields.
 for url in stub_requests:
     if url.startswith(air_quality_api.AIR_URL):
-        keys = set(urllib.parse.parse_qs(urllib.parse.urlsplit(url).query))
-        assert keys == {"latitude", "longitude", "current", "hourly", "timezone",
-                        "forecast_days"}, url
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+        assert set(query) == {"latitude", "longitude", "current", "hourly", "timezone",
+                              "forecast_days"}, url
+        for key in ("latitude", "longitude"):
+            assert len(query[key][0].split(".")[-1]) == 2, url
 assert not problems, "\n".join(problems)
 print("OK no_errors")
 

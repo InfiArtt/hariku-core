@@ -17,7 +17,8 @@ translated text, so tests can drive it with sample responses.
 Privacy: none of these services ever gets the user's location. wheretheiss.at
 gets the ISS's own position (rounded) to name the country below it; Launch
 Library gets nothing but the request for the list; Open-Meteo gets the city
-name the user types. Distances are worked out on this computer.
+name the user types. Distances are worked out on this computer, from the
+place chosen in Preferences, Places (core 2.8) or the city of its own.
 
 fetch_json(), fetch_iss(), fetch_country(), fetch_launches() and
 search_places() block on the network: call them from a worker thread only.
@@ -32,6 +33,7 @@ import urllib.parse
 import urllib.request
 import zoneinfo
 
+import core.places
 from core.constants import CORE_VERSION
 
 logger = logging.getLogger(__name__)
@@ -396,13 +398,18 @@ def normalize_settings(raw):
     raw = raw if isinstance(raw, dict) else {}
     lead = raw.get("lead_minutes")
     return {
+        # "main", a place id or "own" (core.places); None until decided.
+        "place": core.places.normalize_choice(raw.get("place")),
+        # The city of its own ("own"), kept while another place is chosen.
         "location": normalize_location(raw.get("location")),
         "lead_minutes": lead if lead in LEAD_CHOICES and not isinstance(lead, bool) else DEFAULT_LEAD,
     }
 
 
 def zone_for(location):
-    """The location's time zone, or None (use the computer's own)."""
+    """The location's time zone, or None (use the computer's own). A place
+    from Preferences, Places has "" when it has no zone (an address or pasted
+    coordinates): the computer's own, as core.places.timezone_for() does."""
     name = (location or {}).get("timezone") or ""
     if not name:
         return None

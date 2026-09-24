@@ -9,9 +9,9 @@
 
 """
 Windows for the Space extension:
-  * SpacePanel     - the Preferences page: the location (city search, or the
-                     Weather city by default and after "Use the Weather
-                     location"), the reminder lead time, notes and credits.
+  * SpacePanel     - the Preferences page: the place (one from Preferences,
+                     Places, or its own city, found with the city search),
+                     the reminder lead time, notes and credits.
   * LaunchesDialog - the next rocket launches, one sentence per row, with
                      Details (Enter), Refresh and Remind me.
 Selection changes never move keyboard focus. Focus only moves after the user
@@ -23,8 +23,10 @@ import threading
 
 import wx
 
+import core.places
 import core.ui_scale
 from core.i18n import apply_rtl_layout, get_current_language
+from core.places_ui import PlaceChoice
 from core.speech import speak
 
 import space_api as api
@@ -60,18 +62,23 @@ def lead_choice_text(minutes):
 
 
 class SpacePanel(wx.Panel):
-    """OK saves the search result selected last, or the Weather city after
-    "Use the Weather location", or keeps the saved place."""
+    """OK saves which place to use ("Place:"), and as its own city the
+    search result selected last, or keeps the saved one. The city search is
+    only available while "Its own place" is chosen."""
 
-    def __init__(self, parent, settings, weather_location=None):
+    def __init__(self, parent, settings):
         super().__init__(parent)
         self._location = settings.get("location")
-        self._weather_location = weather_location
         self._results = []
-        self._pending = None     # "place" or "weather"
+        self._pending = None     # "place" after a search result was selected
         self._search_id = 0
 
         vbox = wx.BoxSizer(wx.VERTICAL)
+        choice = (core.places.normalize_choice(settings.get("place"))
+                  or core.places.initial_choice(self._location))
+        self.place_choice = PlaceChoice(self, vbox, choice, own=True,
+                                        on_change=lambda key: self._update_own())
+
         self.txt_location = _labelled(self, vbox, _("lbl_current_location"),
                                       lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
         vbox.Add(self.txt_location, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
@@ -90,9 +97,6 @@ class SpacePanel(wx.Panel):
         self.list_results.SetName(_("lbl_results").rstrip(":"))
         vbox.Add(self.list_results, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
-        self.btn_use_weather = wx.Button(self, label=_("btn_use_weather"))
-        vbox.Add(self.btn_use_weather, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-
         self.choice_lead = _labelled(self, vbox, _("lbl_lead"), lambda: wx.Choice(
             self, choices=[lead_choice_text(m) for m in api.LEAD_CHOICES]))
         self.choice_lead.SetSelection(api.LEAD_CHOICES.index(settings.get("lead_minutes",
@@ -110,52 +114,44 @@ class SpacePanel(wx.Panel):
         self.txt_search.Bind(wx.EVT_TEXT_ENTER, self._on_search)
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search)
         self.list_results.Bind(wx.EVT_LISTBOX, self._on_result_selected)
-        self.btn_use_weather.Bind(wx.EVT_BUTTON, self._on_use_weather)
-        self.set_location(self._location, weather_location)
+        self.set_location(self._location)
+        self._update_own()
         core.ui_scale.apply_appearance(self)
 
-    def _location_text(self, place, weather_location):
-        if place:
-            return api.place_label(place)
-        if weather_location:
-            return _("location_from_weather", place=api.place_label(weather_location))
-        return _("location_not_set")
-
-    def set_location(self, place, weather_location=None):
+    def set_location(self, place):
+        """Show the saved city of its own (after OK)."""
         self._location = place
-        self._weather_location = weather_location
-        self.txt_location.ChangeValue(self._location_text(place, weather_location))
+        self._pending = None
+        self.txt_location.ChangeValue(api.place_label(place) if place else _("location_not_set"))
+
+    def _update_own(self):
+        """The city search is for "Its own place" only; other choices skip it."""
+        own = self.place_choice.is_own()
+        for ctrl in (self.txt_location, self.txt_search, self.btn_search, self.list_results):
+            ctrl.Enable(own)
+
+    def refresh_places(self):
+        """The places changed (Preferences, Places): list them again."""
+        self.place_choice.refresh()
+        self._update_own()
 
     def chosen_location(self):
-        """The location OK would save (None means the Weather city)."""
+        """Its own city, as OK would save it."""
         if self._pending == "place":
             sel = self.list_results.GetSelection()
             if 0 <= sel < len(self._results):
                 return self._results[sel]
-        elif self._pending == "weather":
-            return None
         return self._location
 
     def get_settings(self):
         """Settings to save."""
         lead = api.LEAD_CHOICES[max(0, self.choice_lead.GetSelection())]
-        return {"location": self.chosen_location(), "lead_minutes": lead}
+        return {"place": self.place_choice.key(), "location": self.chosen_location(),
+                "lead_minutes": lead}
 
     def _on_result_selected(self, event):
         self._pending = "place"   # state only; focus stays where it is
         event.Skip()
-
-    def _on_use_weather(self, event):
-        # Focus stays on the button; the change is spoken.
-        self._pending = "weather"
-        self.list_results.SetSelection(wx.NOT_FOUND)
-        # SetValue (not ChangeValue) so Preferences knows there is something to save.
-        self.txt_location.SetValue(self._location_text(None, self._weather_location))
-        if self._weather_location:
-            speak(_("use_weather_done", place=api.place_label(self._weather_location)),
-                  interrupt=True)
-        else:
-            speak(_("use_weather_none"), interrupt=True)
 
     def _on_search(self, event):
         query = self.txt_search.GetValue().strip()

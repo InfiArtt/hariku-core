@@ -224,8 +224,22 @@ def _fake_fetch_json(url, timeout=None, user_agent=None):
 
 flight_radar_api.fetch_json = _fake_fetch_json
 
+# The address search and short links live in the core (core 2.8, moved from
+# Flight Radar): stub its fetch too. Nominatim is the only thing it may ask.
+import core.place_search
+
+
+def _fake_core_fetch_json(url, timeout=None, user_agent=None):
+    stub_requests.append(url)
+    if url.startswith("https://nominatim.openstreetmap.org/search?"):
+        nominatim_agents.append(user_agent)
+        return ADDRESSES
+    raise AssertionError(f"unexpected URL {url}")
+
+
+core.place_search.fetch_json = _fake_core_fetch_json
+
 # The short-link redirect: Google's answer is only ever read, never fetched.
-import flight_radar_location
 
 short_link_fetches = []
 PIN_URL = ("https://www.google.com/maps/place/Home/@-6.2,106.8,17z/data=!4m6!3m5!1s0x0:0x0"
@@ -237,7 +251,7 @@ def _fake_open_without_redirects(url, timeout):
     return 302, PIN_URL
 
 
-flight_radar_location._open_without_redirects = _fake_open_without_redirects
+core.place_search._open_without_redirects = _fake_open_without_redirects
 
 import core.extension_manager as em
 em.load_unpacked_extension(FR_DIR)
@@ -353,12 +367,19 @@ assert run_and_close("Flight Radar.show_list") == []
 assert spoken == [NO_LOCATION, NO_LOCATION], spoken
 print("OK no_location_hint")
 
-# --- The Weather city is offered as the default ----------------------------------
+# --- The main place (Preferences, Places) is the default --------------------------
+import core.places
 core.api.save_data("Weather", {"location": {"name": "Bandung", "admin1": "West Java",
                                             "country": "Indonesia", "latitude": -6.9175,
                                             "longitude": 107.6191}, "units": "metric"})
+assert main.get_location() is None, "the Weather city is no longer used by itself"
+core.places.set_places([{"name": "Bandung", "lat": -6.9175, "lon": 107.6191,
+                         "label": "Bandung, West Java, Indonesia", "timezone": "Asia/Jakarta",
+                         "source": "city", "city": "Bandung", "region": "West Java",
+                         "country": "Indonesia"}])
 assert main.get_location()["name"] == "Bandung"
-print("OK weather_default")
+assert main._poll_timer is None, "no alerts are on: nothing to poll"
+print("OK main_place_default")
 
 # --- Preferences page: search, browse, save -------------------------------------
 from ui.preferences_dialog import PreferencesDialog
@@ -368,8 +389,19 @@ prefs.Show()
 wx.Yield()
 panel = main._panel
 assert panel is not None and panel.IsShown(), "Flight Radar settings page was not created"
-assert panel.txt_location.GetValue() == "Bandung, West Java, Indonesia (from the Weather settings)", \
-    panel.txt_location.GetValue()
+choice = panel.place_choice.ctrl
+assert choice.GetName() == "Place", choice.GetName()
+assert choice.GetStrings() == ["The main place (Bandung)", "Bandung", "Its own place\u2026"], \
+    choice.GetStrings()
+assert panel.place_choice.key() == "main"
+assert panel.txt_location.GetValue() == _("location_not_set"), panel.txt_location.GetValue()
+# Finding a place of its own is for "Its own place" only: skipped until it is chosen.
+own_controls = (panel.txt_location, panel.txt_search, panel.list_results, panel.txt_address,
+                panel.list_addresses, panel.txt_coords, panel.btn_use, panel.txt_name)
+assert not any(ctrl.IsEnabled() for ctrl in own_controls)
+checked_choice = browse(choice, wx.EVT_CHOICE)      # the last item is "Its own place"
+assert panel.place_choice.key() == "own", panel.place_choice.key()
+assert all(ctrl.IsEnabled() for ctrl in own_controls)
 assert panel.choice_radius.GetString(panel.choice_radius.GetSelection()) == \
     "25 kilometres (13 nautical miles)"
 assert panel.choice_alert.GetString(panel.choice_alert.GetSelection()) == \
@@ -399,7 +431,7 @@ assert pump(lambda: panel.list_results.GetCount() == 2), "search results never a
 assert panel.list_results.GetString(0) == "Jakarta, Indonesia"
 if search_focused:
     assert wx.Window.FindFocus() is panel.list_results, "focus did not move to the results"
-checked = browse(panel.list_results, wx.EVT_LISTBOX)
+checked = browse(panel.list_results, wx.EVT_LISTBOX) and checked_choice
 for choice in (panel.choice_radius, panel.choice_units, panel.choice_alert):
     checked = browse(choice, wx.EVT_CHOICE) and checked
 for checkbox in (panel.chk_ground, panel.chk_alerts, panel.chk_emergency):
@@ -434,7 +466,8 @@ mark = len(spoken)
 fire(panel.btn_address, wx.EVT_BUTTON)          # the same search again: from memory
 # Focus is on the results list, so the answer is spoken rather than focused.
 assert pump(lambda: any(s.startswith("2 addresses found") for s in spoken[mark:])), spoken
-assert nominatim_agents == [flight_radar_location.NOMINATIM_USER_AGENT], nominatim_agents
+assert nominatim_agents == [core.place_search.NOMINATIM_USER_AGENT], nominatim_agents
+assert "github.com/InfiArtt/hariku-core" in nominatim_agents[0]
 
 # Coordinates or a map link: a wrong paste, then a Google Maps short link.
 panel.txt_coords.SetValue("Monas")
@@ -461,7 +494,8 @@ panel.choice_units.SetSelection(0)
 panel.chk_alerts.SetValue(False)
 prefs.OnApply(None)
 saved = core.api.load_data("FlightRadar")
-# The exact point is stored here, and only here.
+assert saved["place"] == "own", saved
+# Its own exact point is stored here, and only here.
 assert saved["location"] == {"name": "Home", "admin1": "", "country": "",
                              "latitude": -6.21462, "longitude": 106.84513,
                              "kind": "coordinates", "detail": ""}, saved

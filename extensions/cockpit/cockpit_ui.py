@@ -10,7 +10,8 @@
 """
 Windows for the Cockpit extension:
   * CockpitPanel         - the Preferences page: Captain mode and the sound
-                           theme, the favourite airports, reading options, notes.
+                           theme, the favourite airports, the place for the
+                           nearest airport, reading options, notes.
   * AirportWeatherDialog - the airports (one sentence each), the selected
                            one's decoded METAR and TAF, and the raw codes.
   * AddAirportDialog     - asks for an ICAO code.
@@ -25,6 +26,7 @@ import wx
 
 import core.ui_scale
 from core.i18n import apply_rtl_layout
+from core.places_ui import PlaceChoice
 from core.speech import speak
 
 import cockpit_api as api
@@ -206,6 +208,11 @@ class CockpitPanel(_PageBase):
         buttons.Add(self.btn_default, 0)
         vbox.Add(buttons, 0, wx.LEFT | wx.RIGHT | wx.TOP, _BORDER)
 
+        # Without favourites, the nearest airport to this place (core 2.8).
+        # Cockpit has no place of its own: its airports are.
+        self.place_choice = PlaceChoice(self, vbox, settings.get("place"), own=False,
+                                        label=_("lbl_place"), border=_BORDER)
+
         self.chk_raw = wx.CheckBox(self, label=_("chk_raw"))
         self.chk_raw.SetValue(bool(settings.get("raw")))
         vbox.Add(self.chk_raw, 0, wx.LEFT | wx.RIGHT | wx.TOP, _BORDER)
@@ -254,7 +261,11 @@ class CockpitPanel(_PageBase):
 
     def get_settings(self):
         return {"captain": self.chk_captain.GetValue(), "raw": self.chk_raw.GetValue(),
-                "briefing": self.chk_briefing.GetValue()}
+                "briefing": self.chk_briefing.GetValue(), "place": self.place_choice.key()}
+
+    def refresh_places(self):
+        """The places changed (Preferences, Places): list them again."""
+        self.place_choice.refresh()
 
     # -- actions ------------------------------------------------------------- #
     def on_add(self, event=None):

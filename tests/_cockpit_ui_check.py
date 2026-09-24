@@ -304,8 +304,18 @@ assert run_and_close("Cockpit.airport_weather") == ["AirportWeatherDialog"]
 assert stub_requests == [], stub_requests
 print("OK no_airport_hint")
 
-# --- The Weather city: the nearest airport, said which -----------------------------------
+# --- The main place (Preferences, Places): the nearest airport, said which ------------
+import core.places
 core.api.save_data("Weather", {"location": BATAM, "units": "metric"})
+spoken.clear()
+assert run_and_close("Cockpit.pilot_weather") == []
+assert spoken == [_("no_airport")], "the Weather city is no longer used by itself"
+assert stub_requests == [], stub_requests
+batam_place, = core.places.set_places([{
+    "name": "Batam", "lat": BATAM["latitude"], "lon": BATAM["longitude"],
+    "label": "Batam, Riau Islands, Indonesia", "timezone": "Asia/Jakarta", "source": "city",
+    "city": "Batam", "region": "Riau Islands", "country": "Indonesia"}])
+assert stub_requests == [], "Captain mode is off: nothing is looked up in the background"
 spoken.clear()
 assert run_and_close("Cockpit.pilot_weather") == []
 assert spoken[0] == "Looking for the airport nearest to Batam...", spoken
@@ -313,6 +323,9 @@ assert pump(lambda: len(spoken) >= 2), spoken
 assert spoken[1].startswith("No favourite airports yet, so Hariku uses Batam Hang Nadim, W I D D, "
                             "the nearest airport with a weather report to Batam."), spoken
 assert "bbox=0.1%2C103.0%2C2.1%2C105.0" in stub_requests[-1], stub_requests
+# Only the rounded place is kept with the airport found for it.
+assert core.api.load_data("Cockpit")["auto"]["for"] == {"name": "Batam", "latitude": 1.15,
+                                                        "longitude": 104.02}
 print("OK nearest")
 
 # --- Preferences: favourites, Captain mode, the sound theme ---------------------------------
@@ -332,6 +345,16 @@ assert panel.list_airports.GetStrings() == [
     "No favourite airports yet. Hariku uses Batam Hang Nadim, W I D D, nearest to Batam."], \
     panel.list_airports.GetStrings()
 assert not panel.chk_captain.GetValue()
+# The place for the nearest airport: the main place or a saved one (no place of its own).
+place_choice = panel.place_choice.ctrl
+assert place_choice.GetName() == "Place, for the nearest airport when you have no favourites", \
+    place_choice.GetName()
+assert place_choice.GetStrings() == ["The main place (Batam)", "Batam"], place_choice.GetStrings()
+assert panel.place_choice.key() == "main"
+place_focus = browse(place_choice, wx.EVT_CHOICE)
+place_choice.SetSelection(0)
+fire(place_choice, wx.EVT_CHOICE, 0)
+assert panel.place_choice.key() == "main"
 
 panel.txt_code.SetValue("WI")
 fire(panel.txt_code, wx.EVT_TEXT_ENTER)
@@ -351,7 +374,7 @@ panel.txt_code.SetValue("WIII")
 fire(panel.btn_add, wx.EVT_BUTTON)
 assert pump(lambda: said("Added Jakarta Hatta International")), spoken
 assert [a["icao"] for a in core.api.load_data("Cockpit")["favourites"]] == ["WIDD", "WIII"]
-checked = browse(panel.list_airports, wx.EVT_LISTBOX)
+checked = browse(panel.list_airports, wx.EVT_LISTBOX) and place_focus
 checked = toggle(panel.chk_raw) and checked
 checked = toggle(panel.chk_briefing) and checked
 panel.list_airports.SetSelection(1)
@@ -386,6 +409,7 @@ assert offers[0].startswith("Shall Hariku call you Captain?"), offers
 assert offers[1].startswith("Set a cockpit greeting for when Hariku starts?"), offers
 saved = core.api.load_data("Cockpit")
 assert saved["captain"] is True and saved["raw"] is False and saved["briefing"] is False, saved
+assert saved["place"] == "main", saved
 assert core.personal.get_title() == "Captain"
 assert core.personal.get_custom_greeting()["text"] == _("cockpit_greeting")
 # The Profile page, built in the same session, doesn't undo what Captain mode set.
@@ -511,7 +535,7 @@ assert not core.personal.is_placeholder_registered("airportweather")
 print("OK teardown")
 
 assert not network_attempts, f"real network access attempted: {network_attempts}"
-# aviationweather.gov only ever gets airport codes, or a box around the Weather city.
+# aviationweather.gov only ever gets airport codes, or a box around the place.
 for url in stub_requests:
     parts = urllib.parse.urlsplit(url)
     assert parts.netloc == "aviationweather.gov", url
