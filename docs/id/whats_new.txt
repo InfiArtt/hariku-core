@@ -39,9 +39,16 @@ Versi 2.8.0 (Pembaruan Inti)
 - Tab Tidak kompatibel, seperti di NVDA, berisi ekstensi yang dibuat untuk
   Hariku yang lebih lama dari yang masih didukung Hariku ini. Belum ada
   pembaruan yang merusak ekstensi lama, jadi untuk sekarang tab ini kosong.
+- Piper Voices 1.1 menjawab jauh lebih cepat. Dulu Piper menyala ulang dan
+  memuat suaranya untuk setiap jawaban (satu sampai tiga detik di laptop
+  lama), dan baru bersuara setelah seluruh teks selesai, jadi terasa seperti
+  suara online. Sekarang suaranya tetap dimuat selama kamu memakainya (sekitar
+  100 MB memori, dilepas setelah sepuluh menit tidak dipakai), dan teks
+  panjang seperti briefing diucapkan kalimat demi kalimat: kalimat pertama
+  diputar sementara Piper membuat kalimat berikutnya.
 - Pembaruan ekstensi di Toko, untuk Hariku 2.8: Cuaca 1.2, Kondisi Laut 1.2,
-  Kualitas Udara 1.2, Gempa & Tsunami 1.2, Antariksa 1.1, Kokpit 1.1, dan
-  Radar Pesawat 1.7.
+  Kualitas Udara 1.2, Gempa & Tsunami 1.2, Antariksa 1.1, Kokpit 1.1, Radar
+  Pesawat 1.7, dan Piper Voices 1.1.
 - Untuk pembuat ekstensi: core.places memberi ekstensimu tempat-tempat
   pengguna, tempat utama, pembulatan, jarak, dan zona waktu, dan
   core.place_search mencari alamat dan kota (lihat DEVELOPERS.md).

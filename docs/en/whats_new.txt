@@ -38,9 +38,15 @@ Version 2.8.0 (Core Update)
 - Incompatible, like in NVDA, lists extensions made for a Hariku older than
   this one still runs. No update has broken older extensions, so it's empty
   for now.
+- Piper Voices 1.1 answers much sooner. Piper used to start again and load
+  the voice for every answer (one to three seconds on an older laptop) and
+  said nothing until the whole text was ready, which felt like an online
+  voice. Now the voice stays loaded while you use it (about 100 MB of memory,
+  freed after ten quiet minutes), and a long text, such as the briefing, is
+  said sentence by sentence: the first one plays while Piper makes the next.
 - Extension updates in the Store, for Hariku 2.8: Weather 1.2, Sea Conditions
-  1.2, Air Quality 1.2, Earthquakes & Tsunami 1.2, Space 1.1, Cockpit 1.1 and
-  Flight Radar 1.7.
+  1.2, Air Quality 1.2, Earthquakes & Tsunami 1.2, Space 1.1, Cockpit 1.1,
+  Flight Radar 1.7 and Piper Voices 1.1.
 - For extension developers: core.places gives your extension the user's
   places, the main place, rounding, distances and time zones, and
   core.place_search finds addresses and cities (see DEVELOPERS.md).
