@@ -9,6 +9,7 @@
 import wx
 import core.api
 import core.personal
+import core.quick_reminder
 import core.ui_scale
 from core.i18n import get_translator, get_available_languages, get_current_language, set_language
 
@@ -257,6 +258,18 @@ def _labeled(parent, sizer, label, make, proportion=0):
     return ctrl
 
 
+def _labeled_row(parent, sizer, label, make):
+    """Like _labeled, side by side in a horizontal `sizer`: the label, then the
+    control `make()` creates. The label must be created first: screen readers
+    name a control after the static text created just before it, not after
+    SetName."""
+    sizer.Add(wx.StaticText(parent, label=label), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+    ctrl = make()
+    ctrl.SetName(_plain_label(label))
+    sizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 15)
+    return ctrl
+
+
 def placeholder_menu(entries, on_pick):
     """A wx.Menu of Insert placeholder entries ((token, label) pairs, see
     core.personal.menu_entries); choosing one calls on_pick(token). The Profile
@@ -457,14 +470,8 @@ class ProfileSettingsPanel(_ScrollingPage):
         self._refresh(0)
 
     def _labeled_row(self, sizer, label, make):
-        """A label, then the control `make()` creates beside it. The label must be
-        created first: screen readers name a control after the static text
-        created just before it, not after SetName."""
-        sizer.Add(wx.StaticText(self, label=label), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        ctrl = make()
-        ctrl.SetName(_plain_label(label))
-        sizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 15)
-        return ctrl
+        """A label, then the control `make()` creates beside it (see _labeled_row)."""
+        return _labeled_row(self, sizer, label, make)
 
     def _on_greeting_focus(self, event):
         self._greeting_focused = True
@@ -678,6 +685,72 @@ def apply_quiet_settings():
     if _quiet_panel_instance:
         try:
             _quiet_panel_instance.ApplyChanges()
+        except RuntimeError:
+            pass  # panel already destroyed
+
+# ---------------------------------------------------------------------------
+# Reminders Panel: the languages the quick reminder also understands
+# ---------------------------------------------------------------------------
+_reminders_panel_instance = None
+
+
+class RemindersPanel(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        # [(code, name)] of the packs besides the Hariku language, English and
+        # Indonesian, which are always on.
+        self.choices = core.quick_reminder.optional_languages()
+        self._loaded = core.quick_reminder.extra_languages()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.list_languages = None
+        if self.choices:
+            self.list_languages = _labeled(
+                self, vbox, _("prefs_rem_lbl_languages"),
+                lambda: wx.CheckListBox(self, size=(-1, 90),
+                                        choices=[name for code, name in self.choices]))
+            for index, (code, name) in enumerate(self.choices):
+                self.list_languages.Check(index, code in self._loaded)
+            # Checking a language is a change Preferences must offer to save.
+            self.list_languages.Bind(wx.EVT_CHECKLISTBOX, self._on_toggle)
+        else:
+            vbox.Add(wx.StaticText(self, label=_("prefs_rem_none")), 0, wx.ALL, 10)
+        lbl_privacy = wx.StaticText(self, label=_("prefs_rem_privacy"))
+        lbl_privacy.Wrap(500)
+        vbox.Add(lbl_privacy, 0, wx.ALL, 10)
+        self.SetSizer(vbox)
+
+    def _on_toggle(self, event):
+        top = wx.GetTopLevelParent(self)
+        if top is not None and hasattr(top, "is_dirty"):
+            top.is_dirty = True
+        event.Skip()
+
+    def get_enabled(self):
+        if self.list_languages is None:
+            return list(self._loaded)
+        return [code for index, (code, name) in enumerate(self.choices)
+                if self.list_languages.IsChecked(index)]
+
+    def ApplyChanges(self):
+        enabled = self.get_enabled()
+        # A language this page doesn't offer now (the Hariku language, say)
+        # stays as it was.
+        offered = {code for code, name in self.choices}
+        kept = [code for code in self._loaded if code not in offered]
+        core.quick_reminder.set_extra_languages(kept + enabled)
+        self._loaded = kept + enabled
+
+
+def create_reminders_panel(parent):
+    global _reminders_panel_instance
+    _reminders_panel_instance = RemindersPanel(parent)
+    return _reminders_panel_instance
+
+
+def apply_reminders_settings():
+    if _reminders_panel_instance:
+        try:
+            _reminders_panel_instance.ApplyChanges()
         except RuntimeError:
             pass  # panel already destroyed
 
@@ -914,6 +987,7 @@ def register():
     core.preferences.register_panel("General",             "", create_panel,             apply_general_settings)
     core.preferences.register_panel(_("prefs_tab_profile"), "", create_profile_panel,    apply_profile_settings)
     core.preferences.register_panel(_("prefs_tab_quiet"),  "", create_quiet_panel,      apply_quiet_settings)
+    core.preferences.register_panel(_("prefs_tab_reminders"), "", create_reminders_panel, apply_reminders_settings)
     core.preferences.register_panel(_("prefs_tab_voice"),  "", create_voice_panel,      apply_voice_settings)
     core.preferences.register_panel("Extensions",          "", create_ext_settings_panel, apply_ext_settings)
     core.preferences.register_panel("Advanced",            "", create_adv_panel,          apply_adv_settings)

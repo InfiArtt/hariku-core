@@ -48,6 +48,13 @@ saved_config = {} # action_id -> [{"keycode": 123, "ctrl": false, "global": true
 _next_hotkey_id = 100
 _registered_hotkeys = {} # hotkey_id -> action_id
 
+# Actions that moved: saved keybindings under the old id are read as the new
+# one. The quick reminder was the Hariku Assistant extension's before it
+# moved into the core (2.7).
+RENAMED_ACTIONS = {
+    "Assistant.quick_reminder": "Hariku Core.quick_reminder",
+}
+
 # State for Multi-Tap System
 _last_hotkey_trigger = None
 _last_hotkey_time = 0.0
@@ -179,10 +186,27 @@ def load_keybindings():
                 if isinstance(v, dict): # Old format
                     saved_config[k] = [v]
                     migrated = True
+            if migrate_renamed_actions(saved_config):
+                migrated = True
             if migrated:
                 save_keybindings()
         except Exception:
             saved_config = {}
+
+
+def migrate_renamed_actions(config):
+    """Move the bindings saved under an old action id (RENAMED_ACTIONS) to the
+    new id, unless the new id has its own already; the old id goes either way,
+    so the old binding can't clash with the new action's. Returns True when
+    `config` changed."""
+    changed = False
+    for old, new in RENAMED_ACTIONS.items():
+        if old in config:
+            bindings = config.pop(old)
+            if new not in config:
+                config[new] = bindings
+            changed = True
+    return changed
 
 def save_keybindings():
     try:

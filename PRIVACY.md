@@ -140,6 +140,13 @@ its extensions already have on your computer: filling them in never makes a
 connection. When Windows starts Hariku, the greeting waits until Windows
 reports a network connection; Hariku only asks Windows, it contacts nothing.
 
+## Reminders typed as a sentence
+
+The quick reminder (N) and the reminder dialog's "Or type it in one sentence"
+field read what you type on your computer, with rules built into Hariku. No AI
+and no online service is involved: the sentence is never sent anywhere, and it
+is not stored. Only the reminder you save is kept, like any other reminder.
+
 ## Clipboard History
 
 The Clipboard History extension sends nothing over the internet. Copied text
