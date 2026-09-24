@@ -335,6 +335,7 @@
         "token_desc_date": "today's date",
         "token_desc_zulu": "the time in UTC, as pilots say it (Zulu)",
         "token_desc_reminders": "how many reminders you still have today",
+        "token_desc_version": "the Hariku version, e.g. 2.7.0",
         "profile_err_birthday_incomplete": "Choose both the day and the month of your birthday, or neither.",
         "profile_err_birthday_invalid": "That date does not exist. Check the day and the month of your birthday.",
         "profile_err_birthday_year": "The year of your birthday must be a number from {min} to {max}, or left empty.",

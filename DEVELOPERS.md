@@ -699,7 +699,7 @@ The user fills in their profile in Preferences, Profile: their name, what Hariku
 **Placeholder rules:**
 - A token is `%` + letters, digits or underscores + `%`, e.g. `%myname%`. Matching is case-insensitive: `%MyName%` works too.
 - The profile: `%myname%` (the name), `%mynickname%` (the nickname, or the name if there is none), `%mytitle%` (the title), `%mybirthday%` (like `birthday_text()`) and `%myage%` (empty without a birth year). The user's own keys are 1–32 characters of `a`–`z`, `0`–`9` and `_`, and can't be Windows variable names such as `temp` or `userprofile`.
-- Dynamic *(core 2.7)*, worked out when the text is used: `%greeting%` ("Good morning", "Selamat pagi"), `%time%` (HH:MM), `%day%` (the weekday), `%date%` ("24 September"), `%zulu%` (HH:MM in UTC) and `%reminders%` ("3 reminders today", "no reminders today": today's reminders not done yet). Routines' own `%time%` and `%date%` win inside routines.
+- Dynamic *(core 2.7)*, worked out when the text is used: `%greeting%` ("Good morning", "Selamat pagi"), `%time%` (HH:MM), `%day%` (the weekday), `%date%` ("24 September"), `%zulu%` (HH:MM in UTC), `%reminders%` ("3 reminders today", "no reminders today": today's reminders not done yet) and `%version%` (Hariku's version, e.g. 2.7.0). Routines' own `%time%` and `%date%` win inside routines.
 - Looked up in this order: `extra`, the dynamic ones, those extensions registered, then the profile.
 - Unknown tokens and lone `%` signs are left as they are, so `"50%"` and `"100% done"` never change.
 - Expansion is a single pass: a value that itself contains `%something%` is inserted as it is, never expanded again.
