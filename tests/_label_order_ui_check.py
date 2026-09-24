@@ -176,7 +176,10 @@ from ui.preferences_dialog import PreferencesDialog
 problems = []
 start = time.perf_counter()
 prefs = PreferencesDialog(frame)
-print(f"TIMING total PreferencesDialog {1000 * (time.perf_counter() - start):.0f} ms")
+print(f"TIMING opening Preferences (first page only) {1000 * (time.perf_counter() - start):.0f} ms")
+start = time.perf_counter()
+prefs.realize_all()
+print(f"TIMING building every other page {1000 * (time.perf_counter() - start):.0f} ms")
 for seconds, name in sorted(timings, reverse=True):
     print(f"TIMING {1000 * seconds:7.1f} ms  {name}")
 book = prefs.treebook

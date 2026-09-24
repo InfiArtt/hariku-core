@@ -26,6 +26,11 @@ Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
   Suara Hariku, termasuk suara bahasa Indonesia Ardi dan Gadis. Teks yang
   dibacakan dikirim ke Microsoft, dan layanan ini bisa berhenti berfungsi
   kapan saja; kalau begitu, Hariku memakai suara cadanganmu.
+- Baru di store extension: Piper Voices, suara neural untuk Suara Hariku yang
+  berbicara di komputermu, tanpa internet, termasuk suara bahasa Indonesia.
+  Unduh suara yang kamu mau di Pengaturan, Suara Piper; setiap suara
+  menampilkan ukuran, kualitas, dan lisensinya sebelum kamu mengunduhnya, dan
+  program Piper ikut terunduh bersama suara pertamamu.
 - Briefing Pagi 1.1 menyapamu dengan nama dan punya ringkasan malam baru
   (Shift+B): berapa pengingat hari ini yang sudah kamu selesaikan, mana yang
   belum, serta pengingat pertama dan cuaca besok. Ringkasan ini bisa diputar

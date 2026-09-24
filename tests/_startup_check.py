@@ -52,6 +52,7 @@ def _descendants(win):
 # page including extension panels (it used to apply neither).
 from ui.preferences_dialog import PreferencesDialog
 prefs = PreferencesDialog(frame)
+prefs.realize_all()   # pages are built when first shown
 texts = [w for w in _descendants(prefs) if isinstance(w, wx.StaticText)]
 assert texts, "no text found in Preferences"
 for w in texts:

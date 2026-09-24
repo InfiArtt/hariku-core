@@ -69,6 +69,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "space",
     "edge_voices",
     "sleep_tracker",
+    "piper_voices",
 ])
 
 

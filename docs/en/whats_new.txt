@@ -24,6 +24,11 @@ Version 2.7.0 (Core Update - September 24, 2026)
   for Hariku Voice, including the Indonesian voices Ardi and Gadis. They send
   the text being read to Microsoft, and the service may stop working at any
   time; Hariku then uses your fallback voice.
+- New in the Extension Store: Piper Voices, neural voices for Hariku Voice
+  that speak on your computer, without the internet, including an Indonesian
+  voice. Download the voices you want in Preferences, Piper Voices; each one
+  shows its size, quality and license before you download it, and the Piper
+  program comes along with your first voice.
 - Morning Briefing 1.1 greets you by name and adds an evening summary
   (Shift+B): how many of today's reminders you finished, the ones left, and
   tomorrow's first reminder and weather. It can play by itself every evening.
