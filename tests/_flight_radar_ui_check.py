@@ -779,12 +779,16 @@ assert flight_requests and set(flight_requests) == {
 assert opened_urls and all(u.startswith("https://www.liveatc.net/") for u in opened_urls)
 route_requests = [u for u in stub_requests if "adsbdb" in u]
 assert len(route_requests) == len(set(route_requests)), f"routes looked up twice: {route_requests}"
-# Routes are kept in memory only: nothing about them reaches the data folder.
-for name in os.listdir(core.api.DATA_DIR):
-    with open(os.path.join(core.api.DATA_DIR, name), encoding="utf-8", errors="replace") as f:
-        content = f.read()
-    assert "Batam" not in content and "Semarang" not in content, f"route data in {name}"
-    assert "PK-QQ" not in content, f"aircraft data in {name}"
+# Routes are kept in memory only: nothing about them reaches the data folder,
+# including extensions' storage folders inside it.
+for folder, _dirs, files in os.walk(core.api.DATA_DIR):
+    for name in files:
+        path = os.path.join(folder, name)
+        with open(path, encoding="utf-8", errors="replace") as f:
+            content = f.read()
+        where = os.path.relpath(path, core.api.DATA_DIR)
+        assert "Batam" not in content and "Semarang" not in content, f"route data in {where}"
+        assert "PK-QQ" not in content, f"aircraft data in {where}"
 assert not problems, "\n".join(problems)
 print("OK no_errors")
 
