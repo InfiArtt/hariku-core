@@ -24,8 +24,10 @@ program comes along with the first voice.
   piper_voices_text.py      - text in the user's language
   piper_voices_ui.py        - the Preferences page and the download dialog
 
-Speaking runs on one worker thread, one piper.exe at a time; downloads on
-another. The UI gets results through wx.CallAfter.
+Speaking runs on one worker thread: a text is said sentence by sentence, each
+played as soon as it's ready while Piper makes the next, by one piper.exe kept
+running with the voice loaded (closed after ten quiet minutes). Downloads run
+on another thread. The UI gets results through wx.CallAfter.
 """
 
 import collections
@@ -52,7 +54,7 @@ EXT_NAME = "Piper Voices"   # fixed, whatever the language
 PROVIDER_ID = "piper"
 CATALOGUE_MAX_AGE = 7 * 24 * 3600
 CACHE_LIMIT_BYTES = 30 * 1024 * 1024
-IDLE_EXIT_SECONDS = 60.0
+IDLE_EXIT_SECONDS = 600.0      # then the kept piper.exe closes (about 100 MB)
 MILESTONES = (25, 50, 75, 100)
 
 _panel = None
@@ -114,21 +116,28 @@ def default_voice(voices, languages=None):
 
 
 # ------------------------------------------------------------
-# Speaking: one worker thread, one piper.exe at a time
+# Speaking: one worker thread, sentence by sentence
 # ------------------------------------------------------------
 
 class _Job:
+    """One text to say. The worker makes it sentence by sentence and plays
+    each as soon as it's ready, while Piper makes the next."""
+
     def __init__(self, text_, voice_id, rate, volume, on_done):
         self.text = text_
         self.voice_id = voice_id
         self.rate = rate
         self.volume = volume
         self.cancelled = False
+        self.play_error = None
         self._on_done = on_done
         self._finished = False
         self._lock = threading.Lock()
-        self._process = None
-        self._playing = False
+        self._process = None          # a one-off piper.exe, which stop() kills
+        self._played = None           # set when the file playing now has ended
+
+    def is_cancelled(self):
+        return self.cancelled
 
     def attach(self, process):
         with self._lock:
@@ -141,29 +150,56 @@ class _Job:
         with self._lock:
             self._process = None
 
-    def start_playing(self):
-        """Mark the job as playing; False when it was cancelled meanwhile."""
+    def play(self, path):
+        """Wait for the file playing now to end, then play `path`. False when
+        the job was cancelled meanwhile."""
+        self.wait_playback()
+        ended = threading.Event()
+
+        first = self._played is None
+
+        def on_done(error=None):
+            if error is not None and first:
+                self.play_error = error    # nothing was heard: another voice may say it
+            ended.set()
+
         with self._lock:
             if self.cancelled:
                 return False
-            self._playing = True
-            return True
+            self._played = ended
+        core.voice.play_file(path, self.volume, on_done)
+        if self.cancelled:
+            core.voice.stop_playback()   # stop() came just before the file started
+        return True
+
+    def wait_playback(self):
+        """Wait until the file playing now has ended (at once when cancelled)."""
+        with self._lock:
+            ended = self._played
+        while ended is not None and not ended.wait(0.05):
+            if self.cancelled:
+                ended.wait(1.0)
+                return
 
     def cancel(self):
+        """Stop at once: the file playing stops, a one-off piper.exe is killed,
+        and on_done is called now. A sentence the kept piper.exe is making
+        may finish; nothing more is played."""
         with self._lock:
             self.cancelled = True
-            process, playing = self._process, self._playing and not self._finished
+            process = self._process
+            playing = self._played is not None and not self._played.is_set()
         if process is not None:
-            synth.kill(process)       # communicate() returns; the job finishes
+            synth.kill(process)
         if playing:
-            core.voice.stop_playback()   # its on_done finishes the job
+            core.voice.stop_playback()
+        self.finish(None)
 
     def finish(self, error=None):
         with self._lock:
             if self._finished:
                 return
             self._finished = True
-            self._playing = False
         try:
             self._on_done(error)
         except Exception:
@@ -175,7 +211,6 @@ class _Worker:
         self._cond = threading.Condition()
         self._queue = collections.deque()
         self._current = None
-        self._playing = None      # its file may still play after the worker moved on
         self._thread = None
 
     def submit(self, job):
@@ -187,23 +222,15 @@ class _Worker:
                 self._thread.start()
             self._cond.notify_all()
 
-    def playing(self, job):
-        with self._cond:
-            self._playing = job
-
     def cancel_all(self):
         with self._cond:
             dropped = list(self._queue)
             self._queue.clear()
-            current, playing = self._current, self._playing
-            self._playing = None
+            current = self._current
         for job in dropped:
             job.cancel()
-            job.finish(None)
         if current is not None:
             current.cancel()
-        if playing is not None and playing is not current:
-            playing.cancel()          # stops its file; a finished job is left alone
 
     def _run(self):
         while True:
@@ -212,6 +239,7 @@ class _Worker:
                     self._cond.wait(IDLE_EXIT_SECONDS)
                 if not self._queue:
                     self._thread = None
+                    close_engine()        # nothing said for a while: free its memory
                     return
                 job = self._current = self._queue.popleft()
             try:
@@ -226,6 +254,35 @@ class _Worker:
 
 _worker = _Worker()
 
+# The piper.exe kept running with the voice loaded (see synth.PiperProcess).
+_engine_lock = threading.Lock()
+_engine = None
+
+
+def _engine_for(exe, model, rate, output_dir):
+    """The kept piper.exe for this voice and speed, started when needed."""
+    global _engine
+    key = (exe, model, synth.length_scale_text(rate))
+    with _engine_lock:
+        engine = _engine
+        if engine is not None and (engine.key != key or not engine.alive()):
+            engine.close()
+            engine = _engine = None
+    if engine is None:
+        engine = synth.PiperProcess(exe, model, rate, output_dir)
+        with _engine_lock:
+            _engine = engine
+    return engine
+
+
+def close_engine():
+    """Stop the kept piper.exe (Hariku closing, a voice removed, a long pause)."""
+    global _engine
+    with _engine_lock:
+        engine, _engine = _engine, None
+    if engine is not None:
+        engine.close()
+
 
 def _choose_voice(root, voice_id):
     voices = store.installed_voices(root)
@@ -237,6 +294,34 @@ def _choose_voice(root, voice_id):
     if chosen is None:
         raise LookupError(_("err_no_voice"))
     return chosen
+
+
+def _make_audio(job, root, voice, cache, sentence):
+    """The WAV file of one sentence: from the cache, else from the kept
+    piper.exe, else from a one-off piper.exe."""
+    key = cache.key(voice, synth.length_scale_text(job.rate), sentence)
+    path = cache.get(key)
+    if path is not None:
+        return path
+    exe, model = store.exe_path(root), store.model_path(root, voice)
+    temporary = cache.temporary_path(key)
+    try:
+        try:
+            engine = _engine_for(exe, model, job.rate, cache.directory)
+            engine.synthesize(sentence, temporary, cancelled=job.is_cancelled)
+        except synth.PiperError as e:
+            if job.cancelled:
+                raise
+            logger.info(f"[{EXT_NAME}] The kept piper.exe failed ({e}); trying a new one.")
+            close_engine()
+            synth.remove_quietly(temporary)
+            synth.synthesize(exe, model, temporary, sentence, job.rate, on_process=job.attach)
+        return cache.put_file(key, temporary)
+    except BaseException:
+        synth.remove_quietly(temporary)
+        raise
+    finally:
+        job.detach()
 
 
 def _process(job):
@@ -252,31 +337,26 @@ def _process(job):
         job.finish(e)
         return
     cache = synth.AudioCache(core.voice.cache_dir(PROVIDER_ID), CACHE_LIMIT_BYTES)
-    key = cache.key(voice, synth.length_scale_text(job.rate), job.text)
-    path = cache.get(key)
-    if path is None:
-        temporary = cache.temporary_path(key)
+    sentences = synth.split_sentences(job.text) or [job.text]
+    played = 0
+    for sentence in sentences:
+        if job.cancelled:
+            break
         try:
-            synth.synthesize(store.exe_path(root), store.model_path(root, voice), temporary,
-                             job.text, job.rate, on_process=job.attach)
-            path = cache.put_file(key, temporary)
+            path = _make_audio(job, root, voice, cache, sentence)
         except Exception as e:
-            synth.remove_quietly(temporary)
             if job.cancelled:
-                job.finish(None)
-            else:
-                logger.info(f"[{EXT_NAME}] Piper could not speak: {e}")
-                job.finish(e)
-            return
-        finally:
-            job.detach()
-    _worker.playing(job)
-    if not job.start_playing():
-        job.finish(None)
-        return
-    core.voice.play_file(path, job.volume, job.finish)
-    if job.cancelled:
-        core.voice.stop_playback()   # stop() came just before the file started
+                break
+            logger.info(f"[{EXT_NAME}] Piper could not speak: {e}")
+            if played == 0:
+                job.finish(e)             # nothing said yet: another voice says it all
+                return
+            break                         # the rest is lost; the log says why
+        if not job.play(path):
+            break
+        played += 1
+    job.wait_playback()
+    job.finish(job.play_error)           # set only when the first file couldn't play
 
 
 def speak(text_, voice_id, rate, volume, on_done):
@@ -506,6 +586,7 @@ class Controller:
 
     @staticmethod
     def remove_voice(key):
+        close_engine()                   # it may have that voice's model open
         try:
             return store.remove_voice(store.root_dir(), key)
         finally:
@@ -544,5 +625,6 @@ def teardown():
     _panel = None
     core.voice.unregister_provider(PROVIDER_ID)
     _worker.cancel_all()
+    close_engine()
     _downloads.cancel()
     logger.info(f"[{EXT_NAME}] Extension unloaded.")

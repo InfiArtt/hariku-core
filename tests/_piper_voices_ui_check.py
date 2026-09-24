@@ -18,9 +18,9 @@ download, remove a voice, refresh the catalogue, and close Preferences while a
 download runs. Fails on any logged error.
 
 Nothing is downloaded, started or played: the catalogue, model cards and
-installers are fakes, piper.exe is never run (synthesize is refused), the
-network and MCI are refused, and screen reader speech is captured through
-on_before_speak.
+installers are fakes, piper.exe is never run (a one-off or a kept one: both
+are refused), the network and MCI are refused, and screen reader speech is
+captured through on_before_speak.
 
 Run by tests/test_piper_voices_ui.py in a separate process, because
 conftest.py mocks wx inside the pytest process. The caller points APPDATA at a
@@ -262,6 +262,7 @@ dl.install_runtime = fake_install_runtime
 dl.install_voice = fake_install_voice
 dl.open_url = refuse_network
 synth.synthesize = refuse_synthesis
+synth.PiperProcess = refuse_synthesis     # the kept piper.exe is refused too
 
 # The Remove confirmation is a native message box, which can't be driven from
 # here: record it and answer Yes.

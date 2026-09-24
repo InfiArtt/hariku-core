@@ -9,23 +9,33 @@
 """
 Running Piper and keeping what it said (blocking; no wx, no network).
 
-synthesize() starts piper.exe with the voice model and an output WAV file,
-writes the text to its standard input as UTF-8 and waits. The process never
-gets a console window (CREATE_NO_WINDOW, hidden) and is killed when it takes
-too long or when stop() asks. Each run loads the model again, which takes about
-a second; that is the price of not keeping a process around.
+PiperProcess keeps one piper.exe running with the voice model loaded
+(--json-input): each sentence is one line of JSON on its standard input, and
+Piper prints the WAV file's path once it has written it. Loading the model
+takes one to three seconds on an older laptop, so a new piper.exe for every
+text made each answer wait that long, like an online voice.
+synthesize() is the one-off way (a new piper.exe loads the model, says the
+text and exits), used when the kept process can't start or fails. Neither
+ever gets a console window (CREATE_NO_WINDOW, hidden), and both are killed
+when they take too long.
+
+split_sentences() cuts a text into sentences, so the first one plays while
+Piper makes the next.
 
 The WAV files are kept in %APPDATA%\\Hariku2\\voice_cache\\piper, named by a
 hash of the voice, the speed and the text, so a phrase said again (the
 greeting) plays at once. Least recently used files go first once the folder is
 over 30 MB, like Edge Voices' cache.
 """
+import collections
 import hashlib
 import itertools
 import json
 import os
+import queue
 import re
 import subprocess
+import threading
 import time
 import wave
 
@@ -37,10 +47,18 @@ MAX_TIMEOUT_SECONDS = 600.0
 AUDIO_SUFFIX = ".wav"
 DEFAULT_LIMIT_BYTES = 30 * 1024 * 1024
 STALE_TEMPORARY_SECONDS = 3600
+CANCEL_GRACE_SECONDS = 3.0      # a stopped sentence may finish; after that Piper is killed
+MAX_SENTENCE_CHARS = 220
+MIN_SENTENCE_CHARS = 8
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
 _SW_HIDE = 0
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+# Spaces after ".", "!", "?" or "…", or after one of those and a closing quote
+# or bracket. "2.8" and "31,5" have no space, so they stay whole.
+_SENTENCE_END_RE = re.compile(
+    r"(?<=[.!?…])\s+|(?<=[.!?…][\"'”’)\]])\s+")
+_CLAUSE_END_RE = re.compile(r"(?<=[,;:])\s+")
 _serial = itertools.count(1)
 
 
@@ -74,6 +92,51 @@ def length_scale_text(rate):
 def prepare_text(text):
     """One line of text: Piper reads its input line by line."""
     return " ".join(_CONTROL_RE.sub(" ", str(text or "")).split())
+
+
+def _split_long(sentence, limit):
+    """A sentence over `limit` characters in pieces: at the last comma,
+    semicolon or colon that fits, else at the last space."""
+    pieces = []
+    while len(sentence) > limit:
+        cut = -1
+        for match in _CLAUSE_END_RE.finditer(sentence, 0, limit + 1):
+            cut = match.start()
+        if cut < limit // 3:
+            cut = sentence.rfind(" ", 0, limit + 1)
+        if cut <= 0:
+            cut = limit
+        pieces.append(sentence[:cut].strip())
+        sentence = sentence[cut:].strip()
+    if sentence:
+        pieces.append(sentence)
+    return pieces
+
+
+def split_sentences(text, limit=MAX_SENTENCE_CHARS):
+    """The text as sentences, each on one line, in order. A line is a sentence
+    too, a long sentence is split, and a piece shorter than MIN_SENTENCE_CHARS
+    joins the next. [] when there is nothing to say."""
+    pieces = []
+    for line in str(text or "").splitlines():
+        for sentence in _SENTENCE_END_RE.split(prepare_text(line)):
+            pieces.extend(_split_long(sentence.strip(), limit))
+    merged, carry = [], ""
+    for piece in pieces:
+        if not piece:
+            continue
+        piece = f"{carry} {piece}" if carry else piece
+        if len(piece) < MIN_SENTENCE_CHARS:
+            carry = piece
+        else:
+            merged.append(piece)
+            carry = ""
+    if carry:
+        if merged:
+            merged[-1] = f"{merged[-1]} {carry}"
+        else:
+            merged.append(carry)
+    return merged
 
 
 def build_command(exe, model, output, rate):
@@ -136,6 +199,104 @@ def synthesize(exe, model, output, text, rate=0, on_process=None, timeout=None,
         raise PiperError(_last_line(err) or f"piper.exe exited with code {process.returncode}")
     check_wav(output)
     return output
+
+
+class PiperProcess:
+    """One piper.exe kept running with a voice model loaded, at one speed.
+    synthesize() is called by one thread at a time (the speaking worker);
+    close() by any."""
+
+    def __init__(self, exe, model, rate, output_dir, popen=None):
+        self.key = (exe, model, length_scale_text(rate))
+        self._lines = queue.Queue()
+        self._errors = collections.deque(maxlen=20)
+        popen = popen or subprocess.Popen
+        command = [exe, "--model", model, "--json-input", "--output_dir", output_dir,
+                   "--length_scale", length_scale_text(rate)]
+        try:
+            self._process = popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, cwd=os.path.dirname(exe),
+                                  creationflags=CREATE_NO_WINDOW,
+                                  startupinfo=_hidden_startupinfo())
+        except OSError as e:
+            raise PiperError(f"piper.exe could not start: {e}") from None
+        self.last_used = time.monotonic()
+        for target, name in ((self._read_stdout, "out"), (self._read_stderr, "err")):
+            threading.Thread(target=target, daemon=True, name=f"hariku-piper-{name}").start()
+
+    def _read_stdout(self):
+        try:
+            for line in self._process.stdout:
+                self._lines.put(line.decode("utf-8", "replace").strip())
+        except (OSError, ValueError):
+            pass
+        self._lines.put(None)
+
+    def _read_stderr(self):
+        try:
+            for line in self._process.stderr:
+                self._errors.append(line.decode("utf-8", "replace").strip())
+        except (OSError, ValueError):
+            pass
+
+    def alive(self):
+        return self._process.poll() is None
+
+    def _failure(self, fallback):
+        lines = [l for l in self._errors if "error" in l.lower()]
+        return PiperError(lines[-1][:300] if lines else fallback)
+
+    def synthesize(self, text, output, cancelled=None, timeout=None):
+        """Make `output` (a WAV file) with the loaded voice saying `text`. Once
+        `cancelled()` is true the sentence may finish for CANCEL_GRACE_SECONDS,
+        then Piper is killed. Raises PiperError when Piper fails, stops or
+        takes too long."""
+        text = prepare_text(text)
+        if not text:
+            raise PiperError("nothing to say")
+        while not self._lines.empty():           # nothing should be left over; be sure
+            if self._lines.get_nowait() is None:
+                self.close()
+                raise self._failure("Piper stopped")
+        request = json.dumps({"text": text, "output_file": output}) + "\n"
+        try:
+            self._process.stdin.write(request.encode("utf-8"))
+            self._process.stdin.flush()
+        except (OSError, ValueError, AttributeError):
+            self.close()
+            raise self._failure("Piper stopped") from None
+        deadline = time.monotonic() + (timeout or timeout_for(text))
+        cancel_seen = False
+        while True:
+            if cancelled is not None and not cancel_seen and cancelled():
+                cancel_seen = True
+                deadline = min(deadline, time.monotonic() + CANCEL_GRACE_SECONDS)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                self.close()
+                raise PiperError("Piper was stopped" if cancel_seen else "Piper took too long")
+            try:
+                line = self._lines.get(timeout=min(remaining, 0.1))
+            except queue.Empty:
+                continue
+            if line is None:
+                self.close()
+                raise self._failure("Piper stopped")
+            if line:                              # the path of the file it wrote
+                break
+        check_wav(output)
+        self.last_used = time.monotonic()
+        return output
+
+    def close(self):
+        process = getattr(self, "_process", None)
+        if process is None:
+            return
+        try:
+            process.stdin.close()
+        except (OSError, ValueError, AttributeError):
+            pass
+        kill(process)
 
 
 def _last_line(data):

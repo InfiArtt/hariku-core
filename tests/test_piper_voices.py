@@ -849,10 +849,34 @@ def write_wav(path, frames=2205, rate=22050):
         w.writeframes(b"\x00\x00" * frames)
 
 
+class _FakeStdin:
+    """The kept piper.exe's standard input: each flushed line is one request."""
+
+    def __init__(self, process):
+        self.process = process
+        self.buffer = b""
+        self.closed = False
+
+    def write(self, data):
+        if self.closed:
+            raise ValueError("write to closed file")
+        self.buffer += data
+
+    def flush(self):
+        while b"\n" in self.buffer:
+            line, self.buffer = self.buffer.split(b"\n", 1)
+            self.process.request(line)
+
+    def close(self):
+        self.closed = True
+
+
 class FakePopen:
-    """Stands in for piper.exe: records how it was started, writes a WAV."""
+    """Stands in for piper.exe: records how it was started, writes a WAV. With
+    --json-input it is the kept piper.exe: every JSON line on its standard
+    input writes that line's output_file and prints its path."""
     instances = []
-    mode = "ok"          # "ok", "hang", "fail", "badwav"
+    mode = "ok"          # "ok", "hang", "fail", "badwav"; "server_fail" fails only the kept one
 
     def __init__(self, args, **kwargs):
         self.args = list(args)
@@ -861,7 +885,37 @@ class FakePopen:
         self.returncode = None
         self.killed = threading.Event()
         self.started = threading.Event()
+        self.server = "--json-input" in self.args
         FakePopen.instances.append(self)
+        if self.server:
+            import queue
+            self.requests = []
+            self.request_times = []
+            self._out = queue.Queue()
+            self.stdin = _FakeStdin(self)
+            self.stdout = iter(self._out.get, None)
+            failing = self.mode in ("fail", "server_fail")
+            self.stderr = iter([b"[piper] [error] model file is broken\n"] if failing else [])
+            if failing:
+                self.returncode = 1
+                self._out.put(None)
+
+    def poll(self):
+        return self.returncode
+
+    def request(self, line):
+        data = json.loads(line.decode("utf-8"))
+        self.requests.append(data["text"])
+        self.request_times.append(time.monotonic())
+        self.started.set()
+        if self.returncode is not None or self.mode == "hang":
+            return
+        if self.mode == "badwav":
+            with open(data["output_file"], "wb") as f:
+                f.write(b"not a wav")
+        else:
+            write_wav(data["output_file"])
+        self._out.put((data["output_file"] + "\r\n").encode("utf-8"))
 
     def communicate(self, input=None, timeout=None):
         if input is not None:
@@ -886,6 +940,9 @@ class FakePopen:
 
     def kill(self):
         self.killed.set()
+        if self.server and self.returncode is None:
+            self.returncode = 1
+            self._out.put(None)
 
 
 @pytest.fixture
@@ -951,6 +1008,100 @@ class TestCommandLine:
 # ------------------------------------------------------------
 # The WAV cache
 # ------------------------------------------------------------
+
+class TestSentences:
+    @pytest.mark.parametrize("text, expected", [
+        ("Selamat pagi, Rafli. Hari ini hari Kamis, 24 September 2026. Cuaca 31,5 derajat!",
+         ["Selamat pagi, Rafli.", "Hari ini hari Kamis, 24 September 2026.",
+          "Cuaca 31,5 derajat!"]),
+        ("Hariku 2.8 sudah keluar.\nPengingat: minum obat.",
+         ["Hariku 2.8 sudah keluar.", "Pengingat: minum obat."]),
+        ('Dia bilang "halo." Lalu pergi\u2026  Selesai?',
+         ['Dia bilang "halo."', "Lalu pergi\u2026", "Selesai?"]),
+        ("Ya. Oke. Tentu saja.", ["Ya. Oke.", "Tentu saja."]),   # tiny pieces join the next
+        ("Ya. Oke. Siap.", ["Ya. Oke. Siap."]),                 # a tiny last one, the previous
+        ("Oke. Hi.", ["Oke. Hi."]),
+        ("Hi.", ["Hi."]),
+        ("", []),
+        ("  \n \x07 ", []),
+    ])
+    def test_split(self, text, expected):
+        assert synth.split_sentences(text) == expected
+
+    def test_a_long_sentence_splits_at_a_comma_then_a_space(self):
+        clause = "satu dua tiga empat lima enam tujuh delapan sembilan sepuluh"
+        text = ", ".join([clause] * 6) + "."
+        pieces = synth.split_sentences(text, limit=150)
+        assert all(len(p) <= 150 for p in pieces) and len(pieces) > 1
+        assert all(p.endswith(",") for p in pieces[:-1])
+        assert " ".join(pieces) == text
+        words = synth.split_sentences("kata " * 100, limit=60)
+        assert all(len(p) <= 60 for p in words) and " ".join(words) == ("kata " * 100).strip()
+
+
+class TestKeptProcess:
+    def test_command_and_requests(self, tmp_path, fake_popen):
+        engine = synth.PiperProcess("C:\\piper\\piper.exe", "voice.onnx", -5, str(tmp_path))
+        process = fake_popen.instances[0]
+        assert process.args == ["C:\\piper\\piper.exe", "--model", "voice.onnx", "--json-input",
+                                "--output_dir", str(tmp_path), "--length_scale", "1.30"]
+        assert process.kwargs["creationflags"] == synth.CREATE_NO_WINDOW
+        assert process.kwargs["cwd"] == "C:\\piper"
+        assert engine.key == ("C:\\piper\\piper.exe", "voice.onnx", "1.30") and engine.alive()
+        first, second = str(tmp_path / "a.wav"), str(tmp_path / "b.wav")
+        assert engine.synthesize("Halo,\nini\x07 café — satu.", first) == first
+        assert engine.synthesize("Dua.", second) == second
+        assert process.requests == ["Halo, ini café — satu.", "Dua."]
+        assert synth.wav_duration(first) > 0 and synth.wav_duration(second) > 0
+        engine.close()
+        assert process.killed.is_set() and process.stdin.closed and not engine.alive()
+
+    def test_the_request_is_one_ascii_json_line(self, tmp_path, fake_popen):
+        engine = synth.PiperProcess("piper.exe", "voice.onnx", 0, str(tmp_path))
+        sent = []
+        process = fake_popen.instances[0]
+        original = process.request
+        process.request = lambda line: sent.append(line) or original(line)
+        engine.synthesize("Selamat pagi — café", str(tmp_path / "c.wav"))
+        assert sent == [json.dumps({"text": "Selamat pagi — café",
+                                    "output_file": str(tmp_path / "c.wav")}).encode("ascii")]
+
+    def test_a_piper_that_stops_is_an_error(self, tmp_path, fake_popen):
+        fake_popen.mode = "fail"
+        engine = synth.PiperProcess("piper.exe", "voice.onnx", 0, str(tmp_path))
+        with pytest.raises(synth.PiperError):
+            engine.synthesize("Halo", str(tmp_path / "d.wav"))
+        assert not engine.alive()
+
+    def test_a_bad_wav_is_an_error(self, tmp_path, fake_popen):
+        fake_popen.mode = "badwav"
+        engine = synth.PiperProcess("piper.exe", "voice.onnx", 0, str(tmp_path))
+        with pytest.raises(synth.PiperError):
+            engine.synthesize("Halo", str(tmp_path / "e.wav"))
+
+    def test_too_long_kills_it(self, tmp_path, fake_popen):
+        fake_popen.mode = "hang"
+        engine = synth.PiperProcess("piper.exe", "voice.onnx", 0, str(tmp_path))
+        with pytest.raises(synth.PiperError, match="too long"):
+            engine.synthesize("Halo", str(tmp_path / "f.wav"), timeout=0.2)
+        assert fake_popen.instances[0].killed.is_set()
+
+    def test_cancelled_gets_a_short_grace_then_kills_it(self, tmp_path, fake_popen, monkeypatch):
+        monkeypatch.setattr(synth, "CANCEL_GRACE_SECONDS", 0.2)
+        fake_popen.mode = "hang"
+        engine = synth.PiperProcess("piper.exe", "voice.onnx", 0, str(tmp_path))
+        started = time.monotonic()
+        with pytest.raises(synth.PiperError, match="stopped"):
+            engine.synthesize("Halo", str(tmp_path / "g.wav"), cancelled=lambda: True)
+        assert time.monotonic() - started < 2.0
+        assert fake_popen.instances[0].killed.is_set()
+
+    def test_nothing_to_say(self, tmp_path, fake_popen):
+        engine = synth.PiperProcess("piper.exe", "voice.onnx", 0, str(tmp_path))
+        with pytest.raises(synth.PiperError):
+            engine.synthesize(" \x07 ", str(tmp_path / "h.wav"))
+        assert fake_popen.instances[0].requests == []
+
 
 class TestCache:
     def test_keys(self):
@@ -1145,11 +1296,12 @@ class TestProvider:
         assert speak(piper, "Halo, ini suara Piper.", rate=5, volume=70) is None
         process = fake_popen.instances[0]
         assert process.args[0] == store.exe_path(piper.root)
-        assert process.args[1:3] == ["--model", store.model_path(piper.root,
-                                                                  "id_ID-news_tts-medium")]
+        assert process.args[1:4] == ["--model", store.model_path(piper.root,
+                                                                  "id_ID-news_tts-medium"),
+                                     "--json-input"]
         assert process.args[-2:] == ["--length_scale", "0.80"]
         assert process.kwargs["creationflags"] == synth.CREATE_NO_WINDOW
-        assert process.input == "Halo, ini suara Piper.\n".encode("utf-8")
+        assert process.requests == ["Halo, ini suara Piper."]
         path, volume = piper.played[0]
         assert volume == 70 and path.endswith(".wav")
         assert os.path.dirname(path).endswith(os.path.join("voice_cache", "piper"))
@@ -1195,7 +1347,9 @@ class TestProvider:
         cache_dir = os.path.join(piper.root, "..", "voice_cache", "piper")
         assert [n for n in os.listdir(cache_dir) if not n.endswith(".wav")] == []
 
-    def test_stop_kills_piper_and_calls_on_done_once(self, piper, fake_popen):
+    def test_stop_answers_at_once_and_a_stuck_piper_is_killed(self, piper, fake_popen,
+                                                                monkeypatch):
+        monkeypatch.setattr(synth, "CANCEL_GRACE_SECONDS", 0.3)
         install_fake_runtime(piper.root)
         install_fake_voice(piper.root)
         fake_popen.mode = "hang"
@@ -1204,11 +1358,82 @@ class TestProvider:
         assert wait_until(lambda: fake_popen.instances and fake_popen.instances[0].started.is_set())
         piper.speak("Queued", "id_ID-news_tts-medium", 0, 100, done.append)
         piper.stop()
-        assert wait_until(lambda: len(done) == 2)
-        time.sleep(0.05)
+        assert wait_until(lambda: len(done) == 2, timeout=0.2)     # without waiting for Piper
         assert done == [None, None]
-        assert fake_popen.instances[0].killed.is_set() and len(fake_popen.instances) == 1
-        assert piper.played == []
+        assert wait_until(lambda: fake_popen.instances[0].killed.is_set())
+        time.sleep(0.1)
+        assert len(fake_popen.instances) == 1 and piper.played == []
+
+    def test_a_long_text_plays_sentence_by_sentence(self, piper, fake_popen):
+        install_fake_runtime(piper.root)
+        install_fake_voice(piper.root)
+        piper.hold_playback = True
+        done = []
+        piper.speak("Selamat pagi, Rafli. Hari ini hari Kamis.\nKamu punya tiga pengingat.",
+                    "id_ID-news_tts-medium", 0, 90, done.append)
+        assert wait_until(lambda: len(piper.pending_playback) == 1)
+        engine = fake_popen.instances[0]
+        # The first sentence plays while Piper makes the second, which waits its turn.
+        assert wait_until(lambda: len(engine.requests) == 2)
+        time.sleep(0.05)
+        assert len(piper.played) == 1 and not done
+        piper.pending_playback.pop(0)(None)
+        assert wait_until(lambda: len(piper.pending_playback) == 1 and len(piper.played) == 2)
+        piper.pending_playback.pop(0)(None)
+        assert wait_until(lambda: len(piper.pending_playback) == 1 and len(piper.played) == 3)
+        assert not done
+        piper.pending_playback.pop(0)(None)
+        assert wait_until(lambda: done) and done == [None]
+        assert engine.requests == ["Selamat pagi, Rafli.", "Hari ini hari Kamis.",
+                                   "Kamu punya tiga pengingat."]
+        assert [volume for _path, volume in piper.played] == [90, 90, 90]
+        assert len({path for path, _volume in piper.played}) == 3
+        assert len(fake_popen.instances) == 1
+
+    def test_the_voice_stays_loaded_between_texts(self, piper, fake_popen):
+        install_fake_runtime(piper.root)
+        install_fake_voice(piper.root)
+        speak(piper, "Jam delapan.")
+        speak(piper, "Cuaca cerah.")
+        assert len(fake_popen.instances) == 1
+        assert fake_popen.instances[0].requests == ["Jam delapan.", "Cuaca cerah."]
+        assert not fake_popen.instances[0].killed.is_set()
+
+    def test_a_failing_kept_piper_falls_back_to_a_new_one(self, piper, fake_popen):
+        install_fake_runtime(piper.root)
+        install_fake_voice(piper.root)
+        fake_popen.mode = "server_fail"
+        assert speak(piper, "Halo.") is None
+        assert [p.server for p in fake_popen.instances] == [True, False]
+        assert fake_popen.instances[1].input == "Halo.\n".encode("utf-8")
+        assert len(piper.played) == 1
+
+    def test_a_first_file_that_cant_play_is_an_error(self, piper, fake_popen, monkeypatch):
+        import core.voice
+        install_fake_runtime(piper.root)
+        install_fake_voice(piper.root)
+        monkeypatch.setattr(core.voice, "play_file",
+                            lambda path, volume, on_done: on_done(RuntimeError("no sound device")))
+        error = speak(piper, "Satu. Dua.")
+        assert isinstance(error, RuntimeError)
+
+    def test_removing_a_voice_and_teardown_close_the_kept_piper(self, piper, fake_popen):
+        install_fake_runtime(piper.root)
+        install_fake_voice(piper.root)
+        speak(piper, "Halo.")
+        piper.controller.remove_voice("id_ID-news_tts-medium")
+        assert fake_popen.instances[0].killed.is_set()
+        install_fake_voice(piper.root)
+        speak(piper, "Halo lagi.")
+        piper.teardown()
+        assert fake_popen.instances[1].killed.is_set()
+
+    def test_a_quiet_while_closes_the_kept_piper(self, piper, fake_popen, monkeypatch):
+        monkeypatch.setattr(piper, "IDLE_EXIT_SECONDS", 0.1)
+        install_fake_runtime(piper.root)
+        install_fake_voice(piper.root)
+        speak(piper, "Halo.")
+        assert wait_until(lambda: fake_popen.instances[0].killed.is_set())
 
     def test_stop_during_playback(self, piper, fake_popen):
         install_fake_runtime(piper.root)
@@ -1377,7 +1602,7 @@ class TestPackage:
         with open(os.path.join(PIPER_DIR, "manifest.json"), encoding="utf-8") as f:
             manifest = json.load(f)
         assert manifest["id"] == "piper_voices" and manifest["name"] == "Piper Voices"
-        assert manifest["version"] == "1.0" and manifest["minimum_core_version"] == "2.7"
+        assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"
         assert manifest["main"] == "main.py"
 
     def test_translations(self):
