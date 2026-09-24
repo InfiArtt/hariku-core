@@ -49,8 +49,17 @@ class KeyNotifierSettingsPanel(wx.Panel):
         hbox_interval = wx.BoxSizer(wx.HORIZONTAL)
         hbox_interval.Add(wx.StaticText(self, label="Loop Interval (seconds): "), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
         
-        interval_val = config.get("loop_interval_sec", 2.0)
-        self.spin_interval = wx.SpinCtrlDouble(self, value=str(interval_val), min=2.0, max=60.0, inc=0.5)
+        # A choice rather than wx.SpinCtrlDouble, whose inner text field has no
+        # label for screen readers.
+        try:
+            interval_val = float(config.get("loop_interval_sec", 2.0))
+        except (TypeError, ValueError):
+            interval_val = 2.0
+        self._intervals = [2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 30.0, 45.0, 60.0]
+        self.spin_interval = wx.Choice(self, choices=[f"{v:g}" for v in self._intervals])
+        self.spin_interval.SetName("Loop Interval (seconds)")
+        nearest = min(range(len(self._intervals)), key=lambda i: abs(self._intervals[i] - interval_val))
+        self.spin_interval.SetSelection(nearest)
         hbox_interval.Add(self.spin_interval, 0, wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox_interval, 0, wx.EXPAND | wx.ALL, 10)
         
@@ -106,6 +115,6 @@ class KeyNotifierSettingsPanel(wx.Panel):
         config["sound_off"] = self.fp_off.GetValue().strip()
         config["loop_enabled"] = self.chk_loop.GetValue()
         config["sound_loop"] = self.fp_loop.GetValue().strip()
-        config["loop_interval_sec"] = self.spin_interval.GetValue()
+        config["loop_interval_sec"] = self._intervals[max(0, self.spin_interval.GetSelection())]
         
         core.api.save_data("key_notifier", config)

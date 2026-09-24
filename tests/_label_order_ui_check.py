@@ -93,7 +93,7 @@ for name in sorted(os.listdir(ext_root)):
 # Controls a screen reader names from a preceding label. Buttons, check boxes
 # and radio buttons carry their own text.
 NEEDS_LABEL = (wx.TextCtrl, wx.Choice, wx.ComboBox, wx.ListCtrl, wx.ListBox,
-               wx.SpinCtrl, wx.SpinCtrlDouble, wx.Slider, wx.TreeCtrl)
+               wx.SpinCtrl, wx.Slider, wx.TreeCtrl)
 DEFAULT_NAMES = {"text", "choice", "comboBox", "listCtrl", "listBox", "wxSpinCtrl",
                  "wxSpinCtrlDouble", "slider", "treeCtrl", "checkListBox", "panel", ""}
 
@@ -112,9 +112,9 @@ def _is_note(ctrl):
 def check(window, page, problems):
     children = [c for c in window.GetChildren() if not isinstance(c, wx.TopLevelWindow)]
     for index, ctrl in enumerate(children):
-        if isinstance(ctrl, (wx.FilePickerCtrl, wx.DirPickerCtrl)):
+        if isinstance(ctrl, (wx.FilePickerCtrl, wx.DirPickerCtrl, wx.SpinCtrlDouble)):
             problems.append(f"PROBLEM [{page}] {type(ctrl).__name__} hides an unlabelled text "
-                            f"field; use a labelled TextCtrl and a Browse button")
+                            f"field; use a labelled TextCtrl, SpinCtrl or Choice instead")
             continue
         if isinstance(ctrl, NEEDS_LABEL) and ctrl.IsShown() and not _is_note(ctrl):
             before = children[index - 1] if index else None
