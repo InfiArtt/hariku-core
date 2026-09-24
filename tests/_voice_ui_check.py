@@ -334,8 +334,11 @@ state = {"focus": True}
 def interact():
     """Everything a user does on the page, run inside the modal Preferences."""
     assert panel.IsShown(), "the Hariku Voice page is not showing"
-    # Off by default; every control is named by the label before it.
-    assert [chk.GetValue() for chk in panel.chk_kinds.values()] == [False, False, False]
+    # Off by default, except answers to commands (the user asked for those in
+    # their Hariku Voice); every control is named by the label before it.
+    assert [chk.GetValue() for chk in panel.chk_kinds.values()] == [False, False, False, True]
+    assert panel.chk_kinds["command"].GetName() == \
+        "Read answers to commands (the command bar) with Hariku Voice"
     assert panel.chk_kinds["reminder"].GetName() == \
         "Read reminders with Hariku Voice when they are due"
     assert panel.chk_stop_on_key.GetValue() is True
@@ -549,7 +552,8 @@ assert result == wx.ID_OK, result
 
 # --- What OK saved ------------------------------------------------------------
 saved = core.voice.get_settings()
-assert saved == {"kinds": {"greeting": False, "briefing": True, "reminder": True},
+assert saved == {"kinds": {"greeting": False, "briefing": True, "reminder": True,
+                           "command": True},
                  "provider": "fake", "voice": "id-ID-GadisNeural", "rate": 3, "volume": 80,
                  "fallback": "TOKEN_ZIRA", "stop_on_key": False}, saved
 stored = core.api.load_data("Core")
@@ -588,7 +592,7 @@ prefs.Show()
 wx.Yield()
 panel = core.voice_panel._panel_instance
 assert panel.choice_source.GetStringSelection() == "Fake online voices"
-assert [chk.GetValue() for chk in panel.chk_kinds.values()] == [False, True, True]
+assert [chk.GetValue() for chk in panel.chk_kinds.values()] == [False, True, True, True]
 assert panel.spin_rate.GetValue() == 3 and panel.spin_volume.GetValue() == 80
 assert panel.chk_stop_on_key.GetValue() is False
 assert pump(lambda: loaded(panel))
