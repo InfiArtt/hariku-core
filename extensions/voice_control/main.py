@@ -19,8 +19,17 @@ Preferences, Voice Control.
   voice_control_download.py  pinned, checked downloads from GitHub and Hugging Face
   voice_control_store.py     files and settings
   voice_control_engine.py    whisper-server: start, recognise, stop when idle
+  voice_control_wake.py      the wake phrase: the phrase, and the listener thread
+  voice_control_kws.py       sherpa-onnx's keyword spotter (its C API, ctypes)
+  voice_control_bpe.py       a phrase as the keyword model's tokens
   voice_control_text.py      text in the user's language
   voice_control_ui.py        the Preferences page
+
+The wake phrase (1.1, off until the user turns it on): "Hey Aruna", or any
+phrase the user types, opens Aruna listening, as the hotkey does. sherpa-onnx
+(Apache-2.0) spots it on this computer with an English keyword model; both
+are downloaded only when the user asks. See voice_control_wake.py for when it
+listens and when it doesn't.
 
 How a command is heard: the screen reader and Hariku Voice are silenced (with
 speakers they would talk into the microphone), the start tone plays, and the
@@ -48,6 +57,8 @@ import wx
 
 import core.api
 import core.commands
+import core.hotkeys
+import core.personal
 import core.preferences
 import core.sounds
 import core.speech
@@ -55,11 +66,14 @@ import core.voice
 from core.i18n import get_current_language
 
 import voice_control_audio as audio
+import voice_control_bpe as bpe
 import voice_control_download as download
 import voice_control_engine as engine
+import voice_control_kws as kws
 import voice_control_store as store
 import voice_control_text as text
 import voice_control_ui
+import voice_control_wake as wake
 from voice_control_text import _
 
 logger = logging.getLogger(__name__)
@@ -71,9 +85,12 @@ MAX_TONE_SECONDS = 1.5
 START_TIMEOUT_MS = 5000         # no speech this long: stop and say so
 MAX_RECORD_MS = 12000
 MIC_TEST_SECONDS = 5.0          # time for a sentence, with quiet before and after it
+WAKE_TEST_SECONDS = wake.TEST_SECONDS
+WAKE_ACTION = "toggle_wake"     # "Voice Control.toggle_wake"
 MILESTONES = (25, 50, 75, 100)
 
 _panel = None
+_bus = None
 
 
 def _call_after(fn, *args):
@@ -99,22 +116,30 @@ def _say(message, interrupt=True):
 
 _state_lock = threading.Lock()
 _available = False
+_wake_available = False
 _settings = dict(store.DEFAULT_SETTINGS)
 
 
 def refresh_state():
     """Look at the disk again; returns the installed models."""
-    global _available
+    global _available, _wake_available
     root = store.root_dir()
     models = store.installed_models(root)
+    wake_ready = store.wake_installed(root)
     with _state_lock:
         _available = bool(models) and store.runtime_installed(root)
+        _wake_available = wake_ready
     return models
 
 
 def is_available():
     """The program and at least one model are installed."""
     return _available
+
+
+def wake_available():
+    """The wake phrase listener is installed."""
+    return _wake_available
 
 
 def get_settings():
@@ -127,15 +152,23 @@ def reload_settings():
     settings = store.load_settings()
     with _state_lock:
         _settings = settings
+    _configure_wake(settings)
     return settings
 
 
-def save_settings(model, listen_on_open, silence_ms, sensitivity=None):
-    """Save the page's settings (the sensitivity stays as it is when None)."""
+def save_settings(model, listen_on_open, silence_ms, sensitivity=None, wake_settings=None):
+    """Save the page's settings (the sensitivity and the wake phrase stay as
+    they are when None). `wake_settings`: {"enabled", "phrase",
+    "sensitivity", "quiet_hours"}."""
     settings = get_settings()
     settings.update(model=model, listen_on_open=bool(listen_on_open), silence_ms=silence_ms)
     if sensitivity is not None:
         settings["sensitivity"] = sensitivity
+    if wake_settings is not None:
+        settings.update(wake=bool(wake_settings.get("enabled")),
+                        wake_phrase=wake_settings.get("phrase") or wake.DEFAULT_PHRASE,
+                        wake_sensitivity=wake_settings.get("sensitivity"),
+                        wake_quiet_hours=bool(wake_settings.get("quiet_hours")))
     store.save_settings(settings)
     reload_settings()
 
@@ -391,6 +424,160 @@ _listener = Listener()
 
 
 # ------------------------------------------------------------
+# The wake phrase: a keyword spotter listens in the background while the
+# user has it on; hearing the phrase opens Aruna listening
+# ------------------------------------------------------------
+
+# Hariku speaking (Hariku Voice, or the screen reader through Hariku) isn't heard.
+_speech = wake.SpeechWatch(voice_speaking=lambda: core.voice.is_speaking())
+_tokenizers = {}
+_tokenizers_lock = threading.Lock()
+
+
+def _tokenizer(path):
+    with _tokenizers_lock:
+        model = _tokenizers.get(path)
+        if model is None:
+            model = _tokenizers[path] = bpe.UnigramModel.load(path)
+        return model
+
+
+def make_spotter(phrase, sensitivity):
+    """A keyword spotter for the phrase (on a worker thread: loading takes a
+    moment). Raises kws.KwsError, ValueError (a phrase the model can't hear)
+    or bpe.ModelError."""
+    root = store.root_dir()
+    if not store.wake_installed(root):
+        raise kws.KwsError("missing", "the wake phrase listener")
+    if not download.verify_wake(root):
+        raise kws.KwsError("damaged", "a file doesn't match its SHA-256")
+    files = store.wake_files(root)
+    tokens = kws.read_tokens(files["tokens"])
+    keywords = wake.keywords_text(phrase, _tokenizer(files["bpe"]), tokens, sensitivity)
+    threshold, score, paths = wake.sensitivity_values(sensitivity)
+    return kws.Spotter(store.wake_runtime_dir(root), files, keywords, threshold=threshold,
+                       score=score, threads=1, max_active_paths=paths)
+
+
+def _make_wake_recorder():
+    return audio.Recorder(poll_seconds=wake.POLL_SECONDS)
+
+
+def _quiet_time():
+    return core.personal.is_quiet_time()
+
+
+def open_aruna_listening():
+    """The wake phrase was heard (UI thread): Aruna opens and listens, as the
+    hotkey does with "Start listening as soon as Aruna opens"; when Aruna is
+    open already, it starts listening."""
+    import ui.command_bar as command_bar
+    bar = command_bar.current_bar()
+    if bar is None:
+        command_bar.open_command_bar(listen=True)
+        return
+    command_bar.bring_to_front(bar)
+    if not getattr(bar, "_listening", False):
+        bar.start_listening()
+
+
+def _on_wake_detected(name):
+    logger.info(f"[{EXT_NAME}] Heard the wake phrase ({name}).")
+    _call_after(_open_aruna)
+
+
+def _open_aruna():
+    try:
+        open_aruna_listening()
+    except Exception:
+        logger.exception(f"[{EXT_NAME}] Opening Aruna for the wake phrase failed")
+
+
+_wake_state_listeners = []
+
+
+def _on_wake_state(state):
+    _call_after(_notify_wake_state, state)
+
+
+def _notify_wake_state(state):
+    for listener in list(_wake_state_listeners):
+        try:
+            listener(state)
+        except Exception:
+            logger.exception(f"[{EXT_NAME}] A wake phrase state listener failed")
+
+
+def _on_wake_problem(kind, value):
+    _say(text.wake_problem(kind, value), interrupt=False)
+
+
+_wake = wake.WakeListener(make_spotter, _make_wake_recorder, _on_wake_detected,
+                          installed=wake_available, busy=lambda: _listener.busy(),
+                          quiet_time=_quiet_time, speaking=_speech.speaking,
+                          on_state=_on_wake_state, on_problem=_on_wake_problem)
+
+
+def _configure_wake(settings):
+    _wake.configure(wake.Config(settings["wake"], settings["wake_phrase"],
+                                settings["wake_sensitivity"], settings["wake_quiet_hours"]))
+
+
+def toggle_wake_pause():
+    """The "Pause or resume the wake phrase" action (no key by default; also
+    from Aruna by name). The pause lasts until it's resumed or Hariku
+    restarts."""
+    settings = get_settings()
+    if not settings["wake"]:
+        _say(_("wake_is_off"))
+        return
+    if not wake_available():
+        _say(_("wake_not_installed"))
+        return
+    paused = not _wake.paused
+    _wake.set_paused(paused)
+    _say(_("wake_paused") if paused else _("wake_resumed", phrase=settings["wake_phrase"]))
+
+
+def test_wake(phrase, sensitivity, on_heard, stop, listener=None, seconds=WAKE_TEST_SECONDS,
+              spotter=None):
+    """The page's "Test the wake phrase": listen for `phrase` with this
+    sensitivity (the page's, not yet saved) for `seconds`, or until `stop`
+    (an Event) is set; on_heard(count) for each detection, on this worker
+    thread. Nothing is kept. Returns {"count", "seconds", "stopped"}.
+    Raises audio.MicrophoneError, kws.KwsError or ValueError."""
+    listener = listener or _listener
+    blocked = listener.blocked()
+    if blocked:
+        raise audio.MicrophoneError(blocked)
+    spotter = spotter or make_spotter(phrase, sensitivity)
+    count = 0
+    try:
+        listener.quiet()
+        listener.play(core.commands.LISTEN_SOUND)
+        listener.sleep(listener.tone_seconds(core.commands.LISTEN_SOUND) + TONE_GAP_SECONDS)
+        ear = wake.Ear(spotter, _speech.speaking)
+
+        def on_chunk(chunk):
+            nonlocal count
+            if ear.hear(chunk):
+                count += 1
+                on_heard(count)
+            return False
+
+        if not stop.is_set():
+            listener.make_recorder().record(on_chunk, stop=stop, max_seconds=seconds,
+                                            keep=False)
+    finally:
+        listener.play(core.commands.LISTEN_END_SOUND)
+        spotter.close()
+    stopped = stop.is_set()
+    logger.info(f"[{EXT_NAME}] Wake phrase test: heard it {count} times"
+                f"{' (stopped early)' if stopped else ''}.")
+    return {"count": count, "seconds": seconds, "stopped": stopped}
+
+
+# ------------------------------------------------------------
 # The microphone test (Preferences): a sentence at the user's normal volume,
 # measured to suggest a sensitivity; nothing played back
 # ------------------------------------------------------------
@@ -433,14 +620,18 @@ def test_microphone(listener=None, seconds=MIC_TEST_SECONDS):
 # ------------------------------------------------------------
 
 class Download:
-    """The program or a model being downloaded (a model brings the program
-    along when it isn't installed)."""
+    """The program, a model or the wake phrase listener being downloaded (a
+    model brings the program along when it isn't installed)."""
 
     def __init__(self, item, need_runtime):
         self.item = item
-        self.need_runtime = need_runtime or item == "runtime"
-        self.total = (download.RUNTIME_SIZE if self.need_runtime else 0) + (
-            0 if item == "runtime" else download.MODELS[item]["size"])
+        if item == "wake":
+            self.need_runtime = False
+            self.total = download.WAKE_SIZE
+        else:
+            self.need_runtime = need_runtime or item == "runtime"
+            self.total = (download.RUNTIME_SIZE if self.need_runtime else 0) + (
+                0 if item == "runtime" else download.MODELS[item]["size"])
         self.percent = 0
         self.spoken = 0
         self.reported = -1
@@ -452,9 +643,10 @@ class Download:
 
 
 class Downloads:
-    def __init__(self, install_runtime=None, install_model=None):
+    def __init__(self, install_runtime=None, install_model=None, install_wake=None):
         self._install_runtime = install_runtime or download.install_runtime
         self._install_model = install_model or download.install_model
+        self._install_wake = install_wake or download.install_wake
         self._lock = threading.Lock()
         self._current = None
         self._listeners = []
@@ -497,12 +689,19 @@ class Downloads:
         try:
             store.cleanup_partials(root)
             done_before = 0
+            if job.item == "wake":
+                _wake.suspend("download")          # its files may be replaced
+                try:
+                    self._install_wake(root, progress=lambda n: self._progress(job, n),
+                                       cancelled=job.cancel_event.is_set)
+                finally:
+                    _wake.release("download")
             if job.need_runtime:
                 _engine.stop_all()          # its files may be replaced
                 self._install_runtime(root, progress=lambda n: self._progress(job, n),
                                       cancelled=job.cancel_event.is_set)
                 done_before = download.RUNTIME_SIZE
-            if job.item != "runtime":
+            if job.item not in ("runtime", "wake"):
                 self._install_model(job.item, root,
                                     progress=lambda n: self._progress(job, done_before + n),
                                     cancelled=job.cancel_event.is_set)
@@ -516,6 +715,7 @@ class Downloads:
             logger.exception(f"[{EXT_NAME}] Downloading {job.item} failed")
         try:
             refresh_state()
+            _wake.refresh()
         except Exception:
             logger.exception(f"[{EXT_NAME}] Reading what is installed failed")
         _call_after(self._finished, job, error)
@@ -573,7 +773,9 @@ def _in_thread(work, done, name):
             result = work()
         except Exception as e:
             error = e
-            if not isinstance(e, (audio.MicrophoneError, download.DownloadError, OSError)):
+            if isinstance(e, (kws.KwsError, ValueError, bpe.ModelError)):
+                logger.warning(f"[{EXT_NAME}] {name} failed: {e}")
+            elif not isinstance(e, (audio.MicrophoneError, download.DownloadError, OSError)):
                 logger.exception(f"[{EXT_NAME}] {name} failed")
         _call_after(done, result, error)
 
@@ -587,10 +789,11 @@ class Controller:
 
     @staticmethod
     def installed():
-        """{item: True/False} for the program and each model (a quick look at the disk)."""
+        """{item: True/False} for the program, each model and the wake phrase
+        listener (a quick look at the disk)."""
         root = store.root_dir()
         models = set(store.installed_models(root))
-        state = {"runtime": store.runtime_installed(root)}
+        state = {"runtime": store.runtime_installed(root), "wake": store.wake_installed(root)}
         state.update({name: name in models for name in store.MODEL_NAMES})
         return state
 
@@ -599,24 +802,30 @@ class Controller:
         return get_settings()
 
     @staticmethod
-    def save_settings(model, listen_on_open_, silence_ms, sensitivity=None):
-        save_settings(model, listen_on_open_, silence_ms, sensitivity)
+    def save_settings(model, listen_on_open_, silence_ms, sensitivity=None, wake_settings=None):
+        save_settings(model, listen_on_open_, silence_ms, sensitivity, wake_settings)
 
     @staticmethod
     def remove(item):
-        """Delete the program or a model (its server is stopped first: Windows
-        can't delete a file in use)."""
+        """Delete the program, a model (its server is stopped first: Windows
+        can't delete a file in use) or the wake phrase listener. Returns
+        whether it was there, or "later" when some files are only deleted at
+        the next start (a DLL Hariku has loaded)."""
         _engine.stop_all()
         root = store.root_dir()
         try:
             if item == "runtime":
                 return store.remove_runtime(root)
+            if item == "wake":
+                removed, complete = store.remove_wake(root)
+                return removed and (True if complete else "later")
             removed = store.remove_model(root, item)
             store.forget_speed(item)
             reload_settings()
             return removed
         finally:
             refresh_state()
+            _wake.refresh()
 
     @staticmethod
     def test_microphone(done):
@@ -624,7 +833,50 @@ class Controller:
         if _listener.busy():
             done(None, RuntimeError("busy"))
             return
-        _in_thread(test_microphone, done, "microphone-test")
+        _wake.suspend("microphone-test")
+
+        def finished(result, error):
+            _wake.release("microphone-test")
+            done(result, error)
+
+        _in_thread(test_microphone, finished, "microphone-test")
+
+    @staticmethod
+    def wake_state():
+        """(the wake phrase listener's state, the phrase it listens for)."""
+        return _wake.state, _wake.config.phrase
+
+    @staticmethod
+    def add_wake_listener(listener):
+        """listener(state) on the UI thread whenever the wake phrase's state changes."""
+        if listener not in _wake_state_listeners:
+            _wake_state_listeners.append(listener)
+
+    @staticmethod
+    def remove_wake_listener(listener):
+        if listener in _wake_state_listeners:
+            _wake_state_listeners.remove(listener)
+
+    @staticmethod
+    def test_wake(phrase, sensitivity, on_heard, done, stop=None):
+        """Start the wake phrase test; returns the Event (`stop`, or a new
+        one) that stops it early. on_heard(count) and done(result, error)
+        come on the UI thread; see test_wake()."""
+        stop = stop or threading.Event()
+        if _listener.busy():
+            done(None, RuntimeError("busy"))
+            return stop
+        _wake.suspend("wake-test")
+
+        def heard(count):
+            _call_after(on_heard, count)
+
+        def finished(result, error):
+            _wake.release("wake-test")
+            done(result, error)
+
+        _in_thread(lambda: test_wake(phrase, sensitivity, heard, stop), finished, "wake-test")
+        return stop
 
 
 controller = Controller()
@@ -648,21 +900,32 @@ def _apply_panel():
 # Registration
 # ------------------------------------------------------------
 
+def wake_action_id():
+    return f"{EXT_NAME}.{WAKE_ACTION}"
+
+
 def register(bus):
-    global _panel
+    global _panel, _bus
     _panel = None
     if not hasattr(core.commands, "register_listener"):
         logger.warning(f"[{EXT_NAME}] This Hariku has no command bar; Voice Control needs core 2.7.")
         return
+    _bus = bus
+    _engine.restart()
+    _wake.restart()
+    bus.subscribe("on_before_speak", _speech.on_before_speak)
     try:
         store.cleanup_partials(store.root_dir())
         refresh_state()
-        reload_settings()
+        reload_settings()                  # starts the wake phrase listener when it's on
     except Exception:
         logger.exception(f"[{EXT_NAME}] Reading what is installed failed")
-    _engine.restart()
     core.commands.register_listener(_listener.start, _listener.stop, _listener.is_available,
                                     _listener.listen_on_open, name=EXT_NAME)
+    core.hotkeys.register_action(EXT_NAME, WAKE_ACTION, _("action_toggle_wake"), None, False,
+                                 toggle_wake_pause)
+    core.commands.add_aliases(wake_action_id(), text.WAKE_ALIASES,
+                              title=_("action_toggle_wake_title"))
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
     logger.info(f"[{EXT_NAME}] Extension loaded.")
 
@@ -670,15 +933,20 @@ def register(bus):
 def _shutdown():
     _listener.stop(discard=True)
     _downloads.cancel()
+    _wake.stop()
     _engine.shutdown()
 
 
 def teardown():
-    global _panel
+    global _panel, _bus
     _panel = None
     try:
         core.commands.unregister_listener(_listener.start)
+        core.commands.remove_aliases(wake_action_id())
     except Exception:
         pass
+    if _bus is not None:
+        _bus.unsubscribe("on_before_speak", _speech.on_before_speak)
+        _bus = None
     _shutdown()
     logger.info(f"[{EXT_NAME}] Extension unloaded.")

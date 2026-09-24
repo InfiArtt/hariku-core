@@ -8,9 +8,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Opens Preferences and uses the Voice Control page, then listens through the
-# command bar, with real wxPython in a separate process (conftest.py mocks wx
-# here). The downloads, the microphone and whisper.cpp are fakes: nothing is
-# downloaded, recorded, run or played.
+# command bar, and uses the wake phrase (its test, its settings, and the
+# phrase opening Aruna), with real wxPython in a separate process (conftest.py
+# mocks wx here). The downloads, the microphone, whisper.cpp and sherpa-onnx
+# are fakes: nothing is downloaded, recorded, run or played.
 
 import os
 import subprocess
@@ -28,8 +29,9 @@ def test_voice_control_page(tmp_path):
     )
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK load", "OK page", "OK download", "OK microphone_test",
-                  "OK settings", "OK listening", "OK remove", "OK teardown", "OK no_errors",
-                  "OK shutdown"):
+                  "OK settings", "OK listening", "OK wake_download", "OK wake_advice",
+                  "OK wake_test", "OK wake_settings", "OK wake_opens_aruna", "OK remove",
+                  "OK teardown", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
     assert "Traceback" not in result.stderr, output

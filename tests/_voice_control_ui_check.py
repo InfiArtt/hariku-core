@@ -15,11 +15,16 @@ the sensitivity on the page, unsaved) and with a made-up result (a voice too
 quiet), the settings saved with OK (the sensitivity chosen with the arrow
 keys, focus staying on it), then the command bar listening through the
 extension with a fake microphone and a fake whisper-server ("gempa terbaru"
-runs the earthquake action), and removing the model.
+runs the earthquake action), then the wake phrase (1.1): downloading its
+listener with a fake installer, the advice about the phrase said as it
+changes, "Test the wake phrase..." hearing it twice, the wake settings saved
+with OK (the status line then says it listens), and the phrase heard in the
+background opening Aruna listening; and removing the model and the listener.
 
 Nothing is downloaded, recorded, run or played: the installers, the
-microphone (Recorder), whisper-server (the engine) and the sounds are fakes,
-the network is refused, and speech is captured through on_before_speak.
+microphone (Recorder), whisper-server (the engine), sherpa-onnx's keyword
+spotter and the sounds are fakes, the network is refused, and speech is
+captured through on_before_speak.
 
 Run by tests/test_voice_control_ui.py in a separate process, because
 conftest.py mocks wx inside the pytest process. The caller points APPDATA at a
@@ -174,8 +179,26 @@ def fake_install_model(name, root, progress=None, cancelled=None):
     store.write_model_marker(root, name, 4, dl.MODELS[name]["sha256"])
 
 
+def fake_install_wake(root, progress=None, cancelled=None):
+    installs.append(("wake", _worker()))
+    for step in range(1, 5):
+        time.sleep(0.03)
+        progress(dl.WAKE_SIZE * step // 4)
+    folder = store.wake_dir(root)
+    files = {}
+    for relative in dl.WAKE_FILES:
+        path = os.path.join(folder, *relative.split("/"))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(b"fake")
+        files[relative] = {"size": 4, "sha256": "not checked: the spotter is a fake"}
+    store.write_json(os.path.join(folder, store.WAKE_MARKER), {"version": "1.13.8",
+                                                               "files": files})
+
+
 main._downloads._install_runtime = fake_install_runtime
 main._downloads._install_model = fake_install_model
+main._downloads._install_wake = fake_install_wake
 dl.open_url = lambda *args, **kwargs: _blocked(*args)
 
 questions = []
@@ -199,7 +222,7 @@ def speech_clip():
 class FakeRecorder:
     """The microphone: plays back nothing, just hands over a synthetic clip."""
 
-    def record(self, on_chunk, stop=None, max_seconds=30.0):
+    def record(self, on_chunk, stop=None, max_seconds=30.0, keep=True):
         data = speech_clip()
         out = bytearray()
         for i in range(0, len(data), 3200):
@@ -309,8 +332,9 @@ pages = [prefs.treebook.GetPageText(i) for i in range(prefs.treebook.GetPageCoun
 assert pages[prefs.treebook.GetSelection()] == "Voice Control", pages
 panel = main._panel
 assert panel is not None and panel.IsShown(), "the Voice Control page was not created or shown"
-assert check_labels(panel) == 7, \
-    "list, progress, status, model, silence, sensitivity and test result"
+assert check_labels(panel) == 11, \
+    "list, progress, status, model, silence, sensitivity, test result, wake phrase, " \
+    "its advice, its sensitivity and its test"
 assert panel.list_items.GetName() == "Program and speech models"
 assert panel.gauge.GetName() == "Download progress"
 assert panel.txt_status.GetName() == "Status"
@@ -327,6 +351,8 @@ assert rows(panel.list_items) == [
     ("Tiny speech model (fastest, for commands)", "77.7 MB", "Not installed"),
     ("Base speech model (more accurate, for reminders)", "148.0 MB", "Not installed"),
     ("Small speech model (most accurate, slow on older computers)", "487.6 MB",
+     "Not installed"),
+    ("Wake phrase listener (sherpa-onnx and an English keyword model)", "38.1 MB",
      "Not installed")], rows(panel.list_items)
 assert panel.selected_item() == "tiny"
 assert panel.choice_model.GetStringSelection() == "Automatic (recommended)"
@@ -334,6 +360,20 @@ assert panel.chk_listen.GetValue() is True
 assert panel.choice_silence.GetStringSelection() == "1.0 s"
 assert panel.choice_sensitivity.GetStringSelection() == "Normal"
 assert panel.txt_status.GetValue() == _("status_not_ready")
+# The wake phrase: off, "Hey Aruna", Normal; each control named by its label.
+assert panel.chk_wake.GetLabel().replace("&", "") == "Listen for a wake phrase"
+assert panel.chk_wake.GetValue() is False
+assert panel.txt_phrase.GetName() == "Wake phrase" and panel.txt_phrase.GetValue() == "Hey Aruna"
+assert panel.txt_advice.GetName() == "About this phrase"
+assert panel.txt_advice.GetValue() == _("wake_advice_note")
+assert panel.choice_wake_sensitivity.GetName() == "Wake phrase sensitivity"
+assert [panel.choice_wake_sensitivity.GetString(i)
+        for i in range(panel.choice_wake_sensitivity.GetCount())] == ["Low", "Normal", "High"]
+assert panel.choice_wake_sensitivity.GetStringSelection() == "Normal"
+assert panel.chk_wake_quiet.GetValue() is False
+assert panel.btn_test_wake.GetLabel().replace("&", "") == "Test the wake phrase..."
+assert panel.txt_wake_test.GetName() == "Wake phrase test"
+assert main._wake.state == "off"
 assert not prefs.is_dirty, "building the page marked Preferences as changed"
 print("OK page")
 
@@ -465,7 +505,190 @@ assert pump(lambda: cb.current_bar() is None), "the command bar did not close"
 print("OK listening")
 
 # --------------------------------------------------------------------------- #
-# Remove the model
+# The wake phrase. sherpa-onnx's keyword spotter is a fake that "hears" the
+# phrase in a chunk whose first sample is 0.5; its microphone is a fake that
+# gives what is put in wake_script, then quiet.
+# --------------------------------------------------------------------------- #
+wake = sys.modules["voice_control_wake"]
+wake.speech_seconds = lambda text_: 0.05          # Hariku "says" everything at once here
+wake.AFTER_SPEECH_SECONDS = 0.0
+wake.COOLDOWN_SECONDS = 0.05
+
+
+def chunk_bytes(level, first=None):
+    samples = [int(level * math.sqrt(2) * math.sin(2 * math.pi * 220 * i / RATE))
+               for i in range(RATE // 10)]
+    if first is not None:
+        samples[0] = first
+    return array.array("h", samples).tobytes()
+
+
+QUIET_CHUNK = chunk_bytes(10)
+TRIGGER_CHUNK = chunk_bytes(3000, first=16384)
+wake_script = []
+
+
+class FakeSpotter:
+    made = []
+
+    def __init__(self, phrase, sensitivity):
+        self.phrase, self.sensitivity, self.closed = phrase, sensitivity, False
+        FakeSpotter.made.append(self)
+
+    def new_stream(self):
+        pass
+
+    def accept(self, floats):
+        return ["HEY_ARUNA"] if len(floats) and abs(floats[0] - 0.5) < 1e-6 else []
+
+    def close(self):
+        self.closed = True
+
+
+class FakeWakeMic:
+    """What wake_script holds, then quiet until told to stop (the page's test:
+    until the script ends)."""
+
+    ends_with_script = False
+
+    def record(self, on_chunk, stop=None, max_seconds=30.0, keep=True):
+        assert keep is False, "the wake phrase kept audio"
+        end = time.monotonic() + max_seconds
+        while time.monotonic() < end:
+            if stop is not None and stop.is_set():
+                return b""
+            if not wake_script and FakeWakeMic.ends_with_script:
+                return b""
+            if on_chunk(wake_script.pop(0) if wake_script else QUIET_CHUNK):
+                return b""
+            time.sleep(0.01)
+        return b""
+
+
+main.make_spotter = FakeSpotter                  # the page's test
+main._wake._make_spotter = FakeSpotter           # the listener in the background
+main._wake._make_recorder = FakeWakeMic
+main._wake._blocked = lambda: None
+
+prefs = PreferencesDialog(frame, select_tab="Voice Control")
+prefs.Show()
+wx.Yield()
+panel = main._panel
+
+# Download the wake phrase listener.
+select(panel, "wake")
+fire(panel.btn_download, wx.EVT_BUTTON)
+assert "GitHub" in questions[-1][1] and "38.1 MB" in questions[-1][1], questions[-1]
+assert "Apache-2.0" in questions[-1][1], questions[-1]
+assert pump(lambda: main._downloads.current() is None and ("wake", True) in installs,
+            timeout=10), installs
+assert pump(lambda: rows(panel.list_items)[4][2] == "Installed"), rows(panel.list_items)
+assert main.wake_available()
+print("OK wake_download")
+
+# The advice about the phrase, said when it changes; focus stays in the field.
+panel.txt_phrase.SetFocus()
+pump(lambda: wx.Window.FindFocus() is panel.txt_phrase, timeout=1.0)
+observable = wx.Window.FindFocus() is panel.txt_phrase
+prefs.is_dirty = False
+spoken.clear()
+panel.txt_phrase.SetValue("Aruna")                           # EVT_TEXT, as typing does
+assert pump(lambda: panel.txt_advice.GetValue().startswith(_("wake_advice_one_word")),
+            timeout=5), panel.txt_advice.GetValue()
+assert spoken[-1] == panel.txt_advice.GetValue(), spoken
+assert prefs.is_dirty, "typing a phrase did not count as a change"
+panel.txt_phrase.SetValue("Hey Aruna")
+assert pump(lambda: panel.txt_advice.GetValue() == _("wake_advice_note"), timeout=5)
+assert pump(lambda: spoken[-1] == _("wake_advice_note"), timeout=2), spoken
+if observable:
+    assert wx.Window.FindFocus() is panel.txt_phrase, "the advice moved focus"
+print(f"OK wake_advice ({focus_note(observable)})")
+
+# Test the wake phrase: it hears it twice, says "Heard it" each time, and
+# counts. The phrase on the page is used, before OK.
+panel.btn_test_wake.SetFocus()
+pump(lambda: wx.Window.FindFocus() is panel.btn_test_wake, timeout=1.0)
+observable = wx.Window.FindFocus() is panel.btn_test_wake
+main._listener.make_recorder = FakeWakeMic
+FakeWakeMic.ends_with_script = True
+wake_script[:] = [QUIET_CHUNK] * 5 + [TRIGGER_CHUNK] + [QUIET_CHUNK] * 30 + [TRIGGER_CHUNK] + \
+    [QUIET_CHUNK] * 3
+spoken.clear()
+played.clear()
+try:
+    fire(panel.btn_test_wake, wx.EVT_BUTTON)
+    assert pump(lambda: panel.txt_wake_test.GetValue().startswith("Heard the wake phrase"),
+                timeout=15), panel.txt_wake_test.GetValue()
+finally:
+    main._listener.make_recorder = FakeRecorder
+    FakeWakeMic.ends_with_script = False
+assert panel.txt_wake_test.GetValue() == "Heard the wake phrase 2 times in 20 seconds.", \
+    panel.txt_wake_test.GetValue()
+assert spoken[0] == 'Say "Hey Aruna" a few times in the next 20 seconds, after the tone.', spoken
+assert "Heard it." in spoken and "Heard it, 2." in spoken, spoken
+assert spoken[-1] == panel.txt_wake_test.GetValue(), spoken
+assert played == ["listen.wav", "listen_end.wav"], played
+assert FakeSpotter.made[-1].phrase == "Hey Aruna" and FakeSpotter.made[-1].closed
+assert main._wake._suspended == set(), "the test left the listener paused"
+if observable:
+    assert wx.Window.FindFocus() is panel.btn_test_wake, "the test moved focus"
+print(f"OK wake_test ({focus_note(observable)})")
+
+# The wake settings, saved with OK; the status line says it listens.
+prefs.is_dirty = False
+panel.chk_wake.SetValue(True)
+fire(panel.chk_wake, wx.EVT_CHECKBOX)
+panel.txt_phrase.SetValue("Hi Princess")
+panel.choice_wake_sensitivity.SetFocus()
+pump(lambda: wx.Window.FindFocus() is panel.choice_wake_sensitivity, timeout=1.0)
+observable = wx.Window.FindFocus() is panel.choice_wake_sensitivity
+panel.choice_wake_sensitivity.SetSelection(panel._wake_sensitivities.index("high"))
+fire(panel.choice_wake_sensitivity, wx.EVT_CHOICE)
+pump(lambda: False, timeout=0.05)
+if observable:
+    assert wx.Window.FindFocus() is panel.choice_wake_sensitivity, "choosing moved focus"
+panel.chk_wake_quiet.SetValue(True)
+fire(panel.chk_wake_quiet, wx.EVT_CHECKBOX)
+assert prefs.is_dirty
+wake_script[:] = []
+prefs.OnApply(None)
+pump(lambda: False, timeout=0.2)
+saved = store.load_settings()
+assert (saved["wake"], saved["wake_phrase"], saved["wake_sensitivity"],
+        saved["wake_quiet_hours"]) == (True, "Hi Princess", "high", True), saved
+assert main._wake.config == wake.Config(True, "Hi Princess", "high", True)
+assert pump(lambda: main._wake.state == wake.LISTENING, timeout=5), main._wake.state
+assert pump(lambda: panel.txt_status.GetValue().endswith('Listening for "Hi Princess".'),
+            timeout=5), panel.txt_status.GetValue()
+assert FakeSpotter.made[-1].phrase == "Hi Princess"
+assert FakeSpotter.made[-1].sensitivity == "high"
+try:
+    prefs.Destroy()
+except RuntimeError:
+    pass
+wx.Yield()
+print(f"OK wake_settings ({focus_note(observable)})")
+
+# Said in the background, the phrase opens Aruna listening; after the
+# command, it listens for the phrase again.
+ran.clear()
+played.clear()
+fake_engine.calls.clear()
+wake_script[:] = [QUIET_CHUNK] * 3 + [TRIGGER_CHUNK]
+assert pump(lambda: ran, timeout=15), "the wake phrase did not open Aruna listening"
+bar = cb.current_bar()
+assert bar is not None and ran == [False], ran
+assert played[:2] == ["listen.wav", "listen_end.wav"], played
+assert ("transcribe", "tiny", "en") in fake_engine.calls, fake_engine.calls
+assert main._wake.detections == 1
+bar.close(restore=False)
+assert pump(lambda: cb.current_bar() is None), "the command bar did not close"
+assert pump(lambda: main._wake.state == wake.LISTENING, timeout=10), main._wake.state
+assert main._wake.detections == 1, "it heard the phrase again by itself"
+print("OK wake_opens_aruna")
+
+# --------------------------------------------------------------------------- #
+# Remove the model and the wake phrase listener
 # --------------------------------------------------------------------------- #
 prefs = PreferencesDialog(frame, select_tab="Voice Control")
 prefs.Show()
@@ -476,15 +699,23 @@ fire(panel.btn_remove, wx.EVT_BUTTON)
 assert questions[-1][0] == _("confirm_remove_title"), questions
 assert pump(lambda: rows(panel.list_items)[1][2] == "Not installed"), rows(panel.list_items)
 assert not listener.is_available()
+select(panel, "wake")
+fire(panel.btn_remove, wx.EVT_BUTTON)
+assert pump(lambda: rows(panel.list_items)[4][2] == "Not installed"), rows(panel.list_items)
+assert pump(lambda: main._wake.state == wake.MISSING, timeout=5), main._wake.state
+assert pump(lambda: panel.txt_status.GetValue().endswith(_("wake_status_missing")),
+            timeout=5), panel.txt_status.GetValue()
+assert FakeSpotter.made[-1].closed
 prefs.Destroy()
 wx.Yield()
 print("OK remove")
 
 # --------------------------------------------------------------------------- #
-# Unloading takes the recogniser away
+# Unloading takes the recogniser and the wake phrase listener away
 # --------------------------------------------------------------------------- #
 em.unload_all_extensions()
 assert core.commands.get_listener() is None, "the recogniser stayed registered"
+assert main._wake._thread is None, "the wake phrase listener kept running"
 print("OK teardown")
 
 assert not network_attempts, f"network access attempted: {network_attempts}"

@@ -854,16 +854,20 @@ class TestInstall:
 # Files and settings
 # ------------------------------------------------------------
 
+WAKE_DEFAULTS = {"wake": False, "wake_phrase": "Hey Aruna", "wake_sensitivity": "normal",
+                 "wake_quiet_hours": False}
+
+
 class TestStore:
     def test_settings(self, userdata):
-        assert store.load_settings() == {"model": "auto", "listen_on_open": True,
-                                         "silence_ms": 1000, "sensitivity": "normal",
-                                         "speeds": {}}
+        assert store.load_settings() == dict({"model": "auto", "listen_on_open": True,
+                                              "silence_ms": 1000, "sensitivity": "normal",
+                                              "speeds": {}}, **WAKE_DEFAULTS)
         assert store.normalize_settings({"model": "huge", "silence_ms": 7, "sensitivity": "max",
                                          "speeds": {"tiny": 1.63, "base": "fast", "small": -1,
-                                                    "giant": 3}}) == {
+                                                    "giant": 3}}) == dict({
             "model": "auto", "listen_on_open": True, "silence_ms": 1000, "sensitivity": "normal",
-            "speeds": {"tiny": 1.63}}
+            "speeds": {"tiny": 1.63}}, **WAKE_DEFAULTS)
         store.save_settings({"model": "base", "listen_on_open": False, "silence_ms": 1500})
         assert store.load_settings()["model"] == "base"
 
@@ -880,9 +884,9 @@ class TestStore:
         import core.api
         core.api.save_data(store.SETTINGS_NAME, {"model": "base", "listen_on_open": False,
                                                  "silence_ms": 1500, "speeds": {"tiny": 1.5}})
-        assert store.load_settings() == {"model": "base", "listen_on_open": False,
-                                         "silence_ms": 1500, "sensitivity": "normal",
-                                         "speeds": {"tiny": 1.5}}
+        assert store.load_settings() == dict({"model": "base", "listen_on_open": False,
+                                              "silence_ms": 1500, "sensitivity": "normal",
+                                              "speeds": {"tiny": 1.5}}, **WAKE_DEFAULTS)
 
     def test_a_speed_is_measured_once(self, userdata):
         store.record_speed("tiny", 1.634)
@@ -1623,13 +1627,20 @@ def page(vc, monkeypatch):
         choice_sensitivity=FakeChoice(1), txt_test=FakeText(), dirty=[], said=said,
         _model_keys=[name for name, _label in text.model_choices()], choice_model=FakeChoice(0),
         chk_listen=types.SimpleNamespace(GetValue=lambda: True), choice_silence=FakeChoice(2),
-        _silences=list(store.SILENCE_CHOICES), saved=[])
+        _silences=list(store.SILENCE_CHOICES), saved=[],
+        chk_wake=types.SimpleNamespace(GetValue=lambda: False),
+        txt_phrase=types.SimpleNamespace(GetValue=lambda: "  Hey   Aruna "),
+        _wake_sensitivities=[name for name, _label in text.wake_sensitivity_choices()],
+        choice_wake_sensitivity=FakeChoice(1),
+        chk_wake_quiet=types.SimpleNamespace(GetValue=lambda: False), _wake_was_on=False,
+        wake_installed=False)
     fake._usable = lambda: True
     fake._mark_dirty = lambda: fake.dirty.append(True)
     for name in ("_sensitivity_index", "select_sensitivity", "_test_done", "get_settings",
-                 "ApplyChanges"):
+                 "ApplyChanges", "_wake_sensitivity", "_wake_sensitivity_index"):
         setattr(fake, name, getattr(panel_class, name).__get__(fake))
-    fake._c = types.SimpleNamespace(save_settings=lambda *values: fake.saved.append(values))
+    fake._c = types.SimpleNamespace(save_settings=lambda *values: fake.saved.append(values),
+                                    installed=lambda: {"wake": fake.wake_installed})
     return fake
 
 
@@ -1693,10 +1704,13 @@ class TestPage:
 
     def test_the_page_saves_the_sensitivity(self, page):
         page.choice_sensitivity.selection = 3
+        wake_values = {"enabled": False, "phrase": "Hey Aruna", "sensitivity": "normal",
+                       "quiet_hours": False}
         assert page.get_settings() == {"model": "auto", "listen_on_open": True,
-                                       "silence_ms": 1000, "sensitivity": "very_high"}
+                                       "silence_ms": 1000, "sensitivity": "very_high",
+                                       "wake": wake_values}
         page.ApplyChanges()
-        assert page.saved == [("auto", True, 1000, "very_high")]
+        assert page.saved == [("auto", True, 1000, "very_high", wake_values)]
         page.choice_sensitivity.selection = -1
         assert page.get_settings()["sensitivity"] == "normal"
         assert page._sensitivity_index("unknown") == 1
@@ -1705,7 +1719,7 @@ class TestPage:
 def test_manifest():
     with open(os.path.join(VC_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["id"] == "voice_control" and manifest["version"] == "1.0"
+    assert manifest["id"] == "voice_control" and manifest["version"] == "1.1"
     assert manifest["minimum_core_version"] == "2.7" and manifest["main"] == "main.py"
 
 
@@ -1738,7 +1752,7 @@ def test_the_page_creates_each_label_before_its_control():
         tree = ast.parse(f.read())
     calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
              and isinstance(node.func, ast.Name) and node.func.id == "_labeled"]
-    assert len(calls) == 7
+    assert len(calls) == 11      # and the wake phrase, its advice, its sensitivity, its test
     assert all(isinstance(call.args[3], ast.Lambda) for call in calls)
     controls = {"Choice", "ComboBox", "ListCtrl", "ListBox", "SpinCtrl", "Slider", "TextCtrl",
                 "Gauge"}

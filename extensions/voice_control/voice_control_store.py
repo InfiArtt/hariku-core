@@ -14,13 +14,21 @@ Voice Control's files and settings (no network, no wx), in
   runtime\\runtime.json      written last, it marks the program as installed
   models\\ggml-<name>.bin    a speech model, with <file>.json next to it once
                             its SHA-256 matched
-  downloads\\                the whisper.cpp zip while it downloads
+  downloads\\                the whisper.cpp zip or the wake phrase archives
+                            while they download
   server.log                what whisper-server printed last time it ran
+  wake\\runtime\\             sherpa-onnx's C API DLL and ONNX Runtime (the
+                            wake phrase listener)
+  wake\\model\\               the English keyword model: tokens.txt, bpe.model
+                            and the encoder, decoder and joiner (int8)
+  wake\\wake.json            written last, it marks them as installed
 
 A file being downloaded is "<name>.part" next to where it goes. No recording
 is ever stored here (or anywhere). The settings are Hariku data
 ("VoiceControl"): the model choice, listening on open, the silence length, the
-microphone sensitivity and each model's measured speed.
+microphone sensitivity, each model's measured speed, and the wake phrase:
+whether to listen for it, the phrase, its sensitivity and whether to pause it
+during quiet hours.
 """
 import json
 import os
@@ -29,6 +37,7 @@ import shutil
 import core.api
 
 import voice_control_audio as audio
+import voice_control_wake as wake
 
 ROOT_NAME = "voice_control"
 RUNTIME_DIR = "runtime"
@@ -40,13 +49,22 @@ DOWNLOADS_DIR = "downloads"
 LOG_FILE = "server.log"
 PART_SUFFIX = ".part"
 MODEL_NAMES = ("tiny", "base", "small")
+WAKE_DIR = "wake"
+WAKE_MARKER = "wake.json"
+WAKE_PARTS = {"tokens": ("model", "tokens.txt"), "bpe": ("model", "bpe.model"),
+              "encoder": ("model", "encoder.int8.onnx"),
+              "decoder": ("model", "decoder.int8.onnx"),
+              "joiner": ("model", "joiner.int8.onnx")}
 
 SETTINGS_NAME = "VoiceControl"
 MODEL_CHOICES = ("auto",) + MODEL_NAMES
 SILENCE_CHOICES = (600, 800, 1000, 1500, 2000)    # milliseconds
 SENSITIVITY_CHOICES = audio.SENSITIVITIES           # least sensitive first
+WAKE_SENSITIVITY_CHOICES = wake.SENSITIVITIES       # least sensitive first
 DEFAULT_SETTINGS = {"model": "auto", "listen_on_open": True, "silence_ms": 1000,
-                    "sensitivity": audio.DEFAULT_SENSITIVITY, "speeds": {}}
+                    "sensitivity": audio.DEFAULT_SENSITIVITY, "speeds": {},
+                    "wake": False, "wake_phrase": wake.DEFAULT_PHRASE,
+                    "wake_sensitivity": wake.DEFAULT_SENSITIVITY, "wake_quiet_hours": False}
 
 
 def root_dir():
@@ -205,11 +223,14 @@ def remove_model(root, name):
 
 
 def cleanup_partials(root):
-    """Remove half-unpacked programs and temporary files left by a crash
+    """Remove half-unpacked programs, a wake phrase listener that was removed
+    while Hariku still had it loaded, and temporary files left by a crash
     (unfinished downloads are kept, to be continued)."""
-    staging = runtime_dir(root) + ".new"
-    if os.path.isdir(staging):
-        shutil.rmtree(staging, ignore_errors=True)
+    for staging in (runtime_dir(root) + ".new", wake_dir(root) + ".new"):
+        if os.path.isdir(staging):
+            shutil.rmtree(staging, ignore_errors=True)
+    if os.path.isdir(wake_dir(root)) and not os.path.isfile(_wake_marker(root)):
+        shutil.rmtree(wake_dir(root), ignore_errors=True)
     for folder in (models_dir(root), downloads_dir(root)):
         try:
             names = os.listdir(folder)
@@ -221,12 +242,68 @@ def cleanup_partials(root):
 
 
 # ------------------------------------------------------------
+# The wake phrase listener
+# ------------------------------------------------------------
+
+def wake_dir(root):
+    return os.path.join(root, WAKE_DIR)
+
+
+def wake_runtime_dir(root):
+    return os.path.join(wake_dir(root), "runtime")
+
+
+def _wake_marker(root):
+    return os.path.join(wake_dir(root), WAKE_MARKER)
+
+
+def wake_files(root):
+    """{"tokens", "bpe", "encoder", "decoder", "joiner"}: the model's files."""
+    return {key: os.path.join(wake_dir(root), *parts) for key, parts in WAKE_PARTS.items()}
+
+
+def wake_installed(root):
+    """The wake phrase listener counts once its marker was written (after
+    every file matched its SHA-256) and each file is still there, with the
+    size the marker recorded."""
+    marker = read_json(_wake_marker(root))
+    files = marker.get("files") if isinstance(marker, dict) else None
+    if not isinstance(files, dict) or not files:
+        return False
+    for relative, info in files.items():
+        if (not isinstance(relative, str) or ".." in relative.replace("\\", "/").split("/")
+                or not isinstance(info, dict)):
+            return False
+        try:
+            if os.path.getsize(os.path.join(wake_dir(root), *relative.split("/"))) != \
+                    info.get("size"):
+                return False
+        except OSError:
+            return False
+    return True
+
+
+def remove_wake(root):
+    """Delete the wake phrase listener. The marker goes first, so files
+    Windows keeps (a DLL Hariku has loaded can't be deleted until Hariku
+    closes) no longer count as installed; cleanup_partials() removes them at
+    the next start. Returns (removed anything, removed everything)."""
+    folder = wake_dir(root)
+    if not os.path.isdir(folder):
+        return False, True
+    remove_quietly(_wake_marker(root))
+    shutil.rmtree(folder, ignore_errors=True)
+    return True, not os.path.exists(folder)
+
+
+# ------------------------------------------------------------
 # Settings
 # ------------------------------------------------------------
 
 def normalize_settings(raw):
     """The settings with every value checked; a missing or unknown one gets
-    its default (settings saved before the sensitivity existed get Normal)."""
+    its default (settings saved before the sensitivity existed get Normal,
+    before the wake phrase existed, the wake phrase off)."""
     raw = raw if isinstance(raw, dict) else {}
     model = raw.get("model")
     silence = raw.get("silence_ms")
@@ -237,6 +314,9 @@ def normalize_settings(raw):
         value = speeds.get(name)
         if isinstance(value, (int, float)) and not isinstance(value, bool) and 0 < value < 600:
             clean_speeds[name] = round(float(value), 2)
+    phrase = raw.get("wake_phrase")
+    phrase = wake.tidy(phrase) if isinstance(phrase, str) else ""
+    wake_sensitivity = raw.get("wake_sensitivity")
     return {
         "model": model if model in MODEL_CHOICES else DEFAULT_SETTINGS["model"],
         "listen_on_open": bool(raw.get("listen_on_open", DEFAULT_SETTINGS["listen_on_open"])),
@@ -244,6 +324,11 @@ def normalize_settings(raw):
         "sensitivity": sensitivity if isinstance(sensitivity, str)
         and sensitivity in SENSITIVITY_CHOICES else DEFAULT_SETTINGS["sensitivity"],
         "speeds": clean_speeds,
+        "wake": raw.get("wake") is True,
+        "wake_phrase": phrase or DEFAULT_SETTINGS["wake_phrase"],
+        "wake_sensitivity": wake_sensitivity if isinstance(wake_sensitivity, str)
+        and wake_sensitivity in WAKE_SENSITIVITY_CHOICES else DEFAULT_SETTINGS["wake_sensitivity"],
+        "wake_quiet_hours": raw.get("wake_quiet_hours") is True,
     }
 
 

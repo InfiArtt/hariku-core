@@ -22,7 +22,9 @@ only).
   level_db()           a loudness in dB below full scale, for the microphone test
 
 A recording stays in memory. It is handed to the whisper.cpp program on this
-computer and then dropped: it is never written to disk or sent anywhere.
+computer and then dropped: it is never written to disk or sent anywhere. The
+wake phrase records with keep=False: each 100 ms goes to the keyword spotter
+and is dropped, so nothing accumulates at all.
 """
 import array
 import collections
@@ -462,18 +464,21 @@ class Recorder:
     the DLL (or a fake with the same functions, for tests)."""
 
     def __init__(self, winmm=None, sample_rate=SAMPLE_RATE, buffer_ms=BUFFER_MS,
-                 buffers=BUFFERS, sleep=time.sleep, clock=time.monotonic):
+                 buffers=BUFFERS, sleep=time.sleep, clock=time.monotonic,
+                 poll_seconds=POLL_SECONDS):
         self._winmm = winmm
         self.sample_rate = sample_rate
         self.buffer_bytes = sample_rate * SAMPLE_WIDTH * buffer_ms // 1000
         self.buffers = buffers
         self._sleep = sleep
         self._clock = clock
+        self.poll_seconds = poll_seconds
 
-    def record(self, on_chunk, stop=None, max_seconds=30.0):
+    def record(self, on_chunk, stop=None, max_seconds=30.0, keep=True):
         """Record until on_chunk(bytes) returns True, `stop` (a
         threading.Event) is set, or `max_seconds` pass. Returns all the PCM
-        recorded. Raises MicrophoneError."""
+        recorded, or b"" with keep=False (the wake phrase: each chunk is
+        handed to on_chunk and dropped). Raises MicrophoneError."""
         winmm = self._winmm or _winmm()
         if not winmm.waveInGetNumDevs():
             raise MicrophoneError("none", "no recording device")
@@ -513,9 +518,10 @@ class Recorder:
                 while not header.dwFlags & WHDR_DONE:
                     if (stop is not None and stop.is_set()) or self._clock() > deadline:
                         return bytes(pcm)
-                    self._sleep(POLL_SECONDS)
+                    self._sleep(self.poll_seconds)
                 chunk = ctypes.string_at(memory[index], header.dwBytesRecorded)
-                pcm += chunk
+                if keep:
+                    pcm += chunk
                 if on_chunk(chunk) or (stop is not None and stop.is_set()):
                     return bytes(pcm)
                 header.dwFlags &= ~WHDR_DONE

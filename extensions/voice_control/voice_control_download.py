@@ -7,9 +7,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Downloading whisper.cpp and its speech models (blocking; no wx). main.py runs
-these on a worker thread, only after the user pressed Download in
-Preferences, Voice Control.
+Downloading whisper.cpp, its speech models and the wake phrase listener
+(blocking; no wx). main.py runs these on a worker thread, only after the user
+pressed Download in Preferences, Voice Control.
 
 Every request goes to an allowed host over HTTPS: GitHub and its release
 download host, Hugging Face (huggingface.co, hf.co) and its CDN. Each redirect
@@ -17,16 +17,30 @@ is checked before it is followed, so a redirect elsewhere is refused. Files
 are written as "<name>.part", continued with a Range request when an earlier
 attempt was cut off, checked against the SHA-256 pinned below and only then
 renamed into place. A file that doesn't match is deleted, never used.
+
+The wake phrase listener comes from two official sherpa-onnx release archives
+on GitHub (.tar.bz2): the Windows build (for its C API DLL and onnxruntime)
+and the English keyword model. Only the eight files it needs are unpacked,
+each under a name Hariku chooses (never the name inside the archive, so an
+entry like "../x.dll" can't land anywhere else), each checked against its own
+pinned SHA-256; nothing else in the archives is written.
 """
 import hashlib
 import http.client
 import os
 import re
 import shutil
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+
+try:
+    import bz2
+    import tarfile
+except ImportError:          # a compiled Hariku older than 2.8 may lack them
+    bz2 = tarfile = None
 
 import core.constants
 
@@ -57,6 +71,62 @@ MODELS = {
 }
 SIZE_TOLERANCE = 0.05       # a file may be this much bigger than shown before it's refused
 
+# The wake phrase listener. sherpa-onnx v1.13.8 (Apache-2.0), the official
+# Windows x64 build with shared libraries ("shared-MD-Release"): its C API DLL
+# and ONNX Runtime (MIT). The SHA-256 is the one GitHub shows for the asset.
+WAKE_RUNTIME_VERSION = "1.13.8"
+WAKE_RUNTIME_FILE = "sherpa-onnx-v1.13.8-win-x64-shared-MD-Release.tar.bz2"
+WAKE_RUNTIME_URL = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/"
+                    + WAKE_RUNTIME_FILE)
+WAKE_RUNTIME_SIZE = 20494724
+WAKE_RUNTIME_SHA256 = "3e971a04b2e0ba4dfa53d381a006367ce8c9f5f09b4ae00043e9845c2baded22"
+# The English open-vocabulary keyword model (Apache-2.0), trained on
+# GigaSpeech by the sherpa-onnx authors, from the "kws-models" release.
+WAKE_MODEL_NAME = "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01"
+WAKE_MODEL_FILE = WAKE_MODEL_NAME + ".tar.bz2"
+WAKE_MODEL_URL = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/"
+                  + WAKE_MODEL_FILE)
+WAKE_MODEL_SIZE = 17626723
+WAKE_MODEL_SHA256 = "f170013b4716e41b62b9bfd809687c207cef798ef9bc6534d524e17af9b6561a"
+WAKE_SIZE = WAKE_RUNTIME_SIZE + WAKE_MODEL_SIZE
+
+# What is unpacked: {name in the archive: (where it goes, size, SHA-256)}.
+_RUNTIME_PREFIX = "sherpa-onnx-v1.13.8-win-x64-shared-MD-Release/lib/"
+_MODEL_PREFIX = WAKE_MODEL_NAME + "/"
+_MODEL_STEM = "-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
+WAKE_RUNTIME_MEMBERS = {
+    _RUNTIME_PREFIX + "sherpa-onnx-c-api.dll": (
+        "runtime/sherpa-onnx-c-api.dll", 4197376,
+        "f86ed1570de14b4750d29fb4f58cfaf5558f734040d73133da79dd6457ed77ff"),
+    _RUNTIME_PREFIX + "onnxruntime.dll": (
+        "runtime/onnxruntime.dll", 17136128,
+        "422d776ab0e3218260f7f628fcb84606aaa5c21116f720c8619a6da5e0b2e0f9"),
+    _RUNTIME_PREFIX + "onnxruntime_providers_shared.dll": (
+        "runtime/onnxruntime_providers_shared.dll", 10752,
+        "0190137dee4933261c065c5d030c3568a68c7aa43cad942b4726a07011738bc2"),
+}
+WAKE_MODEL_MEMBERS = {
+    _MODEL_PREFIX + "tokens.txt": (
+        "model/tokens.txt", 5006,
+        "fd2ded4050a55d2b1578870ba8697d02371980217806b7558bd0a5cc60f3ba53"),
+    _MODEL_PREFIX + "bpe.model": (
+        "model/bpe.model", 244837,
+        "c8a2a0129c4ab8e463164c142f82d25649661b122c8cd0b7aab5c9e80b90ad24"),
+    _MODEL_PREFIX + "encoder" + _MODEL_STEM: (
+        "model/encoder.int8.onnx", 4807159,
+        "1e721676515bcd42a186979733981213c66c80db680e1cc582dfedf3be76e678"),
+    _MODEL_PREFIX + "decoder" + _MODEL_STEM: (
+        "model/decoder.int8.onnx", 277985,
+        "e40ff43297abe815e8898494c17e71bba2152d9d40fa3eb803f75d0f7533329a"),
+    _MODEL_PREFIX + "joiner" + _MODEL_STEM: (
+        "model/joiner.int8.onnx", 163380,
+        "eae9da0c7e1e6c6a3f4cc42d167899c388f6c6701b94cb96320e4f55df79624c"),
+}
+WAKE_FILES = {dest: (size, sha) for dest, size, sha in
+              list(WAKE_RUNTIME_MEMBERS.values()) + list(WAKE_MODEL_MEMBERS.values())}
+TAR_MAX_MEMBERS = 1000
+TAR_MAX_UNPACKED = 256 * 1024 * 1024
+
 ALLOWED_HOSTS = frozenset({
     "github.com",
     "objects.githubusercontent.com",          # GitHub's release downloads, old
@@ -73,7 +143,8 @@ CHUNK_BYTES = 64 * 1024
 
 class DownloadError(Exception):
     """kind: "offline", "http" (code), "host" (detail = the host), "verify",
-    "size", "extract", "disk" or "bad_data"."""
+    "size", "extract", "disk", "bad_data" or "unsupported" (this Hariku
+    can't unpack .tar.bz2)."""
 
     def __init__(self, kind, detail="", code=None):
         super().__init__(f"{kind}: {detail}" if detail else kind)
@@ -404,3 +475,189 @@ def install_model(name, root, progress=None, cancelled=None, opener=None):
     except OSError as e:
         raise DownloadError("disk", str(e)) from None
     return dest
+
+
+# ------------------------------------------------------------
+# The wake phrase listener: unpacking only what is needed from .tar.bz2
+# ------------------------------------------------------------
+
+def _unsafe_name(name):
+    """An archive entry that would point outside the folder it unpacks to."""
+    return (not name or name.startswith(("/", "\\")) or ":" in name
+            or any(part == ".." for part in re.split(r"[\\/]", name)))
+
+
+def _copy_checked(source, dest, size, sha256):
+    """Copy an archive member's stream to `dest` (via a .part file), reading
+    at most `size` bytes and checking its SHA-256."""
+    part = dest + store.PART_SUFFIX
+    digest = hashlib.sha256()
+    done = 0
+    try:
+        try:
+            out = open(part, "wb")
+        except OSError as e:
+            raise DownloadError("disk", str(e)) from None
+        with out:
+            while True:
+                chunk = source.read(CHUNK_BYTES)
+                if not chunk:
+                    break
+                done += len(chunk)
+                if done > size:
+                    raise DownloadError("verify", os.path.basename(dest))
+                digest.update(chunk)
+                try:
+                    out.write(chunk)
+                except OSError as e:
+                    raise DownloadError("disk", str(e)) from None
+        if done != size or digest.hexdigest() != sha256:
+            raise DownloadError("verify", os.path.basename(dest))
+        try:
+            os.replace(part, dest)
+        except OSError as e:
+            raise DownloadError("disk", str(e)) from None
+    except BaseException:
+        store.remove_quietly(part)
+        raise
+
+
+def extract_members(archive_path, dest, members, cancelled=None,
+                    max_members=TAR_MAX_MEMBERS, max_bytes=TAR_MAX_UNPACKED):
+    """Unpack the entries named in `members` ({name in the archive: (path
+    under dest, size, SHA-256)}) from a .tar.bz2, and nothing else. Each is
+    written under the name Hariku chose, must be a regular file of that size
+    and SHA-256, and may appear once. An archive with an entry pointing
+    outside it (absolute, a drive, ".."), a link or device among the wanted
+    entries, too many entries or too much data is refused. Raises
+    DownloadError ("extract", "verify", "unsupported" without tarfile and
+    bz2, or "disk") or Cancelled."""
+    if tarfile is None or bz2 is None:
+        raise DownloadError("unsupported", "this Hariku has no tarfile/bz2")
+    cancelled = cancelled or _never
+    found = set()
+    count = total = 0
+    dest_real = os.path.realpath(dest)
+    try:
+        with bz2.open(archive_path, "rb") as stream, \
+                tarfile.open(fileobj=stream, mode="r|") as archive:
+            for member in archive:
+                if cancelled():
+                    raise Cancelled()
+                count += 1
+                total += max(0, member.size)
+                if count > max_members or total > max_bytes:
+                    raise DownloadError("extract", "the archive is too large")
+                name = member.name
+                if _unsafe_name(name):
+                    raise DownloadError("extract", f"unsafe entry {name!r}")
+                if name not in members:
+                    continue                   # never written anywhere
+                if not member.isreg():
+                    raise DownloadError("extract", f"{name!r} is not a regular file")
+                if name in found:
+                    raise DownloadError("extract", f"{name!r} appears twice")
+                relative, size, sha256 = members[name]
+                target = os.path.realpath(os.path.join(dest, *relative.split("/")))
+                if not target.startswith(dest_real + os.sep):
+                    raise DownloadError("extract", f"unsafe destination {relative!r}")
+                if member.size != size:
+                    raise DownloadError("verify", os.path.basename(relative))
+                try:
+                    os.makedirs(os.path.dirname(target), exist_ok=True)
+                except OSError as e:
+                    raise DownloadError("disk", str(e)) from None
+                source = archive.extractfile(member)
+                if source is None:
+                    raise DownloadError("extract", f"{name!r} can't be read")
+                with source:
+                    _copy_checked(source, target, size, sha256)
+                found.add(name)
+    except (DownloadError, Cancelled):
+        raise
+    except (tarfile.TarError, EOFError, ValueError, OSError) as e:
+        # Writing is "disk" above; an OSError here is bzip2 reading bad data
+        # (or the archive being unreadable).
+        raise DownloadError("extract", str(e)) from None
+    missing = sorted(set(members) - found)
+    if missing:
+        raise DownloadError("extract", "missing " + ", ".join(os.path.basename(m)
+                                                              for m in missing))
+
+
+def wake_archives():
+    """(url, file name, size, SHA-256, members) of the two archives."""
+    return [(WAKE_RUNTIME_URL, WAKE_RUNTIME_FILE, WAKE_RUNTIME_SIZE, WAKE_RUNTIME_SHA256,
+             WAKE_RUNTIME_MEMBERS),
+            (WAKE_MODEL_URL, WAKE_MODEL_FILE, WAKE_MODEL_SIZE, WAKE_MODEL_SHA256,
+             WAKE_MODEL_MEMBERS)]
+
+
+def install_wake(root, progress=None, cancelled=None, opener=None):
+    """Download the two pinned archives, check them, unpack the eight files
+    into wake\\ (replacing what is there, through wake.new) and delete the
+    archives. Raises DownloadError or Cancelled."""
+    progress = progress or (lambda done: None)
+    cancelled = cancelled or _never
+    target = store.wake_dir(root)
+    staging = target + ".new"
+    paths = []
+    done_before = 0
+    for url, name, size, sha256, _members in wake_archives():
+        path = os.path.join(store.downloads_dir(root), name)
+        download_file(url, path, sha256, size,
+                      progress=lambda n, base=done_before: progress(base + n),
+                      cancelled=cancelled, opener=opener)
+        paths.append(path)
+        done_before += size
+        if cancelled():
+            raise Cancelled()
+    try:
+        shutil.rmtree(staging, ignore_errors=True)
+        os.makedirs(staging, exist_ok=True)
+        for path, (_url, _name, _size, _sha, members) in zip(paths, wake_archives()):
+            extract_members(path, staging, members, cancelled=cancelled)
+        if cancelled():
+            raise Cancelled()
+        store.write_json(os.path.join(staging, store.WAKE_MARKER), {
+            "version": WAKE_RUNTIME_VERSION, "model": WAKE_MODEL_NAME,
+            "files": {dest: {"size": size, "sha256": sha}
+                      for dest, (size, sha) in WAKE_FILES.items()}})
+        if os.path.isdir(target):
+            shutil.rmtree(target)
+        os.replace(staging, target)
+    except (DownloadError, Cancelled):
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    except OSError as e:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise DownloadError("disk", str(e)) from None
+    for path in paths:
+        store.remove_quietly(path)
+    return target
+
+
+_verified = {}
+_verified_lock = threading.Lock()
+
+
+def verify_wake(root):
+    """Whether the installed wake phrase files are the pinned ones (SHA-256;
+    a file is hashed again only when its size or time changed). A damaged
+    model could end Hariku when it is loaded, so it is checked first."""
+    for relative, (size, sha256) in WAKE_FILES.items():
+        path = os.path.join(store.wake_dir(root), *relative.split("/"))
+        try:
+            stat = os.stat(path)
+        except OSError:
+            return False
+        key = (path, stat.st_size, stat.st_mtime_ns)
+        with _verified_lock:
+            known = _verified.get(key)
+        if known is None:
+            known = stat.st_size == size and verify_file(path, sha256, size)
+            with _verified_lock:
+                _verified[key] = known
+        if not known:
+            return False
+    return True

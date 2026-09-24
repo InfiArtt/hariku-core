@@ -8,19 +8,24 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
 The Voice Control page in Preferences: download or remove the whisper.cpp
-program and the speech models (with their sizes, progress and Cancel), the
-recognition model, "Start listening as soon as the command bar opens", the
-silence that ends listening, the microphone sensitivity, and a microphone
-test that measures a sentence and sets the sensitivity that suits it.
+program, the speech models and the wake phrase listener (with their sizes,
+progress and Cancel), the recognition model, "Start listening as soon as the
+command bar opens", the silence that ends listening, the microphone
+sensitivity, a microphone test that measures a sentence and sets the
+sensitivity that suits it, and the wake phrase: "Listen for a wake phrase",
+the phrase (with advice about it, said when it changes), its sensitivity,
+"Pause the wake phrase during quiet hours" and a test that listens for the
+phrase for 20 seconds and says "Heard it" each time.
 
 Every control comes right after the label that names it (screen readers name
 a control after the static text created just before it; SetName alone
 doesn't change that). Selecting a row only shows its details; focus never
-moves by itself. Download, Remove, Cancel and the microphone test act at
-once; the four settings, including a sensitivity the test chose, are saved
-with OK or Apply.
+moves by itself. Download, Remove, Cancel and the tests act at once; the
+settings, including a sensitivity the microphone test chose, are saved with
+OK or Apply. The status line also says whether the wake phrase is heard.
 """
 import logging
+import threading
 
 import wx
 
@@ -30,6 +35,7 @@ from core.speech import speak
 import voice_control_download as download
 import voice_control_store as store
 import voice_control_text as text
+import voice_control_wake as wake
 from voice_control_text import _
 
 logger = logging.getLogger(__name__)
@@ -37,6 +43,8 @@ logger = logging.getLogger(__name__)
 _BORDER = 8
 ANNOUNCE_DELAY_MS = 300     # after a message box closes, so the focus announcement doesn't cut it
 MIC_TEST_DELAY_MS = 2000    # "say a sentence" is said before the tone (listening silences it)
+ADVICE_DELAY_MS = 700       # the advice about the phrase waits for typing to pause
+WHISPER_ITEMS = ("runtime", "tiny", "base", "small")
 
 
 def _plain(label):
@@ -74,15 +82,25 @@ def ask(parent, message, title):
     return wx.MessageBox(message, title, style, parent) == wx.YES
 
 
-class VoiceControlPanel(wx.Panel):
+# The page is taller than the Preferences dialog, so it scrolls (and scrolls
+# the focused control into view). A plain panel where wx is not the real one.
+_PageBase = wx.ScrolledWindow if isinstance(getattr(wx, "ScrolledWindow", None), type) else wx.Panel
+
+
+class VoiceControlPanel(_PageBase):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self._c = controller
         self._alive = True
         self._testing = False
+        self._wake_stop = None            # the running wake phrase test's stop Event
+        self._advice_timer = None
+        self._advice_problem = None
+        self._status_message = ""
         self._installed = self._c.installed()
         settings = self._c.settings()
         self._speeds = settings["speeds"]
+        self._wake_was_on = settings["wake"]
         self._rows = list(text.ITEMS)
 
         root = wx.BoxSizer(wx.VERTICAL)
@@ -138,22 +156,60 @@ class VoiceControlPanel(wx.Panel):
         root.Add(row, 0, wx.LEFT | wx.RIGHT, _BORDER)
         self.txt_test = _labeled(self, root, _("lbl_test_result"),
                                  lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
+
+        # The wake phrase.
+        wake_help = wx.StaticText(self, label=_("wake_help"))
+        wake_help.Wrap(560)
+        root.Add(wake_help, 0, wx.LEFT | wx.RIGHT | wx.TOP, _BORDER)
+        self.chk_wake = wx.CheckBox(self, label=_("chk_wake"))
+        self.chk_wake.SetValue(settings["wake"])
+        root.Add(self.chk_wake, 0, wx.LEFT | wx.RIGHT | wx.TOP, _BORDER)
+        self.txt_phrase = _labeled(self, root, _("lbl_wake_phrase"),
+                                   lambda: wx.TextCtrl(self))
+        self.txt_phrase.SetMaxLength(wake.MAX_PHRASE_CHARS)
+        self.txt_phrase.ChangeValue(settings["wake_phrase"])     # not a change by the user
+        self.txt_advice = _labeled(self, root, _("lbl_wake_advice"),
+                                   lambda: wx.TextCtrl(self, size=(-1, 60),
+                                                       style=wx.TE_READONLY | wx.TE_MULTILINE))
+        self._wake_sensitivities = [name for name, _label in text.wake_sensitivity_choices()]
+        self.choice_wake_sensitivity = _labeled(
+            self, root, _("lbl_wake_sensitivity"),
+            lambda: wx.Choice(self, choices=[label for _name, label
+                                             in text.wake_sensitivity_choices()]))
+        self.choice_wake_sensitivity.SetSelection(
+            self._wake_sensitivity_index(settings["wake_sensitivity"]))
+        self.chk_wake_quiet = wx.CheckBox(self, label=_("chk_wake_quiet"))
+        self.chk_wake_quiet.SetValue(settings["wake_quiet_hours"])
+        root.Add(self.chk_wake_quiet, 0, wx.LEFT | wx.RIGHT | wx.TOP, _BORDER)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_test_wake = _button(self, row, _("btn_test_wake"), self.on_test_wake)
+        root.Add(row, 0, wx.LEFT | wx.RIGHT, _BORDER)
+        self.txt_wake_test = _labeled(self, root, _("lbl_wake_test"),
+                                      lambda: wx.TextCtrl(self, style=wx.TE_READONLY))
+
         note = wx.StaticText(self, label=_("page_headset"))
         note.Wrap(560)
         root.Add(note, 0, wx.ALL, _BORDER)
         self.SetSizer(root)
+        if hasattr(self, "SetScrollRate"):
+            self.SetScrollRate(0, 20)
 
         self.list_items.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_download)
         self.list_items.Bind(wx.EVT_LIST_KEY_DOWN, self.on_list_key)
+        self.txt_phrase.Bind(wx.EVT_TEXT, self.on_phrase_text)
         self.Bind(wx.EVT_WINDOW_DESTROY, self._on_destroy)
         self._c.downloads.add_listener(self._on_download_event)
+        self._c.add_wake_listener(self._on_wake_state)
 
         self._fill_list()
         self._show_download_state()
+        self._update_advice(speak_it=False)
         try:
             core.ui_scale.apply_appearance(self)
         except Exception:
             pass
+        if hasattr(self, "FitInside"):
+            self.FitInside()      # after scaling, so large text can still be scrolled to
 
     # --- state -------------------------------------------------------------------
 
@@ -167,6 +223,15 @@ class VoiceControlPanel(wx.Panel):
         if event.GetEventObject() is self:
             self._alive = False
             self._c.downloads.remove_listener(self._on_download_event)
+            self._c.remove_wake_listener(self._on_wake_state)
+            if self._wake_stop is not None:
+                self._wake_stop.set()           # the page is gone: stop listening
+            timer, self._advice_timer = self._advice_timer, None
+            if timer is not None:
+                try:
+                    timer.Stop()
+                except Exception:
+                    pass
         event.Skip()
 
     def _mark_dirty(self):
@@ -179,6 +244,11 @@ class VoiceControlPanel(wx.Panel):
             return self._sensitivities.index(name)
         return self._sensitivities.index(store.DEFAULT_SETTINGS["sensitivity"])
 
+    def _wake_sensitivity_index(self, name):
+        if name in self._wake_sensitivities:
+            return self._wake_sensitivities.index(name)
+        return self._wake_sensitivities.index(wake.DEFAULT_SENSITIVITY)
+
     def select_sensitivity(self, name):
         """Show a sensitivity the microphone test chose (saved with OK or
         Apply, like a choice the user made). Focus stays where it is."""
@@ -188,9 +258,18 @@ class VoiceControlPanel(wx.Panel):
             self._mark_dirty()
 
     def _set_status(self, message, speak_it=False):
-        self.txt_status.ChangeValue(message)     # ChangeValue: not an unsaved setting
+        """Show `message` in the status line, followed by what the wake phrase
+        is doing (only `message` is said)."""
+        self._status_message = message
+        state, phrase = self._c.wake_state()
+        extra = text.wake_status(state, phrase)
+        self.txt_status.ChangeValue(f"{message} {extra}" if extra else message)   # not a setting
         if speak_it:
             _announce(message)
+
+    def _on_wake_state(self, state):
+        if self._usable():
+            self._set_status(self._status_message)
 
     def _status_text(self, item, percent=None):
         return text.status_label(item, self._installed.get(item), self._speeds, percent)
@@ -230,8 +309,8 @@ class VoiceControlPanel(wx.Panel):
         job = self._c.downloads.current()
         if job is None:
             self.gauge.SetValue(0)
-            installed = [text.item_name(i) for i in self._rows if self._installed.get(i)]
-            if not self._installed.get("runtime") or len(installed) < 2:
+            models = [i for i in WHISPER_ITEMS if i != "runtime" and self._installed.get(i)]
+            if not self._installed.get("runtime") or not models:
                 self._set_status(_("status_not_ready"))
             else:
                 self._set_status(_("status_ready"))
@@ -283,12 +362,12 @@ class VoiceControlPanel(wx.Panel):
         if not ask(self, _("confirm_remove", name=name), _("confirm_remove_title")):
             return
         try:
-            self._c.remove(item)
+            removed = self._c.remove(item)
         except OSError as e:
             logger.info(f"[Voice Control] Removing {item} failed: {e}")
             message = _("remove_failed", name=name)
         else:
-            message = _("removed", name=name)
+            message = _("remove_later" if removed == "later" else "removed", name=name)
         self._refresh()
         self._show_download_state()
         self._set_status(message)
@@ -325,6 +404,80 @@ class VoiceControlPanel(wx.Panel):
         self.txt_test.ChangeValue(message)
         _announce(message)
 
+    # --- the wake phrase ----------------------------------------------------------
+
+    def on_phrase_text(self, event):
+        """Typing in Wake phrase: the advice follows once typing pauses."""
+        event.Skip()                 # Preferences marks the change
+        timer = self._advice_timer
+        if timer is not None and timer.IsRunning():
+            timer.Restart(ADVICE_DELAY_MS)
+        else:
+            self._advice_timer = wx.CallLater(ADVICE_DELAY_MS, self._update_advice, True)
+
+    def _update_advice(self, speak_it=False):
+        """Show the advice about the phrase; say it when what's wrong with
+        the phrase changed."""
+        if not self._usable():
+            return
+        problem = wake.phrase_problem(self.txt_phrase.GetValue())
+        message = text.wake_advice(problem)
+        if self.txt_advice.GetValue() != message:
+            self.txt_advice.ChangeValue(message)
+        if speak_it and problem != self._advice_problem:
+            _announce(message, interrupt=False)
+        self._advice_problem = problem
+
+    def _wake_sensitivity(self):
+        index = self.choice_wake_sensitivity.GetSelection()
+        if 0 <= index < len(self._wake_sensitivities):
+            return self._wake_sensitivities[index]
+        return wake.DEFAULT_SENSITIVITY
+
+    def _show_wake_test(self, message, speak_it=True):
+        self.txt_wake_test.ChangeValue(message)
+        if speak_it:
+            _announce(message)
+
+    def on_test_wake(self, event=None):
+        """Listen for the phrase on the page (not yet saved) for 20 seconds;
+        pressed again, stop."""
+        if self._wake_stop is not None:
+            self._wake_stop.set()
+            return
+        phrase = wake.tidy(self.txt_phrase.GetValue())
+        if not wake.usable(phrase):
+            self._show_wake_test(_("wake_test_bad_phrase"))
+            return
+        if not self._installed.get("wake"):
+            self._show_wake_test(_("wake_not_installed"))
+            return
+        stop = self._wake_stop = threading.Event()
+        message = _("wake_test_speak", phrase=phrase, seconds=wake.TEST_SECONDS)
+        self._show_wake_test(message)
+        # The test starts once that is said (it would be ignored anyway).
+        delay = int(wake.speech_seconds(message) * 1000)
+        wx.CallLater(delay, self._start_wake_test, phrase, self._wake_sensitivity(), stop)
+
+    def _start_wake_test(self, phrase, sensitivity, stop):
+        if not self._usable() or stop is not self._wake_stop:
+            return
+        if stop.is_set():
+            self._wake_test_done({"count": 0, "seconds": 0, "stopped": True}, None)
+            return
+        self._show_wake_test(_("wake_test_listening", phrase=phrase), speak_it=False)
+        self._c.test_wake(phrase, sensitivity, self._wake_heard, self._wake_test_done, stop)
+
+    def _wake_heard(self, count):
+        if self._usable() and self._wake_stop is not None:
+            self._show_wake_test(text.wake_heard(count))
+
+    def _wake_test_done(self, result, error):
+        if not self._usable():
+            return
+        self._wake_stop = None
+        self._show_wake_test(text.wake_test_message(result, error))
+
     # --- downloads (on the UI thread) -------------------------------------------
 
     def _on_download_event(self, event, job, value):
@@ -360,9 +513,28 @@ class VoiceControlPanel(wx.Panel):
             "sensitivity": self._sensitivities[sensitivity_index]
             if 0 <= sensitivity_index < len(self._sensitivities)
             else store.DEFAULT_SETTINGS["sensitivity"],
+            "wake": {
+                "enabled": self.chk_wake.GetValue(),
+                "phrase": wake.tidy(self.txt_phrase.GetValue()) or wake.DEFAULT_PHRASE,
+                "sensitivity": self._wake_sensitivity(),
+                "quiet_hours": self.chk_wake_quiet.GetValue(),
+            },
         }
+
+    def ValidateChanges(self):
+        """Preferences asks before saving: with the wake phrase on, a phrase
+        the model can't hear (empty, digits, other letters) keeps the dialog
+        open, with the reason said and focus in Wake phrase."""
+        phrase = self.txt_phrase.GetValue()
+        if self.chk_wake.GetValue() and not wake.usable(phrase):
+            return text.wake_advice(wake.phrase_problem(phrase)), self.txt_phrase
+        return None
 
     def ApplyChanges(self):
         values = self.get_settings()
         self._c.save_settings(values["model"], values["listen_on_open"], values["silence_ms"],
-                              values["sensitivity"])
+                              values["sensitivity"], values["wake"])
+        turned_on = values["wake"]["enabled"] and not self._wake_was_on
+        self._wake_was_on = values["wake"]["enabled"]
+        if turned_on and not self._c.installed().get("wake"):
+            _announce(_("wake_saved_missing"), delay=ANNOUNCE_DELAY_MS)
