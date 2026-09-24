@@ -319,11 +319,16 @@ class SpeechWatch:
     """While Hariku speaks, the wake phrase isn't listened for: Hariku Voice
     speaking (voice_speaking(), core.voice.is_speaking), or text handed to
     the screen reader through Hariku (on_before_speak), for about as long as
-    the screen reader needs to say it."""
+    the screen reader needs to say it.
 
-    def __init__(self, voice_speaking=None, clock=None):
+    Text that interrupts (and "Interrupt speech" is on: interrupts()) cuts
+    off what the screen reader was saying, so only it is left to say; other
+    text is said after what is already waiting."""
+
+    def __init__(self, voice_speaking=None, clock=None, interrupts=None):
         self._voice_speaking = voice_speaking or (lambda: False)
         self._clock = clock or time.monotonic
+        self._interrupts = interrupts or (lambda: True)
         self._lock = threading.Lock()
         self._until = 0.0
 
@@ -332,12 +337,21 @@ class SpeechWatch:
         text = payload.get("text") if isinstance(payload, dict) else None
         if not isinstance(text, str) or not text.strip():
             return
-        self.hold(speech_seconds(text))
+        interrupt = bool(payload.get("interrupt"))
+        if interrupt:
+            try:
+                interrupt = bool(self._interrupts())
+            except Exception:
+                logger.debug("Voice Control: reading Interrupt speech failed", exc_info=True)
+        self.hold(speech_seconds(text), queued=not interrupt)
 
-    def hold(self, seconds):
-        until = self._clock() + seconds + AFTER_SPEECH_SECONDS
+    def hold(self, seconds, queued=False):
+        """Ignore what is heard for `seconds` (and a moment more) from now,
+        or, `queued`, from when what is being said now ends."""
+        now = self._clock()
         with self._lock:
-            self._until = max(self._until, until)
+            start = max(now, self._until - AFTER_SPEECH_SECONDS) if queued else now
+            self._until = start + seconds + AFTER_SPEECH_SECONDS
 
     def speaking(self):
         with self._lock:

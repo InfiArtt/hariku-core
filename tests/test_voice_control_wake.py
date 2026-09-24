@@ -652,6 +652,38 @@ class TestSpeechWatch:
         assert wake.speech_seconds("x" * 100000) == wake.READER_MAX_SECONDS
         assert wake.speech_seconds("") == wake.READER_SECONDS
 
+    def test_interrupting_text_replaces_what_was_being_said(self):
+        # The screen reader stops a long answer for new text said with
+        # interrupt, so only that text is left: the wake phrase test's
+        # instructions after the microphone test's long result, for one.
+        now = [0.0]
+        watch = wake.SpeechWatch(clock=lambda: now[0])
+        long_text, short_text = "x" * 300, "Say it."
+        watch.on_before_speak({"text": long_text, "interrupt": True})
+        now[0] += 1.0
+        watch.on_before_speak({"text": short_text, "interrupt": True})
+        now[0] += wake.speech_seconds(short_text) + wake.AFTER_SPEECH_SECONDS
+        assert not watch.speaking()
+
+    def test_text_without_interrupt_waits_its_turn(self):
+        now = [0.0]
+        watch = wake.SpeechWatch(clock=lambda: now[0])
+        first, second = "x" * 100, "y" * 50
+        watch.on_before_speak({"text": first, "interrupt": True})
+        watch.on_before_speak({"text": second, "interrupt": False})
+        now[0] += wake.speech_seconds(first) + wake.speech_seconds(second) - 0.1
+        assert watch.speaking()
+        now[0] += 0.1 + wake.AFTER_SPEECH_SECONDS
+        assert not watch.speaking()
+
+    def test_with_interrupt_speech_off_everything_waits_its_turn(self):
+        now = [0.0]
+        watch = wake.SpeechWatch(clock=lambda: now[0], interrupts=lambda: False)
+        watch.on_before_speak({"text": "x" * 300, "interrupt": True})
+        watch.on_before_speak({"text": "Say it.", "interrupt": True})
+        now[0] += wake.speech_seconds("x" * 300)
+        assert watch.speaking()
+
 
 class TestEar:
     def test_hearing_the_phrase(self):
@@ -1240,6 +1272,32 @@ class TestExtension:
         assert log.played == ["listen.wav", "listen_end.wav"] and spotter.closed
         assert text.wake_test_message(result, None) == \
             "Heard the wake phrase 2 times in 0.6 seconds."
+
+    def test_the_page_test_hears_after_a_long_answer_was_cut_off(self, vc, monkeypatch):
+        # What CI's window check did: the microphone test's long result was
+        # said, then "Test the wake phrase..." said its instructions (which
+        # interrupt it) and waited that long. The test was deaf for the rest
+        # of the long result, so it heard nothing.
+        monkeypatch.setattr(wake, "speech_seconds", lambda t: 30.0 if len(t) > 100 else 0.05)
+        monkeypatch.setattr(wake, "AFTER_SPEECH_SECONDS", 0.0)
+        monkeypatch.setattr(wake, "COOLDOWN_SECONDS", 0.0)
+        result_text = text.calibration_message(audio.Calibration("very_high", "too_quiet",
+                                                                  20.0, 60.0))
+        assert len(result_text) > 100
+        vc._speech.on_before_speak({"text": result_text, "interrupt": True})
+        instructions = text._("wake_test_speak", phrase="Hey Aruna", seconds=20)
+        vc._speech.on_before_speak({"text": instructions, "interrupt": True})
+        time.sleep(wake.speech_seconds(instructions) + 0.01)     # the page waits this long
+        listener, log = make_listener(vc, b"")
+        mic = types.SimpleNamespace(opened=0, closed=0, chunks=0)
+        listener.make_recorder = lambda: types.SimpleNamespace(
+            record=lambda on_chunk, stop=None, max_seconds=30.0, keep=True:
+            FakeMic([QUIET] * 5 + [TRIGGER] + [QUIET] * 30 + [TRIGGER] + [QUIET] * 3, mic)
+            .record(on_chunk, stop=stop, max_seconds=max_seconds, keep=keep))
+        heard = []
+        result = vc.test_wake("Hey Aruna", "normal", heard.append, threading.Event(),
+                              listener=listener, seconds=0.6, spotter=FakeSpotter())
+        assert heard == [1, 2] and result["count"] == 2
 
     def test_the_page_test_can_be_stopped_and_explains_problems(self, vc):
         stop = threading.Event()

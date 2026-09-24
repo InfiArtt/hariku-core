@@ -428,8 +428,16 @@ _listener = Listener()
 # user has it on; hearing the phrase opens Aruna listening
 # ------------------------------------------------------------
 
+def _interrupt_speech():
+    """Hariku's "Interrupt speech" setting: does interrupting text cut the
+    screen reader off?"""
+    config = core.api.load_data("Core")
+    return not isinstance(config, dict) or bool(config.get("interrupt_speech", True))
+
+
 # Hariku speaking (Hariku Voice, or the screen reader through Hariku) isn't heard.
-_speech = wake.SpeechWatch(voice_speaking=lambda: core.voice.is_speaking())
+_speech = wake.SpeechWatch(voice_speaking=lambda: core.voice.is_speaking(),
+                           interrupts=_interrupt_speech)
 _tokenizers = {}
 _tokenizers_lock = threading.Lock()
 
