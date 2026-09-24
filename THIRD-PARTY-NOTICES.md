@@ -59,6 +59,28 @@ each component.
   `ggml-tiny.bin`, `ggml-base.bin` and `ggml-small.bin`, each downloaded only
   when the user chooses it and checked against a SHA-256 pinned in the
   extension. No model is included in Hariku or its installer.
+- **sherpa-onnx** (https://github.com/k2-fsa/sherpa-onnx, Apache-2.0,
+  Copyright Xiaomi Corporation and the sherpa-onnx contributors): the wake
+  phrase of the Voice Control extension (1.1) downloads the official Windows
+  x64 build (`sherpa-onnx-v1.13.8-win-x64-shared-MD-Release.tar.bz2`, release
+  v1.13.8) from GitHub when the user presses Download, checks it against a
+  SHA-256 pinned in the extension, and unpacks only `sherpa-onnx-c-api.dll`
+  and the ONNX Runtime DLLs from it. The extension calls its C API through
+  ctypes, in Hariku's own process. The Apache License 2.0 is at
+  https://www.apache.org/licenses/LICENSE-2.0 and in the sherpa-onnx
+  repository.
+- **ONNX Runtime** (Microsoft, https://github.com/microsoft/onnxruntime, MIT):
+  `onnxruntime.dll` and `onnxruntime_providers_shared.dll`, as they come in
+  that sherpa-onnx build.
+- **sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01** (an English
+  open-vocabulary keyword spotting model by the k2-fsa / sherpa-onnx authors,
+  trained on GigaSpeech, Apache-2.0): downloaded from the sherpa-onnx
+  `kws-models` release on GitHub with the program, checked against a pinned
+  SHA-256; only `tokens.txt`, `bpe.model` and the int8 encoder, decoder and
+  joiner are unpacked. The extension reads `bpe.model` (a sentencepiece model)
+  with its own small reader to turn the wake phrase into the model's tokens;
+  sentencepiece itself is not used. Neither sherpa-onnx, ONNX Runtime nor the
+  model is included in Hariku or its installer.
 
 ## Native components
 

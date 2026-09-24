@@ -527,6 +527,32 @@ Voice when you have set one up (Preferences, Hariku Voice, "Read answers to
 commands"). With the Voice Control extension, press Ctrl + Alt + Backspace again
 while the bar is open, and speak after the tone instead of typing.
 
+Voice Control 1.1 can also open Aruna when you say a wake phrase, "Hey Aruna"
+or one you choose, so you don't have to press a key. In Preferences, Voice
+Control:
+
+  1. In the list at the top, select "Wake phrase listener" and press
+     Download (38.1 MB from GitHub: sherpa-onnx and an English keyword model).
+  2. Tick "Listen for a wake phrase", and type your phrase in "Wake phrase".
+     "About this phrase" tells you when a phrase is one word, very short or
+     common (easily heard by mistake). English words work best with this
+     model; names like Aruna may need the High sensitivity.
+  3. Press "Test the wake phrase...", and after the tone say the phrase a few
+     times in 20 seconds. Hariku says "Heard it" each time it hears you, then
+     how many times it heard you. If it missed you, choose High in "Wake
+     phrase sensitivity" and test again; if it wakes up by mistake, choose
+     Low. Press OK to save.
+
+Say the phrase, and Aruna opens with the tone and listens to your command.
+The Status line on the page says whether Hariku is listening for your phrase.
+It doesn't listen while Hariku or your screen reader speaks through Hariku,
+while Voice Control listens to a command, or, if you tick "Pause the wake
+phrase during quiet hours", during quiet hours. The command "Pause or resume
+the wake phrase" (no key by default: give it one in Input Gestures, or ask
+Aruna for it) pauses it until you resume it or restart Hariku. The microphone
+stays on your computer: nothing is saved or sent anywhere. A headset stops
+your screen reader's voice from reaching the microphone.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on

@@ -280,13 +280,34 @@ without the internet:
   can reach, and then dropped. It is never saved to disk and never sent
   anywhere. What was recognised is handled like text you typed.
 - It listens only after you press Ctrl+Alt+Backspace (or, if you turned that on,
-  when Aruna opens), and it stops on its own after a second or two of
-  silence, after 12 seconds, or when you press the key again. There is no wake
-  word and nothing listens in the background. Hariku plays a tone when
-  listening starts and another when it ends.
+  when Aruna opens, or when you say the wake phrase, below), and it stops on
+  its own after a second or two of silence, after 12 seconds, or when you
+  press the key again. Hariku plays a tone when listening starts and another
+  when it ends.
 - It keeps each speech model's measured speed in its settings in
   `%APPDATA%\Hariku2`, to choose a model automatically. It keeps nothing you
   said.
+
+**The wake phrase** (Voice Control 1.1) is off until you turn on "Listen for
+a wake phrase" in Preferences, Voice Control. Only while it is on, Hariku
+keeps the microphone open in the background and listens for your phrase
+("Hey Aruna", or one you type) with sherpa-onnx, a small keyword spotter that
+runs on your computer:
+
+- Every tenth of a second of sound goes to the keyword spotter in memory and
+  is dropped straight away. Nothing is recorded, saved to disk or sent
+  anywhere, and the keyword spotter can only tell whether your phrase was
+  said; it doesn't turn anything else into text. Only when it hears the
+  phrase does Aruna open and listen to your command, as described above.
+- It doesn't listen while Voice Control listens to a command, while Hariku or
+  your screen reader speaks through Hariku, while you have paused it (the
+  "Pause or resume the wake phrase" command), during quiet hours if you ticked
+  that, or while Windows' privacy settings block the microphone. Turn the
+  option off, or remove the wake phrase listener, and the microphone is
+  closed.
+- The settings (whether it is on, the phrase, its sensitivity and the quiet
+  hours choice) are kept with Voice Control's other settings in
+  `%APPDATA%\Hariku2`.
 
 It connects only when you press Download in Preferences, Voice Control:
 
@@ -295,6 +316,9 @@ It connects only when you press Download in Preferences, Voice Control:
   `release-assets.githubusercontent.com` or `objects.githubusercontent.com`).
 - The speech models you choose (tiny, base or small) from Hugging Face
   (`huggingface.co` and its download servers, `*.hf.co`).
+- The wake phrase listener: the official sherpa-onnx v1.13.8 Windows build
+  and its English keyword model, from the sherpa-onnx releases on GitHub (the
+  same GitHub servers).
 
 These requests go over encrypted connections. Like every web request they
 include your IP address, and they carry a user agent that names Hariku and its
@@ -306,10 +330,11 @@ from any other server, even when redirected, and deletes any file whose
 SHA-256 doesn't match the one built into the extension.
 
 Everything is stored in `%APPDATA%\Hariku2\voice_control`: the program in
-`runtime`, the models in `models`, and `server.log`, the messages the
-whisper.cpp program printed the last time it ran (it holds no recognised
-text). Remove the program or a model on the Voice Control page, or delete that
-folder to remove everything.
+`runtime`, the models in `models`, the wake phrase listener in `wake`, and
+`server.log`, the messages the whisper.cpp program printed the last time it
+ran (it holds no recognised text). Remove the program, a model or the wake
+phrase listener on the Voice Control page, or delete that folder to remove
+everything.
 
 ## When you ask for it
 
