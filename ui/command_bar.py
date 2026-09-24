@@ -18,8 +18,19 @@ decides what it means):
   * a command runs at once: the bar closes first, focus goes back to the
     window that had it, and the action runs as its hotkey would, so an action
     that opens a window opens it as usual;
+  * with "Keep Aruna open after an answer" (core 2.8, on by default), an
+    action that only says something (core.commands.is_answer_action: the
+    time, the weather...) runs with the bar still open instead: what it says
+    shows in Last result, and the bar waits for the next command. If it opens
+    a window after all, the bar steps aside. A saved reminder keeps the bar
+    open too;
   * a close call asks "Did you mean …?" (Enter or "ya" runs it);
   * anything else: "I didn't understand".
+
+Status says "Aruna is thinking..." from the moment a message is sent until
+Aruna answers. With "Aruna's sounds" (core 2.8, on by default) a typed message
+plays aruna_send.wav and every answer aruna_reply.wav (a sound theme can
+replace both); Voice Control plays its own tones for spoken ones.
 
 What the bar says goes through core.voice.announce(text, "command"), and an
 action's own speech is routed to Hariku Voice for a moment
@@ -52,6 +63,7 @@ import core.api
 import core.commands
 import core.hotkeys
 import core.quick_reminder as quick
+import core.sounds
 import core.ui_scale
 import core.voice
 from core.core_panels import _labeled
@@ -70,6 +82,10 @@ AUTO_LISTEN_DELAY_MS = 400     # the screen reader has started announcing the ba
 FOLLOW_UP_POLL_MS = 150
 FOLLOW_UP_MAX_SECONDS = 15.0   # waiting for a question to be said before listening
 READER_SECONDS_PER_CHAR = 0.065  # a guess at how long the screen reader takes
+ANSWER_WAIT_MS = 20000         # an answer may take a download; after that, stop waiting
+ANSWER_GATHER_MS = 1500        # more speech this soon after is part of the same answer
+WINDOW_CHECKS_MS = (150, 500, 1200, 2500)  # did the action open a window after all?
+REPLY_AFTER_SEND_MS = 150      # the answer's sound waits for the send sound to end
 
 
 # ------------------------------------------------------------
@@ -152,6 +168,13 @@ def _call_after(fn, *args):
         pass
 
 
+def _shown(window):
+    try:
+        return bool(window) and window.IsShown()
+    except RuntimeError:
+        return False
+
+
 def run_command(action_id):
     """Run an action for the command bar: its speech goes to Hariku Voice for
     a moment (core.voice.route_speech), then it runs as its hotkey would."""
@@ -160,6 +183,16 @@ def run_command(action_id):
         return True
     core.voice.announce(_("cmd_action_failed"), "command")
     return False
+
+
+class _Awaited:
+    """An action running with the bar open, whose answer the bar waits for."""
+
+    def __init__(self, command, windows):
+        self.command = command
+        self.windows = windows          # the top-level windows before it ran
+        self.lines = []
+        self.timers = []
 
 
 class _Pending:
@@ -198,6 +231,14 @@ class CommandBar(wx.Dialog):
         self._follow_up = None
         self._generation = 0             # listening sessions; old events are ignored
         self.last_said = ""
+        settings = core.commands.bar_settings()
+        self._keep_open = settings["keep_open"]
+        self._sounds = settings["sounds"]
+        self._awaiting = None              # an action answering with the bar open
+        self._responding = False         # a message was sent and not answered yet
+        self._saying = False             # the bar is saying its own words
+        self._sent_at = 0.0
+        bus.subscribe("on_before_speak", self._on_speech)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         # Each label right before its control (screen readers name a control
@@ -261,11 +302,46 @@ class CommandBar(wx.Dialog):
         answers, else the screen reader). Returns True when a voice says it."""
         self.last_said = message
         self.txt_result.ChangeValue(message)
+        if self._responding:
+            self._responded()
+        self._saying = True
         try:
             return bool(self._say_fn(message))
         except Exception:
             logger.exception("Command bar: saying a message failed")
             return False
+        finally:
+            self._saying = False
+
+    # --- sounds and the status of a message ------------------------------------------
+
+    def _play(self, sound):
+        if not self._sounds or not self._alive():
+            return
+        try:
+            core.sounds.play_internal_sound(sound)
+        except Exception:
+            logger.exception("Command bar: a sound failed")
+
+    def _sent(self, source):
+        """A message was sent: "Aruna is thinking...", and the send sound for a
+        typed one (Voice Control has its own tones)."""
+        self._responding = True
+        self._set_status(_("cmd_status_thinking"))
+        if source == "typed":
+            self._sent_at = time.monotonic()
+            self._play(core.commands.SEND_SOUND)
+
+    def _responded(self):
+        """Aruna answered: the status says so, and the answer's sound plays
+        (after the send sound, when that has only just started)."""
+        self._responding = False
+        self._set_status(_("cmd_status_answered"))
+        wait = REPLY_AFTER_SEND_MS - int((time.monotonic() - self._sent_at) * 1000)
+        if wait > 0:
+            wx.CallLater(wait, self._play, core.commands.REPLY_SOUND)
+        else:
+            self._play(core.commands.REPLY_SOUND)
 
     # --- input -----------------------------------------------------------------------
 
@@ -298,6 +374,8 @@ class CommandBar(wx.Dialog):
         text = self.text() if text is None else " ".join(str(text).split())
         self._voice_turn = source == "voice"
         self._cancel_follow_up()
+        self._end_answer()                   # a new message: stop waiting for the last answer
+        self._sent(source)
         pending = self._pending
         if pending is not None:
             if source == "typed" and (not text or text == pending.text):
@@ -361,6 +439,7 @@ class CommandBar(wx.Dialog):
     def _ask(self, pending, message):
         self._pending = pending
         voiced = self.say(message)
+        self._set_status(_("cmd_status_question"))
         if self._voice_turn:
             self._listen_for_answer(message, voiced)
 
@@ -403,9 +482,17 @@ class CommandBar(wx.Dialog):
             return
         self.last_said = _("qr_saved")
         self.txt_result.ChangeValue(self.last_said)
+        if self._keep_open:
+            self._busy = False
+            self.txt_input.ChangeValue("")
+            self._responded()
+            return
         self._after_keys_released(self.close)
 
     def _run_command(self, command):
+        if self._keep_open and core.commands.is_answer_action(command.id):
+            self._run_in_place(command)
+            return
         self._busy = True
         self._pending = None
         self.stop_listening(discard=True)
@@ -424,6 +511,92 @@ class CommandBar(wx.Dialog):
             open_quick_reminder(core.api.main_window_instance, text=text)
 
         self._after_keys_released(lambda: self.close(restore=False, then=open_it))
+
+    # --- an answer with the bar open (core 2.8) ---------------------------------------
+
+    def _run_in_place(self, command):
+        """Run an action that only says something while the bar stays open;
+        what it says (on_before_speak) shows in Last result."""
+        self._pending = None
+        self.stop_listening(discard=True)
+        self._responding = False               # the action answers, not the bar
+        self._set_status(_("cmd_status_thinking"))
+        self.txt_result.ChangeValue(_("cmd_running", name=command.title))
+        self.txt_input.SelectAll()             # typing replaces the last command
+        answer = self._awaiting = _Awaited(command, self._top_windows())
+        run = self._run
+
+        def start():
+            if answer is not self._awaiting or not self._alive():
+                return
+            answer.timers = [wx.CallLater(ms, self._check_windows, answer)
+                             for ms in WINDOW_CHECKS_MS]
+            answer.timers.append(wx.CallLater(ANSWER_WAIT_MS, self._answer_timeout, answer))
+            run(command.id)
+            self._check_windows(answer)
+
+        wx.CallAfter(start)
+
+    def _top_windows(self):
+        try:
+            return set(wx.GetTopLevelWindows())
+        except Exception:
+            return set()
+
+    def _on_speech(self, payload):
+        """on_before_speak, on any thread: while an action answers with the bar
+        open, what it says is its answer (the bar's own words aren't)."""
+        answer = self._awaiting
+        if answer is None or self._saying or self._closed:
+            return
+        text = payload.get("text") if isinstance(payload, dict) else None
+        if isinstance(text, str) and text.strip():
+            _call_after(self._heard_answer, answer, " ".join(text.split()))
+
+    def _heard_answer(self, answer, text):
+        if answer is not self._awaiting or not self._alive():
+            return
+        if not answer.lines:
+            self._responded()
+        answer.lines.append(text)
+        self.last_said = "\n".join(answer.lines)
+        self.txt_result.ChangeValue(self.last_said)
+        # More speech soon after belongs to the same answer; then stop listening for it.
+        answer.timers.append(wx.CallLater(ANSWER_GATHER_MS, self._gathered, answer,
+                                          len(answer.lines)))
+
+    def _gathered(self, answer, count):
+        if answer is self._awaiting and len(answer.lines) == count:
+            self._end_answer()
+
+    def _check_windows(self, answer):
+        """The action opened a window after all: the bar steps aside for it."""
+        if answer is not self._awaiting or not self._alive():
+            return
+        opened = [w for w in self._top_windows() - answer.windows
+                  if w is not self and _shown(w)]
+        if opened:
+            self._end_answer()
+            self.close(restore=False)
+
+    def _answer_timeout(self, answer):
+        if answer is not self._awaiting or not self._alive():
+            return
+        if not answer.lines:
+            self.last_said = _("cmd_done", name=answer.command.title)
+            self.txt_result.ChangeValue(self.last_said)
+            self._set_status(self._idle_status())
+        self._end_answer()
+
+    def _end_answer(self):
+        answer, self._awaiting = self._awaiting, None
+        if answer is None:
+            return
+        for timer in answer.timers:
+            try:
+                timer.Stop()
+            except Exception:
+                pass
 
     def _after_keys_released(self, then, waited=0):
         """Call then() once the key that confirmed (Enter) is let go, so its
@@ -562,6 +735,8 @@ class CommandBar(wx.Dialog):
         if self._closed:
             return
         self._cancel_follow_up()
+        self._end_answer()
+        bus.unsubscribe("on_before_speak", self._on_speech)
         if self._listening:
             self.stop_listening(discard=True)
         self._closed = True

@@ -17,6 +17,9 @@ spoken command. No wx here; the window is ui/command_bar.py.
     add_aliases(action_id, [...]) -> more ways to say an action (extensions)
     register_listener(...)        -> the speech recogniser (Voice Control)
     set_fallback(handler)         -> reserved for a future AI fallback
+    add_answer_actions([...])     -> actions that only say something (core 2.8):
+                                     Aruna stays open and shows their answer
+    bar_settings()                -> Aruna's "keep open" and "sounds" (core 2.8)
 
 How a command is matched
 ------------------------
@@ -78,6 +81,30 @@ MAX_ANSWER_WORDS = 4   # a longer text is a new command, not a yes or no
 # The command bar's own action, which the bar doesn't offer as a command.
 COMMAND_BAR_ACTION = "Hariku Core.command_bar"
 HIDDEN_ACTIONS = {COMMAND_BAR_ACTION}
+
+# Aruna's settings in Core.json (core 2.8; Preferences, Aruna).
+KEEP_OPEN_KEY = "aruna_keep_open"   # stay open after an answer
+SOUNDS_KEY = "aruna_sounds"         # a sound when a message is sent and when Aruna answers
+SEND_SOUND = "aruna_send.wav"       # core.sounds names, so a sound theme can replace them
+REPLY_SOUND = "aruna_reply.wav"
+
+# Actions that only say something (the time, the weather, the latest
+# earthquake): they open no window and don't act on the window that had the
+# focus. With "Keep Aruna open after an answer" they run with the bar still
+# open, and what they say shows in it; any other action closes the bar first,
+# as before. Extensions name theirs with add_answer_actions().
+ANSWER_ACTIONS = frozenset([
+    "Hariku Core.speak_time", "Hariku Core.speak_date",
+    "Hariku Core.volume_up", "Hariku Core.volume_down",
+    "Morning Briefing.play_briefing", "Morning Briefing.evening_summary",
+    "Weather.speak_current_weather", "Earthquakes.speak_latest",
+    "Flight Radar.speak_nearby", "Flight Radar.speak_tracked",
+    "Sea Conditions.speak_sea", "Air Quality.speak_air",
+    "Space.where_is_iss", "Space.sun_and_moon", "Sleep Pattern.last_night",
+    "Clipboard History.speak_last", "World Clock.speak_world_clock",
+    "Cockpit.pilot_weather", "Sound Themes.next_theme",
+])
+_answer_actions = set()
 
 # Sounds a speech recogniser plays when it starts and stops listening; sound
 # themes can replace them (core.sounds.play_internal_sound).
@@ -723,6 +750,42 @@ def ask_fallback(text, candidates=None):
         logger.exception("Command bar: the fallback failed")
         return None
     return next((c for c in candidates if c.id == action_id), None)
+
+
+# ------------------------------------------------------------
+# Aruna's settings, and the actions that only answer (core 2.8)
+# ------------------------------------------------------------
+
+def add_answer_actions(action_ids):
+    """Name actions of your extension that only say something (no window, and
+    nothing done to the window that had the focus), so Aruna can stay open and
+    show what they say. Ids as core.hotkeys makes them: "<extension>.<action>"."""
+    if isinstance(action_ids, str):
+        action_ids = [action_ids]
+    with _lock:
+        _answer_actions.update(str(a) for a in action_ids if a)
+
+
+def is_answer_action(action_id):
+    with _lock:
+        return action_id in ANSWER_ACTIONS or action_id in _answer_actions
+
+
+def bar_settings(config=None):
+    """{"keep_open": bool, "sounds": bool}: both on unless the user turned them off."""
+    if config is None:
+        import core.api
+        config = core.api.load_data("Core")
+    return {"keep_open": bool(config.get(KEEP_OPEN_KEY, True)),
+            "sounds": bool(config.get(SOUNDS_KEY, True))}
+
+
+def save_bar_settings(keep_open, sounds):
+    import core.api
+    config = core.api.load_data("Core")
+    config[KEEP_OPEN_KEY] = bool(keep_open)
+    config[SOUNDS_KEY] = bool(sounds)
+    core.api.save_data("Core", config)
 
 
 # ------------------------------------------------------------

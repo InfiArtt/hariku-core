@@ -983,6 +983,52 @@ def apply_voice_settings():
 
 
 # ---------------------------------------------------------------------------
+# Aruna Panel (core 2.8): what the command bar does after an answer, its sounds
+# ---------------------------------------------------------------------------
+
+class ArunaPanel(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        import core.commands
+        settings = core.commands.bar_settings()
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.chk_keep_open = wx.CheckBox(self, label=_("prefs_aruna_keep_open"))
+        self.chk_keep_open.SetValue(settings["keep_open"])
+        vbox.Add(self.chk_keep_open, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        note = wx.StaticText(self, label=_("prefs_aruna_keep_open_note"))
+        note.Wrap(500)
+        vbox.Add(note, 0, wx.ALL, 10)
+        self.chk_sounds = wx.CheckBox(self, label=_("prefs_aruna_sounds"))
+        self.chk_sounds.SetValue(settings["sounds"])
+        vbox.Add(self.chk_sounds, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        note = wx.StaticText(self, label=_("prefs_aruna_sounds_note"))
+        note.Wrap(500)
+        vbox.Add(note, 0, wx.ALL, 10)
+        self.SetSizer(vbox)
+
+    def ApplyChanges(self):
+        import core.commands
+        core.commands.save_bar_settings(self.chk_keep_open.GetValue(), self.chk_sounds.GetValue())
+
+
+_aruna_panel_instance = None
+
+
+def create_aruna_panel(parent):
+    global _aruna_panel_instance
+    _aruna_panel_instance = ArunaPanel(parent)
+    return _aruna_panel_instance
+
+
+def apply_aruna_settings():
+    if _aruna_panel_instance:
+        try:
+            _aruna_panel_instance.ApplyChanges()
+        except RuntimeError:
+            pass  # panel already destroyed
+
+
+# ---------------------------------------------------------------------------
 # Places Panel (core/places_ui.py, core 2.8), imported when Preferences opens
 # ---------------------------------------------------------------------------
 
@@ -1004,6 +1050,7 @@ def register():
     core.preferences.register_panel(_("prefs_tab_quiet"),  "", create_quiet_panel,      apply_quiet_settings)
     core.preferences.register_panel(_("prefs_tab_reminders"), "", create_reminders_panel, apply_reminders_settings)
     core.preferences.register_panel(_("prefs_tab_voice"),  "", create_voice_panel,      apply_voice_settings)
+    core.preferences.register_panel(_("prefs_tab_aruna"),  "", create_aruna_panel,      apply_aruna_settings)
     core.preferences.register_panel("Extensions",          "", create_ext_settings_panel, apply_ext_settings)
     core.preferences.register_panel("Advanced",            "", create_adv_panel,          apply_adv_settings)
 
