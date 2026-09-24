@@ -7,8 +7,11 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import wx
+import ctypes
 import logging
+import time
+
+import wx
 import core.preferences
 import core.ui_scale
 from ui.input_gestures_panel import InputGesturesPanel
@@ -18,13 +21,42 @@ _ = get_translator("core")
 
 logger = logging.getLogger(__name__)
 
+# Pages are built when first needed. While the user arrows through the page
+# list, building every page passed over made it stutter, so a page is built
+# once the selection has settled for SETTLE_MS; the rest are built in the
+# background, one at a time, whenever the keyboard has been idle for IDLE_MS.
+SETTLE_MS = 200
+IDLE_MS = 700
+BACKGROUND_GAP_MS = 60
+
+
+class _LastInputInfo(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+
+
+def _ms_since_input():
+    """Milliseconds since the last keyboard or mouse input (no hook), or a
+    large number when Windows can't say."""
+    try:
+        info = _LastInputInfo()
+        info.cbSize = ctypes.sizeof(info)
+        if not ctypes.windll.user32.GetLastInputInfo(ctypes.byref(info)):
+            return 1 << 30
+        return (ctypes.windll.kernel32.GetTickCount() - info.dwTime) & 0xFFFFFFFF
+    except Exception:
+        return 1 << 30
+
+
 class PreferencesDialog(wx.Dialog):
     def __init__(self, parent, select_tab=None):
         super().__init__(parent, title=_("dlg_prefs_title"), size=(800, 500))
         
         self.panels = []           # one entry per page, in page order
         self.select_tab = select_tab
-        self._realizing = False
+        self._realizing = []       # holders of pages being built right now
+        self._settle_timer = None
+        self._background_timer = None
+        self._last_page_change = 0.0
         self.InitUI()
         self.CentreOnParent()
         
@@ -82,6 +114,8 @@ class PreferencesDialog(wx.Dialog):
         core.ui_scale.apply_appearance(self)
         self._realize(self.treebook.GetSelection())
         self.treebook.Bind(wx.EVT_TREEBOOK_PAGE_CHANGED, self._on_page_changed)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._on_destroy)
+        self._background_timer = wx.CallLater(IDLE_MS, self._build_in_background)
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=wx.ID_CANCEL)
@@ -101,13 +135,64 @@ class PreferencesDialog(wx.Dialog):
         wx.CallAfter(self.ResetDirty)
         
     def MarkDirty(self, event):
-        if not self._realizing:   # a page filling in its values isn't a change
+        # A page filling in its own values while it is built isn't a change.
+        if not self._inside_page_being_built(event.GetEventObject()):
             self.is_dirty = True
         event.Skip()
 
+    def _inside_page_being_built(self, window):
+        while window is not None and self._realizing:
+            if any(window is holder for holder in self._realizing):
+                return True
+            window = window.GetParent()
+        return False
+
     def _on_page_changed(self, event):
-        # Only builds the page; focus stays where the user is (the page list).
-        self._realize(event.GetSelection())
+        # Build the page once the user stops on it; focus stays in the page list.
+        self._last_page_change = time.monotonic()
+        if self._settle_timer is not None:
+            self._settle_timer.Stop()
+        self._settle_timer = wx.CallLater(SETTLE_MS, self._realize_selected)
+        event.Skip()
+
+    def _realize_selected(self):
+        self._settle_timer = None
+        try:
+            self._realize(self.treebook.GetSelection())
+        except RuntimeError:
+            pass   # the dialog closed meanwhile
+
+    def _build_in_background(self):
+        """Build the next unbuilt page while the user isn't typing or moving
+        through the list, then come back for the one after it."""
+        self._background_timer = None
+        try:
+            if not self:
+                return
+            since_change = (time.monotonic() - self._last_page_change) * 1000
+            if (self._settle_timer is not None or since_change < IDLE_MS
+                    or _ms_since_input() < IDLE_MS):
+                self._background_timer = wx.CallLater(IDLE_MS, self._build_in_background)
+                return
+            index = next((i for i, p in enumerate(self.panels)
+                          if p["panel"] is None and not p.get("failed")), None)
+            if index is None:
+                return
+            focus = wx.Window.FindFocus()
+            self._realize(index)
+            # A page must never take the focus while it is built unseen.
+            if focus is not None and wx.Window.FindFocus() is not focus:
+                focus.SetFocus()
+            self._background_timer = wx.CallLater(BACKGROUND_GAP_MS, self._build_in_background)
+        except RuntimeError:
+            pass   # the dialog closed meanwhile
+
+    def _on_destroy(self, event):
+        if event.GetEventObject() is self:
+            for timer in (self._settle_timer, self._background_timer):
+                if timer is not None:
+                    timer.Stop()
+            self._settle_timer = self._background_timer = None
         event.Skip()
 
     def _realize(self, index):
@@ -118,7 +203,7 @@ class PreferencesDialog(wx.Dialog):
         if entry["panel"] is not None or entry.get("failed"):
             return
         holder = entry["holder"]
-        self._realizing = True
+        self._realizing.append(holder)
         try:
             panel = entry["create"](holder)
             holder.GetSizer().Add(panel, 1, wx.EXPAND)
@@ -134,10 +219,13 @@ class PreferencesDialog(wx.Dialog):
         finally:
             holder.Layout()
             # Events a page posts while filling in arrive later; ignore those too.
-            wx.CallAfter(self._end_realizing)
+            wx.CallAfter(self._end_realizing, holder)
 
-    def _end_realizing(self):
-        self._realizing = False
+    def _end_realizing(self, holder):
+        try:
+            self._realizing.remove(holder)
+        except ValueError:
+            pass
 
     def realize_all(self):
         """Build every page now (checks that look at all pages use this)."""
@@ -150,8 +238,12 @@ class PreferencesDialog(wx.Dialog):
     def OnCharHook(self, event):
         if event.GetKeyCode() == wx.WXK_ESCAPE:
             self.Close() # Triggers OnClose (shows prompt if dirty)
-        else:
-            event.Skip()
+            return
+        if event.GetKeyCode() == wx.WXK_TAB and self._settle_timer is not None:
+            # Tab right after arrowing: build the page now, so Tab lands in it.
+            self._settle_timer.Stop()
+            self._realize_selected()
+        event.Skip()
             
     def _validate(self):
         """A page with ValidateChanges() returning (message, control) keeps the
