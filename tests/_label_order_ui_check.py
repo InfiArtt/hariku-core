@@ -131,9 +131,54 @@ def check(window, page, problems):
             check(ctrl, page, problems)
 
 
+# How long each page takes to build, to find what makes Preferences slow to open.
+import time
+import core.preferences
+import core.ui_scale
+timings = []
+for category, items in core.preferences.get_all_panels().items():
+    for item in items:
+        def timed(parent, _create=item["create"], _name=item["name"] or category):
+            start = time.perf_counter()
+            try:
+                return _create(parent)
+            finally:
+                timings.append((time.perf_counter() - start, _name))
+        item["create"] = timed
+_apply_appearance = core.ui_scale.apply_appearance
+
+
+def _timed_appearance(window):
+    start = time.perf_counter()
+    try:
+        return _apply_appearance(window)
+    finally:
+        timings.append((time.perf_counter() - start, f"apply_appearance({type(window).__name__})"))
+
+
+core.ui_scale.apply_appearance = _timed_appearance
+import ui.preferences_dialog as _pd
+_pd.core.ui_scale.apply_appearance = _timed_appearance
+_InputGestures = _pd.InputGesturesPanel
+
+
+def _timed_input(parent):
+    start = time.perf_counter()
+    try:
+        return _InputGestures(parent)
+    finally:
+        timings.append((time.perf_counter() - start, "Input Gestures"))
+
+
+_pd.InputGesturesPanel = _timed_input
+
 from ui.preferences_dialog import PreferencesDialog
 problems = []
+start = time.perf_counter()
 prefs = PreferencesDialog(frame)
+print(f"TIMING total PreferencesDialog {1000 * (time.perf_counter() - start):.0f} ms")
+for seconds, name in sorted(timings, reverse=True):
+    print(f"TIMING {1000 * seconds:7.1f} ms  {name}")
 book = prefs.treebook
 for i in range(book.GetPageCount()):
     check(book.GetPage(i), book.GetPageText(i), problems)
