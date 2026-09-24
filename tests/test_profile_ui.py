@@ -7,8 +7,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Opens Preferences and uses the Profile page with real wxPython, in a separate
-# process (conftest.py mocks wx here).
+# Opens Preferences and uses the Profile and Quiet Hours pages with real
+# wxPython, in a separate process (conftest.py mocks wx here).
 
 import os
 import subprocess
@@ -25,8 +25,8 @@ def test_profile_page(tmp_path):
         timeout=180, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK main_window", "OK profile_page", "OK profile_edit", "OK profile_saved",
-                  "OK profile_reopen", "OK no_errors", "OK shutdown"):
+    for stage in ("OK main_window", "OK profile_page", "OK profile_edit", "OK quiet_hours",
+                  "OK profile_saved", "OK profile_reopen", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
     assert "Traceback" not in result.stderr, output

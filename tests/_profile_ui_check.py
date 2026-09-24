@@ -8,9 +8,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
 Open Preferences with real wxPython, go to the Profile page, type a name and a
-nickname, add, edit and remove placeholders through the real dialog (including
-its spoken validation), browse the list checking focus stays put, press OK and
-check what was saved.
+nickname, choose a birthday (an impossible one is refused), turn the startup
+greeting off, add, edit and remove placeholders through the real dialog
+(including its spoken validation), browse the lists checking focus stays put,
+set quiet hours on their own page, press OK and check what was saved.
 
 Speech is captured through on_before_speak instead of reaching the screen
 reader. Run by tests/test_profile_ui.py in a separate process, because
@@ -188,11 +189,30 @@ def focus_note(checked):
     return "focus checked" if checked else "focus not observable here"
 
 
+def browse_choice(ctrl):
+    """Select every item and fire EVT_CHOICE, as arrow keys do; focus must stay.
+    Returns whether focus could be observed here."""
+    ctrl.SetFocus()
+    pump(lambda: wx.Window.FindFocus() is ctrl, timeout=1.0)
+    observable = wx.Window.FindFocus() is ctrl
+    for i in range(ctrl.GetCount()):
+        ctrl.SetSelection(i)
+        evt = wx.CommandEvent(wx.EVT_CHOICE.typeId, ctrl.GetId())
+        evt.SetEventObject(ctrl)
+        evt.SetInt(i)
+        ctrl.GetEventHandler().ProcessEvent(evt)
+        wx.Yield()
+        if observable:
+            assert wx.Window.FindFocus() is ctrl, f"focus left {ctrl.GetName()} at item {i}"
+    return observable
+
+
 from ui.preferences_dialog import PreferencesDialog
 
 prefs = PreferencesDialog(frame, select_tab="Profile")
 pages = [prefs.treebook.GetPageText(i) for i in range(prefs.treebook.GetPageCount())]
 assert "General" in pages and pages[pages.index("General") + 1] == "Profile", pages
+assert pages[pages.index("Profile") + 1] == "Quiet Hours", pages
 assert pages[prefs.treebook.GetSelection()] == "Profile", pages
 panel = core.core_panels._profile_panel_instance
 assert panel is not None, "the Profile page was not created"
@@ -214,6 +234,37 @@ def interact():
     panel.txt_name.SetFocus()
     panel.txt_name.SetValue("Rafli")
     panel.txt_nickname.SetValue("Bro")
+
+    # Birthday: named day and month choices and an optional year field.
+    assert panel.choice_day.GetName() == "Birthday, day"
+    assert panel.choice_month.GetName() == "Birthday, month"
+    assert panel.txt_year.GetName() == "Birthday, year (optional)"
+    assert panel.choice_day.GetSelection() == 0 and panel.choice_month.GetSelection() == 0
+    assert panel.choice_day.GetString(0) == _("profile_not_set") and panel.choice_day.GetCount() == 32
+    assert panel.choice_month.GetString(9) == "September" and panel.choice_month.GetCount() == 13
+    assert panel.ValidateChanges() is None                    # no birthday is fine
+    state["focus"] = browse_choice(panel.choice_month) and state["focus"]
+    state["focus"] = browse_choice(panel.choice_day) and state["focus"]
+    # An impossible or half-filled birthday is refused before anything is saved.
+    panel.choice_day.SetSelection(31)
+    panel.choice_month.SetSelection(4)
+    message, ctrl = panel.ValidateChanges()
+    assert message == _("profile_err_birthday_invalid") and ctrl is panel.choice_day, message
+    panel.choice_month.SetSelection(0)
+    message, ctrl = panel.ValidateChanges()
+    assert message == _("profile_err_birthday_incomplete") and ctrl is panel.choice_month, message
+    panel.choice_day.SetSelection(24)
+    panel.choice_month.SetSelection(9)
+    panel.txt_year.SetValue("19x9")
+    message, ctrl = panel.ValidateChanges()
+    assert ctrl is panel.txt_year, message
+    panel.txt_year.SetValue("1999")
+    assert panel.ValidateChanges() is None
+
+    # The startup greeting is on by default; this user turns it off.
+    assert panel.chk_greet.GetName() == "Greet me when Hariku starts"
+    assert panel.chk_greet.GetValue() is True
+    panel.chk_greet.SetValue(False)
 
     # Add: a reserved name is refused (shown and spoken), then a good one.
     reserved = _("profile_err_key_reserved", token="time")
@@ -305,7 +356,28 @@ def interact():
 
     # Nothing is saved before OK.
     assert core.personal.get_name() == ""
+    assert core.personal.get_birthday() is None
     print(f"OK profile_edit ({focus_note(state['focus'])})")
+
+    # --- Quiet Hours, a page of its own -------------------------------------
+    quiet = core.core_panels._quiet_panel_instance
+    assert quiet is not None, "the Quiet Hours page was not created"
+    assert quiet.chk_enabled.GetName() == "Turn on quiet hours"
+    assert quiet.chk_enabled.GetValue() is False                # off by default
+    assert quiet.choice_start.GetName() == "Quiet hours start at"
+    assert quiet.choice_end.GetName() == "Quiet hours end at"
+    assert quiet.choice_start.GetStringSelection() == "22:00"
+    assert quiet.choice_end.GetStringSelection() == "05:00"
+    quiet_focus = browse_choice(quiet.choice_end)
+    quiet.chk_enabled.SetValue(True)
+    quiet.choice_start.SetSelection(quiet._times.index("22:00"))
+    quiet.choice_end.SetSelection(quiet._times.index("22:00"))
+    message, ctrl = quiet.ValidateChanges()
+    assert message == _("profile_err_quiet_same") and ctrl is quiet.choice_end, message
+    quiet.choice_end.SetSelection(quiet._times.index("06:30"))
+    assert quiet.ValidateChanges() is None
+    assert not core.personal.is_quiet_time()                     # not saved yet
+    print(f"OK quiet_hours ({focus_note(quiet_focus)})")
 
     fire(prefs.btn_ok, wx.EVT_BUTTON)   # OK applies every page and closes
 
@@ -338,7 +410,12 @@ saved = core.api.load_data("Core")
 assert saved["user_name"] == "Rafli" and saved["user_nickname"] == "Bro", saved
 assert saved["user_fields"] == [{"key": "kantor_baru", "value": "Jl. Thamrin 2"}], saved
 assert saved["onboarding_completed"] is True, saved
+assert saved["user_birthday"] == {"day": 24, "month": 9, "year": 1999}, saved
+assert saved["greet_on_startup"] is False, saved
+assert saved["quiet_hours"] == {"enabled": True, "start": "22:00", "end": "06:30"}, saved
 assert core.personal.get_nickname() == "Bro"
+assert core.personal.expand("%mybirthday%") == "24 September 1999"
+assert core.personal.startup_greeting_enabled() is False
 assert core.personal.expand("%MYNICKNAME% @ %kantor_baru%, 100%") == "Bro @ Jl. Thamrin 2, 100%"
 print("OK profile_saved")
 
@@ -349,6 +426,11 @@ wx.Yield()
 panel = core.core_panels._profile_panel_instance
 assert panel.txt_name.GetValue() == "Rafli" and panel.txt_nickname.GetValue() == "Bro"
 assert rows(panel) == [("%kantor_baru%", "Jl. Thamrin 2")], rows(panel)
+assert panel.choice_day.GetSelection() == 24 and panel.choice_month.GetSelection() == 9
+assert panel.txt_year.GetValue() == "1999" and panel.chk_greet.GetValue() is False
+quiet = core.core_panels._quiet_panel_instance
+assert quiet.chk_enabled.GetValue() is True
+assert quiet.choice_end.GetStringSelection() == "06:30"
 prefs.Destroy()
 wx.Yield()
 print("OK profile_reopen")

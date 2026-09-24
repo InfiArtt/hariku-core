@@ -1,8 +1,8 @@
 # Privacy
 
 Hariku does not collect analytics or telemetry. Your calendar, reminders,
-routines, profile (your name and the placeholders you add in Preferences,
-Profile), settings, and extension data stay on your computer, in
+routines, profile (your name, birthday and the placeholders you add in
+Preferences, Profile), settings, and extension data stay on your computer, in
 `%APPDATA%\Hariku2`.
 
 This page lists every case where Hariku and the official extensions in the

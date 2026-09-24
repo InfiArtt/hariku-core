@@ -23,6 +23,8 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Volume Control](#volume-control)
   - [Reminders](#reminders)
   - [Personal Profile](#personal-profile)
+  - [Quiet Hours](#quiet-hours)
+  - [Morning Briefing and Evening Summary](#morning-briefing-and-evening-summary)
   - [Translation (i18n)](#translation-i18n)
   - [Constants](#constants)
   - [App Utilities](#app-utilities)
@@ -627,22 +629,27 @@ if today_reminders:
 import core.personal
 ```
 
-The user fills in their profile in Preferences, Profile: their name, what Hariku should call them, and their own placeholders (for example `%kantor%` → an office address). Hariku fills in `%myname%`, `%mynickname%` and those placeholders in routines, the Morning Briefing greeting and reminder text when a reminder is announced. Read the profile with these functions; the Profile page is the only place that changes it.
+The user fills in their profile in Preferences, Profile: their name, what Hariku should call them, their birthday (day and month, the year optional), and their own placeholders (for example `%kantor%` → an office address). Hariku fills in `%myname%`, `%mynickname%`, `%mybirthday%`, `%myage%` and those placeholders in routines, the Morning Briefing and reminder text when a reminder is announced. It greets the user when it starts (unless they turn that off), with "Happy birthday!" on their birthday. Read the profile with these functions; the Profile page is the only place that changes it.
 
 | Function | Returns | Description |
 |---|---|---|
 | `core.personal.get_name()` | `str` | The user's name, or `""` if they gave none. |
 | `core.personal.get_nickname()` | `str` | What Hariku should call the user: their nickname, else their name, else `""`. Use this to greet them. |
 | `core.personal.get_fields()` | `list[tuple]` | The user's own placeholders as an ordered list of `(key, value)`. Keys are lower-case, without `%` signs. |
+| `core.personal.get_birthday()` | `tuple` or `None` | The birthday as `(day, month, year)`; `year` is `None` when the user left it out. `None` without a birthday. |
+| `core.personal.is_birthday(today=None)` | `bool` | `True` on the user's birthday. `today` is a `date` or `datetime` (default: now). A 29 February birthday counts on 28 February in other years. |
+| `core.personal.get_age(today=None)` | `int` or `None` | The user's age in whole years, or `None` without a birth year. |
+| `core.personal.birthday_text()` | `str` | The birthday in the user's language: `"24 September"` or `"24 September 1999"`; `""` without one. |
+| `core.personal.greeting(now=None)` | `str` | `"Good morning, Budi."` for the time of day (with the nickname if there is one), followed by `"Happy birthday!"` on the birthday. |
 | `core.personal.expand(text, extra=None)` | `str` | Fill in `%token%` placeholders in `text` (see the rules below). `extra` is an optional dict of your own tokens (`{"city": "Jakarta"}` fills in `%city%`); it is looked up before the profile. |
 
 **Placeholder rules:**
 - A token is `%` + letters, digits or underscores + `%`, e.g. `%myname%`. Matching is case-insensitive: `%MyName%` works too.
-- Built in: `%myname%` (the name) and `%mynickname%` (the nickname, or the name if there is none). The user's own keys are 1–32 characters of `a`–`z`, `0`–`9` and `_`.
+- Built in: `%myname%` (the name), `%mynickname%` (the nickname, or the name if there is none), `%mybirthday%` (like `birthday_text()`) and `%myage%` (empty without a birth year). The user's own keys are 1–32 characters of `a`–`z`, `0`–`9` and `_`, and can't be Windows variable names such as `temp` or `userprofile`.
 - Unknown tokens and lone `%` signs are left as they are, so `"50%"` and `"100% done"` never change.
 - Expansion is a single pass: a value that itself contains `%something%` is inserted as it is, never expanded again.
 - An empty value expands to `""` (for example `%myname%` when the user gave no name).
-- These names are reserved and can't be the user's own keys: `myname`, `mynickname`, and the Routines tokens `time`, `date`, `battery`, `app`, `clipboard`, `ssid`, `ram`, `cpu`, `events`, `var`.
+- These names are reserved and can't be the user's own keys: `myname`, `mynickname`, `mybirthday`, `myage`, and the Routines tokens `time`, `date`, `battery`, `app`, `clipboard`, `ssid`, `ram`, `cpu`, `events`, `var`.
 - Expand only text you are about to speak or show. Store what the user typed, raw.
 - The profile is saved unencrypted in `Core.json`. Don't copy it anywhere else, and never send it over the network without the user asking you to.
 
@@ -662,6 +669,62 @@ speak(core.personal.expand("%myname%, it is %temp% degrees.", extra={"temp": 31}
 ```
 
 The `on_reminder_fired` event passes the reminder as stored. To read it aloud, use `core.reminders.expanded_copy(reminder)["title"]` or `core.personal.expand(reminder["title"])`.
+
+Don't greet the user at startup yourself: Hariku already does (when the greeting is on, `core.personal.startup_greeting_enabled()` is `True`), including "Happy birthday!". An extension that also celebrates the user's birthday should skip it on the day when that is `True`, as Lumina does.
+
+---
+
+### Quiet Hours
+
+*(Available since core 2.7.)*
+
+The user can set quiet hours in Preferences, Quiet Hours (off by default; 22:00 to 05:00 when turned on). During them, background alerts from extensions stay silent.
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.personal.is_quiet_time(now=None)` | `bool` | `True` during the user's quiet hours. Ranges past midnight work (22:00–05:00 is quiet at 23:30 and at 04:59, not at 05:00). Always `False` when quiet hours are off. |
+| `core.personal.get_quiet_hours()` | `dict` | `{"enabled": bool, "start": "HH:MM", "end": "HH:MM"}`. |
+
+**Rules for alerts:**
+- Check `is_quiet_time()` right before you announce something the user didn't ask for at that moment (an aircraft overhead, high waves, a nearby earthquake), and skip the announcement.
+- Skip, don't queue: don't save alerts for later. Mark an event-based alert (one earthquake, one emergency) as handled so it isn't announced when quiet hours end. A condition-based alert (the air is unhealthy today) may be announced if it still holds when you next check after quiet hours.
+- Keep safety warnings that can't wait: Earthquakes & Tsunami still announces tsunami alerts during quiet hours.
+- Keep what the user set up to sound at that time: their reminders, launch reminders, routines, and anything else they scheduled themselves.
+- Stop background requests that only feed skipped alerts, but keep your timer running so alerts come back when quiet hours end.
+
+```python
+import core.personal
+
+def _on_new_alert(message):
+    if core.personal.is_quiet_time():
+        return            # dropped, not saved for later
+    speak(message)
+```
+
+---
+
+### Morning Briefing and Evening Summary
+
+The Morning Briefing extension speaks a morning briefing (B) and an evening summary (Shift+B), and lets other extensions add a sentence to each through two events. Subscribe in `register(bus)`; the Morning Briefing emits them with a new, empty list:
+
+| Event | Arguments | When |
+|---|---|---|
+| `on_briefing_collect` | `lines` | While the morning briefing is built. Append what matters today, e.g. `"Weather in Jakarta: light rain, 27 degrees."`. |
+| `on_evening_collect` | `lines` | *(Morning Briefing 1.1)* While the evening summary is built. Append what matters for tonight or tomorrow, e.g. `"Tomorrow: light rain, 31 degrees."`. |
+
+The contract is the same for both:
+- The handler runs on the UI thread and must return quickly: use data you already have (a cache). No network requests, subprocesses or sleeps. With no data yet, append nothing.
+- Append plain text in the user's current language: one short sentence, two at most. Don't call `speak()`; the briefing speaks it.
+- Only append; don't change what other extensions added. Non-strings and blank entries are ignored, and an exception in your handler is logged without stopping the briefing.
+- Contributions are spoken last, in subscription order.
+
+```python
+def _on_evening_collect(lines):
+    if _cached_tomorrow:
+        lines.append(_cached_tomorrow)   # "Tomorrow: light rain, 31 degrees."
+
+bus.subscribe("on_evening_collect", _on_evening_collect)
+```
 
 ---
 
