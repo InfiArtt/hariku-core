@@ -25,6 +25,12 @@ Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
   Control: model tiny (77,7 MB) untuk perintah, dan model base (148 MB) untuk
   pengingat yang lebih akurat. Sebaiknya pakai headset, supaya mikrofon tidak
   mendengar screen reader-mu.
+- Voice Control: kalau kamu harus bicara keras, pilih Kepekaan mikrofon yang
+  lebih tinggi di Pengaturan, Voice Control: Rendah, Normal, Tinggi, atau
+  Sangat tinggi. Atau tekan Tes mikrofon lalu ucapkan satu kalimat dengan
+  suara biasa: Hariku mengukur suaramu dan ruangan, mengatur kepekaan yang
+  cocok, lalu memberitahumu, atau memberi saran kalau suaramu terlalu pelan
+  atau ruangannya terlalu bising. Tekan OK atau Terapkan untuk menyimpannya.
 - Pengingat cepat: tekan N lalu ketik pengingatnya dalam satu kalimat,
   misalnya "minum obat besok jam 8 pagi, tiap hari", "telepon Budi 30 menit
   lagi", atau "take medicine tomorrow at 8 am". Tekan Enter untuk mendengar
