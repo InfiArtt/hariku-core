@@ -65,6 +65,7 @@ CORE_FEATURES_SINCE = {
     "zoneinfo": (2, 5),
     "set_theme_dir": (2, 6),
     "get_builtin_sounds_dir": (2, 6),
+    "default_sound_path": (2, 7),
     "stop_sound": (2, 6),
     "core.personal": (2, 7),
     "core.voice": (2, 7),

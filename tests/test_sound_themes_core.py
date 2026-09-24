@@ -211,3 +211,22 @@ def test_only_folders_inside_the_themes_folder_are_loaded(themes, tmp_path, play
         assert sounds.get_theme_dir() is None
     core.api.save_data("Core", {"sound_theme_dir": str(themes / "Cockpit" / ".." / "Cockpit")})
     assert sounds.load_remembered_theme() is not None
+
+
+def test_reminder_sound_is_themeable(tmp_path, monkeypatch):
+    import core.sounds as sounds
+    played = []
+    monkeypatch.setattr(sounds, "play_sound", played.append)
+    monkeypatch.setenv("WINDIR", r"C:\Windows")
+    old = sounds.get_theme_dir()
+    try:
+        sounds.set_theme_dir(None)
+        sounds.play_reminder_sound()
+        (tmp_path / "reminder.wav").write_bytes(b"RIFF")
+        sounds.set_theme_dir(str(tmp_path))
+        sounds.play_reminder_sound()
+    finally:
+        sounds.set_theme_dir(old)
+    assert played == [r"C:\Windows\Media\Windows Notify Calendar.wav",
+                      str(tmp_path / "reminder.wav")]
+    assert sounds.default_sound_path("info.wav") ==         __import__("os").path.join(sounds.get_builtin_sounds_dir(), "info.wav")

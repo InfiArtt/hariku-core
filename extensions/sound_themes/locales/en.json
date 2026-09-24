@@ -33,6 +33,7 @@
         "snd_move": "moving between days",
         "snd_openDiary": "opening the diary",
         "snd_penClick": "a day with reminders",
+        "snd_reminder": "a reminder is due",
         "snd_select": "selecting an item",
         "snd_show": "window shown",
         "snd_start": "Hariku starting",

@@ -1126,7 +1126,9 @@ def test_the_indonesian_title_and_greeting(cmain, lang):
 # ------------------------------------------------------------
 
 def test_sound_files(snd, theme_files):
-    assert set(theme_files) == {"info.wav", "penClick.wav", "confirm.wav", "error.wav", "start.wav"}
+    assert set(theme_files) == {"info.wav", "reminder.wav", "penClick.wav", "confirm.wav",
+                                "error.wav", "start.wav"}
+    assert theme_files["reminder.wav"] == theme_files["info.wav"]   # the cabin ding-dong
     for name, data in theme_files.items():
         assert data[:4] == b"RIFF" and data[8:12] == b"WAVE", name
         channels, width, rate, frames = snd.wav_info(data)
@@ -1168,7 +1170,7 @@ def test_install_theme_in_the_sound_themes_format(snd, tmp_path, theme_files):
                                check=sound_themes_store.check_wav_data)
     assert folder == str(root / "Cockpit")
     assert sorted(os.listdir(folder)) == ["confirm.wav", "error.wav", "info.wav", "move.wav",
-                                          "penClick.wav", "start.wav"]
+                                          "penClick.wav", "reminder.wav", "start.wav"]
     assert (root / "Cockpit" / "info.wav").read_bytes() == theme_files["info.wav"]
     assert (root / "Cockpit" / "move.wav").read_bytes() == b"the user's own"
     assert sorted(stopped) == sorted(theme_files)

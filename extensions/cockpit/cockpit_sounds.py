@@ -124,9 +124,12 @@ def rising_chime():
 # Hariku's sound file -> the Cockpit sound for it. info.wav is what Hariku and
 # the extensions play for information and their own alerts and reminders
 # (Space, Sleep Pattern, Sea Conditions...); penClick.wav marks a day that has
-# reminders; confirm.wav is a confirmation; error.wav and start.wav as named.
+# reminders; reminder.wav replaces Windows' calendar sound when one of your
+# reminders is due (core 2.7); confirm.wav is a confirmation; error.wav and
+# start.wav as named.
 THEME_SOUNDS = (
     ("info.wav", ding_dong),
+    ("reminder.wav", ding_dong),
     ("penClick.wav", single_chime),
     ("confirm.wav", single_chime),
     ("error.wav", double_beep),

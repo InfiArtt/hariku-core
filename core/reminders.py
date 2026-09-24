@@ -223,8 +223,8 @@ def show_notification(r):
     import core.voice
     voiced = core.voice.announce(message, "reminder", interrupt=True)
 
-    from core.sounds import play_sound
-    play_sound(r"C:\Windows\Media\Windows Notify Calendar.wav")
+    from core.sounds import play_reminder_sound
+    play_reminder_sound()
 
     # With the voice reading it, the dialog keeps the text out of what the
     # screen reader announces when it opens, so it isn't read twice.

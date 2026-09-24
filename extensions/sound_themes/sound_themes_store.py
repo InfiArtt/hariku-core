@@ -57,6 +57,7 @@ SOUNDS = (
     ("move.wav", "snd_move"),
     ("openDiary.wav", "snd_openDiary"),
     ("penClick.wav", "snd_penClick"),
+    ("reminder.wav", "snd_reminder"),
     ("select.wav", "snd_select"),
     ("show.wav", "snd_show"),
     ("start.wav", "snd_start"),
@@ -294,7 +295,7 @@ def sound_path(name, sound):
         path = os.path.join(folder, sound)
         if os.path.isfile(path):
             return path
-    return os.path.join(builtin_dir(), sound)
+    return core.sounds.default_sound_path(sound)
 
 
 def check_wav_data(data):
@@ -651,7 +652,7 @@ def _v1_sounds(path):
 
 
 def _same_as_builtin(sound, data):
-    path = os.path.join(builtin_dir(), sound)
+    path = core.sounds.default_sound_path(sound)
     try:
         if os.path.getsize(path) != len(data):
             return False
