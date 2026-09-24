@@ -1,3 +1,21 @@
+Version 2.7.0 (Core Update - September 24, 2026)
+================================================================================
+- Your profile: Preferences has a new Profile page for your name, what Hariku
+  should call you, and your own placeholders, such as %kantor% for your office
+  address. It stays on your computer, but it is saved unencrypted, so don't
+  store passwords there.
+- Placeholders: write %myname%, %mynickname% or one of your own in a reminder
+  or a routine, and Hariku fills it in when the reminder is announced or the
+  routine runs. Morning Briefing 1.1 greets you by name ("Good morning,
+  Budi.").
+- Routines 1.1 also accepts %time%, %date%, %battery% and its other
+  placeholders written this way; the old {time} form keeps working. Its
+  builder has an "Insert placeholder" button that lists them all, and its
+  open actions understand Windows variables such as %USERPROFILE%. Update
+  both extensions in the Extension Manager.
+- New in the Extension Store: Earthquakes & Tsunami (G), Sea Conditions (O),
+  Air Quality (U), Space (A).
+
 Version 2.6.0 (Core Update - September 23, 2026)
 ================================================================================
 - Sound themes: with the new Sound Themes extension you can replace Hariku's

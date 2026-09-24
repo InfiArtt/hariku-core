@@ -90,7 +90,9 @@ class OnboardingWizard(wx.adv.Wizard):
         sizer.Add(title, 0, wx.ALL, 10)
         
         msg = _("onb_p3_msg_name")
-        sizer.Add(wx.StaticText(page, label=msg), 0, wx.LEFT | wx.RIGHT, 10)
+        lbl_name = wx.StaticText(page, label=msg)
+        lbl_name.Wrap(400)
+        sizer.Add(lbl_name, 0, wx.LEFT | wx.RIGHT, 10)
         
         self.txt_name = wx.TextCtrl(page)
         sizer.Add(self.txt_name, 0, wx.ALL | wx.EXPAND, 10)
@@ -171,7 +173,7 @@ def run_onboarding():
     wizard.FitToPage(wizard.page1)
     
     if wizard.RunWizard(wizard.page1):
-        name = wizard.txt_name.GetValue().strip() or "User"
+        name = wizard.txt_name.GetValue().strip()
         autostart = wizard.chk_autostart.GetValue()
         
         preset = "Basic"
