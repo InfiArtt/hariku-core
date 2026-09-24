@@ -213,7 +213,9 @@ from ui.preferences_dialog import PreferencesDialog
 prefs = PreferencesDialog(frame, select_tab="Profile")
 pages = [prefs.treebook.GetPageText(i) for i in range(prefs.treebook.GetPageCount())]
 assert "General" in pages and pages[pages.index("General") + 1] == "Profile", pages
-assert pages[pages.index("Profile") + 1] == "Quiet Hours", pages
+# Places (core 2.8) comes right after Profile, then Quiet Hours.
+assert pages[pages.index("Profile") + 1] == "Places", pages
+assert pages[pages.index("Places") + 1] == "Quiet Hours", pages
 assert pages[prefs.treebook.GetSelection()] == "Profile", pages
 panel = core.core_panels._profile_panel_instance
 assert panel is not None, "the Profile page was not created"

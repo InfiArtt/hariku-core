@@ -26,6 +26,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Personal Profile](#personal-profile)
   - [Placeholders from Extensions](#placeholders-from-extensions)
   - [Quiet Hours](#quiet-hours)
+  - [Places](#places)
   - [Hariku Voice](#hariku-voice)
   - [The Command Bar (Aruna)](#the-command-bar-aruna)
   - [Morning Briefing and Evening Summary](#morning-briefing-and-evening-summary)
@@ -798,6 +799,104 @@ def _on_new_alert(message):
 
 ---
 
+### Places
+
+*(Available since core 2.8. Declare `"minimum_core_version": "2.8"` to use it.)*
+
+```python
+import core.places
+import core.place_search          # finding a place: addresses, cities, map links
+from core.places_ui import PlaceChoice
+```
+
+The user names the places they use in Preferences, Places (Home, Office, Mum's house) and makes one of them the main place. Use these instead of asking for a city yourself: by default your extension uses the main place, and your settings page offers the user a "Place:" list to pick another one (or, if your extension has one, its own place). Weather, Sea Conditions, Air Quality, Earthquakes & Tsunami, Space, Cockpit and Flight Radar all work this way. Places are saved only on the user's computer (`Places.json`); reading them is cheap, so it is fine from a placeholder provider.
+
+A place is a dict:
+
+| Key | Description |
+|---|---|
+| `id` | A short id, such as `"3f9a1c2e"`. What you store to remember the user's choice. |
+| `name` | The user's name for it, 1 to 40 characters, unique: `"Home"`, `"Rumah Mama"`. |
+| `lat`, `lon` | The exact point (floats). Never send them anywhere; see `rounded()`. |
+| `label` | The address or city the user chose, such as `"Jalan Merdeka 1, Batam, Kepulauan Riau, Indonesia"`; `""` for pasted coordinates. |
+| `timezone` | The IANA zone (`"Asia/Makassar"`) when known (a city found by name), else `None`: use `timezone_for()`. |
+| `source` | `"address"`, `"city"` or `"coordinates"`. |
+| `city`, `region`, `country` | When known (from the search), else `""`. |
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.places.get_places()` | `list` | Every place, in the user's order (copies). |
+| `core.places.get_place(place_id)` | `dict` or `None` | One place. |
+| `core.places.get_main()` / `get_main_id()` | `dict` / `str`, or `None` | The main place, or `None` when the user has no places. |
+| `core.places.rounded(place, decimals=2)` | `(lat, lon)` | The point to send a service: 2 decimals is about 1 km. |
+| `core.places.distance_km(a, b)` | `float` | Great-circle distance. `a` and `b` can be places, location dicts (`"latitude"`/`"longitude"`) or `(lat, lon)` pairs. |
+| `core.places.bearing(a, b)` | `float` | Compass bearing from `a` to `b`, 0 to 360 (0 is north, 90 east). |
+| `core.places.timezone_for(place)` | `tzinfo` | The place's time zone, or the computer's own when it has none. |
+| `core.places.where_text(place)` / `describe(place)` | `str` | `"Jalan Merdeka 1, Batam (1.1301, 104.0529)"` / `"Home: Jalan Merdeka 1, ..."`. |
+| `core.places.set_places(places, main_id=None)` | `list` | Save the whole list (the Places page does this; don't, unless the user asked). Raises `core.places.PlaceError` (`str()` is a message for the user). Emits `on_places_changed`. |
+
+**Which place your extension uses.** Store the user's choice in your own data, never a copy of the place: `"main"`, a place id, or `"own"` for a place of your own (for example a beach). Then:
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.places.location_for(choice, own_location=None)` | `dict` or `None` | The location to use: `own_location` for `"own"`, else the chosen place (a removed one becomes the main place), as `location_dict()`. `None` when there is none. |
+| `core.places.location_dict(place)` | `dict` | A place as `{"name", "latitude", "longitude", "timezone" ("" when unknown), "place_id", "city", "label", ...}`, the shape Hariku's extensions keep their own location in. |
+| `core.places.initial_choice(own_location)` | `str` | For settings saved before 2.8: `"own"` when your extension has a place of its own that isn't the main place, else `"main"`. Settle it once in `register()` and save it. |
+| `core.places.normalize_choice(value)` | `str` or `None` | A stored choice checked (`None` for anything else). |
+| `core.places.choice_entries(own=True)` | `list` | `[(choice, text)]` for a list of your own. |
+| `PlaceChoice(parent, sizer, choice, own=True, on_change=None, label=None)` | | The labelled "Place:" list for your settings page (the label is created first, for screen readers). `.key()` is the choice to save, `.set_key(choice)`, `.is_own()`, and `.refresh()` after `on_places_changed`; `.ctrl` is the `wx.Choice`. Pass `own=False` when your extension has no place of its own. |
+
+**Finding a place yourself** (`core.place_search`, the helpers the Places page uses):
+
+| Function | Returns | Description |
+|---|---|---|
+| `parse_location_text(text)` | `dict` | Pasted coordinates (`"-6.2088, 106.8456"`, `6°12'31.7"S 106°50'44.2"E`, Indonesian LS/BT) or a Google Maps, Apple Maps or OpenStreetMap link, read offline: `{"kind": "coordinates", "latitude", "longitude"}`, or `{"kind": "short_link", "url"}` for a `maps.app.goo.gl` link. Raises `LocationError` (`.kind`). |
+| `resolve_short_link(url)` | `(lat, lon)` | Expands a short link (network: only after the user pressed a button, on a worker thread). Only the short-link hosts are fetched. |
+| `search_addresses(query, language="en")` | `list` | OpenStreetMap Nominatim (network, worker thread). Only when the user presses Enter or a button, never while they type, with at least 3 characters. Hariku paces every caller together (one request per 1.1 s) and remembers answers. Credit "© OpenStreetMap contributors" on your page. |
+| `search_cities(name, language="en")` | `list` | Open-Meteo geocoding (network, worker thread), with each city's time zone. Credit Open-Meteo. |
+
+Both searches return candidates: `{"name", "label", "latitude", "longitude", "timezone", "source", "city", "region", "country"}`; `core.places.place_from_candidate(found, name)` makes a place of one.
+
+**Rules:**
+- Send a service `rounded(place)` (or something coarser), never `lat`/`lon`, and say so in your privacy notes. Keep what you cache keyed by the rounded point, so the exact point isn't copied into your data files.
+- Store the choice, not the place: when the user edits a place, your extension follows.
+- Subscribe to `on_places_changed`: refresh your settings page's list (`PlaceChoice.refresh()`, which keeps the user's choice) and fetch again when the place you use moved.
+- Network requests on worker threads only, results back through `wx.CallAfter`.
+- To keep working on older cores, import it guarded (`try: import core.places as places` / `except ImportError: places = None`) and fall back to your own city search; otherwise declare `"minimum_core_version": "2.8"`.
+
+```python
+import core.api
+import core.places
+from core.places_ui import PlaceChoice
+
+DATA_KEY = "MyExtension"
+
+def get_location():
+    data = core.api.load_data(DATA_KEY)
+    return core.places.location_for(data.get("place", "main"))
+
+def _fetch_worker():
+    location = get_location()
+    if location:
+        lat, lon = core.places.rounded(location)     # about 1 km, never the exact point
+        ...
+
+class MyPanel(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.place = PlaceChoice(self, sizer, core.api.load_data(DATA_KEY).get("place"),
+                                 own=False)
+        self.SetSizer(sizer)
+
+    def ApplyChanges(self):
+        data = core.api.load_data(DATA_KEY)
+        data["place"] = self.place.key()
+        core.api.save_data(DATA_KEY, data)
+```
+
+Coming later: telling which place the user is at (for example from the Wi-Fi network), for Routines.
+
 ### Hariku Voice
 
 *(Available since core 2.7. Declare `"minimum_core_version": "2.7"` to use it.)*
@@ -1305,6 +1404,7 @@ These events are emitted by the Hariku core at specific moments. Subscribe to th
 | `on_build_tray_menu` | `menu, frame` | When the system tray right-click menu is being built. Use this to add your own menu items to the tray icon context menu. |
 | `on_build_tray_tooltip` | `tooltip_data` | When the tray icon tooltip is being updated. `tooltip_data` is a dict with a `"text"` key — modify `tooltip_data["text"]` to append your own information. |
 | `on_open_preferences` | `tab_name` | When the Preferences dialog is requested to open (optionally to a specific tab). |
+| `on_places_changed` | None | *(Since 2.8)* When the user saved changes to their places (Preferences, Places). Read them again with `core.places`; see [Places](#places). |
 | `on_reminder_fired` | `reminder` | *(Since 2.4)* When a reminder comes due and is announced. `reminder` is the stored dict (`id`, `title`, `date`, `time`, ...), with the raw text; see [Personal Profile](#personal-profile) for filling in its placeholders. |
 | `on_fetch_agenda` | `payload` | When the Agenda list is being built for a specific date. `payload` is a dict containing `"date"` (YYYY-MM-DD) and `"reminders"` (list of dicts). Modify `payload["reminders"]` to inject your own agenda items dynamically without saving them to disk. |
 | `on_agenda_item_deleted` | `event_id` | Fired when the user presses 'Delete Selected' in the main Agenda Dialog. `event_id` is the ID of the deleted item. Use this to delete your dynamically injected virtual events. |
