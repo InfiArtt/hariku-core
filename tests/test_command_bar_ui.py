@@ -7,7 +7,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Uses the command bar (Ctrl+Alt+Space) with real wxPython in a separate
+# Uses the command bar (Ctrl+Alt+Backspace) with real wxPython in a separate
 # process (conftest.py mocks wx here). Nothing leaves the machine and no
 # microphone is used; reminders and settings go to a temporary APPDATA.
 

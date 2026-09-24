@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
 Build the real main window with real wxPython and use the command bar
-(Ctrl+Alt+Space) through its action, as the global hotkey would: check its
+(Ctrl+Alt+Backspace) through its action, as the global hotkey would: check its
 labels and focus, type "gempa terbaru" and press Enter (the earthquake action
 runs after the bar has closed and focus went back), a close call with its
 "Did you mean …?" answered by Escape and then by Enter, a reminder read back
@@ -132,11 +132,11 @@ cb.foreground_window = lambda: PREVIOUS
 # --- The action and the menu ------------------------------------------------------------------
 action = core.hotkeys.actions["Hariku Core.command_bar"]
 assert (action.default_keycode, action.default_ctrl, action.default_alt, action.default_shift,
-        action.default_win, action.default_global) == (wx.WXK_SPACE, True, True, False, False,
+        action.default_win, action.default_global) == (wx.WXK_BACK, True, True, False, False,
                                                        True)
 assert action.description == "Open the command bar: type or say a command", action.description
-assert cb.hotkey_label() == "Ctrl + Alt + Space", cb.hotkey_label()
-assert frame.item_command_bar.GetItemLabelText() == "Command bar... (Ctrl + Alt + Space)", \
+assert cb.hotkey_label() == "Ctrl + Alt + Backspace", cb.hotkey_label()
+assert frame.item_command_bar.GetItemLabelText() == "Command bar... (Ctrl + Alt + Backspace)", \
     frame.item_command_bar.GetItemLabelText()
 assert "Hariku Core.speak_time" in core.hotkeys.actions
 print("OK action")

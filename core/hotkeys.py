@@ -55,6 +55,14 @@ RENAMED_ACTIONS = {
     "Assistant.quick_reminder": "Hariku Core.quick_reminder",
 }
 
+# Defaults that changed: a saved binding still equal to the old default is
+# dropped on load, so the new default applies; a key the user chose stays.
+# The command bar moved from Ctrl+Alt+Space to Ctrl+Alt+Backspace (2.7).
+CHANGED_DEFAULTS = {
+    "Hariku Core.command_bar": [{"keycode": 32, "ctrl": True, "shift": False, "alt": True,
+                                 "win": False, "global": True}],
+}
+
 # State for Multi-Tap System
 _last_hotkey_trigger = None
 _last_hotkey_time = 0.0
@@ -193,6 +201,8 @@ def load_keybindings():
                     migrated = True
             if migrate_renamed_actions(saved_config):
                 migrated = True
+            if migrate_changed_defaults(saved_config):
+                migrated = True
             if migrated:
                 save_keybindings()
         except Exception:
@@ -210,6 +220,21 @@ def migrate_renamed_actions(config):
             bindings = config.pop(old)
             if new not in config:
                 config[new] = bindings
+            changed = True
+    return changed
+
+def migrate_changed_defaults(config):
+    """Drop saved bindings that are exactly an old default (CHANGED_DEFAULTS),
+    so the action's new default applies. Returns True when `config` changed."""
+    def normal(bindings):
+        keys = ("keycode", "ctrl", "shift", "alt", "win", "global")
+        return sorted(tuple(b.get(k) if k == "keycode" else bool(b.get(k, False)) for k in keys)
+                      for b in bindings)
+    changed = False
+    for action_id, old_default in CHANGED_DEFAULTS.items():
+        saved = config.get(action_id)
+        if isinstance(saved, list) and normal(saved) == normal(old_default):
+            del config[action_id]
             changed = True
     return changed
 

@@ -7,7 +7,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-The command bar (core 2.7): Ctrl+Alt+Space, from anywhere, even with Hariku
+The command bar (core 2.7): Ctrl+Alt+Backspace, from anywhere, even with Hariku
 hidden in the tray, opens a small always-on-top window, "Hariku", with one
 field: "Say or type a command". Enter runs what was typed (core.commands
 decides what it means):
@@ -77,16 +77,16 @@ READER_SECONDS_PER_CHAR = 0.065  # a guess at how long the screen reader takes
 # ------------------------------------------------------------
 
 def register_hotkey(callback=None):
-    """Register "Open the command bar" as a global Ctrl+Alt+Space. Global
+    """Register "Open the command bar" as a global Ctrl+Alt+Backspace. Global
     hotkeys go through core.hotkeys, which uses RegisterHotKey on the main
     window; users can move it in Input Gestures."""
     core.hotkeys.register_action("Hariku Core", ACTION_NAME, _("nav_command_bar"),
-                                 wx.WXK_SPACE, True, callback or toggle_command_bar,
+                                 wx.WXK_BACK, True, callback or toggle_command_bar,
                                  default_alt=True, default_global=True)
 
 
 def hotkey_label():
-    """The command bar's current key, "Ctrl + Alt + Space", or ""."""
+    """The command bar's current key, "Ctrl + Alt + Backspace", or ""."""
     bindings = core.hotkeys.get_current_bindings(ACTION_ID)
     if not bindings:
         return ""

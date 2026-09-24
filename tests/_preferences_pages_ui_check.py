@@ -166,6 +166,10 @@ def settle_workers(timeout=10.0):
 
 settle_workers()
 prefs.Destroy()
+# Like every other window check: the tray icon goes before the frame, or
+# wx can crash while tearing down (seen as intermittent access violations).
+frame.tb_icon.RemoveIcon()
+frame.tb_icon.Destroy()
 frame.Destroy()
 wx.CallAfter(app.ExitMainLoop)
 app.MainLoop()

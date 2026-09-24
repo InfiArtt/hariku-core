@@ -7,7 +7,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-What the command bar (Ctrl+Alt+Space, since core 2.7) makes of a typed or
+What the command bar (Ctrl+Alt+Backspace, since core 2.7) makes of a typed or
 spoken command. No wx here; the window is ui/command_bar.py.
 
     decide(text)                  -> Decision: a reminder, an action to run, a
