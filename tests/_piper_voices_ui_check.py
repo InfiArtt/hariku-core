@@ -529,7 +529,8 @@ details = panel.txt_details.GetValue()
 assert "Installed on this computer." in details and "License: See URL" in details, details
 assert core.voice.is_provider_available("piper")
 assert core.voice.list_voices("piper") == [
-    {"id": ID_KEY, "name": "News tts (Medium)", "language": "id-ID", "quality": "medium"}]
+    {"id": ID_KEY, "name": "News tts (Medium)", "language": "id-ID", "quality": "medium",
+     "gender": ""}]   # Piper voices carry no gender; core.voice fills in ""
 assert os.path.isfile(store.exe_path(ROOT_DIR))
 if button_focus:
     assert wx.Window.FindFocus() is panel.btn_download, "focus moved during the download"
