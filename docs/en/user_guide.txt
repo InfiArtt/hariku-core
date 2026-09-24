@@ -94,6 +94,8 @@ ADDING A REMINDER TO THE SELECTED DATE
 ----------------------------------------
   Enter              Opens the Add Reminder dialog for the currently
                      selected date. See Section 3 for details.
+  N                  Quick reminder: type a reminder in one sentence, such
+                     as "take medicine tomorrow at 8 am, every day".
 
 
 ================================================================================
@@ -102,14 +104,38 @@ ADDING A REMINDER TO THE SELECTED DATE
 
 ADDING A REMINDER
 ------------------
-Navigate to the date you want on the calendar, then press Enter. The
-"Add Reminder" dialog opens. Fill in:
+Navigate to the date you want on the calendar, then press Enter (or choose
+Reminders, Add reminder). The "Add Reminder" dialog opens. Fill in:
 
-  Title    — A short description of the reminder (e.g. "Doctor appointment").
-  Time     — The time the reminder should fire, in HH:MM 24-hour format
-             (e.g. 14:30 for 2:30 PM).
+  Title      — A short description of the reminder (e.g. "Doctor appointment").
+  Date       — The selected date; change it here if you like (YYYY-MM-DD or
+               DD/MM/YYYY).
+  Time       — The time the reminder should fire, in HH:MM 24-hour format
+               (e.g. 14:30 for 2:30 PM).
+  Repeat     — Does not repeat, daily, weekly, monthly or yearly.
+  How often  — For a repeating reminder: every day, every 2 days, every
+               3 weeks... up to 30. A monthly reminder on the 31st comes on
+               the last day of shorter months.
 
-Press OK to save. The reminder is stored locally on your device.
+Or type the whole reminder in the field above the title, "Or type it in one
+sentence" (Shift+Tab twice from the title), for example "dentist next Monday
+at half past nine", and press Enter or Fill in. Hariku fills in the fields
+and tells you what it understood.
+
+Press Save Reminder (Alt+S) to save. The reminder is stored locally on your
+device.
+
+QUICK REMINDER
+---------------
+Press N anywhere in the main window (or choose Reminders, Quick reminder)
+and type one sentence, such as "take medicine tomorrow at 8 am, every day",
+"call Budi in 30 minutes" or "minum obat besok jam 8 pagi, tiap hari".
+Press Enter: Hariku reads back what it understood, for example "Take
+medicine, Friday 25 September 2026, at 08:00, every day. Save?". Press Enter
+again or Save to save it, or "Edit in full reminder dialog" to check it in
+the dialog above. English and Indonesian are always understood, also mixed
+in one sentence; German can be turned on in Preferences, Reminders. The
+sentence is read on your computer and never sent anywhere.
 
 HOW REMINDERS FIRE
 -------------------
@@ -132,9 +158,8 @@ date. The Agenda lists all reminders with their times and completion status.
 
 IMPORTANT NOTE
 --------------
-In Hariku V2, advanced reminder features (recurring reminders, snooze
-customisation, etc.) are being rebuilt as separate extensions and are not yet
-part of the core application.
+Snooze customisation and editing a saved reminder are not part of the core
+application yet.
 
 
 ================================================================================

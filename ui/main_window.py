@@ -28,7 +28,8 @@ class MainWindow(wx.Frame):
         core.api.main_window_instance = self
         self.InitUI()
         self.RegisterCoreHotkeys()
-        
+        self.UpdateReminderMenu()
+
         # Apply global hotkeys to the OS
         core.hotkeys.apply_global_hotkeys(self)
 
@@ -87,13 +88,24 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda e: core.api.restart_app(safe_mode=True), item_safe_mode)
         
         fileMenu.AppendSubMenu(exitMenu, _("menu_exit_options"))
-        
+
+        # Reminders. The shortcut is part of the label rather than a menu
+        # accelerator (after a tab), which would take the plain N key for
+        # itself even after the user moves the action to another key.
+        self.remindersMenu = wx.Menu()
+        self.item_add_reminder = self.remindersMenu.Append(wx.ID_ANY, _("menu_add_reminder"))
+        self.item_quick_reminder = self.remindersMenu.Append(wx.ID_ANY, _("menu_quick_reminder"))
+        self.Bind(wx.EVT_MENU, lambda e: self.OnAddReminder(), self.item_add_reminder)
+        self.Bind(wx.EVT_MENU, lambda e: self.OnQuickReminder(), self.item_quick_reminder)
+        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
+
         self.extensionsMenu = wx.Menu()
         ext_manage_item = self.extensionsMenu.Append(wx.ID_ANY, _("menu_manage_extensions"))
         self.Bind(wx.EVT_MENU, self.OnManageExtensions, ext_manage_item)
         self.extensionsMenu.AppendSeparator()
-        
+
         menubar.Append(fileMenu, _("menu_file"))
+        menubar.Append(self.remindersMenu, _("menu_reminders"))
         menubar.Append(prefMenu, _("menu_preferences"))
         menubar.Append(self.extensionsMenu, _("menu_extensions"))
         
@@ -225,6 +237,47 @@ class MainWindow(wx.Frame):
         # S: free in the core, every bundled extension and store package (Sound
         # Themes has Shift+S). Any key stops the voice too, unless that is off.
         core.hotkeys.register_action("Hariku Core", "stop_voice", _("nav_stop_voice"), ord('S'), False, core.voice.stop)
+        # N for "new": free in the core, every bundled extension and store
+        # package. Saved "Assistant.quick_reminder" bindings (the extension it
+        # came from) count for it (core.hotkeys.RENAMED_ACTIONS).
+        core.hotkeys.register_action("Hariku Core", "quick_reminder", _("nav_quick_reminder"), ord('N'), False, self.OnQuickReminder)
+
+    def OnQuickReminder(self):
+        from ui.quick_reminder_dialog import open_quick_reminder
+        open_quick_reminder(self)
+
+    def OnAddReminder(self):
+        """Enter on a date, or Reminders, Add reminder: the reminder dialog for
+        the selected date, unless an extension shows its own."""
+        date_str = self.calendar.GetDate().Format("%Y-%m-%d")
+        # Allow extensions to override the Enter key behavior.
+        # If an extension sets payload["handled"] = True, the
+        # default AddReminderDialog will NOT open.
+        payload = {"date": date_str, "handled": False}
+        bus.emit("on_enter_pressed", payload)
+        if payload["handled"]:
+            return
+        from ui.reminder_dialog import AddReminderDialog
+        dlg = AddReminderDialog(self, date_str)
+        dlg.ShowModal()
+        dlg.Destroy()
+
+    def UpdateReminderMenu(self):
+        """Show the quick reminder's current key in its menu item ("Quick
+        reminder... (N)"); users can move it in Input Gestures."""
+        label = _("menu_quick_reminder")
+        bindings = core.hotkeys.get_current_bindings("Hariku Core.quick_reminder")
+        if bindings:
+            keycode, ctrl, shift, alt, win, is_global = sorted(bindings)[0]
+            key = core.hotkeys.format_key_name(keycode, ctrl, shift, alt, win)
+            label = _("menu_with_shortcut", label=label, key=key)
+        if self.item_quick_reminder.GetItemLabel() != label:
+            self.item_quick_reminder.SetItemLabel(label)
+
+    def OnMenuOpen(self, event):
+        # Cheap enough for every menu; it only changes a label when needed.
+        self.UpdateReminderMenu()
+        event.Skip()
 
     def OnShowShortcuts(self):
         from ui.shortcuts_dialog import show_shortcuts
@@ -333,18 +386,7 @@ class MainWindow(wx.Frame):
         if keycode == wx.WXK_RETURN and not ctrl_down:
             focus = wx.Window.FindFocus()
             if focus == self.calendar or focus == self:
-                date_str = self.calendar.GetDate().Format("%Y-%m-%d")
-                # Allow extensions to override the Enter key behavior.
-                # If an extension sets payload["handled"] = True, the
-                # default AddReminderDialog will NOT open.
-                payload = {"date": date_str, "handled": False}
-                bus.emit("on_enter_pressed", payload)
-                if payload["handled"]:
-                    return
-                from ui.reminder_dialog import AddReminderDialog
-                dlg = AddReminderDialog(self, date_str)
-                dlg.ShowModal()
-                dlg.Destroy()
+                self.OnAddReminder()
                 return
                 
         if keycode == wx.WXK_SPACE and not ctrl_down:
