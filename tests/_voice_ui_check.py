@@ -322,7 +322,7 @@ import core.voice_panel
 
 prefs = PreferencesDialog(frame, select_tab=_("prefs_tab_voice"))
 pages = [prefs.treebook.GetPageText(i) for i in range(prefs.treebook.GetPageCount())]
-assert pages[pages.index("Quiet Hours") + 1] == "Hariku Voice", pages
+assert pages.index("Quiet Hours") < pages.index("Reminders") < pages.index("Hariku Voice"), pages
 assert pages[prefs.treebook.GetSelection()] == "Hariku Voice", pages
 panel = core.voice_panel._panel_instance
 assert panel is not None, "the Hariku Voice page was not created"
