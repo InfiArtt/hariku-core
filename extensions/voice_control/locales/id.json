@@ -28,7 +28,7 @@
         "choice_base": "Base: lebih akurat",
         "choice_small": "Small: paling akurat, lambat di komputer lama",
 
-        "page_help": "Ucapkan perintah di bilah perintah (Ctrl+Alt+Space), misalnya \"gempa terbaru\", \"jam berapa\", atau \"ingatkan aku minum obat besok jam 8\". Ucapanmu dikenali di komputer ini oleh whisper.cpp; tidak pernah disimpan atau dikirim ke mana pun. Unduh dulu model tiny di bawah (programnya ikut terunduh). Model base membuat pengingat lebih akurat.",
+        "page_help": "Ucapkan perintah di bilah perintah (Ctrl+Alt+Backspace), misalnya \"gempa terbaru\", \"jam berapa\", atau \"ingatkan aku minum obat besok jam 8\". Ucapanmu dikenali di komputer ini oleh whisper.cpp; tidak pernah disimpan atau dikirim ke mana pun. Unduh dulu model tiny di bawah (programnya ikut terunduh). Model base membuat pengingat lebih akurat.",
         "page_headset": "Sebaiknya pakai headset: kalau pakai speaker, mikrofon bisa mendengar screen reader-mu. Hariku mendiamkan screen reader dan Suara Hariku selama mendengarkan.",
         "lbl_downloads": "Program dan model ucapan:",
         "col_name": "Nama",
@@ -45,7 +45,7 @@
         "btn_test_mic": "&Tes mikrofon",
         "lbl_test_result": "Tes mikrofon:",
 
-        "status_ready": "Voice Control siap. Tekan Ctrl+Alt+Space lalu bicara setelah nada.",
+        "status_ready": "Voice Control siap. Tekan Ctrl+Alt+Backspace lalu bicara setelah nada.",
         "status_not_ready": "Unduh model ucapan tiny untuk mulai; programnya ikut terunduh.",
         "status_downloading": "Mengunduh {name}: {percent} persen.",
         "status_cancelling": "Membatalkan unduhan...",
@@ -83,7 +83,7 @@
         "err_unexpected": "Ada masalah di Voice Control. Detailnya ada di log.",
         "err_not_ready": "Voice Control belum punya model ucapan. Unduh dulu di Pengaturan, Voice Control.",
         "err_busy": "Aku sudah sedang mendengarkan.",
-        "err_no_speech": "Aku tidak mendengar apa-apa. Tekan Ctrl+Alt+Space lalu coba lagi, sedikit lebih dekat ke mikrofon.",
+        "err_no_speech": "Aku tidak mendengar apa-apa. Tekan Ctrl+Alt+Backspace lalu coba lagi, sedikit lebih dekat ke mikrofon.",
         "err_timeout": "Mengenali ucapan terlalu lama. Coba model tiny di Pengaturan, Voice Control.",
         "err_engine": "Program pengenal ucapan tidak berjalan. Coba unduh ulang di Pengaturan, Voice Control.",
 

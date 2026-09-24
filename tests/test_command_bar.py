@@ -12,7 +12,7 @@
 # saving and the microphone are all replaced; nothing is shown, spoken or
 # recorded. The real window is checked in CI by tests/_command_bar_ui_check.py.
 # Also: the global hotkey goes through RegisterHotKey (mocked here), no bundled
-# extension takes Ctrl+Alt+Space, and no new code installs a keyboard hook.
+# extension takes Ctrl+Alt+Backspace, and no new code installs a keyboard hook.
 
 import logging
 import os
@@ -485,7 +485,7 @@ def hotkeys(tmp_path, monkeypatch):
     import core.hotkeys as hk
     wx = sys.modules["wx"]
     for name, value in (("MOD_NONE", 0), ("MOD_ALT", 1), ("MOD_CONTROL", 2), ("MOD_SHIFT", 4),
-                        ("MOD_WIN", 8), ("WXK_SPACE", 32)):
+                        ("MOD_WIN", 8), ("WXK_BACK", 8), ("WXK_SPACE", 32)):
         monkeypatch.setattr(wx, name, value, raising=False)
     monkeypatch.setattr(hk, "KEYBINDINGS_FILE", str(tmp_path / "keybindings.json"))
     monkeypatch.setattr(hk, "saved_config", {})
@@ -501,18 +501,18 @@ def hotkeys(tmp_path, monkeypatch):
     return hk
 
 
-def test_ctrl_alt_space_is_a_global_registerhotkey(hotkeys):
+def test_ctrl_alt_backspace_is_a_global_registerhotkey(hotkeys):
     import ui.command_bar as cb
     opened = []
     cb.register_hotkey(lambda: opened.append(True))
     action = hotkeys.actions["Hariku Core.command_bar"]
     assert (action.default_keycode, action.default_ctrl, action.default_alt,
             action.default_shift, action.default_win, action.default_global) == \
-        (32, True, True, False, False, True)
-    assert hotkeys.window.registered == [(100, 2 | 1, 32)]     # MOD_CONTROL | MOD_ALT, Space
+        (8, True, True, False, False, True)
+    assert hotkeys.window.registered == [(100, 2 | 1, 8)]      # MOD_CONTROL | MOD_ALT, Backspace
     hotkeys.process_global_hotkey(100)
     assert opened == [True]
-    assert cb.hotkey_label() == "Ctrl + Alt + Space"
+    assert cb.hotkey_label() == "Ctrl + Alt + Backspace"
 
 
 def test_the_command_bar_key_can_be_moved(hotkeys):
@@ -530,7 +530,7 @@ def test_a_taken_key_is_logged(hotkeys, caplog):
     hotkeys.window.accept = False
     caplog.set_level(logging.WARNING, logger="core.hotkeys")
     cb.register_hotkey(lambda: None)
-    assert any("Ctrl + Alt + Space" in r.getMessage() and "taken" in r.getMessage()
+    assert any("Ctrl + Alt + Backspace" in r.getMessage() and "taken" in r.getMessage()
                for r in caplog.records)
     assert hotkeys._registered_hotkeys == {}
 
@@ -543,11 +543,11 @@ def test_main_window_registers_the_command_bar():
     with open(os.path.join(ROOT, "ui", "command_bar.py"), encoding="utf-8") as f:
         bar = f.read()
     assert ('core.hotkeys.register_action("Hariku Core", ACTION_NAME, _("nav_command_bar"),\n'
-            '                                 wx.WXK_SPACE, True, callback or toggle_command_bar,\n'
+            '                                 wx.WXK_BACK, True, callback or toggle_command_bar,\n'
             '                                 default_alt=True, default_global=True)') in bar
 
 
-def test_no_bundled_extension_takes_ctrl_alt_space():
+def test_no_bundled_extension_takes_ctrl_alt_backspace():
     import ast
     found = []
     for folder in sorted(os.listdir(os.path.join(ROOT, "extensions"))):
@@ -564,15 +564,15 @@ def test_no_bundled_extension_takes_ctrl_alt_space():
                 for node in ast.walk(tree):
                     if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
                             and node.func.attr == "register_action"):
-                        if "WXK_SPACE" in ast.dump(node) or "ord(' ')" in ast.unparse(node):
+                        if "WXK_BACK" in ast.dump(node) and "alt" in ast.unparse(node).lower():
                             found.append(f"{folder}/{name}")
     assert found == []
 
 
-def test_no_other_core_default_is_ctrl_alt_space():
+def test_no_other_core_default_is_ctrl_alt_backspace():
     with open(os.path.join(ROOT, "ui", "main_window.py"), encoding="utf-8") as f:
         source = f.read()
-    assert "WXK_SPACE, True" not in source      # the command bar registers it in command_bar.py
+    assert "WXK_BACK, True" not in source       # the command bar registers it in command_bar.py
 
 
 NEW_CODE = [os.path.join("core", "commands.py"), os.path.join("core", "voice.py"),
@@ -598,3 +598,26 @@ def test_voice_control_is_official():
     with open(os.path.join(ROOT, "tools", "server", "generate_trusted_hashes.py"),
               encoding="utf-8") as f:
         assert '"voice_control",' in f.read()
+
+
+def test_the_old_default_key_moves_to_the_new_one(hotkeys):
+    old = {"keycode": 32, "ctrl": True, "shift": False, "alt": True, "win": False, "global": True}
+    config = {"Hariku Core.command_bar": [dict(old)]}
+    assert hotkeys.migrate_changed_defaults(config) is True
+    assert config == {}                       # the new default (Ctrl+Alt+Backspace) applies
+    chosen = {"Hariku Core.command_bar": [dict(old, keycode=ord("K"))]}
+    assert hotkeys.migrate_changed_defaults(chosen) is False
+    assert chosen["Hariku Core.command_bar"][0]["keycode"] == ord("K")   # the user's own key stays
+
+
+def test_loading_saved_keys_applies_the_move(hotkeys, tmp_path):
+    import json
+    path = tmp_path / "keybindings.json"
+    path.write_text(json.dumps({"Hariku Core.command_bar": [
+        {"keycode": 32, "ctrl": True, "shift": False, "alt": True, "win": False, "global": True}],
+        "Hariku Core.quick_reminder": [{"keycode": 78, "ctrl": False, "shift": False,
+                                        "alt": False, "win": False, "global": False}]}))
+    hotkeys.load_keybindings()
+    assert "Hariku Core.command_bar" not in hotkeys.saved_config
+    assert "Hariku Core.quick_reminder" in hotkeys.saved_config
+    assert "Hariku Core.command_bar" not in json.loads(path.read_text())

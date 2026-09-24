@@ -28,7 +28,7 @@
         "choice_base": "Base: more accurate",
         "choice_small": "Small: most accurate, slow on older computers",
 
-        "page_help": "Speak commands in the command bar (Ctrl+Alt+Space): for example \"latest earthquake\", \"what time is it\" or \"remind me to take medicine tomorrow at 8\". Your speech is recognised on this computer by whisper.cpp; it is never saved or sent anywhere. First download the tiny model below (the program comes with it). The base model makes reminders more accurate.",
+        "page_help": "Speak commands in the command bar (Ctrl+Alt+Backspace): for example \"latest earthquake\", \"what time is it\" or \"remind me to take medicine tomorrow at 8\". Your speech is recognised on this computer by whisper.cpp; it is never saved or sent anywhere. First download the tiny model below (the program comes with it). The base model makes reminders more accurate.",
         "page_headset": "A headset is recommended: with speakers, the microphone can hear your screen reader. Hariku silences the screen reader and Hariku Voice while it listens.",
         "lbl_downloads": "Program and speech models:",
         "col_name": "Name",
@@ -45,7 +45,7 @@
         "btn_test_mic": "&Test microphone",
         "lbl_test_result": "Microphone test:",
 
-        "status_ready": "Voice Control is ready. Press Ctrl+Alt+Space and speak after the tone.",
+        "status_ready": "Voice Control is ready. Press Ctrl+Alt+Backspace and speak after the tone.",
         "status_not_ready": "Download the tiny speech model to start; the program comes with it.",
         "status_downloading": "Downloading {name}: {percent} percent.",
         "status_cancelling": "Cancelling the download...",
@@ -83,7 +83,7 @@
         "err_unexpected": "Something went wrong with Voice Control. The details are in the log.",
         "err_not_ready": "Voice Control has no speech model yet. Download one in Preferences, Voice Control.",
         "err_busy": "I'm already listening.",
-        "err_no_speech": "I didn't hear anything. Press Ctrl+Alt+Space and try again, a bit closer to the microphone.",
+        "err_no_speech": "I didn't hear anything. Press Ctrl+Alt+Backspace and try again, a bit closer to the microphone.",
         "err_timeout": "Recognising took too long. Try the tiny model in Preferences, Voice Control.",
         "err_engine": "The speech recognition program didn't work. Try downloading it again in Preferences, Voice Control.",
 

@@ -9,7 +9,7 @@
 """
 Voice Control — Hariku V2 extension (needs core 2.7).
 
-Speak commands into Hariku's command bar (Ctrl+Alt+Space): "gempa terbaru",
+Speak commands into Hariku's command bar (Ctrl+Alt+Backspace): "gempa terbaru",
 "jam berapa", "ingatkan aku minum obat besok jam 8". Speech is recognised on
 this computer by whisper.cpp (MIT) with OpenAI's Whisper models (MIT); the
 program and the models are downloaded only when the user presses Download in

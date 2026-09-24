@@ -149,7 +149,7 @@ is not stored. Only the reminder you save is kept, like any other reminder.
 
 ## The command bar
 
-The command bar (Ctrl+Alt+Space) works out what you typed or said on your
+The command bar (Ctrl+Alt+Backspace) works out what you typed or said on your
 computer, with rules built into Hariku: it compares your words with the names
 of Hariku's actions. No AI and no online service is involved, and what you
 type is not stored. A command you run makes the connections that command
@@ -242,7 +242,7 @@ without the internet:
   through a local connection (127.0.0.1) that nothing outside your computer
   can reach, and then dropped. It is never saved to disk and never sent
   anywhere. What was recognised is handled like text you typed.
-- It listens only after you press Ctrl+Alt+Space (or, if you turned that on,
+- It listens only after you press Ctrl+Alt+Backspace (or, if you turned that on,
   when the command bar opens), and it stops on its own after a second or two of
   silence, after 12 seconds, or when you press the key again. There is no wake
   word and nothing listens in the background. Hariku plays a tone when
