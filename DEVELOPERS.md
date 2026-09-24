@@ -22,6 +22,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Sounds](#sounds)
   - [Volume Control](#volume-control)
   - [Reminders](#reminders)
+  - [Personal Profile](#personal-profile)
   - [Translation (i18n)](#translation-i18n)
   - [Constants](#constants)
   - [App Utilities](#app-utilities)
@@ -589,6 +590,7 @@ The reminders module lets you create, query, modify, and delete calendar reminde
 | `reminders.delete_reminder(rem_id)` | None | Delete a reminder by its UUID. Speaks confirmation. |
 | `reminders.mark_as_done(rem_id)` | None | Mark a reminder as done by its UUID. Speaks confirmation. |
 | `reminders.snooze_reminder(rem_id, minutes=5)` | None | Snooze a reminder — pushes its date/time forward by the specified number of minutes. Speaks confirmation. |
+| `reminders.expanded_copy(reminder)` | `dict` | *(core 2.7)* A copy of the reminder with `%placeholders%` in its title (and notes, if any) filled in from the user's profile. Use it when you speak or show a reminder; the stored reminder keeps the raw text. See [Personal Profile](#personal-profile). |
 
 **Example:**
 ```python
@@ -614,6 +616,52 @@ if today_reminders:
 if today_reminders:
     reminders.delete_reminder(today_reminders[0]["id"])
 ```
+
+---
+
+### Personal Profile
+
+*(Available since core 2.7. Declare `"minimum_core_version": "2.7"` to use it.)*
+
+```python
+import core.personal
+```
+
+The user fills in their profile in Preferences, Profile: their name, what Hariku should call them, and their own placeholders (for example `%kantor%` → an office address). Hariku fills in `%myname%`, `%mynickname%` and those placeholders in routines, the Morning Briefing greeting and reminder text when a reminder is announced. Read the profile with these functions; the Profile page is the only place that changes it.
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.personal.get_name()` | `str` | The user's name, or `""` if they gave none. |
+| `core.personal.get_nickname()` | `str` | What Hariku should call the user: their nickname, else their name, else `""`. Use this to greet them. |
+| `core.personal.get_fields()` | `list[tuple]` | The user's own placeholders as an ordered list of `(key, value)`. Keys are lower-case, without `%` signs. |
+| `core.personal.expand(text, extra=None)` | `str` | Fill in `%token%` placeholders in `text` (see the rules below). `extra` is an optional dict of your own tokens (`{"city": "Jakarta"}` fills in `%city%`); it is looked up before the profile. |
+
+**Placeholder rules:**
+- A token is `%` + letters, digits or underscores + `%`, e.g. `%myname%`. Matching is case-insensitive: `%MyName%` works too.
+- Built in: `%myname%` (the name) and `%mynickname%` (the nickname, or the name if there is none). The user's own keys are 1–32 characters of `a`–`z`, `0`–`9` and `_`.
+- Unknown tokens and lone `%` signs are left as they are, so `"50%"` and `"100% done"` never change.
+- Expansion is a single pass: a value that itself contains `%something%` is inserted as it is, never expanded again.
+- An empty value expands to `""` (for example `%myname%` when the user gave no name).
+- These names are reserved and can't be the user's own keys: `myname`, `mynickname`, and the Routines tokens `time`, `date`, `battery`, `app`, `clipboard`, `ssid`, `ram`, `cpu`, `events`, `var`.
+- Expand only text you are about to speak or show. Store what the user typed, raw.
+- The profile is saved unencrypted in `Core.json`. Don't copy it anywhere else, and never send it over the network without the user asking you to.
+
+**Example:**
+```python
+import core.personal
+from core.speech import speak
+
+nickname = core.personal.get_nickname()
+speak(f"Welcome back, {nickname}." if nickname else "Welcome back.")
+
+# "Hi Budi, your parcel goes to Jl. Sudirman 1." (with the profile filled in)
+speak(core.personal.expand("Hi %mynickname%, your parcel goes to %kantor%."))
+
+# Your own tokens next to the profile's
+speak(core.personal.expand("%myname%, it is %temp% degrees.", extra={"temp": 31}))
+```
+
+The `on_reminder_fired` event passes the reminder as stored. To read it aloud, use `core.reminders.expanded_copy(reminder)["title"]` or `core.personal.expand(reminder["title"])`.
 
 ---
 
@@ -951,6 +999,7 @@ These events are emitted by the Hariku core at specific moments. Subscribe to th
 | `on_build_tray_menu` | `menu, frame` | When the system tray right-click menu is being built. Use this to add your own menu items to the tray icon context menu. |
 | `on_build_tray_tooltip` | `tooltip_data` | When the tray icon tooltip is being updated. `tooltip_data` is a dict with a `"text"` key — modify `tooltip_data["text"]` to append your own information. |
 | `on_open_preferences` | `tab_name` | When the Preferences dialog is requested to open (optionally to a specific tab). |
+| `on_reminder_fired` | `reminder` | *(Since 2.4)* When a reminder comes due and is announced. `reminder` is the stored dict (`id`, `title`, `date`, `time`, ...), with the raw text; see [Personal Profile](#personal-profile) for filling in its placeholders. |
 | `on_fetch_agenda` | `payload` | When the Agenda list is being built for a specific date. `payload` is a dict containing `"date"` (YYYY-MM-DD) and `"reminders"` (list of dicts). Modify `payload["reminders"]` to inject your own agenda items dynamically without saving them to disk. |
 | `on_agenda_item_deleted` | `event_id` | Fired when the user presses 'Delete Selected' in the main Agenda Dialog. `event_id` is the ID of the deleted item. Use this to delete your dynamically injected virtual events. |
 | `on_enter_pressed` | `payload` | *(Since 2.2.0)* Fired when the user presses Enter on the calendar. `payload` is a dict containing `"date"` (YYYY-MM-DD) and `"handled"` (bool, initially `False`). Set `payload["handled"] = True` to prevent the default Add Reminder dialog from opening, allowing your extension to show its own custom dialog instead. |

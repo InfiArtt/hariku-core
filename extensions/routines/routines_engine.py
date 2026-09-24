@@ -14,6 +14,7 @@
 # WHEN a routine should fire and expands text placeholders; the side-effecting
 # action runners live in main.py (they need core.api / wx).
 # ============================================================
+import re
 
 # ---- Condition checkers: each takes (params, ctx) -> bool -------------------
 # ctx is a snapshot of current state gathered by main.py, e.g.:
@@ -262,30 +263,120 @@ def check_all_conditions(conditions, ctx):
     return True
 
 
+# Routines' own placeholder tokens, with a short description for the builder's
+# "Insert placeholder" menu (order matters).
+ROUTINE_TOKENS = [
+    ("time", "current time"),
+    ("date", "today's date"),
+    ("battery", "battery level in percent"),
+    ("app", "the program in focus"),
+    ("clipboard", "the text on the clipboard"),
+    ("ssid", "the Wi-Fi network name"),
+    ("ram", "memory use in percent"),
+    ("cpu", "processor use in percent"),
+    ("events", "number of reminders today"),
+]
+
+# The pre-1.1 syntax, kept so existing routines keep working: {time} … {var:NAME}.
+_BRACE_RE = re.compile(r"\{(%s|var:[^{}]*)\}" % "|".join(t for t, _d in ROUTINE_TOKENS))
+
+
+def routine_token_values(ctx):
+    """Current values of the Routines tokens, as text."""
+    return {
+        "time": ctx.get("now_hm", "") or "",
+        "date": ctx.get("date", "") or "",
+        "battery": str(ctx["battery"]) if ctx.get("battery") is not None else "",
+        "app": ctx.get("active_process", "") or "",
+        "clipboard": ctx.get("clipboard", "") or "",
+        "ssid": ctx.get("wifi_ssid", "") or "",
+        "ram": str(ctx["ram_percent"]) if ctx.get("ram_percent") is not None else "",
+        "cpu": str(ctx["cpu_percent"]) if ctx.get("cpu_percent") is not None else "",
+        "events": str(len(ctx.get("reminders_today") or [])),
+    }
+
+
 def process_placeholders(text, ctx, variables=None):
-    """Expand iOS-Shortcuts-style magic tokens in `text`:
-       {time} {date} {battery} {app} {clipboard} {ssid} {ram} {cpu} {events}
-       {var:NAME}"""
+    """Expand iOS-Shortcuts-style magic tokens in `text`, in a single pass (an
+    inserted value is never expanded again). Both syntaxes work:
+       %time% %date% %battery% %app% %clipboard% %ssid% %ram% %cpu% %events%
+       %var:NAME%, plus the profile's %myname%, %mynickname% and the user's own
+       keys (core.personal; case-insensitive), and the older
+       {time} … {events} {var:NAME} (exact case).
+    Variables are looked up first, then the Routines tokens, then the profile.
+    Unknown tokens are left as they are."""
     if not text:
         return text
+    import core.personal  # core 2.7+
     variables = variables or {}
-    out = str(text)
-    simple = {
-        "{time}": ctx.get("now_hm", ""),
-        "{date}": ctx.get("date", ""),
-        "{battery}": str(ctx.get("battery", "")),
-        "{app}": ctx.get("active_process", "") or "",
-        "{clipboard}": ctx.get("clipboard", "") or "",
-        "{ssid}": ctx.get("wifi_ssid", "") or "",
-        "{ram}": str(ctx.get("ram_percent", "")) if ctx.get("ram_percent") is not None else "",
-        "{cpu}": str(ctx.get("cpu_percent", "")) if ctx.get("cpu_percent") is not None else "",
-        "{events}": str(len(ctx.get("reminders_today") or [])),
-    }
-    for k, v in simple.items():
-        out = out.replace(k, str(v))
-    for name, val in variables.items():
-        out = out.replace("{var:%s}" % name, str(val))
-    return out
+    tokens = routine_token_values(ctx)
+    extra = dict(tokens)
+    extra.update({"var:%s" % name: val for name, val in variables.items()})
+    text = str(text)
+    out, done = [], 0
+    for m in _BRACE_RE.finditer(text):
+        # Text between {…} tokens holds the %…% ones; each piece is expanded once.
+        out.append(core.personal.expand(text[done:m.start()], extra))
+        key = m.group(1)
+        if key.startswith("var:"):
+            name = key[4:]
+            out.append(str(variables[name]) if name in variables else m.group(0))
+        else:
+            out.append(tokens[key])
+        done = m.end()
+    out.append(core.personal.expand(text[done:], extra))
+    return "".join(out)
+
+
+# --------------------------------------------------------------------------- #
+# The builder's "Insert placeholder" menu (pure, so it's testable without wx)
+# --------------------------------------------------------------------------- #
+_MENU_VALUE_MAX = 40
+
+
+def _menu_value(value, empty="not set"):
+    value = " ".join(str(value or "").split())
+    if not value:
+        return empty
+    return value if len(value) <= _MENU_VALUE_MAX else value[:_MENU_VALUE_MAX - 1] + "…"
+
+
+def placeholder_menu_entries(name="", nickname="", fields=(), variables=()):
+    """(token, label) pairs for the builder's Insert placeholder menu: the
+    profile, the user's own keys, the Routines tokens, then this routine's
+    variables. E.g. ("%myname%", "%myname%: your name (Rafli)")."""
+    entries = [
+        ("%myname%", "%%myname%%: your name (%s)" % _menu_value(name)),
+        ("%mynickname%", "%%mynickname%%: what Hariku calls you (%s)"
+         % _menu_value(nickname or name)),
+    ]
+    for key, value in fields or ():
+        entries.append(("%%%s%%" % key, "%%%s%%: your placeholder (%s)"
+                        % (key, _menu_value(value, "empty"))))
+    for key, description in ROUTINE_TOKENS:
+        entries.append(("%%%s%%" % key, "%%%s%%: %s" % (key, description)))
+    seen = set()
+    for var in variables or ():
+        var = str(var or "").strip()
+        # "_…" names are internal (e.g. the run-routine depth guard).
+        if not var or var.startswith("_") or "%" in var or var in seen:
+            continue
+        seen.add(var)
+        entries.append(("%%var:%s%%" % var, "%%var:%s%%: the variable %s" % (var, var)))
+    return entries
+
+
+def insert_placeholder(value, start, end, token):
+    """Put `token` into `value` at the caret, or in place of a partly selected
+    stretch start..end. When all the text is selected, as tabbing into a field
+    does, the token goes at the end instead, so no text is lost. Returns
+    (new_value, caret after the token)."""
+    value = str(value or "")
+    start = max(0, min(int(start), len(value)))
+    end = max(start, min(int(end), len(value)))
+    if start == 0 and end == len(value):
+        start = end = len(value)
+    return value[:start] + token + value[end:], start + len(token)
 
 
 def is_event_routine(routine):

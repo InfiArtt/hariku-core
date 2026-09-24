@@ -66,6 +66,7 @@ CORE_FEATURES_SINCE = {
     "set_theme_dir": (2, 6),
     "get_builtin_sounds_dir": (2, 6),
     "stop_sound": (2, 6),
+    "core.personal": (2, 7),
 }
 
 

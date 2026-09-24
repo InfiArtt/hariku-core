@@ -1,10 +1,10 @@
 {
     "id": "briefing",
     "name": "Morning Briefing",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Hear a short spoken briefing: a greeting, today's date, today's reminders and news from other extensions such as the weather. Optionally plays the first time Hariku starts each day.",
     "author": "Rafli",
     "main": "main.py",
     "language": "en",
-    "minimum_core_version": "2.4"
+    "minimum_core_version": "2.7"
 }

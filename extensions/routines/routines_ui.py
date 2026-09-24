@@ -23,6 +23,8 @@
 #   * Focus is placed on the first meaningful control of each window, and moved
 #     sensibly after add/remove/move so the reader never gets lost.
 #   * ESC closes every dialog (each has a Cancel/Close button).
+#   * "Insert placeholder…" (actions only) puts a %token% at the caret of the
+#     text field last focused and returns focus there, only when chosen.
 #   * core.ui_scale.apply_appearance() is (re-)applied so the user's font-scale /
 #     high-contrast settings reach every control, including ones built on the fly.
 # The only "visual" flourish is a soft background tint per section, and it is
@@ -44,6 +46,8 @@ import routines_engine as engine
 import routines_runtime as runtime
 
 _WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+PLACEHOLDER_HINT = "Text settings can use placeholders such as %myname% or %time%."
 
 # Soft per-section tints (RGB). Built lazily into wx.Colour so importing this
 # module never constructs a wx object. Applied only when high-contrast is OFF.
@@ -164,11 +168,12 @@ class _DaysPicker(wx.Panel):
 # --------------------------------------------------------------------------- #
 class ItemDialog(wx.Dialog):
     """Pick a condition/action type and fill its parameters. This is the
-    Shortcuts-style 'choose an action, then configure it' sheet."""
-    def __init__(self, parent, kind, existing=None):
+    Shortcuts-style 'choose an action, then configure it' sheet. For actions,
+    "Insert placeholder…" puts a %token% into the text field last focused."""
+    def __init__(self, parent, kind, existing=None, variables=()):
         noun = "Condition" if kind == "condition" else "Action"
         verb = "Edit" if existing else "Add"
-        super().__init__(parent, title=f"{verb} {noun}", size=(440, 400),
+        super().__init__(parent, title=f"{verb} {noun}", size=(440, 460),
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self.kind = kind
         self.labels = engine.CONDITION_LABELS if kind == "condition" else engine.ACTION_LABELS
@@ -176,6 +181,9 @@ class ItemDialog(wx.Dialog):
         self._types = [t for t, _ in self.labels]
         self._existing = existing or {}
         self._field_ctrls = {}
+        self._variables = list(variables or ())
+        self._last_text_key = None
+        self.btn_insert = None
 
         v = wx.BoxSizer(wx.VERTICAL)
         hint = wx.StaticText(self, label="Choose a type, then fill in its settings.")
@@ -196,6 +204,13 @@ class ItemDialog(wx.Dialog):
         self.field_sizer = wx.BoxSizer(wx.VERTICAL)
         self.field_panel.SetSizer(self.field_sizer)
         sbs.Add(self.field_panel, 1, wx.EXPAND | wx.ALL, 4)
+        if kind == "action":
+            # The hint sits right before the button, so NVDA reads it with it.
+            sbs.Add(wx.StaticText(self._settings_box, label=PLACEHOLDER_HINT),
+                    0, wx.LEFT | wx.RIGHT | wx.TOP, 4)
+            self.btn_insert = wx.Button(self._settings_box, label="Insert &placeholder…")
+            self.btn_insert.Bind(wx.EVT_BUTTON, self._on_insert_placeholder)
+            sbs.Add(self.btn_insert, 0, wx.ALL, 4)
         v.Add(sbs, 1, wx.EXPAND | wx.ALL, 10)
 
         btns = self.CreateButtonSizer(wx.OK | wx.CANCEL)
@@ -212,7 +227,9 @@ class ItemDialog(wx.Dialog):
     def _rebuild_fields(self, reapply=False):
         self.field_sizer.Clear(delete_windows=True)
         self._field_ctrls = {}
+        self._last_text_key = None
         if not self._types:
+            self._update_insert_button()
             self.field_panel.Layout()
             return
         cur_type = self._types[self.choice.GetSelection()]
@@ -242,11 +259,14 @@ class ItemDialog(wx.Dialog):
                                      0, wx.TOP, 8)
                 ctrl = wx.TextCtrl(self.field_panel, value=str(params.get(key, "")))
                 ctrl.SetName(label)
+                ctrl.Bind(wx.EVT_SET_FOCUS, lambda e, k=key: self._on_text_focus(e, k))
                 self.field_sizer.Add(ctrl, 0, wx.EXPAND | wx.TOP, 2)
             self._field_ctrls[key] = (ctrl, fkind)
         # Name the group after the chosen type, so tabbing into it announces what
         # these settings belong to.
         self._settings_box.SetLabel(f"Settings for {self.choice.GetStringSelection()}")
+        # Enabling/disabling never moves focus (it is on the Type list here).
+        self._update_insert_button()
         self.field_panel.Layout()
         if reapply:
             # New controls were just built: re-apply scale/theme + tint to them.
@@ -255,6 +275,66 @@ class ItemDialog(wx.Dialog):
             # out of the list after each arrow press.
             _apply_scale(self.field_panel)
             self._apply_tints()
+
+    # -- Insert placeholder ------------------------------------------------ #
+    def _text_keys(self):
+        return [k for k, (_c, fkind) in self._field_ctrls.items() if fkind == "text"]
+
+    def _update_insert_button(self):
+        if self.btn_insert is not None:
+            self.btn_insert.Enable(bool(self._text_keys()))
+
+    def _on_text_focus(self, event, key):
+        self._last_text_key = key
+        event.Skip()
+
+    def target_text_field(self):
+        """The text field a placeholder goes into: the one last focused in these
+        settings, else the first one. None when this type has no text field."""
+        keys = self._text_keys()
+        if not keys:
+            return None
+        key = self._last_text_key if self._last_text_key in keys else keys[0]
+        return self._field_ctrls[key][0]
+
+    def placeholder_entries(self):
+        try:
+            import core.personal
+            profile = core.personal.get_profile()
+        except Exception:
+            profile = {"name": "", "nickname": "", "fields": []}
+        return engine.placeholder_menu_entries(profile["name"], profile["nickname"],
+                                               profile["fields"], self._variables)
+
+    def _on_insert_placeholder(self, event=None):
+        if self.target_text_field() is None:
+            return
+        menu = wx.Menu()
+        for token, label in self.placeholder_entries():
+            # Menus treat & as a mnemonic and a tab as an accelerator.
+            item = menu.Append(wx.ID_ANY, label.replace("&", "&&").replace("\t", " "))
+            menu.Bind(wx.EVT_MENU, lambda e, t=token: self.insert_placeholder(t), item)
+        self._show_menu(menu)
+        menu.Destroy()
+
+    def _show_menu(self, menu):
+        self.btn_insert.PopupMenu(menu, (0, self.btn_insert.GetSize().height))
+
+    def insert_placeholder(self, token):
+        """Insert `token` at the caret of the target text field (see
+        engine.insert_placeholder), then put focus back there: an explicit user
+        action, so moving focus is expected."""
+        ctrl = self.target_text_field()
+        if ctrl is None:
+            return
+        if self._last_text_key is None:
+            start = end = len(ctrl.GetValue())   # never focused: add at the end
+        else:
+            start, end = ctrl.GetSelection()
+        value, caret = engine.insert_placeholder(ctrl.GetValue(), start, end, token)
+        ctrl.ChangeValue(value)
+        ctrl.SetFocus()
+        ctrl.SetInsertionPoint(caret)
 
     def get_item(self):
         cur_type = self._types[self.choice.GetSelection()] if self._types else None
@@ -422,8 +502,19 @@ class RoutineEditDialog(wx.Dialog):
             pass
 
     # -- item operations ----------------------------------------------------- #
+    def routine_variables(self):
+        """Names this routine's "Set a variable" actions define, for the
+        Insert placeholder menu."""
+        names = []
+        for action in self.actions:
+            if action.get("type") == "set_variable":
+                name = str((action.get("params") or {}).get("name") or "").strip()
+                if name and name not in names:
+                    names.append(name)
+        return names
+
     def _add(self, kind):
-        dlg = ItemDialog(self, kind)
+        dlg = ItemDialog(self, kind, variables=self.routine_variables())
         if dlg.ShowModal() == wx.ID_OK:
             _, data = self._scr_and_data(kind)
             data.append(dlg.get_item())
@@ -436,7 +527,7 @@ class RoutineEditDialog(wx.Dialog):
         _, data = self._scr_and_data(kind)
         if not (0 <= i < len(data)):
             return
-        dlg = ItemDialog(self, kind, existing=data[i])
+        dlg = ItemDialog(self, kind, existing=data[i], variables=self.routine_variables())
         if dlg.ShowModal() == wx.ID_OK:
             data[i] = dlg.get_item()
             self._rebuild(kind)

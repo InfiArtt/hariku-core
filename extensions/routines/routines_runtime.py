@@ -166,11 +166,12 @@ def _get_cpu_percent():
         return None
 
 
-# Context fields that are slow to collect, and what in a routine asks for them.
+# Context fields that are slow to collect, and what in a routine asks for them:
+# a condition type, or the placeholder as {ssid} (exact case) or %ssid% (any case).
 _COSTLY_FIELDS = {
-    "wifi_ssid": ("wifi_ssid", "{ssid}"),
-    "ram_percent": ("ram_above", "{ram}"),
-    "cpu_percent": ("cpu_above", "{cpu}"),
+    "wifi_ssid": ("wifi_ssid", "ssid"),
+    "ram_percent": ("ram_above", "ram"),
+    "cpu_percent": ("cpu_above", "cpu"),
 }
 
 
@@ -184,8 +185,10 @@ def _costly_fields_needed(routines):
         texts = " ".join(str(v) for item in items
                          for v in (item.get("params") or {}).values()
                          if isinstance(v, str))
+        lowered = texts.lower()
         for field, (cond_type, token) in _COSTLY_FIELDS.items():
-            if cond_type in types or token in texts:
+            if (cond_type in types or "{%s}" % token in texts
+                    or "%%%s%%" % token in lowered):
                 needed.add(field)
     return needed
 

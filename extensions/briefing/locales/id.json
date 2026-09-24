@@ -17,6 +17,10 @@
         "greet_midday": "Selamat siang.",
         "greet_afternoon": "Selamat sore.",
         "greet_evening": "Selamat malam.",
+        "greet_morning_name": "Selamat pagi, {name}",
+        "greet_midday_name": "Selamat siang, {name}",
+        "greet_afternoon_name": "Selamat sore, {name}",
+        "greet_evening_name": "Selamat malam, {name}",
         "today_is": "Hari ini {date}.",
 
         "agenda_none": "Tidak ada pengingat hari ini.",

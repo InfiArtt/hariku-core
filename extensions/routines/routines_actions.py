@@ -61,7 +61,7 @@ def _a_open_url(p, ctx, variables):
 
 def _a_play_sound(p, ctx, variables):
     import core.sounds
-    core.sounds.play_internal_sound(p.get("sound", "move.wav"))
+    core.sounds.play_internal_sound(_expand(p.get("sound", "move.wav"), ctx, variables))
 
 
 def _a_set_variable(p, ctx, variables):
@@ -79,10 +79,10 @@ def _a_delay(p, ctx, variables):
 
 def _a_open_app(p, ctx, variables):
     """Launch a program or run a shell-style command line (user's own machine).
-    Placeholders are expanded first. NOT arbitrary piped shell — the string is
+    Placeholders are expanded first, then Windows variables such as %TEMP%. NOT arbitrary piped shell — the string is
     split into argv and executed directly, with os.startfile as a fallback for
     plain paths and URIs (e.g. spotify:)."""
-    cmd = _expand(p.get("path", ""), ctx, variables).strip()
+    cmd = os.path.expandvars(_expand(p.get("path", ""), ctx, variables)).strip()
     if not cmd:
         return
     try:
@@ -94,8 +94,9 @@ def _a_open_app(p, ctx, variables):
 
 
 def _a_open_file(p, ctx, variables):
-    """Open a file with its default handler."""
-    path = _expand(p.get("path", ""), ctx, variables).strip()
+    """Open a file with its default handler. Placeholders, then Windows
+    variables such as %USERPROFILE%, are expanded first."""
+    path = os.path.expandvars(_expand(p.get("path", ""), ctx, variables)).strip()
     if not path:
         return
     os.startfile(path)  # noqa: S606 - user-selected file on their own PC
@@ -233,14 +234,17 @@ def _a_goto_date(p, ctx, variables):
 
 
 def _a_speak_agenda(p, ctx, variables):
-    """Speak the reminders for a day (blank => today)."""
+    """Speak the reminders for a day (blank => today), with the profile's
+    %placeholders% in their titles filled in."""
+    import core.personal
     import core.reminders
     date = _expand(p.get("date", ""), ctx, variables).strip() or ctx.get("date", "")
     items = core.reminders.get_reminders_for_date(date) or []
     if not items:
         speak(f"No reminders for {date}.", interrupt=True)
         return
-    parts = [(f"{r.get('time', '')} {r.get('title', '')}").strip() for r in items]
+    parts = [(f"{r.get('time', '')} {core.personal.expand(r.get('title', ''))}").strip()
+             for r in items]
     speak(f"{len(items)} reminders. " + ". ".join(parts), interrupt=True)
 
 

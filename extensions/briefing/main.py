@@ -10,10 +10,11 @@
 """
 Morning Briefing — Hariku V2 extension.
 
-A hotkey speaks a greeting, today's date, today's reminders and whatever other
-extensions add through the "on_briefing_collect" event (the contract is
-documented in briefing_core.py). Optionally the briefing plays the first time
-Hariku starts each day (off by default; Preferences, Morning Briefing).
+A hotkey speaks a greeting (with the user's nickname from Preferences, Profile),
+today's date, today's reminders and whatever other extensions add through the
+"on_briefing_collect" event (the contract is documented in briefing_core.py).
+Optionally the briefing plays the first time Hariku starts each day (off by
+default; Preferences, Morning Briefing).
 """
 
 import datetime
@@ -23,6 +24,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.personal
 import core.preferences
 import core.reminders
 import core.ui_scale
@@ -64,7 +66,9 @@ def briefing_text(now=None):
         reminders = []
     core_config = core.api.load_data("Core")
     date_format = core_config.get("date_format") if isinstance(core_config, dict) else None
-    return " ".join(briefing_core.build_briefing(now, reminders, date_format, _bus))
+    return " ".join(briefing_core.build_briefing(now, reminders, date_format, _bus,
+                                                 nickname=core.personal.get_nickname(),
+                                                 expand=core.personal.expand))
 
 
 def play_briefing():

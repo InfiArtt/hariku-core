@@ -90,6 +90,20 @@ def test_costly_fields_detected_from_conditions_and_placeholders(rt):
     assert rt._costly_fields_needed([plain]) == set()
 
 
+def test_costly_fields_detected_from_percent_placeholders(rt):
+    def speaking(text):
+        return {"conditions": [], "actions": [{"type": "tts", "params": {"text": text}}]}
+
+    assert rt._costly_fields_needed([speaking("Wi-Fi %ssid%")]) == {"wifi_ssid"}
+    assert rt._costly_fields_needed([speaking("RAM %RAM%%, CPU %Cpu%%")]) == {"ram_percent",
+                                                                             "cpu_percent"}
+    assert rt._costly_fields_needed([speaking("{ssid} {ram} {cpu}")]) == {
+        "wifi_ssid", "ram_percent", "cpu_percent"}
+    # Other placeholders, the profile and near misses cost nothing.
+    assert rt._costly_fields_needed([speaking("%time% %myname% %ssidx% ssid ram 50% cpu")]) == set()
+    assert rt._costly_fields_needed([speaking("{SSID}")]) == set()
+
+
 def test_no_routines_means_no_work(rt, monkeypatch):
     monkeypatch.setattr(rt, "load_routines", lambda: [])
     called = []

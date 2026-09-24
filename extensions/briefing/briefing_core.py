@@ -11,9 +11,11 @@
 Morning Briefing: putting the spoken briefing together, and the contract other
 extensions use to add to it.
 
-The briefing is, in order: a greeting for the time of day, today's date (in the
-date format chosen in General settings), today's reminders (the same list the
-agenda shows, recurring ones included), then what other extensions contribute.
+The briefing is, in order: a greeting for the time of day (with the name the
+user gave in Preferences, Profile, if any), today's date (in the date format
+chosen in General settings), today's reminders (the same list the agenda shows,
+recurring ones included, with %placeholders% filled in), then what other
+extensions contribute.
 
 Contributing to the briefing
 ----------------------------
@@ -71,15 +73,29 @@ def _end_sentence(text):
     return text if text[-1:] in (".", "!", "?") else text + "."
 
 
-def _agenda_item(reminder):
-    title = " ".join(str(reminder.get("title") or "").split()) or _("agenda_untitled")
+def greeting(hour, nickname=""):
+    """The greeting for `hour`, addressing the user by `nickname` when there is
+    one: "Good morning, Bro." / "Selamat pagi, Bro."."""
+    key = greeting_key(hour)
+    nickname = " ".join(str(nickname or "").split())
+    if not nickname:
+        return _(key)
+    return _end_sentence(_(key + "_name", name=nickname))
+
+
+def _agenda_item(reminder, expand=None):
+    title = str(reminder.get("title") or "")
+    if expand is not None:
+        title = expand(title)
+    title = " ".join(title.split()) or _("agenda_untitled")
     clock = str(reminder.get("time") or "").strip()
     text = _("agenda_item", time=clock, title=title) if clock else title
     return _end_sentence(text)
 
 
-def agenda_sentences(reminders):
-    """Sentences for today's reminders. Done ones are left out."""
+def agenda_sentences(reminders, expand=None):
+    """Sentences for today's reminders. Done ones are left out. `expand`, if
+    given, fills in placeholders in each title (core.personal.expand)."""
     reminders = [r for r in (reminders or []) if isinstance(r, dict)]
     if not reminders:
         return [_("agenda_none")]
@@ -88,7 +104,7 @@ def agenda_sentences(reminders):
         return [_("agenda_all_done")]
     pending.sort(key=lambda r: (str(r.get("time") or "99:99"), str(r.get("title") or "")))
     head = _("agenda_one") if len(pending) == 1 else _("agenda_many", count=len(pending))
-    sentences = [head] + [_agenda_item(r) for r in pending[:MAX_AGENDA_ITEMS]]
+    sentences = [head] + [_agenda_item(r, expand) for r in pending[:MAX_AGENDA_ITEMS]]
     if len(pending) > MAX_AGENDA_ITEMS:
         sentences.append(_("agenda_more", count=len(pending) - MAX_AGENDA_ITEMS))
     return sentences
@@ -107,11 +123,12 @@ def collect_contributions(bus):
     return collected
 
 
-def build_briefing(now, reminders, date_format, bus):
-    """The briefing as a list of sentences. `now` is a local datetime."""
-    return ([_(greeting_key(now.hour)),
+def build_briefing(now, reminders, date_format, bus, nickname="", expand=None):
+    """The briefing as a list of sentences. `now` is a local datetime; `nickname`
+    and `expand` come from core.personal (see main.briefing_text)."""
+    return ([greeting(now.hour, nickname),
              _("today_is", date=format_date(now.date(), date_format or DEFAULT_DATE_FORMAT))]
-            + agenda_sentences(reminders)
+            + agenda_sentences(reminders, expand)
             + collect_contributions(bus))
 
 

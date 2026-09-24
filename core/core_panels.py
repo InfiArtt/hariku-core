@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import wx
 import core.api
+import core.personal
 import core.ui_scale
 from core.i18n import get_translator, get_available_languages, get_current_language, set_language
 
@@ -223,6 +224,239 @@ def create_panel(parent):
 def apply_general_settings():
     if _panel_instance:
         _panel_instance.ApplyChanges()
+
+# ---------------------------------------------------------------------------
+# Profile Panel: the user's name, nickname and own %placeholders% (core.personal)
+# ---------------------------------------------------------------------------
+_profile_panel_instance = None
+
+# Speak a result a moment after a dialog closes, so the screen reader's focus
+# announcement doesn't cut it off.
+_ANNOUNCE_DELAY_MS = 300
+
+
+def _speak(message, interrupt=False):
+    from core.speech import speak
+    speak(message, interrupt=interrupt)
+
+
+def _announce(message):
+    wx.CallLater(_ANNOUNCE_DELAY_MS, _speak, message)
+
+
+def _plain_label(label):
+    return label.replace("&&", "\0").replace("&", "").replace("\0", "&").strip().rstrip(":").strip()
+
+
+def _labeled(parent, sizer, label, make, proportion=0):
+    """A label, then the control it names, which gets the same accessible name."""
+    sizer.Add(wx.StaticText(parent, label=label), 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+    ctrl = make()
+    ctrl.SetName(_plain_label(label))
+    sizer.Add(ctrl, proportion, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
+    return ctrl
+
+
+class ProfileFieldDialog(wx.Dialog):
+    """Adds or edits one of the user's own placeholders. Invalid input is shown
+    and spoken; the dialog stays open with focus on the field to fix."""
+
+    def __init__(self, parent, title, key="", value="", taken=()):
+        super().__init__(parent, title=title, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.result = None
+        self._taken = list(taken)
+        root = wx.BoxSizer(wx.VERTICAL)
+        self.txt_key = _labeled(self, root, _("profile_lbl_key"),
+                                lambda: wx.TextCtrl(self, value=key))
+        self.txt_value = _labeled(self, root, _("profile_lbl_value"),
+                                  lambda: wx.TextCtrl(self, value=value))
+        self.lbl_error = wx.StaticText(self, label="")
+        root.Add(self.lbl_error, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        buttons = wx.StdDialogButtonSizer()
+        self.btn_ok = wx.Button(self, wx.ID_OK, _("prefs_btn_ok"))
+        self.btn_ok.SetDefault()
+        self.btn_ok.Bind(wx.EVT_BUTTON, self._on_ok)
+        buttons.AddButton(self.btn_ok)
+        buttons.AddButton(wx.Button(self, wx.ID_CANCEL, _("prefs_btn_cancel")))
+        buttons.Realize()
+        root.Add(buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+        self.SetSizer(root)
+        self.SetEscapeId(wx.ID_CANCEL)
+
+        from core.i18n import apply_rtl_layout
+        apply_rtl_layout(self)
+        core.ui_scale.apply_appearance(self)
+        self.Fit()
+        width, height = self.GetSize()
+        self.SetMinSize((width, height))
+        self.SetSize((max(width, 420), height))
+        self.CentreOnParent()
+        self.txt_key.SetFocus()
+        self.txt_key.SelectAll()
+
+    def _on_ok(self, event=None):
+        try:
+            key = core.personal.check_key(self.txt_key.GetValue(), self._taken)
+            value = core.personal.check_value(self.txt_value.GetValue())
+        except core.personal.ProfileError as e:
+            self._show_error(str(e), self.txt_value if e.field == "value" else self.txt_key)
+            return
+        self.result = (key, value)
+        self.EndModal(wx.ID_OK)
+
+    def _show_error(self, message, ctrl):
+        width = self.GetSize().width
+        self.lbl_error.SetLabel(message)
+        self.lbl_error.Wrap(max(200, self.GetClientSize().width - 20))
+        self.Fit()   # room for the message, keeping the width the user gave it
+        self.SetSize((max(width, self.GetSize().width), self.GetSize().height))
+        self.Layout()
+        ctrl.SetFocus()
+        ctrl.SelectAll()
+        # After the focus move, so the reader's announcement of the field doesn't swallow it.
+        wx.CallLater(100, _speak, message, True)
+
+
+def ask_profile_field(parent, title, key="", value="", taken=()):
+    """Show the placeholder dialog; the checked (key, value), or None if cancelled."""
+    dlg = ProfileFieldDialog(parent, title, key, value, taken)
+    try:
+        return dlg.result if dlg.ShowModal() == wx.ID_OK else None
+    finally:
+        dlg.Destroy()
+
+
+class ProfileSettingsPanel(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        profile = core.personal.get_profile()
+        self._fields = list(profile["fields"])   # [(key, value)], saved on OK/Apply
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        lbl_help = wx.StaticText(self, label=_("profile_help"))
+        lbl_help.Wrap(500)
+        vbox.Add(lbl_help, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+
+        self.txt_name = _labeled(self, vbox, _("profile_lbl_name"),
+                                 lambda: wx.TextCtrl(self, value=profile["name"]))
+        self.txt_name.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
+        self.txt_nickname = _labeled(self, vbox, _("profile_lbl_nickname"),
+                                     lambda: wx.TextCtrl(self, value=profile["nickname"]))
+        self.txt_nickname.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
+
+        self.list_fields = _labeled(
+            self, vbox, _("profile_lbl_fields"),
+            lambda: wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN),
+            proportion=1)
+        self.list_fields.InsertColumn(0, _("profile_col_placeholder"), width=180)
+        self.list_fields.InsertColumn(1, _("profile_col_value"), width=320)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_add = wx.Button(self, label=_("profile_btn_add"))
+        self.btn_edit = wx.Button(self, label=_("profile_btn_edit"))
+        self.btn_remove = wx.Button(self, label=_("profile_btn_remove"))
+        for btn, handler in ((self.btn_add, self.on_add), (self.btn_edit, self.on_edit),
+                             (self.btn_remove, self.on_remove)):
+            btn.Bind(wx.EVT_BUTTON, handler)
+            hbox.Add(btn, 0, wx.RIGHT, 5)
+        vbox.Add(hbox, 0, wx.ALL, 10)
+        self.SetSizer(vbox)
+
+        # Enter edits and Delete removes; selecting a row never moves focus.
+        self.list_fields.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_edit)
+        self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
+        self._refresh(0)
+
+    def _refresh(self, select=None):
+        self.list_fields.DeleteAllItems()
+        for i, (key, value) in enumerate(self._fields):
+            self.list_fields.InsertItem(i, f"%{key}%")
+            self.list_fields.SetItem(i, 1, value)
+        if self._fields and select is not None:
+            select = max(0, min(select, len(self._fields) - 1))
+            state = wx.LIST_STATE_SELECTED | wx.LIST_STATE_FOCUSED
+            self.list_fields.SetItemState(select, state, state)
+            self.list_fields.EnsureVisible(select)
+
+    def selected_index(self):
+        index = self.list_fields.GetFirstSelected()
+        return index if 0 <= index < len(self._fields) else -1
+
+    def _mark_dirty(self):
+        top = wx.GetTopLevelParent(self)
+        if top is not None and hasattr(top, "is_dirty"):
+            top.is_dirty = True
+
+    def _changed(self, index, message):
+        self._refresh(index)
+        self._mark_dirty()
+        if self._fields:
+            self.list_fields.SetFocus()
+        else:
+            self.btn_add.SetFocus()
+        _announce(message)
+
+    def _on_char_hook(self, event):
+        if wx.Window.FindFocus() is self.list_fields and not event.HasAnyModifiers():
+            code = event.GetKeyCode()
+            if code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+                self.on_edit()
+                return
+            if code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
+                self.on_remove()
+                return
+        event.Skip()
+
+    def on_add(self, event=None):
+        result = ask_profile_field(self, _("profile_dlg_add_title"),
+                                   taken=[key for key, value in self._fields])
+        if result is None:
+            return
+        self._fields.append(result)
+        self._changed(len(self._fields) - 1, _("profile_added", token=result[0]))
+
+    def on_edit(self, event=None):
+        index = self.selected_index()
+        if index < 0:
+            _speak(_("profile_nothing_selected"), True)
+            return
+        key, value = self._fields[index]
+        taken = [k for i, (k, v) in enumerate(self._fields) if i != index]
+        result = ask_profile_field(self, _("profile_dlg_edit_title"), key, value, taken)
+        if result is None:
+            return
+        self._fields[index] = result
+        self._changed(index, _("profile_changed", token=result[0]))
+
+    def on_remove(self, event=None):
+        index = self.selected_index()
+        if index < 0:
+            _speak(_("profile_nothing_selected"), True)
+            return
+        key = self._fields.pop(index)[0]
+        self._changed(index, _("profile_removed", token=key))
+
+    def ApplyChanges(self):
+        try:
+            core.personal.set_profile(self.txt_name.GetValue(), self.txt_nickname.GetValue(),
+                                      self._fields)
+        except core.personal.ProfileError as e:
+            wx.MessageBox(str(e), _("error"), wx.OK | wx.ICON_ERROR, self)
+
+
+def create_profile_panel(parent):
+    global _profile_panel_instance
+    _profile_panel_instance = ProfileSettingsPanel(parent)
+    return _profile_panel_instance
+
+
+def apply_profile_settings():
+    if _profile_panel_instance:
+        try:
+            _profile_panel_instance.ApplyChanges()
+        except RuntimeError:
+            pass  # panel already destroyed
 
 class AdvancedSettingsPanel(wx.Panel):
     def __init__(self, parent):
@@ -441,6 +675,7 @@ def apply_ext_settings():
 def register():
     import core.preferences
     core.preferences.register_panel("General",             "", create_panel,             apply_general_settings)
+    core.preferences.register_panel(_("prefs_tab_profile"), "", create_profile_panel,    apply_profile_settings)
     core.preferences.register_panel("Extensions",          "", create_ext_settings_panel, apply_ext_settings)
     core.preferences.register_panel("Advanced",            "", create_adv_panel,          apply_adv_settings)
 

@@ -113,6 +113,33 @@ def test_greeting_text(core_mod, lang):
         "Selamat pagi.", "Selamat siang.", "Selamat sore.", "Selamat malam."]
 
 
+@pytest.mark.parametrize("hour, en, id_", [
+    (7, "Good morning, Bro.", "Selamat pagi, Bro."),
+    (12, "Good day, Bro.", "Selamat siang, Bro."),
+    (16, "Good afternoon, Bro.", "Selamat sore, Bro."),
+    (21, "Good evening, Bro.", "Selamat malam, Bro."),
+])
+def test_greeting_with_a_nickname(core_mod, lang, hour, en, id_):
+    assert core_mod.greeting(hour, "Bro") == en
+    assert core_mod.greeting(hour, "  Bro  ") == en
+    lang("id")
+    assert core_mod.greeting(hour, "Bro") == id_
+
+
+def test_greeting_without_a_nickname(core_mod, lang):
+    assert core_mod.greeting(7) == "Good morning."
+    assert core_mod.greeting(7, "") == "Good morning."
+    assert core_mod.greeting(7, "   ") == "Good morning."
+    assert core_mod.greeting(7, None) == "Good morning."
+    lang("id")
+    assert core_mod.greeting(20, "") == "Selamat malam."
+
+
+def test_greeting_nickname_keeps_its_own_punctuation(core_mod, lang):
+    assert core_mod.greeting(7, "Bro!") == "Good morning, Bro!"
+    assert core_mod.greeting(7, "{name}") == "Good morning, {name}."
+
+
 # ------------------------------------------------------------
 # Agenda
 # ------------------------------------------------------------
@@ -201,6 +228,24 @@ def test_build_briefing_order_and_date_format(core_mod, lang, fresh_event_bus):
         "Selamat pagi.", "Hari ini Rabu, 23 September 2026.", "Tidak ada pengingat hari ini."]
 
 
+def test_build_briefing_with_a_nickname(core_mod, lang, fresh_event_bus):
+    assert core_mod.build_briefing(MORNING, [], None, fresh_event_bus, nickname="Bro")[0] ==         "Good morning, Bro."
+    lang("id")
+    assert core_mod.build_briefing(MORNING, [], None, fresh_event_bus, nickname="Bro")[0] ==         "Selamat pagi, Bro."
+
+
+def test_agenda_titles_are_expanded(core_mod, lang, fresh_event_bus):
+    reminders = [{"title": "Call %myname%", "time": "09:00"},
+                 {"title": "%empty%", "time": "10:00"}]
+    expand = {"Call %myname%": "Call Rafli", "%empty%": "  "}.get
+    assert core_mod.agenda_sentences(reminders, expand) == [
+        "You have 2 reminders today.", "09:00, Call Rafli.", "10:00, Untitled reminder."]
+    # Without an expander, titles are read as they are.
+    assert core_mod.agenda_sentences(reminders[:1])[1] == "09:00, Call %myname%."
+    assert core_mod.build_briefing(MORNING, reminders[:1], None, fresh_event_bus,
+                                   expand=expand)[3] == "09:00, Call Rafli."
+
+
 # ------------------------------------------------------------
 # Automatic briefing
 # ------------------------------------------------------------
@@ -283,6 +328,36 @@ def test_play_briefing_speaks_everything_once(bmain, lang, monkeypatch):
     text = bmain.spoken[0]
     assert f"Today is {datetime.date.today().strftime('%d-%m-%Y')}." in text
     assert text.endswith("You have 1 reminder today. 10:15, Dentist. Weather is fine.")
+
+
+def test_play_briefing_uses_the_profile(bmain, lang, monkeypatch):
+    import core.api
+    _reminders(monkeypatch, [{"title": "Meet %mynickname% at %kantor% (100% sure)",
+                              "time": "10:15", "is_done": False}])
+    core.api.save_data("Core", {"user_name": "Rafli", "user_nickname": "Bro",
+                                "user_fields": [{"key": "kantor", "value": "Jl. Sudirman 1"}]})
+    bmain.play_briefing()
+    text = bmain.spoken[0]
+    assert text.startswith(("Good morning, Bro.", "Good day, Bro.", "Good afternoon, Bro.",
+                            "Good evening, Bro.")), text
+    assert "10:15, Meet Bro at Jl. Sudirman 1 (100% sure)." in text
+
+
+def test_play_briefing_greets_by_name_without_a_nickname(bmain, lang, monkeypatch):
+    import core.api
+    _reminders(monkeypatch, [])
+    core.api.save_data("Core", {"user_name": "Rafli"})
+    bmain.play_briefing()
+    assert ", Rafli. Today is " in bmain.spoken[0]
+
+
+def test_play_briefing_without_a_name(bmain, lang, monkeypatch):
+    import core.api
+    _reminders(monkeypatch, [])
+    core.api.save_data("Core", {"user_name": "User"})   # the old wizard's blank name
+    bmain.play_briefing()
+    assert bmain.spoken[0].split(" Today is ")[0] in (
+        "Good morning.", "Good day.", "Good afternoon.", "Good evening.")
 
 
 def test_briefing_survives_a_reminder_error(bmain, lang, monkeypatch):
