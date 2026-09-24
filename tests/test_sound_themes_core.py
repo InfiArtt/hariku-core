@@ -168,3 +168,46 @@ def test_a_link_leading_out_of_the_theme_is_ignored(played, theme):
     sounds.set_theme_dir(str(theme))
     sounds.play_internal_sound("move.wav")
     assert played == [os.path.join(BUILTIN, "move.wav")]
+
+
+# --- The remembered theme (core 2.7): the start sound of the user's theme -------------
+
+@pytest.fixture
+def themes(tmp_path, tmp_data_dir, monkeypatch, played):
+    import core.api
+    monkeypatch.setattr(core.api, "USER_DATA_DIR", str(tmp_path / "Hariku2"))
+    root = tmp_path / "Hariku2" / "sound_themes"
+    (root / "Cockpit").mkdir(parents=True)
+    (root / "Cockpit" / "start.wav").write_bytes(b"cockpit start")
+    return root
+
+
+def test_remember_and_load(themes, played):
+    import core.api
+    cockpit = str(themes / "Cockpit")
+    sounds.set_theme_dir(cockpit, remember=True)
+    assert core.api.load_data("Core")["sound_theme_dir"] == cockpit
+    sounds.set_theme_dir(None)                       # an extension unloading
+    assert core.api.load_data("Core")["sound_theme_dir"] == cockpit
+    assert sounds.load_remembered_theme() == cockpit
+    assert sounds.get_theme_dir() == cockpit
+    sounds.play_internal_sound("start.wav")
+    assert played[-1] == os.path.join(cockpit, "start.wav")
+    sounds.set_theme_dir(None, remember=True)        # the user picked the built-in sounds
+    assert "sound_theme_dir" not in core.api.load_data("Core")
+    sounds.set_theme_dir(None)
+    assert sounds.load_remembered_theme() is None and sounds.get_theme_dir() is None
+
+
+def test_only_folders_inside_the_themes_folder_are_loaded(themes, tmp_path, played):
+    import core.api
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    work = themes / ".work-123"
+    work.mkdir()
+    for path in (str(elsewhere), str(themes), str(themes / "Gone"), str(work), "", 42):
+        core.api.save_data("Core", {"sound_theme_dir": path})
+        assert sounds.load_remembered_theme() is None, path
+        assert sounds.get_theme_dir() is None
+    core.api.save_data("Core", {"sound_theme_dir": str(themes / "Cockpit" / ".." / "Cockpit")})
+    assert sounds.load_remembered_theme() is not None

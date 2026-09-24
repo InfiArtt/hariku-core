@@ -117,6 +117,29 @@ aircraft's distance and direction from your exact point itself.
   (or adsb.lol), about once a minute while you track it, never your location.
   Tracking stops by itself an hour after landing or after 24 hours.
 
+## Cockpit
+
+The Cockpit extension downloads aviation weather reports (METAR) and forecasts
+(TAF) from the NOAA Aviation Weather Center (`aviationweather.gov`): when you
+ask for them (at most every 10 minutes for a report and every 30 minutes for
+a forecast), when you add an airport (to check its code), and, only while
+Captain mode is on, in the background about every 30 minutes. These requests
+contain the ICAO codes of your airports, such as WIDD. When you have no
+favourite airports, Cockpit finds the airport nearest to your Weather city by
+sending a box of 1 degree around that city, or 3 degrees if nothing is found
+(roughly 110 or 330 kilometres), with its corners rounded to 0.1 degree. It
+never sends your own location or anything from your profile. The Cockpit sound
+theme is generated on your computer. NOAA's handling of these requests is
+covered by the [National Weather Service privacy policy](https://www.weather.gov/privacy).
+
+## Placeholders and the startup greeting
+
+Placeholders such as %weather%, %sleep%, %airportweather% and %reminders%, and
+the startup greeting you write on the Profile page, only use what Hariku and
+its extensions already have on your computer: filling them in never makes a
+connection. When Windows starts Hariku, the greeting waits until Windows
+reports a network connection; Hariku only asks Windows, it contacts nothing.
+
 ## Clipboard History
 
 The Clipboard History extension sends nothing over the internet. Copied text

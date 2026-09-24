@@ -23,6 +23,7 @@ Welcome to the Hariku V2 extension development guide. This document covers every
   - [Volume Control](#volume-control)
   - [Reminders](#reminders)
   - [Personal Profile](#personal-profile)
+  - [Placeholders from Extensions](#placeholders-from-extensions)
   - [Quiet Hours](#quiet-hours)
   - [Hariku Voice](#hariku-voice)
   - [Morning Briefing and Evening Summary](#morning-briefing-and-evening-summary)
@@ -531,7 +532,8 @@ from core.sounds import play_sound, play_internal_sound
 |---|---|
 | `play_internal_sound(name)` | Play one of Hariku's sounds by file name. Example: `play_internal_sound("info.wav")`. Since core 2.6 it plays the active sound theme's copy when the theme has one, otherwise the built-in `sounds/info.wav`. |
 | `play_sound(filepath)` | Play any `.wav` file from an absolute path. Supports overlapping sounds (multiple sounds can play simultaneously). Returns `True` / `False`. |
-| `set_theme_dir(path_or_None)` | *(core 2.6)* Use a folder of `.wav` files named like Hariku's sounds as the active theme; `None` goes back to the built-in sounds. Only plain file names are looked up in it, never paths. |
+| `set_theme_dir(path_or_None, remember=False)` | *(core 2.6)* Use a folder of `.wav` files named like Hariku's sounds as the active theme; `None` goes back to the built-in sounds. Only plain file names are looked up in it, never paths. *(core 2.7)* With `remember=True` the choice is also saved in `Core.json` (`None` forgets it), so the next start plays that theme's `start.wav` before any extension loads; pass it only when the **user** picks a theme. A plain call, such as your `teardown()` handing the sounds back, leaves the saved choice alone. |
+| `load_remembered_theme()` | *(core 2.7)* Hariku calls this at startup, before `start.wav`: it uses the remembered folder if it still exists inside `%APPDATA%\Hariku2\sound_themes`. |
 | `get_theme_dir()` | *(core 2.6)* The active theme folder, or `None`. |
 | `get_builtin_sounds_dir()` | *(core 2.6)* Hariku's own `sounds/` folder. |
 | `stop_sound(filepath)` | *(core 2.6)* Stop a sound started with `play_sound` and release its file (Windows keeps a played file open, so call this before replacing or deleting it). |
@@ -631,27 +633,36 @@ if today_reminders:
 import core.personal
 ```
 
-The user fills in their profile in Preferences, Profile: their name, what Hariku should call them, their birthday (day and month, the year optional), and their own placeholders (for example `%kantor%` → an office address). Hariku fills in `%myname%`, `%mynickname%`, `%mybirthday%`, `%myage%` and those placeholders in routines, the Morning Briefing and reminder text when a reminder is announced. It greets the user when it starts (unless they turn that off), with "Happy birthday!" on their birthday. Read the profile with these functions; the Profile page is the only place that changes it.
+The user fills in their profile in Preferences, Profile: their name, what Hariku should call them, the title Hariku puts before that (*core 2.7*: "Kapten", "Pak", "Kak"), their birthday (day and month, the year optional), and their own placeholders (for example `%kantor%` → an office address). Hariku fills in `%myname%`, `%mynickname%`, `%mytitle%`, `%mybirthday%`, `%myage%` and those placeholders in routines, the Morning Briefing and reminder text when a reminder is announced, together with its dynamic placeholders and those extensions register (see [Placeholders from Extensions](#placeholders-from-extensions)). It greets the user when it starts (unless they turn that off), with "Happy birthday!" on their birthday, or says the user's own startup greeting when they wrote one. Read the profile with these functions; the Profile page is the only place that changes it, except `set_title()` and `set_custom_greeting()`, which an extension may call after asking the user (Cockpit's Captain mode does).
 
 | Function | Returns | Description |
 |---|---|---|
 | `core.personal.get_name()` | `str` | The user's name, or `""` if they gave none. |
-| `core.personal.get_nickname()` | `str` | What Hariku should call the user: their nickname, else their name, else `""`. Use this to greet them. |
+| `core.personal.get_nickname()` | `str` | What Hariku should call the user: their nickname, else their name, else `""`. |
+| `core.personal.get_title()` | `str` | The title before their name ("Kapten"), or `""`. |
+| `core.personal.get_addressed_name()` | `str` | How to address the user: the title and the nickname, `"Kapten Bro"`; either alone, or `""`. Use this to greet them. |
+| `core.personal.set_title(title)` | `bool` | Save the title (`""` removes it). Raises `ProfileError` when it is too long. Only after the user agreed. |
+| `core.personal.get_custom_greeting()` | `dict` | `{"text", "boot_only"}`: the user's own startup greeting, raw with its placeholders (`""`: the usual greeting), and whether it is only for starts with Windows. |
+| `core.personal.set_custom_greeting(text, boot_only=False)` | `bool` | Save it. Only after the user agreed. |
 | `core.personal.get_fields()` | `list[tuple]` | The user's own placeholders as an ordered list of `(key, value)`. Keys are lower-case, without `%` signs. |
 | `core.personal.get_birthday()` | `tuple` or `None` | The birthday as `(day, month, year)`; `year` is `None` when the user left it out. `None` without a birthday. |
 | `core.personal.is_birthday(today=None)` | `bool` | `True` on the user's birthday. `today` is a `date` or `datetime` (default: now). A 29 February birthday counts on 28 February in other years. |
 | `core.personal.get_age(today=None)` | `int` or `None` | The user's age in whole years, or `None` without a birth year. |
 | `core.personal.birthday_text()` | `str` | The birthday in the user's language: `"24 September"` or `"24 September 1999"`; `""` without one. |
-| `core.personal.greeting(now=None)` | `str` | `"Good morning, Budi."` for the time of day (with the nickname if there is one), followed by `"Happy birthday!"` on the birthday. |
-| `core.personal.expand(text, extra=None)` | `str` | Fill in `%token%` placeholders in `text` (see the rules below). `extra` is an optional dict of your own tokens (`{"city": "Jakarta"}` fills in `%city%`); it is looked up before the profile. |
+| `core.personal.greeting(now=None, nickname=None, title=None)` | `str` | `"Good morning, Kapten Budi."` for the time of day (with the title and nickname if there are any), followed by `"Happy birthday!"` on the birthday. |
+| `core.personal.expand(text, extra=None, now=None, unknown=None)` | `str` | Fill in `%token%` placeholders in `text` (see the rules below). `extra` is an optional dict of your own tokens (`{"city": "Jakarta"}` fills in `%city%`); it is looked up first. `now` is the time for `%time%` and the like. With `unknown=""`, tokens nobody knows are removed instead of left as they are. |
+| `core.personal.tidy_spoken(text)` | `str` | Close the gaps an empty placeholder leaves: double spaces, `", ."`, `". ."`. |
+| `core.personal.startup_speech(welcome="", now=None, boot=False)` | `str` | What Hariku says when it starts: the user's own greeting (expanded and tidied) or the usual greeting followed by `welcome`. `boot` is whether Windows started Hariku (`core.api.started_with_windows()`). |
 
 **Placeholder rules:**
 - A token is `%` + letters, digits or underscores + `%`, e.g. `%myname%`. Matching is case-insensitive: `%MyName%` works too.
-- Built in: `%myname%` (the name), `%mynickname%` (the nickname, or the name if there is none), `%mybirthday%` (like `birthday_text()`) and `%myage%` (empty without a birth year). The user's own keys are 1–32 characters of `a`–`z`, `0`–`9` and `_`, and can't be Windows variable names such as `temp` or `userprofile`.
+- The profile: `%myname%` (the name), `%mynickname%` (the nickname, or the name if there is none), `%mytitle%` (the title), `%mybirthday%` (like `birthday_text()`) and `%myage%` (empty without a birth year). The user's own keys are 1–32 characters of `a`–`z`, `0`–`9` and `_`, and can't be Windows variable names such as `temp` or `userprofile`.
+- Dynamic *(core 2.7)*, worked out when the text is used: `%greeting%` ("Good morning", "Selamat pagi"), `%time%` (HH:MM), `%day%` (the weekday), `%date%` ("24 September"), `%zulu%` (HH:MM in UTC) and `%reminders%` ("3 reminders today", "no reminders today": today's reminders not done yet). Routines' own `%time%` and `%date%` win inside routines.
+- Looked up in this order: `extra`, the dynamic ones, those extensions registered, then the profile.
 - Unknown tokens and lone `%` signs are left as they are, so `"50%"` and `"100% done"` never change.
 - Expansion is a single pass: a value that itself contains `%something%` is inserted as it is, never expanded again.
 - An empty value expands to `""` (for example `%myname%` when the user gave no name).
-- These names are reserved and can't be the user's own keys: `myname`, `mynickname`, `mybirthday`, `myage`, and the Routines tokens `time`, `date`, `battery`, `app`, `clipboard`, `ssid`, `ram`, `cpu`, `events`, `var`.
+- These names are reserved and can't be the user's own keys: `myname`, `mynickname`, `mytitle`, `mybirthday`, `myage`, the dynamic `greeting`, `time`, `day`, `date`, `zulu`, `reminders`, the Routines tokens `battery`, `app`, `clipboard`, `ssid`, `ram`, `cpu`, `events`, `var`, and every name an extension has registered.
 - Expand only text you are about to speak or show. Store what the user typed, raw.
 - The profile is saved unencrypted in `Core.json`. Don't copy it anywhere else, and never send it over the network without the user asking you to.
 
@@ -672,7 +683,47 @@ speak(core.personal.expand("%myname%, it is %temp% degrees.", extra={"temp": 31}
 
 The `on_reminder_fired` event passes the reminder as stored. To read it aloud, use `core.reminders.expanded_copy(reminder)["title"]` or `core.personal.expand(reminder["title"])`.
 
-Don't greet the user at startup yourself: Hariku already does (when the greeting is on, `core.personal.startup_greeting_enabled()` is `True`), including "Happy birthday!". An extension that also celebrates the user's birthday should skip it on the day when that is `True`, as Lumina does.
+Don't greet the user at startup yourself: Hariku already does (when the greeting is on, `core.personal.startup_greeting_enabled()` is `True`), including "Happy birthday!". An extension that also celebrates the user's birthday should skip it on the day when that is `True`, as Lumina does. To be part of the greeting, register a placeholder the user can put in their own greeting.
+
+When Windows started Hariku (`core.api.started_with_windows()` is `True`), the greeting waits until Windows reports a network connection, then about 3 seconds more, 25 seconds at most, so extensions that refresh their data at `on_app_startup` (or on `on_network_changed` with `True`) can have it ready. Manual starts greet 1.5 seconds after the window appears.
+
+### Placeholders from Extensions
+
+*(Available since core 2.7.)*
+
+An extension can add a placeholder that Hariku fills in everywhere it expands text: routines, reminders, the Morning Briefing and the user's startup greeting. The Insert placeholder menus (the Profile page's greeting field and Routines' builder) list it with its description.
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.personal.register_placeholder(name, provider, description="")` | `str` | Make `%name%` call `provider()`. `name` is 1–32 characters of `a`–`z`, `0`–`9` and `_` and can't be one Hariku uses (raises `ValueError`); registering it again replaces it. `description` is shown in the menus, in the user's language. Returns the name as stored. |
+| `core.personal.unregister_placeholder(name)` | `bool` | Remove it; call this in `teardown()`. |
+| `core.personal.is_placeholder_registered(name)` | `bool` | Whether `%name%` is registered. |
+| `core.personal.get_placeholders(now=None, values=True)` | `list[tuple]` | `[(name, description, current value)]`: Hariku's dynamic placeholders, then the registered ones. |
+| `core.personal.menu_entries(...)` | `list[tuple]` | The `(token, label)` pairs of an Insert placeholder menu (the profile, the user's keys, your own `tokens`, then the dynamic and registered placeholders). `core.core_panels.placeholder_menu(entries, on_pick)` makes the `wx.Menu`, and `core.personal.insert_placeholder(value, start, end, token)` puts the chosen token at the caret. |
+
+**Rules for providers:**
+- Return a short string from data you already have (your cache): the provider runs on whichever thread is expanding text, so no network requests, no files that may be slow, no waiting. Return `""` when you have nothing recent.
+- Write it to fit inside the user's sentence: no capital letter at the start (unless it is a name) and no full stop at the end, e.g. `"light rain, 25 degrees"`.
+- An exception or `None` becomes `""`, and the value is put on one line and cut at 300 characters.
+- A user's own key with the same name keeps working in their profile, but your placeholder wins when text is filled in.
+- If your extension also runs on older cores, import it guarded: `try: import core.personal as personal` / `except ImportError: personal = None`, and check `hasattr(personal, "register_placeholder")`.
+
+```python
+import core.personal
+
+def _airport_weather():
+    report = _cache.get("latest")          # never fetch here
+    return report["short"] if report else ""
+
+def register(bus):
+    core.personal.register_placeholder("airportweather", _airport_weather,
+                                       _("placeholder_desc"))
+
+def teardown():
+    core.personal.unregister_placeholder("airportweather")
+```
+
+Hariku's own: Weather adds `%weather%` ("light rain, 25 degrees"), Sleep Pattern `%sleep%` ("about 6 hours 25 minutes") and Cockpit `%airportweather%`.
 
 ---
 
@@ -964,7 +1015,8 @@ These utility functions provide access to common application-level operations.
 | `core.api.open_log_viewer()` | Opens the debug log file in the system's default text editor. |
 | `core.api.open_data_folder()` | Opens the Hariku data directory (`%APPDATA%/Hariku2`) in Windows Explorer. |
 | `core.api.clear_cache()` | Deletes the `.cache` folder inside the extensions directory. Useful for troubleshooting. |
-| `core.api.set_autostart(enable=True)` | Configures the Windows Registry to run Hariku automatically on system startup. Pass `False` to remove the autostart entry. |
+| `core.api.set_autostart(enable=True)` | Configures the Windows Registry to run Hariku automatically on system startup. Pass `False` to remove the autostart entry. *(core 2.7)* The entry starts Hariku with `core.api.AUTOSTART_FLAG` (`--autostart`); Hariku adds it to an older entry by itself. |
+| `core.api.started_with_windows()` | *(core 2.7)* `True` when Windows started Hariku (the autostart entry), `False` when the user or a restart did. |
 
 **Path variables:**
 

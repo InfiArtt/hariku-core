@@ -70,6 +70,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "edge_voices",
     "sleep_tracker",
     "piper_voices",
+    "cockpit",
 ])
 
 

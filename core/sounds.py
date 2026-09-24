@@ -112,11 +112,68 @@ def get_builtin_sounds_dir():
     return os.path.join(base_dir, "sounds")
 
 
-def set_theme_dir(path):
-    """Use the sound theme in folder `path`, or pass None for the built-in sounds."""
+# Core.json key holding the theme folder the user picked (core 2.7), so the
+# next start plays that theme's start.wav before any extension has loaded.
+REMEMBERED_THEME_KEY = "sound_theme_dir"
+THEMES_FOLDER_NAME = "sound_themes"   # %APPDATA%\Hariku2\sound_themes, the Sound Themes extension's
+
+
+def set_theme_dir(path, remember=False):
+    """Use the sound theme in folder `path`, or pass None for the built-in sounds.
+    With remember=True (core 2.7) the choice is also saved for the next start
+    (None forgets it); a plain call, such as an extension unloading, leaves the
+    saved choice alone."""
     global _theme_dir
     _theme_dir = os.path.abspath(path) if path else None
     logger.info(f"Sound theme folder: {_theme_dir or 'built-in sounds'}")
+    if remember:
+        try:
+            config = core.api.load_data("Core")
+            config = config if isinstance(config, dict) else {}
+            if _theme_dir:
+                config[REMEMBERED_THEME_KEY] = _theme_dir
+            else:
+                config.pop(REMEMBERED_THEME_KEY, None)
+            core.api.save_data("Core", config)
+        except Exception as e:
+            logger.error(f"Could not save the sound theme choice: {e}")
+
+
+def themes_root():
+    """The folder the Sound Themes extension keeps its themes in."""
+    return os.path.join(core.api.USER_DATA_DIR, THEMES_FOLDER_NAME)
+
+
+def remembered_theme_dir(config=None):
+    """The saved theme folder if it still exists inside the themes folder, else None."""
+    if config is None:
+        config = core.api.load_data("Core")
+    path = config.get(REMEMBERED_THEME_KEY) if isinstance(config, dict) else None
+    if not isinstance(path, str) or not path.strip():
+        return None
+    try:
+        real = os.path.normcase(os.path.realpath(path))
+        root = os.path.normcase(os.path.realpath(themes_root()))
+    except (OSError, ValueError):
+        return None
+    if not real.startswith(root + os.sep) or not os.path.isdir(path):
+        return None
+    if os.path.basename(real).startswith("."):
+        return None   # a half-made theme (Sound Themes builds them in ".work-" folders)
+    return path
+
+
+def load_remembered_theme():
+    """At startup, before start.wav: use the theme the user picked last time, so
+    its start sound plays. Returns the folder, or None for the built-in sounds."""
+    try:
+        path = remembered_theme_dir()
+    except Exception as e:
+        logger.error(f"Could not read the sound theme choice: {e}")
+        path = None
+    if path:
+        set_theme_dir(path)
+    return path
 
 
 def get_theme_dir():

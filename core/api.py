@@ -471,29 +471,93 @@ def clear_cache():
             return False
     return True
 
+# Windows starts Hariku with this argument (the Run value set_autostart()
+# writes), so Hariku knows the computer has just started (core 2.7).
+AUTOSTART_FLAG = "--autostart"
+_RUN_KEY_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
+_RUN_VALUE_NAME = "HarikuV2"
+
+
+def _running_compiled():
+    # Nuitka defines __compiled__ in every module it compiles (see core.updater);
+    # other freezers set sys.frozen.
+    return "__compiled__" in globals() or bool(getattr(sys, "frozen", False))
+
+
+def autostart_command(compiled=None, executable=None, script=None):
+    """The command line the Run value holds: the program (and, from source,
+    the script) in quotes, then AUTOSTART_FLAG."""
+    compiled = _running_compiled() if compiled is None else compiled
+    executable = executable or sys.executable
+    if compiled:
+        return f'"{executable}" {AUTOSTART_FLAG}'
+    script = os.path.abspath(script or sys.argv[0])
+    return f'"{executable}" "{script}" {AUTOSTART_FLAG}'
+
+
+def started_with_windows(argv=None):
+    """True when Windows started Hariku (the Run value's AUTOSTART_FLAG is in
+    the command line), False when the user or a restart did."""
+    return AUTOSTART_FLAG in (sys.argv[1:] if argv is None else argv)
+
+
 def set_autostart(enable=True):
     """Set whether Hariku runs automatically at Windows startup."""
     try:
         import winreg
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        app_name = "HarikuV2"
-        
-        if getattr(sys, 'frozen', False):
-            exe_path = sys.executable
-        else:
-            exe_path = f'"{sys.executable}" "{os.path.abspath(sys.argv[0])}"'
-            
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS)
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _RUN_KEY_PATH, 0, winreg.KEY_ALL_ACCESS)
         if enable:
-            winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+            winreg.SetValueEx(key, _RUN_VALUE_NAME, 0, winreg.REG_SZ, autostart_command())
         else:
             try:
-                winreg.DeleteValue(key, app_name)
+                winreg.DeleteValue(key, _RUN_VALUE_NAME)
             except FileNotFoundError:
                 pass
         winreg.CloseKey(key)
     except Exception as e:
         logger.error(f"Failed to set autostart: {e}")
+
+
+def _read_autostart_value():
+    """The Run value's command line, or None when there is none."""
+    import winreg
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _RUN_KEY_PATH, 0, winreg.KEY_READ)
+    except OSError:
+        return None
+    try:
+        value, _kind = winreg.QueryValueEx(key, _RUN_VALUE_NAME)
+        return value if isinstance(value, str) else None
+    except OSError:
+        return None
+    finally:
+        winreg.CloseKey(key)
+
+
+def autostart_needs_update(config, run_value):
+    """Whether the Run value (an older Hariku's, without AUTOSTART_FLAG) should
+    be written again. Only while the user has autostart on and the value is
+    there: a value they removed stays removed."""
+    return (isinstance(config, dict) and config.get("auto_start") is True
+            and isinstance(run_value, str) and AUTOSTART_FLAG not in run_value.split())
+
+
+def migrate_autostart(config=None, read_value=None, write=None):
+    """At startup: add AUTOSTART_FLAG to a Run value written before core 2.7.
+    Returns True when it rewrote the value."""
+    config = load_data("Core") if config is None else config
+    if not (isinstance(config, dict) and config.get("auto_start") is True):
+        return False   # nothing to look at, and no registry read
+    try:
+        run_value = (read_value or _read_autostart_value)()
+    except Exception as e:
+        logger.info(f"Could not read the autostart entry: {e}")
+        return False
+    if not autostart_needs_update(config, run_value):
+        return False
+    (write or set_autostart)(True)
+    logger.info("Autostart entry updated so Hariku knows when Windows started it.")
+    return True
 
 def open_preferences(tab_name=None):
     """Open the Preferences window. If tab_name is given, it tries to select that tab directly."""
