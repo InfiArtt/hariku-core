@@ -30,9 +30,7 @@ def test_preferences_labels_precede_their_controls(tmp_path):
     timings = [line for line in result.stdout.splitlines() if line.startswith("TIMING")]
     if timings:
         # Shown in pytest's warnings summary, so CI logs keep them on success.
-        warnings.warn("Preferences build times:
-" + "
-".join(timings[:25]))
+        warnings.warn("Preferences build times: " + " | ".join(timings[:25]))
     problems = [line for line in result.stdout.splitlines() if line.startswith("PROBLEM")]
     assert not problems, "\n".join(problems) + "\n\n" + output
     assert "OK labels" in result.stdout, output
