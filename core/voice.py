@@ -44,6 +44,7 @@ _ = get_translator("core")
 logger = logging.getLogger(__name__)
 
 KINDS = ("greeting", "briefing", "reminder")
+GENDERS = ("female", "male")        # a voice's "gender", or "" when it has none
 WINDOWS = "windows"                 # the built-in provider, also the fallback
 SETTINGS_KEY = "hariku_voice"       # in Core.json
 RATE_MIN, RATE_MAX = -10, 10        # 0 is the voice's normal rate
@@ -110,7 +111,11 @@ def register_provider(provider_id, name, list_voices, speak, stop, is_available=
 
     provider_id   lower-case letters, digits and "_", at most 32 ("edge").
     name          what Preferences shows ("Microsoft Edge neural voices (online)").
-    list_voices() a list of {"id", "name", "language" (BCP-47, e.g. "id-ID")}.
+    list_voices() a list of {"id", "name", "language" (BCP-47, e.g. "id-ID")},
+                  optionally with "gender" ("female" or "male"; leave it out
+                  when you don't know). "name" is the voice's own name
+                  ("Gadis"), without its language or gender: the page groups
+                  the voices by language, then gender, and lists the names.
                   May be slow or use the network: it is never called on the UI thread.
     speak(text, voice_id, rate, volume, on_done)
                   start speaking and return at once. voice_id "" means your
@@ -194,9 +199,10 @@ def is_provider_available(provider_id):
 
 
 def list_voices(provider_id):
-    """The provider's voices as [{"id", "name", "language", ...}], checked and
-    without duplicates. Slow: call it on a worker thread. Raises what the
-    provider raises, or ValueError for an unknown provider."""
+    """The provider's voices as [{"id", "name", "language", "gender", ...}],
+    checked and without duplicates; "gender" is "female", "male" or "". Slow:
+    call it on a worker thread. Raises what the provider raises, or ValueError
+    for an unknown provider."""
     provider = _get_provider(provider_id)
     if provider is None:
         raise ValueError(f"unknown voice provider: {provider_id!r}")
@@ -213,6 +219,9 @@ def list_voices(provider_id):
         entry["name"] = str(item.get("name") or voice_id)
         language = item.get("language")
         entry["language"] = language if isinstance(language, str) else ""
+        gender = item.get("gender")
+        gender = gender.strip().lower() if isinstance(gender, str) else ""
+        entry["gender"] = gender if gender in GENDERS else ""
         voices.append(entry)
     return voices
 

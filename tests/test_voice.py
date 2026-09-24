@@ -210,10 +210,20 @@ class TestRegistry:
         voices = voice.list_voices("edge")
         assert [v["id"] for v in voices] == ["a", "b", "c"]
         assert voices[0] == {"id": "a", "name": "Ardi", "language": "id-ID", "gender": "male"}
-        assert voices[1] == {"id": "b", "name": "b", "language": ""}
+        assert voices[1] == {"id": "b", "name": "b", "language": "", "gender": ""}
         assert voices[2]["name"] == "c" and voices[2]["language"] == ""
         with pytest.raises(ValueError):
             voice.list_voices("nothing")
+
+    @pytest.mark.parametrize("given, gender", [
+        ("female", "female"), ("male", "male"), ("Female", "female"), (" MALE ", "male"),
+        ("neutral", ""), ("", ""), (None, ""), (1, ""), (["female"], ""),
+    ])
+    def test_gender_is_female_male_or_nothing(self, voice, given, gender):
+        FakeProvider("edge", voices=[{"id": "v", "name": "V", "language": "id-ID",
+                                      "gender": given}]).register(voice)
+        assert voice.list_voices("edge")[0]["gender"] == gender
+        assert set(voice.GENDERS) == {"female", "male"}
 
     def test_users_language_comes_first(self, voice):
         voices = [{"id": "1", "name": "Zira", "language": "en-US"},
@@ -941,32 +951,34 @@ class TestSapiCom:
         ole32 = Ole32()
         monkeypatch.setattr(vs, "_ole32", lambda: ole32)
         tokens = {}   # id(FakeInterface) -> FakeInterface
+        # (token id, Name, Language, Gender); an empty attribute is missing.
         categories = {
             vs.VOICE_CATEGORIES[0]: [("HKLM\\Speech\\Tokens\\ZIRA", "Microsoft Zira Desktop",
-                                      "409"),
-                                     ("HKLM\\Speech\\Tokens\\GADIS", "Microsoft Gadis", "421")],
+                                      "409", "Female"),
+                                     ("HKLM\\Speech\\Tokens\\GADIS", "Microsoft Gadis", "421",
+                                      "")],
             vs.VOICE_CATEGORIES[1]: [("HKLM\\OneCore\\Tokens\\ZIRA2", "Microsoft Zira Desktop",
-                                      "409;9"),
-                                     ("HKLM\\OneCore\\Tokens\\ANDIKA", "", "421")],
+                                      "409;9", "Female"),
+                                     ("HKLM\\OneCore\\Tokens\\ANDIKA", "", "421", "Male")],
         }
 
-        def token_handler(token_id, name, lcid):
+        def token_handler(token_id, name, lcid, gender):
             def handler(self, index, args):
                 if index == vs.TOKEN_GET_ID:
                     put_string(args[0], token_id)
                 elif index == vs.DATAKEY_GET_STRING_VALUE and args[0] is None:
                     put_string(args[1], f"{name or 'Microsoft Andika'} - Some Language")
                 elif index == vs.DATAKEY_OPEN_KEY:
-                    attrs = FakeInterface("attributes", attribute_handler(name, lcid))
+                    attrs = FakeInterface("attributes", attribute_handler(name, lcid, gender))
                     put_pointer(args[1], attrs)
                     tokens[id(attrs)] = attrs
                 return 0
             return handler
 
-        def attribute_handler(name, lcid):
+        def attribute_handler(name, lcid, gender):
             def handler(self, index, args):
                 if index == vs.DATAKEY_GET_STRING_VALUE:
-                    value = {"Name": name, "Language": lcid}.get(args[0])
+                    value = {"Name": name, "Language": lcid, "Gender": gender}.get(args[0])
                     if not value:
                         raise vs.ComError(-2147201990, "GetStringValue")   # SPERR_NOT_FOUND
                     put_string(args[1], value)
@@ -1023,9 +1035,9 @@ class TestSapiCom:
         engine = vs.Sapi()
         voices = engine.list_voices()
         assert ole32.initialized == 1
-        assert [(v["name"], v["language"]) for v in voices] == [
-            ("Microsoft Zira Desktop", "en-US"), ("Microsoft Gadis", "id-ID"),
-            ("Microsoft Andika", "id-ID")]
+        assert [(v["name"], v["language"], v["gender"]) for v in voices] == [
+            ("Microsoft Zira Desktop", "en-US", "female"), ("Microsoft Gadis", "id-ID", ""),
+            ("Microsoft Andika", "id-ID", "male")]
         assert voices[0]["id"] == "HKLM\\Speech\\Tokens\\ZIRA"
         categories = [o for o in created if o.name == "category"]
         assert [c.category for c in categories] == list(vs.VOICE_CATEGORIES)
@@ -1259,7 +1271,8 @@ class TestCallSites:
         calls = [node for node in ast.walk(tree)
                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                  and node.func.id in ("_labeled", "_labeled_row")]
-        assert len(calls) == 6
+        # Source, Language, Gender, Voice, rate, volume, fallback, privacy note.
+        assert len(calls) == 8
         for call in calls:
             assert isinstance(call.args[3], ast.Lambda), f"line {call.lineno}: pass a factory"
         controls = {"Choice", "ComboBox", "ListCtrl", "ListBox", "SpinCtrl", "Slider", "TextCtrl"}
@@ -1292,3 +1305,133 @@ class TestCallSites:
         with open(os.path.join(ROOT, "locales", "id.json"), encoding="utf-8") as f:
             messages = json.load(f)["messages"]
         assert "Anda" in messages["voice_test_text"]
+
+
+# ------------------------------------------------------------
+# The Hariku Voice page's Language, Gender and Voice choices (the grouping in
+# core/voice_panel.py, without wx), in both of Hariku's languages
+# ------------------------------------------------------------
+
+PICKER_VOICES = [
+    {"id": "en-US-GuyNeural", "name": "Guy", "language": "en-US", "gender": "male"},
+    {"id": "id-ID-GadisNeural", "name": "Gadis", "language": "id-ID", "gender": "female"},
+    {"id": "fr-FR-DeniseNeural", "name": "Denise", "language": "fr-FR", "gender": "female"},
+    {"id": "en-GB-SoniaNeural", "name": "Sonia", "language": "en-GB", "gender": "female"},
+    {"id": "id-ID-ArdiNeural", "name": "Ardi", "language": "id-ID", "gender": "male"},
+    {"id": "en-US-AriaNeural", "name": "aria", "language": "en-US", "gender": "female"},
+    {"id": "de-DE-thorsten", "name": "Thorsten", "language": "de-DE", "gender": ""},
+    {"id": "zh-CN-liaoning-XiaobeiNeural", "name": "Xiaobei", "language": "zh-CN-liaoning",
+     "gender": "female"},
+    {"id": "mystery", "name": "Mystery", "language": "", "gender": ""},
+    {"id": "en-US-AvaNeural", "name": "Ava", "language": "en-US", "gender": "female"},
+]
+# What Windows calls them (whatever Windows' own language); it doesn't know
+# zh-CN-liaoning, so the tag itself is shown.
+PICKER_NAMES = {"en-US": "English (United States)", "en-GB": "English (United Kingdom)",
+                "id-ID": "Indonesian (Indonesia)", "fr-FR": "French (France)",
+                "de-DE": "German (Germany)"}
+PICKER_TEXT = {
+    "en": {"all": "All voices", "female": "Female", "male": "Male", "unknown": "Unknown language"},
+    "id": {"all": "Semua suara", "female": "Perempuan", "male": "Laki-laki",
+           "unknown": "Bahasa tidak diketahui"},
+}
+
+
+@pytest.fixture(params=["en", "id"])
+def picker(request, monkeypatch):
+    """core.voice_panel with Hariku in English or Indonesian; Windows' own
+    locale adds no language."""
+    import core.voice
+    from core import i18n
+    had_core, old_core = "core" in i18n._language_cache, i18n._language_cache.get("core")
+    i18n._load_domain("core", i18n.CORE_LOCALES_DIR)
+    monkeypatch.setattr(i18n, "_current_language", request.param)
+    monkeypatch.setattr(core.voice, "_windows_locale", lambda: "")
+    monkeypatch.setattr(core.voice, "language_name",
+                        lambda tag: PICKER_NAMES.get(tag, tag) if tag else "")
+    import core.voice_panel
+    yield request.param, core.voice_panel
+    if had_core:
+        i18n._language_cache["core"] = old_core
+    else:
+        i18n._language_cache.pop("core", None)
+
+
+class TestVoicePicker:
+    def test_languages_the_users_first_then_by_name(self, picker):
+        ui, panel = picker
+        listed = panel.languages_for(PICKER_VOICES)
+        rest = [("fr-FR", "French (France)"), ("de-DE", "German (Germany)"),
+                ("zh-CN-liaoning", "zh-CN-liaoning"), ("", PICKER_TEXT[ui]["unknown"])]
+        english = [("en-GB", "English (United Kingdom)"), ("en-US", "English (United States)")]
+        indonesian = [("id-ID", "Indonesian (Indonesia)")]
+        if ui == "en":
+            # English first, by tag as order_voices() puts them; then the rest by name.
+            assert listed == english + [rest[0], rest[1]] + indonesian + rest[2:]
+        else:
+            assert listed == indonesian + english + rest
+        assert len({tag for tag, _label in listed}) == len(listed)    # one entry per locale
+
+    def test_languages_follow_hariku_then_windows(self, picker):
+        _ui, panel = picker
+        tags = [tag for tag, _label in panel.languages_for(PICKER_VOICES, ["en", "id-ID"])]
+        assert tags[:3] == ["en-GB", "en-US", "id-ID"]
+        tags = [tag for tag, _label in panel.languages_for(PICKER_VOICES, ["id", "en"])]
+        assert tags[:3] == ["id-ID", "en-GB", "en-US"]
+        tags = [tag for tag, _label in panel.languages_for(PICKER_VOICES, [])]
+        assert tags == ["en-GB", "en-US", "fr-FR", "de-DE", "id-ID", "zh-CN-liaoning", ""]
+        assert panel.languages_for([]) == []
+
+    def test_genders_only_those_the_language_has(self, picker):
+        ui, panel = picker
+        text = PICKER_TEXT[ui]
+        assert panel.genders_for(PICKER_VOICES, "id-ID") == [
+            ("", text["all"]), ("female", text["female"]), ("male", text["male"])]
+        assert panel.genders_for(PICKER_VOICES, "en-GB") == [
+            ("", text["all"]), ("female", text["female"])]
+        # No voice of the language has a gender (Piper, some Windows voices).
+        assert panel.genders_for(PICKER_VOICES, "de-DE") == [("", text["all"])]
+        assert panel.genders_for(PICKER_VOICES, "") == [("", text["all"])]
+        assert panel.genders_for(PICKER_VOICES, "xx-XX") == [("", text["all"])]
+
+    def test_voices_by_name(self, picker):
+        _ui, panel = picker
+
+        def names(language, gender=""):
+            return [v["name"] for v in panel.voices_for(PICKER_VOICES, language, gender)]
+
+        assert names("id-ID") == ["Ardi", "Gadis"]
+        assert names("id-ID", "female") == ["Gadis"]
+        assert names("id-ID", "male") == ["Ardi"]
+        assert names("en-US") == ["aria", "Ava", "Guy"]            # case doesn't matter
+        assert names("en-US", "female") == ["aria", "Ava"]
+        assert names("de-DE") == ["Thorsten"] and names("de-DE", "female") == []
+        assert names("") == ["Mystery"]
+
+    def test_preselect_the_saved_voice(self, picker):
+        _ui, panel = picker
+        assert panel.preselect(PICKER_VOICES, "id-ID-GadisNeural") == \
+            ("id-ID", "female", "id-ID-GadisNeural")
+        assert panel.preselect(PICKER_VOICES, "en-US-GuyNeural") == \
+            ("en-US", "male", "en-US-GuyNeural")
+        # Without a gender: "All voices".
+        assert panel.preselect(PICKER_VOICES, "de-DE-thorsten") == ("de-DE", "", "de-DE-thorsten")
+        assert panel.preselect(PICKER_VOICES, "mystery") == ("", "", "mystery")
+
+    def test_preselect_without_a_saved_voice(self, picker):
+        ui, panel = picker
+        # The first of the user's languages, All voices, its first voice by name.
+        expected = {"en": ("en-GB", "", "en-GB-SoniaNeural"),
+                    "id": ("id-ID", "", "id-ID-ArdiNeural")}[ui]
+        assert panel.preselect(PICKER_VOICES, "") == expected
+        assert panel.preselect(PICKER_VOICES, "gone-from-the-list") == expected
+        assert panel.preselect(PICKER_VOICES, "", ["fr"]) == ("fr-FR", "", "fr-FR-DeniseNeural")
+        assert panel.preselect([], "id-ID-GadisNeural") is None
+
+    def test_labels(self, picker):
+        ui, panel = picker
+        assert panel.language_label("id-ID") == "Indonesian (Indonesia)"
+        assert panel.language_label("zh-CN-liaoning") == "zh-CN-liaoning"
+        assert panel.language_label("") == PICKER_TEXT[ui]["unknown"]
+        assert [panel.gender_label(g) for g in ("", "female", "male")] == [
+            PICKER_TEXT[ui]["all"], PICKER_TEXT[ui]["female"], PICKER_TEXT[ui]["male"]]

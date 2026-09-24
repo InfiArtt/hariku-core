@@ -27,6 +27,7 @@ def test_hariku_voice_page(tmp_path):
     )
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK voice_page", "OK windows_voices", "OK switch_source",
+                  "OK gender_and_voice", "OK remember_language", "OK load_error",
                   "OK test_button", "OK voice_saved", "OK announce", "OK stop_action",
                   "OK voice_reopen", "OK close_while_loading", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"

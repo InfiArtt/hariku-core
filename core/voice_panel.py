@@ -10,9 +10,15 @@
 Preferences, Hariku Voice: which announcements a voice speaks, the source and
 voice, rate, volume, a Test button, the fallback and "Stop when I press a key".
 
-Voice lists are loaded on worker threads (a provider may use the network) and
-shown with the user's language first. Selecting anything never moves focus.
-Everything is saved on OK or Apply, through core.voice.save_settings().
+A voice is picked with three choices, each narrowing the next: Language (one
+entry per locale, the user's languages first), Gender (All voices, Female,
+Male, as that language has them) and Voice (the names). Voice lists are loaded
+on worker threads (a provider may use the network). Changing a choice refills
+the ones after it and never moves focus. Everything is saved on OK or Apply,
+through core.voice.save_settings().
+
+languages_for(), genders_for(), voices_for() and preselect() hold the
+grouping, without wx, so tests can check it.
 """
 import logging
 import threading
@@ -32,6 +38,95 @@ logger = logging.getLogger(__name__)
 _KIND_LABELS = (("greeting", "voice_chk_greeting"), ("briefing", "voice_chk_briefing"),
                 ("reminder", "voice_chk_reminder"))
 
+
+# ------------------------------------------------------------
+# Grouping the voices: Language, then Gender, then Voice
+# ------------------------------------------------------------
+
+def language_label(tag):
+    """What the Language choice shows for a BCP-47 tag: Windows' name for it
+    ("Indonesian (Indonesia)"), the tag itself when Windows doesn't know it,
+    or "Unknown language" for voices without one."""
+    if not tag:
+        return _("voice_language_unknown")
+    return core.voice.language_name(tag) or tag
+
+
+def gender_label(gender):
+    if gender == "female":
+        return _("voice_gender_female")
+    if gender == "male":
+        return _("voice_gender_male")
+    return _("voice_gender_all")
+
+
+def _language_of(voice):
+    return voice.get("language") or ""
+
+
+def _gender_of(voice):
+    gender = voice.get("gender")
+    return gender if gender in core.voice.GENDERS else ""
+
+
+def languages_for(voices, languages=None, name=language_label):
+    """The Language choice: [(tag, label)], one entry per full locale tag
+    ("en-US" and "en-GB" apart). The user's languages come first, in the order
+    core.voice.order_voices() gives them (Hariku's language, then Windows'),
+    then the rest alphabetically by label; voices without a language last.
+    `languages` defaults to core.voice.user_languages(); `name(tag)` makes the
+    label."""
+    if languages is None:
+        languages = core.voice.user_languages()
+    preferred = [p for p in (core.voice._primary(tag) for tag in languages) if p]
+    mine, rest, seen = [], [], set()
+    for voice in core.voice.order_voices(voices, preferred):
+        tag = _language_of(voice)
+        if tag in seen:
+            continue
+        seen.add(tag)
+        entry = (tag, name(tag))
+        (mine if tag and core.voice._primary(tag) in preferred else rest).append(entry)
+    rest.sort(key=lambda entry: (not entry[0], entry[1].casefold(), entry[0]))
+    return mine + rest
+
+
+def genders_for(voices, language):
+    """The Gender choice for a language: [(gender, label)], "All voices" ("")
+    first, then Female and Male if that language has such voices. Only "All
+    voices" when none of its voices has a gender."""
+    present = {_gender_of(v) for v in voices if _language_of(v) == language}
+    return [("", gender_label(""))] + [(gender, gender_label(gender))
+                                       for gender in core.voice.GENDERS if gender in present]
+
+
+def voices_for(voices, language, gender=""):
+    """The Voice choice: the voices of that language and gender ("" for all of
+    them), sorted by name."""
+    return sorted((v for v in voices if _language_of(v) == language
+                   and (not gender or _gender_of(v) == gender)),
+                  key=lambda v: (str(v.get("name") or "").casefold(), str(v.get("id"))))
+
+
+def preselect(voices, voice_id, languages=None, name=language_label):
+    """Where the three choices start, as (language, gender, voice id): the
+    language of the voice `voice_id`, its gender ("" = All voices when it has
+    none) and the voice itself. When it isn't listed, the first language
+    (the first of the user's), All voices and that language's first voice.
+    None when there are no voices."""
+    for voice in voices:
+        if voice_id and voice.get("id") == voice_id:
+            return _language_of(voice), _gender_of(voice), voice_id
+    listed = languages_for(voices, languages, name)
+    if not listed:
+        return None
+    language = listed[0][0]
+    return language, "", voices_for(voices, language)[0]["id"]
+
+
+# ------------------------------------------------------------
+# The page
+# ------------------------------------------------------------
 
 def _labeled_row(parent, sizer, label, make):
     """A label, then the control make() creates beside it, with the same
@@ -57,6 +152,13 @@ def _call_after(fn, *args):
         pass
 
 
+def _set_choice(choice, labels, index=0, enabled=True):
+    choice.Set(labels)
+    if labels:
+        choice.SetSelection(max(0, min(index, len(labels) - 1)))
+    choice.Enable(enabled)
+
+
 class VoiceSettingsPanel(wx.ScrolledWindow):
     def __init__(self, parent):
         super().__init__(parent, style=wx.TAB_TRAVERSAL | wx.VSCROLL)
@@ -67,9 +169,12 @@ class VoiceSettingsPanel(wx.ScrolledWindow):
         self._errors = {}          # provider id -> why its voices couldn't be listed
         self._loading = set()
         self._chosen = {}          # provider id -> voice id picked on this page
-        self._rows = []            # the voices in the list, row by row
+        self._picked = {}          # (provider id, language) -> (gender, voice id) last picked there
+        self._language_tags = []   # what the Language, Gender and Voice choices hold,
+        self._genders = []         # item by item (empty while they show a message)
+        self._rows = []
         self._filling = False
-        self._shown = None         # provider whose voices the list shows
+        self._shown = None         # provider whose voices the choices show
         self._language_names = {}
         self._fallback_ids = [""]
 
@@ -104,12 +209,13 @@ class VoiceSettingsPanel(wx.ScrolledWindow):
                                       lambda: wx.Choice(self, choices=names))
         self.choice_source.SetSelection(self._provider_ids.index(saved))
 
-        self.lst_voices = _labeled(
-            self, vbox, _("voice_lbl_voice"),
-            lambda: wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN,
-                                size=(-1, 160)), proportion=1)
-        self.lst_voices.InsertColumn(0, _("voice_col_voice"), width=300)
-        self.lst_voices.InsertColumn(1, _("voice_col_language"), width=220)
+        # Language, then gender, then the voice: each one narrows the next.
+        self.choice_language = _labeled(self, vbox, _("voice_lbl_language"),
+                                        lambda: wx.Choice(self, choices=[]))
+        self.choice_gender = _labeled(self, vbox, _("voice_lbl_gender"),
+                                      lambda: wx.Choice(self, choices=[]))
+        self.choice_voice = _labeled(self, vbox, _("voice_lbl_voice"),
+                                     lambda: wx.Choice(self, choices=[]))
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         self.spin_rate = _labeled_row(
@@ -142,7 +248,9 @@ class VoiceSettingsPanel(wx.ScrolledWindow):
         self.SetSizer(vbox)
 
         self.choice_source.Bind(wx.EVT_CHOICE, self.on_source)
-        self.lst_voices.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_voice_selected)
+        self.choice_language.Bind(wx.EVT_CHOICE, self.on_language)
+        self.choice_gender.Bind(wx.EVT_CHOICE, self.on_gender)
+        self.choice_voice.Bind(wx.EVT_CHOICE, self.on_voice)
         self.btn_test.Bind(wx.EVT_BUTTON, self.on_test)
         for spin in (self.spin_rate, self.spin_volume):
             spin.Bind(wx.EVT_SPINCTRL, lambda event: (self._mark_dirty(), event.Skip()))
@@ -203,32 +311,36 @@ class VoiceSettingsPanel(wx.ScrolledWindow):
         if provider_id == core.voice.WINDOWS:
             self._fill_fallback()
         if provider_id == self._shown:
-            self._fill_list()
+            self._fill_choices()
 
     def _show(self, provider_id):
         self._shown = provider_id
         self.txt_privacy.SetValue(self._provider_notes.get(provider_id, ""))
         if provider_id in self._voices or provider_id in self._errors:
-            self._fill_list()
+            self._fill_choices()
         else:
-            self._message_row(_("voice_loading"))
+            self._message(_("voice_loading"), loading=True)
             if provider_id in self._provider_notes:
                 self._request(provider_id)
             else:
                 self._errors[provider_id] = _("voice_source_missing", source=provider_id)
-                self._fill_list()
+                self._fill_choices()
 
     def _language(self, tag):
         if tag not in self._language_names:
-            self._language_names[tag] = core.voice.language_name(tag) or _("voice_language_unknown")
+            self._language_names[tag] = language_label(tag)
         return self._language_names[tag]
 
-    def _message_row(self, text):
+    def _message(self, text, loading=False):
+        """One item instead of the voices: "Loading voices…" in all three
+        choices, or why there are none in Language, with Gender and Voice
+        empty and disabled."""
         self._filling = True
         try:
-            self._rows = []
-            self.lst_voices.DeleteAllItems()
-            self.lst_voices.InsertItem(0, text)
+            self._language_tags, self._genders, self._rows = [], [], []
+            _set_choice(self.choice_language, [text])
+            for choice in (self.choice_gender, self.choice_voice):
+                _set_choice(choice, [text] if loading else [], enabled=loading)
         finally:
             self._filling = False
 
@@ -237,35 +349,64 @@ class VoiceSettingsPanel(wx.ScrolledWindow):
             return self._chosen[provider_id]
         return self._settings["voice"] if provider_id == self._settings["provider"] else ""
 
-    def _fill_list(self):
+    def _shown_voices(self):
+        return self._voices.get(self._shown) or []
+
+    def _selected_language(self):
+        index = self.choice_language.GetSelection()
+        return self._language_tags[index] if 0 <= index < len(self._language_tags) else None
+
+    def _selected_gender(self):
+        index = self.choice_gender.GetSelection()
+        return self._genders[index] if 0 <= index < len(self._genders) else ""
+
+    def _fill_gender(self, language, gender):
+        genders = genders_for(self._shown_voices(), language)
+        self._genders = [key for key, _label in genders]
+        _set_choice(self.choice_gender, [label for _key, label in genders],
+                    self._genders.index(gender) if gender in self._genders else 0)
+
+    def _fill_voice(self, language, gender, voice_id=None):
+        """The voices of that language and gender, with voice_id selected when
+        it is one of them, else the first."""
+        self._rows = voices_for(self._shown_voices(), language, gender)
+        ids = [voice["id"] for voice in self._rows]
+        _set_choice(self.choice_voice, [voice["name"] for voice in self._rows],
+                    ids.index(voice_id) if voice_id in ids else 0)
+
+    def _fill_choices(self):
+        """The source changed or its voices arrived: fill Language, Gender and
+        Voice at the saved (or already picked) voice."""
         provider_id = self._shown
         if provider_id in self._errors:
-            self._message_row(_("voice_load_failed", error=self._errors[provider_id]))
+            self._message(_("voice_load_failed", error=self._errors[provider_id]))
             return
-        voices = self._voices.get(provider_id) or []
+        voices = self._shown_voices()
         if not voices:
-            self._message_row(_("voice_none"))
+            self._message(_("voice_none"))
             return
-        want = self._wanted_voice(provider_id)
-        index = next((i for i, v in enumerate(voices) if v["id"] == want), 0)
+        listed = languages_for(voices, name=self._language)
+        language, gender, voice_id = preselect(voices, self._wanted_voice(provider_id),
+                                               name=self._language)
+        remembered = self._picked.get((provider_id, language))
+        if remembered and remembered[1] == voice_id:
+            gender = remembered[0]          # as the user left it
         self._filling = True
         try:
-            lst = self.lst_voices
-            lst.DeleteAllItems()
-            self._rows = list(voices)
-            for i, voice in enumerate(voices):
-                lst.InsertItem(i, voice["name"])
-                lst.SetItem(i, 1, self._language(voice["language"]))
-            state = wx.LIST_STATE_SELECTED | wx.LIST_STATE_FOCUSED
-            lst.SetItemState(index, state, state)
-            lst.EnsureVisible(index)
+            self._language_tags = [tag for tag, _label in listed]
+            _set_choice(self.choice_language, [label for _tag, label in listed],
+                        self._language_tags.index(language))
+            self._fill_gender(language, gender)
+            self._fill_voice(language, self._selected_gender(), voice_id)
         finally:
             self._filling = False
-        self._chosen.setdefault(provider_id, voices[index]["id"])
+        self._chosen.setdefault(provider_id, self.selected_voice())
+        self._picked.setdefault((provider_id, language),
+                                (self._selected_gender(), self.selected_voice()))
 
     def selected_voice(self):
-        """The voice selected in the list, or None (nothing loaded, or a message)."""
-        index = self.lst_voices.GetFirstSelected()
+        """The voice selected in the Voice choice, or None (nothing loaded, or a message)."""
+        index = self.choice_voice.GetSelection()
         return self._rows[index]["id"] if 0 <= index < len(self._rows) else None
 
     def _voice_to_save(self, provider_id):
@@ -297,19 +438,52 @@ class VoiceSettingsPanel(wx.ScrolledWindow):
         self.choice_fallback.SetSelection(ids.index(chosen) if chosen in ids else 0)
 
     # --- events ----------------------------------------------------------------
+    # Changing a choice refills only the ones after it; focus stays where it is.
 
     def on_source(self, event):
-        # Only the list changes; focus stays on the source.
         self._show(self._selected_provider())
         event.Skip()
 
-    def on_voice_selected(self, event):
-        if not self._filling:
-            voice = self.selected_voice()
-            if voice is not None:
-                self._chosen[self._shown] = voice
-                self._mark_dirty()
+    def on_language(self, event):
+        language = self._selected_language()
+        if not self._filling and language is not None:
+            # The voice last picked in this language on this page, else the first.
+            gender, voice_id = self._picked.get((self._shown, language), ("", None))
+            self._filling = True
+            try:
+                self._fill_gender(language, gender)
+                self._fill_voice(language, self._selected_gender(), voice_id)
+            finally:
+                self._filling = False
+            self._voice_changed(remember=False)
         event.Skip()
+
+    def on_gender(self, event):
+        language = self._selected_language()
+        if not self._filling and language is not None:
+            current = self.selected_voice()     # kept when it has this gender
+            self._filling = True
+            try:
+                self._fill_voice(language, self._selected_gender(), current)
+            finally:
+                self._filling = False
+            self._voice_changed()
+        event.Skip()
+
+    def on_voice(self, event):
+        if not self._filling:
+            self._voice_changed()
+        event.Skip()
+
+    def _voice_changed(self, remember=True):
+        voice = self.selected_voice()
+        if voice is None:
+            return
+        self._chosen[self._shown] = voice
+        if remember:
+            self._picked[(self._shown, self._selected_language())] = \
+                (self._selected_gender(), voice)
+        self._mark_dirty()
 
     def test_text(self):
         nickname = core.personal.get_nickname()

@@ -305,7 +305,7 @@ class Sapi:
         if not token_id:
             return None
         display = self._string(token, None)
-        name = language = ""
+        name = language = gender = ""
         attributes_ptr = ctypes.c_void_p()
         try:
             token.call(DATAKEY_OPEN_KEY, (ctypes.c_wchar_p, ctypes.POINTER(ctypes.c_void_p)),
@@ -317,12 +317,14 @@ class Sapi:
             try:
                 name = self._string(attributes, "Name")
                 language = lcid_to_tag(self._string(attributes, "Language"))
+                gender = self._string(attributes, "Gender").lower()   # "Female", "Male"
             finally:
                 attributes.release()
         # "Microsoft Zira Desktop - English (United States)": the language has
-        # its own column, so the name alone.
+        # its own choice, so the name alone.
         name = name or display.split(" - ")[0].strip() or token_id.rsplit("\\", 1)[-1]
-        return {"id": token_id, "name": name, "language": language}
+        return {"id": token_id, "name": name, "language": language,
+                "gender": gender if gender in ("female", "male") else ""}
 
     # --- speaking --------------------------------------------------------------
 
@@ -527,8 +529,8 @@ _worker = Worker()
 
 
 def list_voices():
-    """Every SAPI voice on this computer, [{"id", "name", "language"}]. Blocks
-    until the worker answers."""
+    """Every SAPI voice on this computer, [{"id", "name", "language", "gender"}]
+    ("gender" is "female", "male" or ""). Blocks until the worker answers."""
     return _worker.call(lambda engine: engine.list_voices())
 
 

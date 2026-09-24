@@ -743,7 +743,7 @@ core.voice.unregister_provider(provider_id)      # in teardown()
 |---|---|
 | `provider_id` | 1–32 characters of `a`–`z`, `0`–`9` and `_`, e.g. `"piper"`. Registering the same id again replaces the provider. `"windows"` is the built-in one and can't be removed. |
 | `name` | Shown in the Source list, in the user's language, e.g. `"Piper voices (offline)"`. |
-| `list_voices()` | Returns `[{"id", "name", "language"}]`: your own voice id, a name for the list, and a BCP-47 tag such as `"id-ID"` (the page shows the language in each row and lists the user's language first). Extra keys are kept. It may be slow or use the network: Hariku only calls it on a worker thread. Raise when it can't list them; the page says so. |
+| `list_voices()` | Returns `[{"id", "name", "language", "gender"}]`: your own voice id, the voice's own name (`"Gadis"`, without its language or gender), a BCP-47 tag such as `"id-ID"`, and optionally `"gender"`: `"female"` or `"male"`; leave it out when you don't know. The page picks a voice with three choices: Language (one entry per tag, the user's languages first), Gender ("All voices", then Female and Male if that language has them; only "All voices" when none of its voices has a gender) and Voice (the names, sorted). Extra keys are kept. It may be slow or use the network: Hariku only calls it on a worker thread. Raise when it can't list them; the page says so. |
 | `speak(text, voice_id, rate, volume, on_done)` | Start speaking and **return at once**. `voice_id` is `""` when the user picked none: use a default voice (ideally one for Hariku's language). `rate` is -10 to 10 (0 is the voice's normal rate; map it to your own range), `volume` 0 to 100. Call `on_done(None)` when the speech has finished or was stopped, or `on_done(error)` when you could not speak, so Hariku falls back. Call it **exactly once**, from any thread. |
 | `stop()` | Stop the current speech now. It must be thread-safe and must not block. After it, call the pending `on_done(None)`; Hariku waits up to 2 seconds for it. |
 | `is_available()` | Optional. Return `False` while you know you can't speak (offline, blocked, too many failures), and Hariku goes straight to the fallback. It is asked before every announcement, so it must be fast: no network, no disk. |
@@ -759,7 +759,7 @@ Hariku speaks one announcement at a time and doesn't call `speak()` again before
 | `core.voice.stop_playback()` | Stop that file. Hariku calls it itself when it stops a voice. |
 | `core.voice.cache_dir(provider_id)` | A folder for your saved audio, `%APPDATA%\Hariku2\voice_cache\<provider_id>`, created if missing. Keep it small and delete the oldest files first. |
 
-Also available: `core.voice.get_providers()` (`[{"id", "name", "privacy_note"}]`, Windows first), `core.voice.list_voices(provider_id)`, `core.voice.order_voices(voices)` (the user's languages first), `core.voice.language_name(tag)` and `core.voice.preview(text, provider_id, voice_id, rate, volume, stop_on_key=True, on_done=None)` (what the page's Test button does).
+Also available: `core.voice.get_providers()` (`[{"id", "name", "privacy_note"}]`, Windows first), `core.voice.list_voices(provider_id)` (checked, with `"language"` and `"gender"` always present; `"gender"` is `"female"`, `"male"` or `""`), `core.voice.order_voices(voices)` (the user's languages first), `core.voice.language_name(tag)` and `core.voice.preview(text, provider_id, voice_id, rate, volume, stop_on_key=True, on_done=None)` (what the page's Test button does).
 
 ```python
 import threading

@@ -9,10 +9,13 @@
 """
 Open Preferences with real wxPython, go to the Hariku Voice page, check each
 control's label comes right before it (that is what screen readers read), watch
-a voice list load on a worker thread (with its "Loading voices…" row), arrow
-through it checking focus stays put, switch the source, press Test, press OK and check
-what was saved; then reopen the page, close it while a list is loading, and use
-the "Stop Hariku Voice" action.
+the voices load on a worker thread (the Language, Gender and Voice choices say
+"Loading voices…" meanwhile), arrow through Language, Gender and Voice checking
+focus stays put and the choices after them refill, check that each language
+remembers the voice picked in it, switch to a source whose list fails, press
+Test, press OK and check what was saved; then reopen the page (the saved voice
+is preselected), close it while a list is loading, and use the "Stop Hariku
+Voice" action.
 
 Nothing speaks or plays: the Windows voices and a second source are fakes that
 only record what they were asked to say, MCI is refused, screen reader speech
@@ -117,9 +120,10 @@ core.voice._mci_send = _no_mci
 class FakeProvider:
     """Records what it is asked to say; never makes a sound."""
 
-    def __init__(self, provider_id, name, voices, delay=0.0, note=""):
+    def __init__(self, provider_id, name, voices, delay=0.0, note="", error=None):
         self.id, self.name, self.voices, self.delay, self.note = (provider_id, name, voices,
                                                                   delay, note)
+        self.error = error          # listing the voices raises OSError(error)
         self.said = []
         self.hang = False
         self.pending = None
@@ -128,6 +132,8 @@ class FakeProvider:
     def list_voices(self):
         self.list_threads.add(threading.get_ident())
         time.sleep(self.delay)
+        if self.error:
+            raise OSError(self.error)
         return self.voices
 
     def speak(self, text, voice_id, rate, volume, on_done):
@@ -150,16 +156,35 @@ class FakeProvider:
 
 # The built-in Windows voices are replaced, so SAPI never speaks here.
 windows = FakeProvider("windows", "Windows voices", [
-    {"id": "TOKEN_ANDIKA", "name": "Microsoft Andika", "language": "id-ID"},
-    {"id": "TOKEN_ZIRA", "name": "Microsoft Zira", "language": "en-US"},
-    {"id": "TOKEN_DAVID", "name": "Microsoft David", "language": "en-US"},
+    {"id": "TOKEN_ANDIKA", "name": "Microsoft Andika", "language": "id-ID"},   # no gender
+    {"id": "TOKEN_ZIRA", "name": "Microsoft Zira", "language": "en-US", "gender": "female"},
+    {"id": "TOKEN_DAVID", "name": "Microsoft David", "language": "en-US", "gender": "male"},
 ], delay=0.2, note=_("voice_windows_privacy")).register()
 fake = FakeProvider("fake", "Fake online voices", [
-    {"id": "fr-FR-DeniseNeural", "name": "Denise", "language": "fr-FR"},
-    {"id": "id-ID-GadisNeural", "name": "Gadis", "language": "id-ID"},
-    {"id": "en-US-AriaNeural", "name": "Aria", "language": "en-US"},
-    {"id": "id-ID-ArdiNeural", "name": "Ardi", "language": "id-ID"},
+    {"id": "fr-FR-DeniseNeural", "name": "Denise", "language": "fr-FR", "gender": "female"},
+    {"id": "id-ID-GadisNeural", "name": "Gadis", "language": "id-ID", "gender": "female"},
+    {"id": "en-US-AriaNeural", "name": "Aria", "language": "en-US", "gender": "female"},
+    {"id": "id-ID-ArdiNeural", "name": "Ardi", "language": "id-ID", "gender": "male"},
+    {"id": "en-US-GuyNeural", "name": "Guy", "language": "en-US", "gender": "male"},
+    {"id": "en-GB-SoniaNeural", "name": "Sonia", "language": "en-GB", "gender": "female"},
+    {"id": "de-DE-thorsten", "name": "Thorsten", "language": "de-DE"},        # no gender
 ], delay=0.8, note="Fake voices send your text to nobody.").register()
+broken = FakeProvider("broken", "Broken voices", [], delay=0.3,
+                      error="the voice list is broken").register()
+
+ALL, FEMALE, MALE = _("voice_gender_all"), _("voice_gender_female"), _("voice_gender_male")
+# Language -> (the Gender choice, the Voice choice with All voices).
+WINDOWS_CHOICES = {
+    "en-US": ([ALL, FEMALE, MALE], ["Microsoft David", "Microsoft Zira"]),
+    "id-ID": ([ALL], ["Microsoft Andika"]),
+}
+FAKE_CHOICES = {
+    "en-GB": ([ALL, FEMALE], ["Sonia"]),
+    "en-US": ([ALL, FEMALE, MALE], ["Aria", "Guy"]),
+    "fr-FR": ([ALL, FEMALE], ["Denise"]),
+    "id-ID": ([ALL, FEMALE, MALE], ["Ardi", "Gadis"]),
+    "de-DE": ([ALL], ["Thorsten"]),
+}
 
 core.api.save_data("Core", {"user_name": "Rafli", "user_nickname": "Bro",
                             "onboarding_completed": True, "language": "en",
@@ -212,13 +237,29 @@ def fire(ctrl, event_type, index=None):
     wx.Yield()
 
 
-def rows(lst):
-    return [(lst.GetItemText(i, 0), lst.GetItemText(i, 1)) for i in range(lst.GetItemCount())]
+def strings(choice):
+    return list(choice.GetStrings())
 
 
 def loaded(panel):
-    lst = panel.lst_voices
-    return lst.GetItemCount() > 1 and lst.GetItemText(0) != _("voice_loading")
+    """The source's voices are in the choices (not "Loading voices…" or an error)."""
+    return panel.selected_voice() is not None
+
+
+def expected_languages(tags):
+    """The tags in the order the Language choice lists them: the user's
+    languages first (Hariku's, then Windows'; by tag within one), then the
+    rest by the name Windows gives them."""
+    preferred = core.voice.user_languages()
+
+    def primary(tag):
+        return tag.split("-")[0].lower()
+
+    mine = sorted((t for t in tags if primary(t) in preferred),
+                  key=lambda t: (preferred.index(primary(t)), t.lower()))
+    rest = sorted((t for t in tags if t not in mine),
+                  key=lambda t: core.voice.language_name(t).casefold())
+    return mine + rest
 
 
 def focus_note(checked):
@@ -249,19 +290,31 @@ def check_labels(page):
     return checked
 
 
-def browse_list(lst, panel):
-    """Select each row as arrow keys do; focus must stay on the list."""
-    lst.SetFocus()
-    pump(lambda: wx.Window.FindFocus() is lst, timeout=1.0)
-    observable = wx.Window.FindFocus() is lst
-    state = wx.LIST_STATE_SELECTED | wx.LIST_STATE_FOCUSED
-    for i in list(range(lst.GetItemCount())) + [0]:
-        lst.SetItemState(i, state, state)
-        pump(lambda: False, timeout=0.05)
-        assert lst.GetFirstSelected() == i
+def pick(choice, index):
+    """Select an item as an arrow key does: the selection moves, then EVT_CHOICE."""
+    choice.SetSelection(index)
+    fire(choice, wx.EVT_CHOICE, index)
+    pump(lambda: False, timeout=0.05)
+
+
+def browse(choice, indexes, check):
+    """Arrow through these items of the choice; focus must stay on it, and
+    check(index) looks at the choices after it once they refilled. Returns
+    whether focus could be observed."""
+    choice.SetFocus()
+    pump(lambda: wx.Window.FindFocus() is choice, timeout=1.0)
+    observable = wx.Window.FindFocus() is choice
+    for i in indexes:
+        pick(choice, i)
+        assert choice.GetSelection() == i, (choice.GetName(), i, choice.GetSelection())
         if observable:
-            assert wx.Window.FindFocus() is lst, f"focus left the voice list at row {i}"
+            assert wx.Window.FindFocus() is choice, f"focus left {choice.GetName()!r} at item {i}"
+        check(i)
     return observable
+
+
+def voice_choices(panel):
+    return (panel.choice_language, panel.choice_gender, panel.choice_voice)
 
 
 from ui.preferences_dialog import PreferencesDialog
@@ -287,61 +340,166 @@ def interact():
         "Read reminders with Hariku Voice when they are due"
     assert panel.chk_stop_on_key.GetValue() is True
     assert panel.choice_source.GetName() == "Source"
-    assert panel.lst_voices.GetName() == "Voice"
+    assert panel.choice_language.GetName() == "Language"
+    assert panel.choice_gender.GetName() == "Gender"
+    assert panel.choice_voice.GetName() == "Voice"
     assert panel.spin_rate.GetName() == "Rate (-10 to 10)"
     assert panel.spin_volume.GetName() == "Volume (0 to 100)"
     assert panel.choice_fallback.GetName() == "If this voice isn't available, use"
     assert panel.txt_privacy.GetName() == "About this source"
-    # Source, voice list, rate, volume, fallback and the privacy note.
-    assert check_labels(panel) == 6
+    # Source, Language, Gender, Voice, rate, volume, fallback and the privacy note.
+    assert check_labels(panel) == 8
     assert panel.choice_source.GetStringSelection() == "Windows voices"
     assert panel.spin_rate.GetValue() == 0 and panel.spin_volume.GetValue() == 100
     assert panel.choice_fallback.GetStringSelection() == _("voice_fallback_reader")
 
     # The Windows voices load on a worker thread; English (Hariku's language) first.
-    assert pump(lambda: loaded(panel)), f"the Windows voices never loaded: {rows(panel.lst_voices)}"
+    assert pump(lambda: loaded(panel)), \
+        f"the Windows voices never loaded: {[strings(c) for c in voice_choices(panel)]}"
     assert threading.main_thread().ident not in windows.list_threads
-    names = [name for name, language in rows(panel.lst_voices)]
-    assert names[:2] == ["Microsoft David", "Microsoft Zira"], names
-    assert names[2] == "Microsoft Andika", names
-    assert all(language for name, language in rows(panel.lst_voices))
+    tags = expected_languages(list(WINDOWS_CHOICES))
+    assert tags[0] == "en-US", tags
+    assert strings(panel.choice_language) == [core.voice.language_name(t) for t in tags]
+    # Nothing saved: the first of the user's languages, All voices, its first voice.
+    assert panel.choice_language.GetSelection() == 0
+    assert strings(panel.choice_gender) == [ALL, FEMALE, MALE]
+    assert panel.choice_gender.GetStringSelection() == ALL
+    assert strings(panel.choice_voice) == ["Microsoft David", "Microsoft Zira"]
+    assert panel.choice_voice.GetStringSelection() == "Microsoft David"
+    assert panel.selected_voice() == "TOKEN_DAVID"
     assert panel.txt_privacy.GetValue() == _("voice_windows_privacy")
     assert panel.txt_privacy.IsEditable() is False
     assert panel.txt_privacy.IsMultiLine()
     # The fallback lists the Windows voices after the screen reader.
     fallbacks = panel.choice_fallback.GetStrings()
     assert fallbacks[0] == _("voice_fallback_reader") and len(fallbacks) == 4, fallbacks
-    state["focus"] = browse_list(panel.lst_voices, panel)
+
+    def windows_language(i):
+        # Andika has no gender, so Indonesian offers only "All voices".
+        genders, names = WINDOWS_CHOICES[tags[i]]
+        assert strings(panel.choice_gender) == genders, (tags[i], strings(panel.choice_gender))
+        assert panel.choice_gender.GetStringSelection() == ALL
+        assert strings(panel.choice_voice) == names, (tags[i], strings(panel.choice_voice))
+        assert panel.choice_voice.GetStringSelection() == names[0]
+
+    state["focus"] = browse(panel.choice_language, list(range(len(tags))) + [0],
+                            windows_language)
     print(f"OK windows_voices ({focus_note(state['focus'])})")
 
-    # Another source: a "Loading voices…" row at once, focus stays on the choice.
+    # Another source: "Loading voices…" in all three choices at once, and
+    # focus stays on the source.
     panel.choice_source.SetFocus()
     pump(lambda: wx.Window.FindFocus() is panel.choice_source, timeout=1.0)
     source_focus = wx.Window.FindFocus() is panel.choice_source
     panel.choice_source.SetSelection(panel.choice_source.FindString("Fake online voices"))
     fire(panel.choice_source, wx.EVT_CHOICE, panel.choice_source.GetSelection())
-    assert rows(panel.lst_voices) == [(_("voice_loading"), "")], rows(panel.lst_voices)
+    loading = [_("voice_loading")]
+    assert [strings(c) for c in voice_choices(panel)] == [loading] * 3, \
+        [strings(c) for c in voice_choices(panel)]
+    assert panel.selected_voice() is None
     assert panel.txt_privacy.GetValue() == "Fake voices send your text to nobody."
     if source_focus:
         assert wx.Window.FindFocus() is panel.choice_source, "switching the source moved focus"
     assert pump(lambda: loaded(panel)), "the second source's voices never loaded"
     if source_focus:
-        assert wx.Window.FindFocus() is panel.choice_source, "the loaded list took focus"
-    languages = [language for name, language in rows(panel.lst_voices)]
-    assert [name for name, language in rows(panel.lst_voices)][0] == "Aria", rows(panel.lst_voices)
-    assert len(languages) == 4
-    state["focus"] = browse_list(panel.lst_voices, panel) and state["focus"] and source_focus
+        assert wx.Window.FindFocus() is panel.choice_source, "the loaded voices took focus"
+    tags = expected_languages(list(FAKE_CHOICES))
+    assert tags[:2] == ["en-GB", "en-US"], tags        # English, by tag
+    assert strings(panel.choice_language) == [core.voice.language_name(t) for t in tags]
+    # Nothing saved for this source: its first language, All voices, the first voice.
+    assert panel.choice_language.GetSelection() == 0
+    assert panel.choice_gender.GetStringSelection() == ALL
+    assert strings(panel.choice_voice) == ["Sonia"]
+    assert panel.selected_voice() == "en-GB-SoniaNeural"
+
+    def fake_language(i):
+        # Gender and Voice refill for each language; nothing was picked there yet.
+        genders, names = FAKE_CHOICES[tags[i]]
+        assert strings(panel.choice_gender) == genders, (tags[i], strings(panel.choice_gender))
+        assert panel.choice_gender.GetStringSelection() == ALL
+        assert strings(panel.choice_voice) == names, (tags[i], strings(panel.choice_voice))
+        assert panel.choice_voice.GetStringSelection() == names[0]
+        assert panel.choice_gender.IsEnabled() and panel.choice_voice.IsEnabled()
+
+    focus = browse(panel.choice_language, list(range(len(tags))) + [0], fake_language)
+    state["focus"] = state["focus"] and source_focus and focus
     print(f"OK switch_source ({focus_note(state['focus'])})")
 
-    # Choose Gadis, a rate and a volume, and press Test: the fake speaks the
-    # test sentence with the unsaved choices, and braille gets it too.
-    lst = panel.lst_voices
-    gadis = [name for name, language in rows(lst)].index("Gadis")
-    selected = wx.LIST_STATE_SELECTED | wx.LIST_STATE_FOCUSED
-    lst.SetItemState(gadis, selected, selected)
-    pump(lambda: False, timeout=0.1)
+    # Indonesian: arrow through Gender, then through Voice.
+    indonesian = tags.index("id-ID")
+    pick(panel.choice_language, indonesian)
+    by_gender = {0: ["Ardi", "Gadis"], 1: ["Gadis"], 2: ["Ardi"]}
+
+    def gender_step(i):
+        assert panel.choice_language.GetSelection() == indonesian
+        assert strings(panel.choice_gender) == [ALL, FEMALE, MALE]
+        assert strings(panel.choice_voice) == by_gender[i], (i, strings(panel.choice_voice))
+
+    focus = browse(panel.choice_gender, [0, 1, 2, 1], gender_step)
+    assert panel.choice_gender.GetStringSelection() == FEMALE
     assert panel.selected_voice() == "id-ID-GadisNeural"
     assert prefs.is_dirty, "choosing a voice did not mark Preferences as changed"
+    pick(panel.choice_gender, 0)
+    assert panel.choice_voice.GetStringSelection() == "Gadis", "All voices lost the voice"
+    ids = ["id-ID-ArdiNeural", "id-ID-GadisNeural"]
+
+    def voice_step(i):
+        assert panel.selected_voice() == ids[i]
+        assert strings(panel.choice_voice) == ["Ardi", "Gadis"]
+        assert panel.choice_gender.GetSelection() == 0
+        assert panel.choice_language.GetSelection() == indonesian
+
+    focus = browse(panel.choice_voice, [0, 1, 0, 1], voice_step) and focus
+    state["focus"] = state["focus"] and focus
+    print(f"OK gender_and_voice ({focus_note(state['focus'])})")
+
+    # Each language remembers the voice picked in it on this page.
+    pick(panel.choice_gender, 1)
+    assert panel.selected_voice() == "id-ID-GadisNeural"
+    english = tags.index("en-US")
+    pick(panel.choice_language, english)
+    assert panel.choice_gender.GetStringSelection() == ALL     # nothing picked there yet
+    assert panel.choice_voice.GetStringSelection() == "Aria"
+    assert panel.selected_voice() == "en-US-AriaNeural"
+    pick(panel.choice_gender, 2)
+    assert strings(panel.choice_voice) == ["Guy"] and panel.selected_voice() == "en-US-GuyNeural"
+    pick(panel.choice_language, indonesian)
+    assert panel.choice_gender.GetStringSelection() == FEMALE
+    assert panel.choice_voice.GetStringSelection() == "Gadis"
+    pick(panel.choice_language, english)
+    assert panel.choice_gender.GetStringSelection() == MALE
+    assert panel.selected_voice() == "en-US-GuyNeural"
+    pick(panel.choice_language, tags.index("fr-FR"))
+    assert panel.selected_voice() == "fr-FR-DeniseNeural"
+    pick(panel.choice_language, indonesian)
+    assert panel.choice_gender.GetStringSelection() == FEMALE
+    assert panel.selected_voice() == "id-ID-GadisNeural"
+    print("OK remember_language")
+
+    # A source whose list fails: the error in Language, Gender and Voice
+    # empty and disabled. Back to the fake voices, as they were left.
+    broken_index = panel.choice_source.FindString("Broken voices")
+    panel.choice_source.SetSelection(broken_index)
+    fire(panel.choice_source, wx.EVT_CHOICE, broken_index)
+    assert [strings(c) for c in voice_choices(panel)] == [loading] * 3
+    failed = _("voice_load_failed", error="the voice list is broken")
+    assert pump(lambda: strings(panel.choice_language) == [failed]), \
+        strings(panel.choice_language)
+    assert panel.choice_language.IsEnabled()
+    for choice in (panel.choice_gender, panel.choice_voice):
+        assert choice.GetCount() == 0 and not choice.IsEnabled(), choice.GetName()
+    assert panel.selected_voice() is None
+    fake_index = panel.choice_source.FindString("Fake online voices")
+    panel.choice_source.SetSelection(fake_index)
+    fire(panel.choice_source, wx.EVT_CHOICE, fake_index)
+    assert panel.choice_gender.IsEnabled() and panel.choice_voice.IsEnabled()
+    assert panel.choice_language.GetStringSelection() == core.voice.language_name("id-ID")
+    assert panel.choice_gender.GetStringSelection() == FEMALE
+    assert panel.choice_voice.GetStringSelection() == "Gadis"
+    print("OK load_error")
+
+    # A rate and a volume, and Test: the fake speaks the test sentence with
+    # the unsaved choices (Gadis), and braille gets it too.
     panel.spin_rate.SetValue(3)
     panel.spin_volume.SetValue(80)
     focus_before = wx.Window.FindFocus()
@@ -435,6 +593,15 @@ assert panel.spin_rate.GetValue() == 3 and panel.spin_volume.GetValue() == 80
 assert panel.chk_stop_on_key.GetValue() is False
 assert pump(lambda: loaded(panel))
 assert panel.selected_voice() == "id-ID-GadisNeural"
+# The saved voice is preselected: its language, its gender, then the voice.
+indonesian_name = core.voice.language_name("id-ID")
+if core.voice.language_name("en-US") == "English (United States)":   # Windows in English (CI)
+    assert indonesian_name == "Indonesian (Indonesia)", indonesian_name
+assert panel.choice_language.GetStringSelection() == indonesian_name
+assert panel.choice_gender.GetStringSelection() == "Female"
+assert strings(panel.choice_gender) == ["All voices", "Female", "Male"]
+assert panel.choice_voice.GetStringSelection() == "Gadis"
+assert strings(panel.choice_voice) == ["Gadis"]
 assert pump(lambda: panel.choice_fallback.GetCount() == 4)
 assert panel.choice_fallback.GetSelection() > 0
 assert "Zira" in panel.choice_fallback.GetStringSelection()
