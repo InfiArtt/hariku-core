@@ -55,7 +55,7 @@ def download_url(ext_id):
 
 
 def registry_entry(ext_id, manifest):
-    return {
+    entry = {
         "id": ext_id,
         "name": manifest["name"],
         "version": manifest["version"],
@@ -63,6 +63,12 @@ def registry_entry(ext_id, manifest):
         "author": manifest["author"],
         "download_url": download_url(ext_id),
     }
+    # The Extension Manager (core 2.8+) marks an entry that needs a newer Hariku,
+    # or is too old for this one, instead of offering to install it.
+    for key in ("minimum_core_version", "last_tested_core_version"):
+        if manifest.get(key):
+            entry[key] = str(manifest[key])
+    return entry
 
 
 def merge_registry(registry, entries):

@@ -37,6 +37,14 @@ def test_registry_entry_points_at_an_allowed_download_url(pub):
     entry = pub.registry_entry("routines", MANIFEST)
     assert entry["id"] == "routines" and entry["version"] == "1.0"
     assert core.endpoints.is_trusted_download_url(entry["download_url"])
+    assert "minimum_core_version" not in entry
+
+
+def test_registry_entry_carries_the_core_versions(pub):
+    entry = pub.registry_entry("weather", dict(MANIFEST, minimum_core_version="2.8",
+                                               last_tested_core_version="2.9"))
+    assert entry["minimum_core_version"] == "2.8"
+    assert entry["last_tested_core_version"] == "2.9"
 
 
 def test_merge_registry_replaces_in_place_and_appends(pub):

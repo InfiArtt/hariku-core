@@ -358,26 +358,60 @@ Access the Extension Manager from:
   - Menu: Extensions > Manage Extensions
   - Keyboard: Ctrl + X
 
-The Extension Manager is where you install, enable, disable, and remove
-extensions. It has two sections: Installed and Store.
+The Extension Manager is where you install, update, enable, disable and
+remove extensions. It has four tabs; Ctrl+Tab moves to the next one. Every
+tab has the same controls, in this order:
+  Search      Type a word from an extension's name, description or author.
+              The list narrows as you type, and Hariku says how many match
+              when you stop typing.
+  Extensions  The list: Name, Version and Status.
+  Details     Who made the extension, where it came from, what's new or
+              wrong, and what it does.
+  Buttons     The tab's buttons. A button that can't be used for the
+              selected extension is skipped by Tab.
+Below the tabs, Refresh asks the Extension Store again and Close (or Escape)
+closes the window. The Installed tab is ready at once; the other tabs fill in
+when the store answers, and Hariku remembers the answer for ten minutes.
 
 INSTALLED TAB
 --------------
-Lists every extension currently installed. For each extension you can:
+Every installed extension that can run on this Hariku.
   Enable / Disable
-      Disabling an extension unloads it from memory but keeps it installed.
-      Re-enabling it requires a restart of Hariku.
-  Remove
-      Permanently deletes the extension from disk.
+      Disabling an extension keeps it installed but stops it from loading.
+      Restart Hariku to finish.
+  Remove (or Delete in the list)
+      Deletes the extension from your computer, after asking you. Extensions
+      that come with Hariku can be disabled but not removed.
+  Update
+      When the store has a newer version, its Status says so.
+The Status also says when an extension isn't running: it needs a newer
+Hariku, its manifest is broken, or it stopped with an error when Hariku
+started. Details says which, and what to do.
 
-When you make changes that require a restart, the Extension Manager will
-prompt you. Choose Yes to restart immediately, or No to restart manually later.
+UPDATES TAB
+------------
+The installed extensions the store has a newer version of, such as
+"Weather, 1.1 to 1.2, Ready to update". Update (or Enter) updates the
+selected one and "Update all" updates them all. A new version that needs a
+newer Hariku says "Needs Hariku 2.9" and can't be installed; "Check for
+Hariku updates" gets the new Hariku, and the version you have keeps working.
 
-STORE TAB (HARIKU STORE)
--------------------------
-Browse and download official and community extensions directly from inside
-Hariku. The store connects to the Hariku server to fetch available packages.
-Select an extension and click Install to download and install it.
+AVAILABLE TAB
+--------------
+The store's extensions you don't have yet, official and community. Install
+(or Enter) downloads the selected one. An extension that needs a newer
+Hariku says so and can't be installed.
+
+INCOMPATIBLE TAB
+-----------------
+Like NVDA's add-on store: extensions made for a Hariku older than this one
+still runs. Hariku doesn't load them. Update one if the store has a newer
+version, or remove it. No Hariku 2 update has broken older extensions, so
+this tab is empty for now.
+
+Nothing jumps while you work: an extension you install, update or remove
+stays where it is in the list, and its Status says what happened (for
+example "Installed, restart Hariku to use it").
 
 EXTENSION UPDATES
 ------------------
