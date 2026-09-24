@@ -205,7 +205,7 @@
         "menu_reminders": "&Reminders",
         "menu_add_reminder": "&Add reminder... (Enter)",
         "menu_quick_reminder": "&Quick reminder...",
-        "menu_with_shortcut": "{label} ({key})",
+        "menu_with_shortcut": "{label} ({shortcut})",
         "nav_quick_reminder": "Quick reminder",
         "qr_title": "Quick reminder",
         "qr_lbl_input": "What should I remind you about, and when? For example: take medicine tomorrow at 8 am, every day",

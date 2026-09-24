@@ -67,7 +67,7 @@ def test_readback_english(lang):
 
 @pytest.mark.parametrize("text, language, expected", [
     ("rapat besok", "id",
-     "Rapat, Jumat 25 September 2026, jam 09:00. Anda tidak menyebut jam, jadi saya pakai "
+     "Rapat, Jumat 25 September 2026, jam 09:00. Kamu tidak menyebut jam, jadi aku pakai "
      "jam 09:00. Simpan?"),
     ("rapat besok", "en",
      "Rapat, Friday 25 September 2026, at 09:00. You didn't say a time, so I used 09:00. Save?"),
@@ -119,7 +119,7 @@ def test_readback_problems_offer_the_full_dialog(lang, text, key):
 def test_readback_without_a_title(lang):
     lang("id")
     assert quick.readback(parse("besok jam 8")) == (
-        "Saya tangkap Jumat 25 September 2026, jam 08:00, tapi belum tahu apa yang perlu "
+        "Aku tangkap Jumat 25 September 2026, jam 08:00, tapi belum tahu apa yang perlu "
         "diingatkan. Tambahkan ke kalimatnya.")
 
 
@@ -154,7 +154,7 @@ def test_fill_values_without_a_result():
      "Minum obat, Friday 25 September 2026, at 08:00, every 2 days. "
      "The fields are filled in; check them, then save."),
     ("rapat besok", "id",
-     "Rapat, Jumat 25 September 2026, jam 09:00. Anda tidak menyebut jam, jadi saya pakai "
+     "Rapat, Jumat 25 September 2026, jam 09:00. Kamu tidak menyebut jam, jadi aku pakai "
      "jam 09:00. Kolom-kolomnya sudah diisi; periksa, lalu simpan."),
     ("besok jam 8", "en",
      "I filled in Friday 25 September 2026, at 08:00, but not what to remind you about. "
@@ -286,10 +286,16 @@ def test_locale_wording():
     assert id_["rem_lbl_sentence"] == "Atau ketik dalam satu kalimat:"
     assert en["rem_every_day_n"].format(n=2) == "every 2 days"
     assert id_["rem_every_day_n"].format(n=2) == "setiap 2 hari"
-    # The core says "Anda", not "kamu".
-    assert "Anda" in id_["qr_rb_time_assumed"]
-    ours = [v for k, v in id_.items() if k.startswith(NEW_PREFIXES)]
-    assert not [v for v in ours if "kamu" in v.lower().split()], "the core uses Anda"
+    # The spoken read-back talks like a person ("kamu"/"aku", the user's choice);
+    # the rest of the core's new strings keep the core's "Anda".
+    assert id_["qr_rb_time_assumed"].startswith("Kamu tidak menyebut jam, jadi aku pakai")
+    spoken = ("qr_rb_", "qr_lbl_readback", "qr_readback_hint")
+    for key, value in id_.items():
+        words = value.lower().replace(",", " ").replace(".", " ").split()
+        if key.startswith(spoken):
+            assert "anda" not in words and "saya" not in words, key
+        elif key.startswith(NEW_PREFIXES):
+            assert "kamu" not in words, key
 
 
 # --- the N key --------------------------------------------------------------------------------
