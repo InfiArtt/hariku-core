@@ -116,6 +116,17 @@ Every extension **must** have a `manifest.json` in its root folder.
 | `main` | string | ✅ | Entry point filename (usually `"main.py"`) |
 | `language` | string | ✅ | Language code (e.g., `"en"`, `"id"`) |
 | `minimum_core_version` | string | ✅ | Minimum Hariku core version required (e.g., `"2.0"`) |
+| `last_tested_core_version` | string | – | The newest Hariku you tested it with (e.g., `"2.8"`). Optional; see below |
+
+**Compatibility.** Hariku doesn't load an extension that needs a newer core (`minimum_core_version`), and
+the Extension Manager shows it, or a store update of it, as "Needs Hariku 2.9" instead of installing it.
+Each core also has an oldest extension API it still runs, `core.constants.EXTENSION_API_BACK_COMPAT`
+(currently `"1.0"`: no 2.x release has broken older extensions). An extension made for an older core
+(its `last_tested_core_version`, or its `minimum_core_version` when it has none) is incompatible: Hariku
+doesn't load it and lists it on the Extension Manager's Incompatible tab, as NVDA does for old add-ons.
+When a core release does break older extensions, it raises that version; set `last_tested_core_version`
+after testing with a new core so your extension keeps running. `tools/publish_extensions.py` copies both
+fields into the store's registry (core 2.8+ reads them).
 
 ---
 

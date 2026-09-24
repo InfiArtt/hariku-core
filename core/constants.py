@@ -10,6 +10,13 @@
 APP_NAME = "Hariku"
 CORE_VERSION = "2.8.0"
 
+# The oldest Hariku an extension can be made for and still run here: an
+# extension whose last_tested_core_version (or, without one, its
+# minimum_core_version) is older is incompatible, like an NVDA add-on older
+# than NVDA's backwards-compatible API. Raise it only when a core change breaks
+# older extensions; no 2.x change has, so every extension made so far runs.
+EXTENSION_API_BACK_COMPAT = "1.0"
+
 # Split major and minor for extension validation (e.g. "2.0").
 _parts = CORE_VERSION.split(".")
 if len(_parts) >= 2:

@@ -25,6 +25,20 @@ Versi 2.8.0 (Pembaruan Inti)
   Tsunami dan Antariksa menghitung semuanya di komputermu, sedangkan Radar
   Pesawat dan Kokpit tetap hanya mengirim titik yang dibulatkan atau kotak
   yang lebar.
+- Pengelola Ekstensi (Ctrl+X) sekarang punya empat tab: Terpasang, Pembaruan,
+  Tersedia, dan Tidak kompatibel. Tiap tab punya kotak Cari, daftar (Nama,
+  Versi, Status), kotak Detail, dan hanya tombol yang dibutuhkan tab itu.
+  Tab Pembaruan punya "Perbarui semua". Jendelanya langsung terbuka: tab-tab
+  dari store terisi begitu store menjawab, dan Hariku tidak lagi macet saat
+  mengunduh. Memasang, memperbarui, atau menghapus tidak memindahkan posisimu
+  di daftar; Status menyebutkan apa yang terjadi, dan Hariku mengucapkannya.
+- Ekstensi, atau pembaruannya, yang butuh Hariku lebih baru sekarang bertulisan
+  "Butuh Hariku 2.9" dan tidak bisa dipasang, dengan tombol "Cek pembaruan
+  Hariku" di sebelahnya. Tab Terpasang juga menyebutkan kalau ada ekstensi
+  yang tidak jalan karena manifest-nya rusak atau berhenti karena error.
+- Tab Tidak kompatibel, seperti di NVDA, berisi ekstensi yang dibuat untuk
+  Hariku yang lebih lama dari yang masih didukung Hariku ini. Belum ada
+  pembaruan yang merusak ekstensi lama, jadi untuk sekarang tab ini kosong.
 - Pembaruan ekstensi di Toko, untuk Hariku 2.8: Cuaca 1.2, Kondisi Laut 1.2,
   Kualitas Udara 1.2, Gempa & Tsunami 1.2, Antariksa 1.1, Kokpit 1.1, dan
   Radar Pesawat 1.7.
