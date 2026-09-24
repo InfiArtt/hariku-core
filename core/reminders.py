@@ -16,6 +16,7 @@ import threading
 import time
 import logging
 import core.api
+import core.personal
 from core.events import bus
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,15 @@ def load_reminders():
             except Exception as e2:
                 logger.error(f"Reminders backup also failed to load: {e2}")
     return []
+
+def expanded_copy(r):
+    """A copy of reminder `r` for announcing or showing it: %placeholders% in its
+    title and notes are filled in from the profile. The stored text stays raw."""
+    shown = dict(r)
+    for key in ("title", "notes"):
+        if isinstance(shown.get(key), str):
+            shown[key] = core.personal.expand(shown[key])
+    return shown
 
 def get_reminders_for_date(date_str):
     reminders = load_reminders()
@@ -101,7 +111,7 @@ def mark_as_done(rem_id):
             save_reminders(reminders)
             
             from core.speech import speak
-            speak(f"Reminder '{r['title']}' marked as done.", interrupt=True)
+            speak(f"Reminder '{core.personal.expand(r['title'])}' marked as done.", interrupt=True)
             break
 
 def delete_reminder(rem_id):
@@ -131,7 +141,7 @@ def snooze_reminder(rem_id, minutes=5):
             save_reminders(reminders)
             
             from core.speech import speak
-            speak(f"Reminder '{r['title']}' snoozed for {minutes} minutes.", interrupt=True)
+            speak(f"Reminder '{core.personal.expand(r['title'])}' snoozed for {minutes} minutes.", interrupt=True)
             break
 
 class ReminderDialog(wx.Dialog):
@@ -174,7 +184,10 @@ class ReminderDialog(wx.Dialog):
         self.EndModal(2)
 
 def show_notification(r):
-    message = f"Reminder: {r['title']}"
+    # Speak and show the text with the profile's %placeholders% filled in; the
+    # event and the stored reminder keep the raw text.
+    shown = expanded_copy(r)
+    message = f"Reminder: {shown['title']}"
 
     # Let extensions (e.g. Routines) react to a reminder firing.
     try:
@@ -191,7 +204,7 @@ def show_notification(r):
     from core.sounds import play_sound
     play_sound(r"C:\Windows\Media\Windows Notify Calendar.wav")
     
-    dlg = ReminderDialog(top_window, r)
+    dlg = ReminderDialog(top_window, shown)
     dlg.Raise()
     result = dlg.ShowModal()
     

@@ -1,3 +1,21 @@
+Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
+================================================================================
+- Profil kamu: di Pengaturan ada halaman Profil baru untuk namamu, panggilan
+  yang dipakai Hariku untukmu, dan placeholder buatanmu sendiri, misalnya
+  %kantor% untuk alamat kantormu. Profil ini tetap di komputermu, tapi
+  disimpan tanpa enkripsi, jadi jangan simpan kata sandi di sana.
+- Placeholder: tulis %myname%, %mynickname%, atau placeholder buatanmu di
+  pengingat atau rutinitas, dan Hariku mengisinya saat pengingat dibacakan
+  atau rutinitas berjalan. Briefing Pagi 1.1 menyapamu dengan nama ("Selamat
+  pagi, Budi.").
+- Routines 1.1 juga menerima %time%, %date%, %battery%, dan placeholder
+  lainnya dengan cara tulis ini; bentuk lama {time} tetap berfungsi. Di
+  pembuat rutinitasnya ada tombol "Insert placeholder" yang menampilkan
+  semuanya, dan aksi membukanya mengenali variabel Windows seperti
+  %USERPROFILE%. Perbarui kedua extension itu di Extension Manager.
+- Baru di store extension: Gempa & Tsunami (G), Kondisi Laut (O), Kualitas
+  Udara (U), dan Antariksa (A).
+
 Versi 2.6.0 (Pembaruan Inti - 23 September 2026)
 ================================================================================
 - Tema suara: dengan extension Sound Themes yang baru, kamu bisa mengganti
