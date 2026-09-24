@@ -75,8 +75,8 @@ Version 2.7.0 (Core Update - September 24, 2026)
   greeting when you open Hariku yourself. A placeholder that comes out empty
   leaves no gap.
 - More placeholders, filled in when the text is used: %greeting%, %time%,
-  %day%, %date%, %zulu% (the time in UTC) and %reminders% ("3 reminders
-  today"), plus %weather% from Weather, %sleep% from Sleep Pattern and
+  %day%, %date%, %zulu% (the time in UTC), %reminders% ("3 reminders
+  today") and %version% (Hariku's version), plus %weather% from Weather, %sleep% from Sleep Pattern and
   %airportweather% from Cockpit. They read what is already on your computer,
   so they never wait for the internet. Other extensions can add their own.
 - When Windows starts Hariku, the greeting now waits until the computer is
