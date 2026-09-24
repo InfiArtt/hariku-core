@@ -197,6 +197,204 @@ class TestVoiceActivity:
         assert audio.rms(array.array("h", [3, -3, 3, -3])) == 3.0
 
 
+# ------------------------------------------------------------
+# Microphone sensitivity
+# ------------------------------------------------------------
+
+def room(ms, level, seed=1):
+    """Room noise with an RMS of about `level`."""
+    return noise(ms, amplitude=level * math.sqrt(3), seed=seed)
+
+
+def voice(ms, level):
+    """A steady "voice" with an RMS of `level`: a 200 Hz tone, six whole
+    periods in each 30 ms frame (keep `ms` a multiple of 30)."""
+    return tone(ms, amplitude=level * math.sqrt(2), freq=200.0)
+
+
+def quiet_sentence(low=150, high=250, words=5, seed=7):
+    """Words between `low` and `high` (RMS) with short gaps of room (RMS 20)
+    between them, the way a laptop microphone with a low input level hears a
+    normal voice."""
+    rng = random.Random(seed)
+    out = b""
+    for i in range(words):
+        out += voice(rng.choice((240, 300, 360)), rng.uniform(low, high))
+        out += room(rng.choice((60, 90, 120)), 20, seed=seed + i)
+    return out
+
+
+def run(vad, data):
+    for piece in chunks(data):
+        if vad.feed(piece) in vad.FINISHED:
+            break
+    return vad.state
+
+
+class TestSensitivity:
+    def test_the_presets(self):
+        assert audio.SENSITIVITY == {"low": (400.0, 3.5), "normal": (150.0, 2.5),
+                                     "high": (80.0, 2.0), "very_high": (40.0, 1.6)}
+        assert audio.SENSITIVITIES == ("low", "normal", "high", "very_high")
+        assert audio.DEFAULT_SENSITIVITY == "normal"
+        vad = audio.VoiceActivity()
+        assert (vad.sensitivity, vad.min_level, vad.ratio) == ("normal", 150.0, 2.5)
+        vad = audio.VoiceActivity(sensitivity="very_high")
+        assert (vad.min_level, vad.ratio) == (40.0, 1.6)
+        vad = audio.VoiceActivity(sensitivity="shouting")
+        assert (vad.sensitivity, vad.min_level, vad.ratio) == ("normal", 150.0, 2.5)
+        vad = audio.VoiceActivity(sensitivity="low", min_level=500, ratio=4)
+        assert (vad.min_level, vad.ratio) == (500.0, 4.0)
+
+    @pytest.mark.parametrize("name, quiet_room, loud_room", [
+        ("low", (400, 240), (700, 420)),
+        ("normal", (150, 90), (500, 300)),
+        ("high", (80, 48), (400, 250)),
+        ("very_high", (40, 25), (320, 250)),
+    ])
+    def test_each_presets_thresholds(self, name, quiet_room, loud_room):
+        vad = audio.VoiceActivity(sensitivity=name)
+        start, keep = vad.thresholds()
+        assert start == vad.min_level and keep == pytest.approx(0.6 * start)
+        vad.noise = 20.0
+        assert vad.thresholds() == pytest.approx(quiet_room)
+        vad.noise = 200.0
+        assert vad.thresholds() == pytest.approx(loud_room)
+        # "Keep speaking" stays relative, but never at the room's own level.
+        assert vad.thresholds()[1] >= 1.25 * vad.noise
+        assert audio.start_level(name, 20.0) == pytest.approx(quiet_room[0])
+
+    def test_quiet_speech_in_a_quiet_room(self):
+        clip = room(420, 20) + quiet_sentence() + room(1500, 20, seed=3)
+        normal = audio.VoiceActivity()
+        assert run(normal, clip) == normal.DONE and normal.heard_speech
+        assert 400 <= normal.speech_start_ms <= 460
+        low = audio.VoiceActivity(sensitivity="low")
+        run(low, clip)
+        assert not low.heard_speech
+        first = audio.VoiceActivity(min_level=300.0, ratio=3.0)   # what the first version needed
+        run(first, clip)
+        assert not first.heard_speech
+        for name in ("high", "very_high"):
+            vad = audio.VoiceActivity(sensitivity=name)
+            assert run(vad, clip) == vad.DONE, name
+
+    def test_each_preset_hears_a_normal_voice_and_ends(self):
+        clip = room(420, 20) + voice(900, 3000) + room(1500, 20, seed=2)
+        for name in audio.SENSITIVITIES:
+            vad = audio.VoiceActivity(sensitivity=name)
+            assert run(vad, clip) == vad.DONE, name
+            assert 1250 <= vad.speech_end_ms <= 1350 and not vad.noisy
+
+    def test_the_room_alone_is_not_speech(self):
+        for level in (20, 300, 1500):
+            for name in audio.SENSITIVITIES:
+                vad = audio.VoiceActivity(sensitivity=name, start_timeout_ms=3000)
+                assert run(vad, room(4000, level, seed=level)) == vad.NO_SPEECH, (name, level)
+
+    def test_a_noisy_room(self):
+        clip = room(420, 1500) + voice(900, 11000) + room(1500, 1500, seed=2)
+        for name in audio.SENSITIVITIES:
+            vad = audio.VoiceActivity(sensitivity=name)
+            assert run(vad, clip) == vad.DONE and vad.heard_speech, name
+
+    def test_noise_that_starts_later_is_ended_by_the_cap(self):
+        # Quiet while the room is measured, then a vacuum cleaner: it starts
+        # "speech" that never pauses, and only the 12-second cap ends it.
+        vad = audio.VoiceActivity(max_ms=12000)
+        assert run(vad, room(150, 20) + room(13000, 3000, seed=4)) == vad.TOO_LONG
+        assert vad.elapsed_ms == 12000 and vad.noisy
+
+    def test_long_speech_with_pauses_is_not_noise(self):
+        clip = room(300, 20) + b"".join(voice(600, 3000) + room(300, 20, seed=i)
+                                        for i in range(16))
+        vad = audio.VoiceActivity(max_ms=12000)
+        assert run(vad, clip) == vad.TOO_LONG
+        assert vad.longest_pause_ms >= 270 and not vad.noisy
+
+    def test_a_quiet_voice_never_becomes_the_room(self):
+        # Murmuring below the start level for 3 seconds (a voice too quiet to
+        # start, or someone warming up): the room must stay the room, or the
+        # start level would climb away from the voice.
+        rng = random.Random(11)
+        murmur = b"".join(voice(30, rng.uniform(35, 140)) for _i in range(100))
+        vad = audio.VoiceActivity(start_timeout_ms=20000)
+        run(vad, room(300, 20) + murmur)
+        assert vad.state == vad.WAITING
+        assert vad.noise < 25
+        assert vad.thresholds()[0] == 150.0
+        assert run(vad, voice(600, 180) + room(1500, 20, seed=5)) == vad.DONE
+
+    def test_the_room_is_followed_down_quickly_and_up_slowly(self):
+        vad = audio.VoiceActivity(start_timeout_ms=20000)
+        run(vad, room(150, 60) + room(1500, 20, seed=2))
+        assert vad.noise == pytest.approx(20, abs=3)          # quieter: followed
+        run(vad, room(3000, 26, seed=3))
+        assert 23 < vad.noise < 28                            # a little louder: followed
+        run(vad, room(3000, 60, seed=4))
+        assert vad.noise < 30                                 # much louder: not the room
+
+
+# ------------------------------------------------------------
+# The microphone test's calibration
+# ------------------------------------------------------------
+
+class TestCalibration:
+    def test_frame_levels(self):
+        levels = audio.frame_levels(voice(300, 200) + room(300, 20))
+        assert len(levels) == 20
+        assert levels[:10] == [pytest.approx(200, abs=1)] * 10
+        assert all(15 < level < 25 for level in levels[10:])
+        assert audio.frame_levels(b"") == [] and audio.frame_levels(bytes(100)) == []
+
+    def test_measure(self):
+        assert audio.measure([20.0] * 50 + [200.0] * 40 + [21.0] * 30) == (20.0, 200.0)
+        levels = audio.frame_levels(room(600, 20) + quiet_sentence() + room(1500, 20, seed=3))
+        room_level, voice_level = audio.measure(levels)
+        assert 15 < room_level < 25 and 190 < voice_level < 260
+        assert audio.measure(audio.frame_levels(room(4000, 20)))[1] is None    # nobody spoke
+        assert audio.measure([20.0] * 100 + [500.0] * 5)[1] is None           # a click
+        assert audio.measure([0.0] * 50 + [300.0] * 20) == (0.0, 300.0)       # a noise gate
+        assert audio.measure([]) == (0.0, None)
+
+    @pytest.mark.parametrize("room_level, voice_level, sensitivity, problem", [
+        (20, 1000, "very_high", None),      # a quiet room: as sensitive as it gets
+        (20, 200, "very_high", None),       # the laptop microphone with a low level
+        (0, 500, "very_high", None),        # a noise gate: the room is digital silence
+        (40, 400, "high", None),            # -58 dB: Very high's own level is too close
+        (80, 1000, "normal", None),         # -52 dB: a fan
+        (200, 3000, "low", None),           # -44 dB: a loud fan, a loud voice
+        (30, 150, "very_high", None),       # High wouldn't hear it: one step more
+        (300, 5000, "low", None),           # louder than any preset allows; Low still hears
+        (300, 1600, "normal", None),        # ...and Normal when Low doesn't
+        (20, 60, "very_high", "too_quiet"),
+        (10, 70, "very_high", "too_quiet"),
+        (100, 250, "normal", "too_noisy"),
+        (500, 1200, "low", "too_noisy"),
+        (20, None, None, "no_speech"),
+    ])
+    def test_calibrate(self, room_level, voice_level, sensitivity, problem):
+        result = audio.calibrate(room_level, voice_level)
+        assert (result.sensitivity, result.problem) == (sensitivity, problem)
+        assert (result.room, result.voice) == (room_level, voice_level)
+
+    def test_the_rule_holds_everywhere(self):
+        levels = [0, 5, 10, 15, 20, 26, 30, 40, 53, 60, 80, 100, 150, 200, 266, 300, 500, 1000]
+        for room_level in levels:
+            for voice_level in [2 * room_level + v for v in (10, 40, 80, 150, 300, 800, 3000)]:
+                result = audio.calibrate(room_level, voice_level)
+                assert result.sensitivity in audio.SENSITIVITIES
+                if result.problem is None:
+                    # The voice is at least twice the start level...
+                    assert audio.start_level(result.sensitivity, room_level) <= voice_level / 2
+                    # ...and no more sensitive preset both hears it and suits the room.
+                    index = audio.SENSITIVITIES.index(result.sensitivity)
+                    for name in audio.SENSITIVITIES[index + 1:]:
+                        assert audio.SENSITIVITY[name][0] < 1.5 * room_level
+                else:
+                    assert audio.start_level("very_high", room_level) > voice_level / 2
+
+
 def test_wav_bytes_in_memory():
     data = tone(500)
     blob = audio.wav_bytes(data)
@@ -659,13 +857,32 @@ class TestInstall:
 class TestStore:
     def test_settings(self, userdata):
         assert store.load_settings() == {"model": "auto", "listen_on_open": True,
-                                         "silence_ms": 1000, "speeds": {}}
-        assert store.normalize_settings({"model": "huge", "silence_ms": 7, "speeds": {
-            "tiny": 1.63, "base": "fast", "small": -1, "giant": 3}}) == {
-            "model": "auto", "listen_on_open": True, "silence_ms": 1000,
+                                         "silence_ms": 1000, "sensitivity": "normal",
+                                         "speeds": {}}
+        assert store.normalize_settings({"model": "huge", "silence_ms": 7, "sensitivity": "max",
+                                         "speeds": {"tiny": 1.63, "base": "fast", "small": -1,
+                                                    "giant": 3}}) == {
+            "model": "auto", "listen_on_open": True, "silence_ms": 1000, "sensitivity": "normal",
             "speeds": {"tiny": 1.63}}
         store.save_settings({"model": "base", "listen_on_open": False, "silence_ms": 1500})
         assert store.load_settings()["model"] == "base"
+
+    def test_the_sensitivity_setting(self, userdata):
+        assert store.SENSITIVITY_CHOICES == ("low", "normal", "high", "very_high")
+        for name in store.SENSITIVITY_CHOICES:
+            assert store.normalize_settings({"sensitivity": name})["sensitivity"] == name
+        for bad in ("max", "", None, 3, ["high"], {"high": 1}, "HIGH"):
+            assert store.normalize_settings({"sensitivity": bad})["sensitivity"] == "normal"
+        store.save_settings(dict(store.load_settings(), sensitivity="very_high"))
+        assert store.load_settings()["sensitivity"] == "very_high"
+
+    def test_settings_saved_before_the_sensitivity_existed_get_normal(self, userdata):
+        import core.api
+        core.api.save_data(store.SETTINGS_NAME, {"model": "base", "listen_on_open": False,
+                                                 "silence_ms": 1500, "speeds": {"tiny": 1.5}})
+        assert store.load_settings() == {"model": "base", "listen_on_open": False,
+                                         "silence_ms": 1500, "sensitivity": "normal",
+                                         "speeds": {"tiny": 1.5}}
 
     def test_a_speed_is_measured_once(self, userdata):
         store.record_speed("tiny", 1.634)
@@ -1216,6 +1433,66 @@ class TestListening:
         with pytest.raises(audio.MicrophoneError):
             vc.test_microphone(listener, seconds=3.0)
 
+    def test_the_microphone_test_measures_a_sentence(self, vc):
+        assert vc.MIC_TEST_SECONDS == 5.0
+        clip = room(600, 20) + quiet_sentence() + room(3000, 20, seed=3)
+        listener, log = make_listener(vc, clip)
+        result = vc.test_microphone(listener)
+        assert result["seconds"] == pytest.approx(5.0, abs=0.11)
+        assert result["speech"] is True
+        assert 15 < result["room"] < 25 and 190 < result["voice"] < 260
+        assert result["calibration"] == audio.Calibration("very_high", None, result["room"],
+                                                          result["voice"])
+        assert log.played == ["listen.wav", "listen_end.wav"]
+        assert store.load_settings()["sensitivity"] == "normal"      # the page saves it, not the test
+
+    @pytest.mark.parametrize("clip, sensitivity, problem", [
+        (lambda: room(600, 10) + voice(1500, 60) + room(2900, 10, seed=2), "very_high", "too_quiet"),
+        (lambda: room(600, 400) + voice(1500, 1000) + room(2900, 400, seed=2), "low", "too_noisy"),
+        (lambda: room(5000, 1500), None, "no_speech"),
+    ])
+    def test_the_microphone_test_explains_problems(self, vc, clip, sensitivity, problem):
+        listener, log = make_listener(vc, clip())
+        calibration = vc.test_microphone(listener)["calibration"]
+        assert (calibration.sensitivity, calibration.problem) == (sensitivity, problem)
+
+    def test_a_quiet_voice_is_heard_at_normal_but_not_at_low(self, vc):
+        install_models(["tiny"])
+        clip = room(420, 20) + quiet_sentence() + room(4000, 20, seed=3)
+        listener, log = make_listener(vc, clip)
+        assert listen(listener, log)[-1] == ("text", "Gempa terbaru.")
+        vc.save_settings("auto", True, 1000, "low")
+        listener, log = make_listener(vc, clip)
+        assert listen(listener, log)[-1] == ("error", text._("err_no_speech"))
+        assert log.engine.calls == []
+        assert "sensitivity" in text._("err_no_speech")
+
+    def test_too_noisy_to_hear_the_end(self, vc):
+        install_models(["tiny"])
+        listener, log = make_listener(vc, room(150, 20) + room(14000, 3000, seed=4))
+        events = listen(listener, log)
+        message = text._("err_too_noisy", seconds=12)
+        assert events == [("listening", None), ("error", message)]
+        assert message.startswith("It was too noisy to hear when you stopped speaking")
+        assert "12 seconds" in message and "Enter" in message
+        assert log.engine.calls == [] and log.played[-1] == "listen_end.wav"
+
+    def test_twelve_seconds_of_speech_with_pauses_is_still_recognised(self, vc):
+        install_models(["tiny"])
+        clip = room(300, 20) + b"".join(voice(600, 3000) + room(300, 20, seed=i)
+                                        for i in range(16))
+        listener, log = make_listener(vc, clip)
+        assert listen(listener, log)[-1] == ("text", "Gempa terbaru.")
+
+    def test_saving_the_sensitivity(self, vc):
+        vc.save_settings("auto", True, 1000, "high")
+        assert store.load_settings()["sensitivity"] == "high"
+        assert vc.get_settings()["sensitivity"] == "high"
+        vc.save_settings("base", False, 800)            # without it, it stays
+        assert store.load_settings()["sensitivity"] == "high"
+        vc.controller.save_settings("auto", True, 1000, "very_high")
+        assert vc.get_settings()["sensitivity"] == "very_high"
+
     def test_the_tone_length_is_read_from_the_sound(self, vc):
         assert vc.tone_seconds("listen.wav") == pytest.approx(0.215, abs=0.01)
         assert vc.tone_seconds("nothing.wav") == vc.DEFAULT_TONE_SECONDS
@@ -1303,6 +1580,128 @@ class TestRegistration:
             core.commands.unregister_listener()
 
 
+# ------------------------------------------------------------
+# The page's logic, without windows
+# ------------------------------------------------------------
+
+class FakeChoice:
+    def __init__(self, selection):
+        self.selection = selection
+        self.selected = []
+
+    def GetSelection(self):
+        return self.selection
+
+    def SetSelection(self, index):
+        self.selected.append(index)
+        self.selection = index
+
+    def SetFocus(self):
+        raise AssertionError("focus moved")
+
+
+class FakeText:
+    value = None
+
+    def ChangeValue(self, value):
+        self.value = value
+
+    def SetFocus(self):
+        raise AssertionError("focus moved")
+
+
+@pytest.fixture
+def page(vc, monkeypatch):
+    """The page's methods on a stand-in without windows."""
+    import voice_control_ui as vui
+    panel_class = vui.VoiceControlPanel
+    said = []
+    monkeypatch.setattr(vui, "_announce", lambda message, interrupt=True, delay=0:
+                        said.append(message))
+    fake = types.SimpleNamespace(
+        _sensitivities=[name for name, _label in text.sensitivity_choices()], _testing=True,
+        choice_sensitivity=FakeChoice(1), txt_test=FakeText(), dirty=[], said=said,
+        _model_keys=[name for name, _label in text.model_choices()], choice_model=FakeChoice(0),
+        chk_listen=types.SimpleNamespace(GetValue=lambda: True), choice_silence=FakeChoice(2),
+        _silences=list(store.SILENCE_CHOICES), saved=[])
+    fake._usable = lambda: True
+    fake._mark_dirty = lambda: fake.dirty.append(True)
+    for name in ("_sensitivity_index", "select_sensitivity", "_test_done", "get_settings",
+                 "ApplyChanges"):
+        setattr(fake, name, getattr(panel_class, name).__get__(fake))
+    fake._c = types.SimpleNamespace(save_settings=lambda *values: fake.saved.append(values))
+    return fake
+
+
+class TestPage:
+    def test_the_sensitivity_choice(self, vc):
+        assert text.sensitivity_choices() == [("low", "Low"), ("normal", "Normal"),
+                                              ("high", "High"), ("very_high", "Very high")]
+
+    def test_calibration_messages(self, vc):
+        done = text.calibration_message(audio.Calibration("high", None, 26.0, 413.0))
+        assert done == "Your voice: -38 dB, the room: -62 dB. Sensitivity set to High."
+        quiet = text.calibration_message(audio.Calibration("very_high", "too_quiet", 20.0, 60.0))
+        assert quiet.startswith("Your voice: -55 dB, the room: -64 dB. Sensitivity set to "
+                                "Very high, but your voice is still too quiet.")
+        noisy = text.calibration_message(audio.Calibration("low", "too_noisy", 500.0, 1200.0))
+        assert noisy.startswith("Your voice: -29 dB, the room: -36 dB. Sensitivity set to Low, "
+                                "but the room is too noisy for your voice.")
+        for message in (quiet, noisy):
+            assert "Windows Settings, System, Sound, Input, Device properties" in message
+            assert "headset microphone" in message
+        nobody = text.calibration_message(audio.Calibration(None, "no_speech", 20.0, None))
+        assert nobody.startswith("I didn't hear you speak. The room: -64 dB.")
+
+    def test_calibration_messages_in_indonesian(self, vc, monkeypatch):
+        import core.i18n
+        monkeypatch.setattr(core.i18n, "_current_language", "id")
+        done = text.calibration_message(audio.Calibration("high", None, 26.0, 413.0))
+        assert done == "Suaramu -38 dB, ruangan -62 dB. Kepekaan diatur ke Tinggi."
+        quiet = text.calibration_message(audio.Calibration("very_high", "too_quiet", 20.0, 60.0))
+        assert "Sangat tinggi" in quiet and "terlalu pelan" in quiet and "headset" in quiet
+        noisy = text.calibration_message(audio.Calibration("low", "too_noisy", 500.0, 1200.0))
+        assert "terlalu bising" in noisy and "Properti perangkat" in noisy
+        assert "kamu" in text._("err_too_noisy", seconds=12)
+
+    def test_mic_test_outcome(self, vc):
+        heard = {"calibration": audio.Calibration("very_high", None, 20.0, 200.0)}
+        message, sensitivity = text.mic_test_outcome(heard, None)
+        assert sensitivity == "very_high" and message.endswith("Sensitivity set to Very high.")
+        nobody = {"calibration": audio.Calibration(None, "no_speech", 20.0, None)}
+        assert text.mic_test_outcome(nobody, None)[1] is None
+        assert text.mic_test_outcome(None, audio.MicrophoneError("blocked_desktop")) == (
+            text.mic_error("blocked_desktop"), None)
+        assert text.mic_test_outcome(None, RuntimeError("busy")) == (text._("mic_test_busy"),
+                                                                     None)
+
+    def test_the_test_selects_the_sensitivity_without_saving_it(self, page):
+        result = {"calibration": audio.Calibration("high", None, 26.0, 413.0)}
+        page._test_done(result, None)
+        assert page.choice_sensitivity.selected == [2] and page.dirty == [True]
+        assert page.txt_test.value == page.said[-1] == (
+            "Your voice: -38 dB, the room: -62 dB. Sensitivity set to High.")
+        assert page._testing is False
+        assert store.load_settings()["sensitivity"] == "normal"     # OK or Apply saves it
+        page._test_done(result, None)                                 # the same again
+        assert page.choice_sensitivity.selected == [2] and page.dirty == [True]
+        page._test_done({"calibration": audio.Calibration(None, "no_speech", 20.0, None)}, None)
+        assert page.choice_sensitivity.selected == [2]                # nobody spoke: kept
+        page._test_done(None, audio.MicrophoneError("busy"))
+        assert page.txt_test.value == text.mic_error("busy")
+        assert page.choice_sensitivity.selection == 2
+
+    def test_the_page_saves_the_sensitivity(self, page):
+        page.choice_sensitivity.selection = 3
+        assert page.get_settings() == {"model": "auto", "listen_on_open": True,
+                                       "silence_ms": 1000, "sensitivity": "very_high"}
+        page.ApplyChanges()
+        assert page.saved == [("auto", True, 1000, "very_high")]
+        page.choice_sensitivity.selection = -1
+        assert page.get_settings()["sensitivity"] == "normal"
+        assert page._sensitivity_index("unknown") == 1
+
+
 def test_manifest():
     with open(os.path.join(VC_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
@@ -1339,7 +1738,7 @@ def test_the_page_creates_each_label_before_its_control():
         tree = ast.parse(f.read())
     calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
              and isinstance(node.func, ast.Name) and node.func.id == "_labeled"]
-    assert len(calls) == 6
+    assert len(calls) == 7
     assert all(isinstance(call.args[3], ast.Lambda) for call in calls)
     controls = {"Choice", "ComboBox", "ListCtrl", "ListBox", "SpinCtrl", "Slider", "TextCtrl",
                 "Gauge"}

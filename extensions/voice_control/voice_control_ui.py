@@ -10,13 +10,15 @@
 The Voice Control page in Preferences: download or remove the whisper.cpp
 program and the speech models (with their sizes, progress and Cancel), the
 recognition model, "Start listening as soon as the command bar opens", the
-silence that ends listening, and a microphone test.
+silence that ends listening, the microphone sensitivity, and a microphone
+test that measures a sentence and sets the sensitivity that suits it.
 
 Every control comes right after the label that names it (screen readers name
 a control after the static text created just before it; SetName alone
 doesn't change that). Selecting a row only shows its details; focus never
 moves by itself. Download, Remove, Cancel and the microphone test act at
-once; the three settings are saved with OK or Apply.
+once; the four settings, including a sensitivity the test chose, are saved
+with OK or Apply.
 """
 import logging
 
@@ -34,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 _BORDER = 8
 ANNOUNCE_DELAY_MS = 300     # after a message box closes, so the focus announcement doesn't cut it
+MIC_TEST_DELAY_MS = 2000    # "say a sentence" is said before the tone (listening silences it)
 
 
 def _plain(label):
@@ -124,6 +127,12 @@ class VoiceControlPanel(wx.Panel):
         self.choice_silence.SetSelection(self._silences.index(settings["silence_ms"])
                                          if settings["silence_ms"] in self._silences else 2)
 
+        self._sensitivities = [name for name, _label in text.sensitivity_choices()]
+        self.choice_sensitivity = _labeled(
+            self, root, _("lbl_sensitivity"),
+            lambda: wx.Choice(self, choices=[label for _name, label in text.sensitivity_choices()]))
+        self.choice_sensitivity.SetSelection(self._sensitivity_index(settings["sensitivity"]))
+
         row = wx.BoxSizer(wx.HORIZONTAL)
         self.btn_test = _button(self, row, _("btn_test_mic"), self.on_test)
         root.Add(row, 0, wx.LEFT | wx.RIGHT, _BORDER)
@@ -159,6 +168,24 @@ class VoiceControlPanel(wx.Panel):
             self._alive = False
             self._c.downloads.remove_listener(self._on_download_event)
         event.Skip()
+
+    def _mark_dirty(self):
+        top = wx.GetTopLevelParent(self)
+        if top is not None and hasattr(top, "is_dirty"):
+            top.is_dirty = True
+
+    def _sensitivity_index(self, name):
+        if name in self._sensitivities:
+            return self._sensitivities.index(name)
+        return self._sensitivities.index(store.DEFAULT_SETTINGS["sensitivity"])
+
+    def select_sensitivity(self, name):
+        """Show a sensitivity the microphone test chose (saved with OK or
+        Apply, like a choice the user made). Focus stays where it is."""
+        index = self._sensitivity_index(name)
+        if self.choice_sensitivity.GetSelection() != index:
+            self.choice_sensitivity.SetSelection(index)
+            self._mark_dirty()
 
     def _set_status(self, message, speak_it=False):
         self.txt_status.ChangeValue(message)     # ChangeValue: not an unsaved setting
@@ -281,7 +308,7 @@ class VoiceControlPanel(wx.Panel):
         self.txt_test.ChangeValue(_("mic_test_speak"))
         _announce(_("mic_test_speak"))
         # The test waits a moment for that sentence before the tone and silence.
-        wx.CallLater(1500, self._start_test)
+        wx.CallLater(MIC_TEST_DELAY_MS, self._start_test)
 
     def _start_test(self):
         if not self._usable():
@@ -292,11 +319,9 @@ class VoiceControlPanel(wx.Panel):
         if not self._usable():
             return
         self._testing = False
-        if error is not None:
-            kind = getattr(error, "kind", None)
-            message = text.mic_error(kind) if kind else _("mic_test_busy")
-        else:
-            message = text.mic_test_result(result["level"], result["speech"])
+        message, sensitivity = text.mic_test_outcome(result, error)
+        if sensitivity is not None:
+            self.select_sensitivity(sensitivity)
         self.txt_test.ChangeValue(message)
         _announce(message)
 
@@ -325,14 +350,19 @@ class VoiceControlPanel(wx.Panel):
     def get_settings(self):
         model_index = self.choice_model.GetSelection()
         silence_index = self.choice_silence.GetSelection()
+        sensitivity_index = self.choice_sensitivity.GetSelection()
         return {
             "model": self._model_keys[model_index] if 0 <= model_index < len(self._model_keys)
             else "auto",
             "listen_on_open": self.chk_listen.GetValue(),
             "silence_ms": self._silences[silence_index]
             if 0 <= silence_index < len(self._silences) else 1000,
+            "sensitivity": self._sensitivities[sensitivity_index]
+            if 0 <= sensitivity_index < len(self._sensitivities)
+            else store.DEFAULT_SETTINGS["sensitivity"],
         }
 
     def ApplyChanges(self):
         values = self.get_settings()
-        self._c.save_settings(values["model"], values["listen_on_open"], values["silence_ms"])
+        self._c.save_settings(values["model"], values["listen_on_open"], values["silence_ms"],
+                              values["sensitivity"])

@@ -10,10 +10,12 @@
 Load Voice Control through the real loader with real wxPython and use its
 page in the real Preferences dialog: the labels, the program and models list,
 downloading the tiny model (which brings the program) with fake installers,
-the settings saved with OK, the microphone test with a fake microphone, then
-the command bar listening through the extension with a fake microphone and a
-fake whisper-server ("gempa terbaru" runs the earthquake action), and removing
-the model.
+the microphone test with a fake microphone (it measures the sentence and sets
+the sensitivity on the page, unsaved) and with a made-up result (a voice too
+quiet), the settings saved with OK (the sensitivity chosen with the arrow
+keys, focus staying on it), then the command bar listening through the
+extension with a fake microphone and a fake whisper-server ("gempa terbaru"
+runs the earthquake action), and removing the model.
 
 Nothing is downloaded, recorded, run or played: the installers, the
 microphone (Recorder), whisper-server (the engine) and the sounds are fakes,
@@ -307,12 +309,17 @@ pages = [prefs.treebook.GetPageText(i) for i in range(prefs.treebook.GetPageCoun
 assert pages[prefs.treebook.GetSelection()] == "Voice Control", pages
 panel = main._panel
 assert panel is not None and panel.IsShown(), "the Voice Control page was not created or shown"
-assert check_labels(panel) == 6, "list, progress, status, model, silence and test result"
+assert check_labels(panel) == 7, \
+    "list, progress, status, model, silence, sensitivity and test result"
 assert panel.list_items.GetName() == "Program and speech models"
 assert panel.gauge.GetName() == "Download progress"
 assert panel.txt_status.GetName() == "Status"
 assert panel.choice_model.GetName() == "Recognition model"
 assert panel.choice_silence.GetName() == "Stop listening after this much silence"
+assert panel.choice_sensitivity.GetName() == "Microphone sensitivity"
+assert [panel.choice_sensitivity.GetString(i)
+        for i in range(panel.choice_sensitivity.GetCount())] == \
+    ["Low", "Normal", "High", "Very high"]
 assert panel.txt_test.GetName() == "Microphone test"
 assert [panel.list_items.GetColumn(c).GetText() for c in range(3)] == ["Name", "Size", "Status"]
 assert rows(panel.list_items) == [
@@ -325,6 +332,7 @@ assert panel.selected_item() == "tiny"
 assert panel.choice_model.GetStringSelection() == "Automatic (recommended)"
 assert panel.chk_listen.GetValue() is True
 assert panel.choice_silence.GetStringSelection() == "1.0 s"
+assert panel.choice_sensitivity.GetStringSelection() == "Normal"
 assert panel.txt_status.GetValue() == _("status_not_ready")
 assert not prefs.is_dirty, "building the page marked Preferences as changed"
 print("OK page")
@@ -354,21 +362,61 @@ if observable:
 print(f"OK download ({focus_note(observable)})")
 
 # --------------------------------------------------------------------------- #
-# The microphone test: a fake microphone, nothing played back
+# The microphone test: a fake microphone, nothing played back. It measures
+# the sentence (the room about -57 dB, the voice about -18 dB) and sets High
+# on the page; nothing is saved before OK or Apply.
 # --------------------------------------------------------------------------- #
 spoken.clear()
 played.clear()
+prefs.is_dirty = False
+panel.btn_test.SetFocus()
+pump(lambda: wx.Window.FindFocus() is panel.btn_test, timeout=1.0)
+observable = wx.Window.FindFocus() is panel.btn_test
 fire(panel.btn_test, wx.EVT_BUTTON)
-assert pump(lambda: panel.txt_test.GetValue().startswith("The microphone works"), timeout=8), \
+assert pump(lambda: panel.txt_test.GetValue().startswith("Your voice:"), timeout=10), \
     panel.txt_test.GetValue()
+assert panel.txt_test.GetValue().endswith("Sensitivity set to High."), panel.txt_test.GetValue()
 assert spoken[0] == _("mic_test_speak") and spoken[-1] == panel.txt_test.GetValue(), spoken
 assert played == ["listen.wav", "listen_end.wav"], played        # the tones only
-print("OK microphone_test")
+assert panel.choice_sensitivity.GetStringSelection() == "High"
+assert prefs.is_dirty, "the sensitivity the test chose did not count as a change"
+assert store.load_settings()["sensitivity"] == "normal", "saved before OK or Apply"
+if observable:
+    assert wx.Window.FindFocus() is panel.btn_test, "the microphone test moved focus"
+
+# A made-up result: a voice too quiet even for Very high.
+real_test = main.test_microphone
+main.test_microphone = lambda: {
+    "level": -40.0, "speech": True, "seconds": 5.0, "room": 20.0, "voice": 60.0,
+    "calibration": audio.Calibration("very_high", "too_quiet", 20.0, 60.0)}
+try:
+    spoken.clear()
+    fire(panel.btn_test, wx.EVT_BUTTON)
+    assert pump(lambda: panel.txt_test.GetValue().startswith("Your voice: -55 dB"), timeout=10), \
+        panel.txt_test.GetValue()
+finally:
+    main.test_microphone = real_test
+assert "still too quiet" in panel.txt_test.GetValue(), panel.txt_test.GetValue()
+assert "Device properties" in panel.txt_test.GetValue()
+assert spoken[-1] == panel.txt_test.GetValue(), spoken
+assert panel.choice_sensitivity.GetStringSelection() == "Very high"
+assert store.load_settings()["sensitivity"] == "normal"
+print(f"OK microphone_test ({focus_note(observable)})")
 
 # --------------------------------------------------------------------------- #
 # Settings, saved with OK
 # --------------------------------------------------------------------------- #
 prefs.is_dirty = False
+panel.choice_sensitivity.SetFocus()
+pump(lambda: wx.Window.FindFocus() is panel.choice_sensitivity, timeout=1.0)
+observable = wx.Window.FindFocus() is panel.choice_sensitivity
+for name in ("high", "normal", "low"):              # arrowing up from Very high
+    panel.choice_sensitivity.SetSelection(panel._sensitivities.index(name))
+    fire(panel.choice_sensitivity, wx.EVT_CHOICE)
+    pump(lambda: False, timeout=0.05)
+    if observable:
+        assert wx.Window.FindFocus() is panel.choice_sensitivity, "arrowing moved focus"
+assert prefs.is_dirty, "choosing a sensitivity did not count as a change"
 panel.choice_model.SetSelection(panel._model_keys.index("base"))
 fire(panel.choice_model, wx.EVT_CHOICE)              # as a user choosing it
 panel.choice_silence.SetSelection(panel._silences.index(1500))
@@ -379,16 +427,17 @@ assert prefs.is_dirty, "changing the settings did not count as a change"
 prefs.OnApply(None)                       # what OK does, without ending a modal loop
 pump(lambda: False, timeout=0.2)
 saved = store.load_settings()
-assert (saved["model"], saved["silence_ms"], saved["listen_on_open"]) == ("base", 1500, False), \
-    saved
+assert (saved["model"], saved["silence_ms"], saved["listen_on_open"], saved["sensitivity"]) == \
+    ("base", 1500, False, "low"), saved
 assert main.get_settings()["model"] == "base"
+assert main.get_settings()["sensitivity"] == "low"
 try:
     prefs.Destroy()
 except RuntimeError:
     pass
 wx.Yield()
-main.save_settings("auto", False, 1000)          # back to Automatic for the next stage
-print("OK settings")
+main.save_settings("auto", False, 1000, "normal")     # back to the defaults for the next stage
+print(f"OK settings ({focus_note(observable)})")
 
 # --------------------------------------------------------------------------- #
 # The command bar listens through Voice Control

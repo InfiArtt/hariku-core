@@ -27,9 +27,13 @@
         "choice_tiny": "Tiny: fastest",
         "choice_base": "Base: more accurate",
         "choice_small": "Small: most accurate, slow on older computers",
+        "sensitivity_low": "Low",
+        "sensitivity_normal": "Normal",
+        "sensitivity_high": "High",
+        "sensitivity_very_high": "Very high",
 
         "page_help": "Speak commands in the command bar (Ctrl+Alt+Backspace): for example \"latest earthquake\", \"what time is it\" or \"remind me to take medicine tomorrow at 8\". Your speech is recognised on this computer by whisper.cpp; it is never saved or sent anywhere. First download the tiny model below (the program comes with it). The base model makes reminders more accurate.",
-        "page_headset": "A headset is recommended: with speakers, the microphone can hear your screen reader. Hariku silences the screen reader and Hariku Voice while it listens.",
+        "page_headset": "A headset is recommended: with speakers, the microphone can hear your screen reader. Hariku silences the screen reader and Hariku Voice while it listens. If you have to speak loudly, press Test microphone and say a sentence at your normal volume: Hariku measures your voice and the room and sets the microphone sensitivity for you.",
         "lbl_downloads": "Program and speech models:",
         "col_name": "Name",
         "col_size": "Size",
@@ -42,6 +46,7 @@
         "lbl_model": "Recognition &model:",
         "chk_listen_on_open": "Start &listening as soon as the command bar opens",
         "lbl_silence": "Stop listening after this much &silence:",
+        "lbl_sensitivity": "Microphone s&ensitivity:",
         "btn_test_mic": "&Test microphone",
         "lbl_test_result": "Microphone test:",
 
@@ -83,7 +88,8 @@
         "err_unexpected": "Something went wrong with Voice Control. The details are in the log.",
         "err_not_ready": "Voice Control has no speech model yet. Download one in Preferences, Voice Control.",
         "err_busy": "I'm already listening.",
-        "err_no_speech": "I didn't hear anything. Press Ctrl+Alt+Backspace and try again, a bit closer to the microphone.",
+        "err_no_speech": "I didn't hear anything. Press Ctrl+Alt+Backspace and try again a bit closer to the microphone, or raise the microphone sensitivity in Preferences, Voice Control.",
+        "err_too_noisy": "It was too noisy to hear when you stopped speaking, so I stopped listening after {seconds} seconds. Next time, press Enter as soon as you finish, or lower the microphone sensitivity in Preferences, Voice Control.",
         "err_timeout": "Recognising took too long. Try the tiny model in Preferences, Voice Control.",
         "err_engine": "The speech recognition program didn't work. Try downloading it again in Preferences, Voice Control.",
 
@@ -94,10 +100,12 @@
         "mic_blocked_desktop": "Windows doesn't let desktop apps like Hariku use the microphone. Turn on \"Let desktop apps access your microphone\" in Windows Settings, Privacy, Microphone.",
         "mic_silent": "The microphone gave only silence. Check that it isn't muted, and that \"Let desktop apps access your microphone\" is on in Windows Settings, Privacy, Microphone.",
         "mic_failed": "The microphone could not be opened.",
-        "mic_test_speak": "After the tone, say something for 3 seconds.",
+        "mic_test_speak": "After the tone, say a sentence at your normal volume.",
         "mic_test_running": "The microphone test is already running.",
         "mic_test_busy": "The microphone is busy. Try again after listening ends.",
-        "mic_test_heard": "The microphone works: I heard speech. Loudest level {level} dB.",
-        "mic_test_not_heard": "I didn't hear speech. Loudest level {level} dB. Speak closer to the microphone, or check that it isn't muted."
+        "calibrate_done": "Your voice: {voice} dB, the room: {room} dB. Sensitivity set to {level}.",
+        "calibrate_too_quiet": "Your voice: {voice} dB, the room: {room} dB. Sensitivity set to {level}, but your voice is still too quiet. Raise the microphone level in Windows Settings, System, Sound, Input, Device properties, or use a headset microphone.",
+        "calibrate_too_noisy": "Your voice: {voice} dB, the room: {room} dB. Sensitivity set to {level}, but the room is too noisy for your voice. Use a headset microphone, or raise the microphone level in Windows Settings, System, Sound, Input, Device properties.",
+        "calibrate_no_speech": "I didn't hear you speak. The room: {room} dB. Press Test microphone and say a sentence after the tone. If you did speak, raise the microphone level in Windows Settings, System, Sound, Input, Device properties, or check that the microphone isn't muted."
     }
 }

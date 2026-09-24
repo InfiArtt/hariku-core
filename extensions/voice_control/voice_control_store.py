@@ -19,14 +19,16 @@ Voice Control's files and settings (no network, no wx), in
 
 A file being downloaded is "<name>.part" next to where it goes. No recording
 is ever stored here (or anywhere). The settings are Hariku data
-("VoiceControl"): the model choice, listening on open, the silence length and
-each model's measured speed.
+("VoiceControl"): the model choice, listening on open, the silence length, the
+microphone sensitivity and each model's measured speed.
 """
 import json
 import os
 import shutil
 
 import core.api
+
+import voice_control_audio as audio
 
 ROOT_NAME = "voice_control"
 RUNTIME_DIR = "runtime"
@@ -42,7 +44,9 @@ MODEL_NAMES = ("tiny", "base", "small")
 SETTINGS_NAME = "VoiceControl"
 MODEL_CHOICES = ("auto",) + MODEL_NAMES
 SILENCE_CHOICES = (600, 800, 1000, 1500, 2000)    # milliseconds
-DEFAULT_SETTINGS = {"model": "auto", "listen_on_open": True, "silence_ms": 1000, "speeds": {}}
+SENSITIVITY_CHOICES = audio.SENSITIVITIES           # least sensitive first
+DEFAULT_SETTINGS = {"model": "auto", "listen_on_open": True, "silence_ms": 1000,
+                    "sensitivity": audio.DEFAULT_SENSITIVITY, "speeds": {}}
 
 
 def root_dir():
@@ -221,9 +225,12 @@ def cleanup_partials(root):
 # ------------------------------------------------------------
 
 def normalize_settings(raw):
+    """The settings with every value checked; a missing or unknown one gets
+    its default (settings saved before the sensitivity existed get Normal)."""
     raw = raw if isinstance(raw, dict) else {}
     model = raw.get("model")
     silence = raw.get("silence_ms")
+    sensitivity = raw.get("sensitivity")
     speeds = raw.get("speeds") if isinstance(raw.get("speeds"), dict) else {}
     clean_speeds = {}
     for name in MODEL_NAMES:
@@ -234,6 +241,8 @@ def normalize_settings(raw):
         "model": model if model in MODEL_CHOICES else DEFAULT_SETTINGS["model"],
         "listen_on_open": bool(raw.get("listen_on_open", DEFAULT_SETTINGS["listen_on_open"])),
         "silence_ms": silence if silence in SILENCE_CHOICES else DEFAULT_SETTINGS["silence_ms"],
+        "sensitivity": sensitivity if isinstance(sensitivity, str)
+        and sensitivity in SENSITIVITY_CHOICES else DEFAULT_SETTINGS["sensitivity"],
         "speeds": clean_speeds,
     }
 

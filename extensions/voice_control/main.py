@@ -24,10 +24,14 @@ Preferences, Voice Control.
 
 How a command is heard: the screen reader and Hariku Voice are silenced (with
 speakers they would talk into the microphone), the start tone plays, and the
-recording begins about 150 ms after it ends. It ends after about a second of
-silence once speech started (Preferences: the silence length), after 12
-seconds, when the hotkey or Enter is pressed again, or after 5 seconds with no
-speech (then Hariku says so). The end tone plays, whisper-server recognises
+recording begins about 150 ms after it ends. Speech starts once the voice is
+loud enough for the microphone sensitivity (Preferences; the microphone test
+measures the voice and the room and suggests one). It ends after about a
+second of silence once speech started (Preferences: the silence length), after
+12 seconds, when the hotkey or Enter is pressed again, or after 5 seconds with
+no speech (then Hariku says so). Twelve seconds without a single pause were
+the room, not speech: Hariku says it was too noisy instead of recognising
+them. The end tone plays, whisper-server recognises
 the recording (in memory, over 127.0.0.1), and the text goes to the command
 bar. With the model set to Automatic, words that look like a reminder are
 recognised again with a more accurate model, when one is installed. The
@@ -66,7 +70,7 @@ DEFAULT_TONE_SECONDS = 0.25
 MAX_TONE_SECONDS = 1.5
 START_TIMEOUT_MS = 5000         # no speech this long: stop and say so
 MAX_RECORD_MS = 12000
-MIC_TEST_SECONDS = 3.0
+MIC_TEST_SECONDS = 5.0          # time for a sentence, with quiet before and after it
 MILESTONES = (25, 50, 75, 100)
 
 _panel = None
@@ -126,9 +130,12 @@ def reload_settings():
     return settings
 
 
-def save_settings(model, listen_on_open, silence_ms):
+def save_settings(model, listen_on_open, silence_ms, sensitivity=None):
+    """Save the page's settings (the sensitivity stays as it is when None)."""
     settings = get_settings()
     settings.update(model=model, listen_on_open=bool(listen_on_open), silence_ms=silence_ms)
+    if sensitivity is not None:
+        settings["sensitivity"] = sensitivity
     store.save_settings(settings)
     reload_settings()
 
@@ -274,7 +281,8 @@ class Session:
         listener.quiet()        # the screen reader may have started talking meanwhile
         self.send("listening")
         vad = audio.VoiceActivity(silence_ms=settings["silence_ms"],
-                                  start_timeout_ms=START_TIMEOUT_MS, max_ms=MAX_RECORD_MS)
+                                  start_timeout_ms=START_TIMEOUT_MS, max_ms=MAX_RECORD_MS,
+                                  sensitivity=settings["sensitivity"])
         recorder = listener.make_recorder()
         try:
             pcm = recorder.record(lambda chunk: vad.feed(chunk) in vad.FINISHED,
@@ -288,6 +296,12 @@ class Session:
             raise audio.MicrophoneError("silent")
         if not vad.heard_speech:
             self.send("error", _("err_no_speech"))
+            return
+        if vad.noisy:
+            # Twelve seconds without a pause: the room kept it going, not a voice.
+            logger.info(f"[{EXT_NAME}] Too noisy to hear the end of speech "
+                        f"(room {audio.level_db(vad.noise or 0):.0f} dB).")
+            self.send("error", _("err_too_noisy", seconds=MAX_RECORD_MS // 1000))
             return
         self.send("recognising")
         wav = audio.wav_bytes(vad.speech_bytes(pcm))
@@ -377,13 +391,17 @@ _listener = Listener()
 
 
 # ------------------------------------------------------------
-# The microphone test (Preferences): 3 seconds, the level, nothing played back
+# The microphone test (Preferences): a sentence at the user's normal volume,
+# measured to suggest a sensitivity; nothing played back
 # ------------------------------------------------------------
 
 def test_microphone(listener=None, seconds=MIC_TEST_SECONDS):
-    """Record `seconds` and say how loud it was and whether it sounded like
-    speech: {"level": dB, "speech": bool, "seconds": s}. The recording is
-    dropped; nothing is played back. Raises audio.MicrophoneError."""
+    """Record `seconds` while the user says a sentence, and measure the room
+    and the voice: {"level": the loudest dB, "speech": bool, "seconds": s,
+    "room": RMS, "voice": RMS or None, "calibration": audio.Calibration}. The
+    recording is dropped; nothing is played back or saved (the page applies
+    the suggested sensitivity; OK or Apply saves it). Raises
+    audio.MicrophoneError."""
     listener = listener or _listener
     blocked = listener.blocked()
     if blocked:
@@ -391,16 +409,23 @@ def test_microphone(listener=None, seconds=MIC_TEST_SECONDS):
     listener.quiet()
     listener.play(core.commands.LISTEN_SOUND)
     listener.sleep(listener.tone_seconds(core.commands.LISTEN_SOUND) + TONE_GAP_SECONDS)
-    vad = audio.VoiceActivity(start_timeout_ms=int(seconds * 1000), max_ms=int(seconds * 1000))
     try:
-        pcm = listener.make_recorder().record(lambda chunk: (vad.feed(chunk), False)[1],
-                                              max_seconds=seconds)
+        pcm = listener.make_recorder().record(lambda chunk: False, max_seconds=seconds)
     finally:
         listener.play(core.commands.LISTEN_END_SOUND)
-    if pcm and vad.peak <= 0:
+    levels = audio.frame_levels(pcm)
+    peak = max(levels, default=0.0)
+    if pcm and peak <= 0:
         raise audio.MicrophoneError("silent")
-    return {"level": audio.level_db(vad.peak), "speech": vad.heard_speech,
-            "seconds": audio.seconds_of(pcm)}
+    room, voice = audio.measure(levels)
+    calibration = audio.calibrate(room, voice)
+    voice_db = "none" if voice is None else f"{audio.level_db(voice):.0f} dB"
+    logger.info(f"[{EXT_NAME}] Microphone test: room {audio.level_db(room):.0f} dB, voice "
+                f"{voice_db}; sensitivity {calibration.sensitivity or 'unchanged'}, "
+                f"problem {calibration.problem or 'none'}.")
+    return {"level": audio.level_db(peak), "speech": voice is not None,
+            "seconds": audio.seconds_of(pcm), "room": room, "voice": voice,
+            "calibration": calibration}
 
 
 # ------------------------------------------------------------
@@ -574,8 +599,8 @@ class Controller:
         return get_settings()
 
     @staticmethod
-    def save_settings(model, listen_on_open_, silence_ms):
-        save_settings(model, listen_on_open_, silence_ms)
+    def save_settings(model, listen_on_open_, silence_ms, sensitivity=None):
+        save_settings(model, listen_on_open_, silence_ms, sensitivity)
 
     @staticmethod
     def remove(item):

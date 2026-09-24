@@ -27,9 +27,13 @@
         "choice_tiny": "Tiny: paling cepat",
         "choice_base": "Base: lebih akurat",
         "choice_small": "Small: paling akurat, lambat di komputer lama",
+        "sensitivity_low": "Rendah",
+        "sensitivity_normal": "Normal",
+        "sensitivity_high": "Tinggi",
+        "sensitivity_very_high": "Sangat tinggi",
 
         "page_help": "Ucapkan perintah di bilah perintah (Ctrl+Alt+Backspace), misalnya \"gempa terbaru\", \"jam berapa\", atau \"ingatkan aku minum obat besok jam 8\". Ucapanmu dikenali di komputer ini oleh whisper.cpp; tidak pernah disimpan atau dikirim ke mana pun. Unduh dulu model tiny di bawah (programnya ikut terunduh). Model base membuat pengingat lebih akurat.",
-        "page_headset": "Sebaiknya pakai headset: kalau pakai speaker, mikrofon bisa mendengar screen reader-mu. Hariku mendiamkan screen reader dan Suara Hariku selama mendengarkan.",
+        "page_headset": "Sebaiknya pakai headset: kalau pakai speaker, mikrofon bisa mendengar screen reader-mu. Hariku mendiamkan screen reader dan Suara Hariku selama mendengarkan. Kalau kamu harus bicara keras, tekan Tes mikrofon lalu ucapkan satu kalimat dengan suara biasa: Hariku mengukur suaramu dan ruangan, lalu mengatur kepekaan mikrofon untukmu.",
         "lbl_downloads": "Program dan model ucapan:",
         "col_name": "Nama",
         "col_size": "Ukuran",
@@ -42,6 +46,7 @@
         "lbl_model": "&Model pengenal:",
         "chk_listen_on_open": "Langsung &mendengarkan saat bilah perintah dibuka",
         "lbl_silence": "Berhenti mendengarkan setelah &hening selama:",
+        "lbl_sensitivity": "&Kepekaan mikrofon:",
         "btn_test_mic": "&Tes mikrofon",
         "lbl_test_result": "Tes mikrofon:",
 
@@ -83,7 +88,8 @@
         "err_unexpected": "Ada masalah di Voice Control. Detailnya ada di log.",
         "err_not_ready": "Voice Control belum punya model ucapan. Unduh dulu di Pengaturan, Voice Control.",
         "err_busy": "Aku sudah sedang mendengarkan.",
-        "err_no_speech": "Aku tidak mendengar apa-apa. Tekan Ctrl+Alt+Backspace lalu coba lagi, sedikit lebih dekat ke mikrofon.",
+        "err_no_speech": "Aku tidak mendengar apa-apa. Tekan Ctrl+Alt+Backspace lalu coba lagi sedikit lebih dekat ke mikrofon, atau naikkan kepekaan mikrofon di Pengaturan, Voice Control.",
+        "err_too_noisy": "Terlalu bising untuk mendengar kapan kamu selesai bicara, jadi aku berhenti mendengarkan setelah {seconds} detik. Lain kali, tekan Enter begitu kamu selesai, atau turunkan kepekaan mikrofon di Pengaturan, Voice Control.",
         "err_timeout": "Mengenali ucapan terlalu lama. Coba model tiny di Pengaturan, Voice Control.",
         "err_engine": "Program pengenal ucapan tidak berjalan. Coba unduh ulang di Pengaturan, Voice Control.",
 
@@ -94,10 +100,12 @@
         "mic_blocked_desktop": "Windows tidak mengizinkan aplikasi desktop seperti Hariku memakai mikrofon. Nyalakan \"Izinkan aplikasi desktop mengakses mikrofon Anda\" di Pengaturan Windows, Privasi, Mikrofon.",
         "mic_silent": "Mikrofon hanya memberi keheningan. Periksa apakah mikrofonnya dibisukan, dan apakah \"Izinkan aplikasi desktop mengakses mikrofon Anda\" sudah menyala di Pengaturan Windows, Privasi, Mikrofon.",
         "mic_failed": "Mikrofon tidak bisa dibuka.",
-        "mic_test_speak": "Setelah nada, ucapkan sesuatu selama 3 detik.",
+        "mic_test_speak": "Setelah nada, ucapkan satu kalimat dengan suara biasa.",
         "mic_test_running": "Tes mikrofon sedang berjalan.",
         "mic_test_busy": "Mikrofon sedang dipakai. Coba lagi setelah selesai mendengarkan.",
-        "mic_test_heard": "Mikrofon berfungsi: aku mendengar ucapan. Level paling keras {level} dB.",
-        "mic_test_not_heard": "Aku tidak mendengar ucapan. Level paling keras {level} dB. Bicaralah lebih dekat ke mikrofon, atau periksa apakah mikrofonnya dibisukan."
+        "calibrate_done": "Suaramu {voice} dB, ruangan {room} dB. Kepekaan diatur ke {level}.",
+        "calibrate_too_quiet": "Suaramu {voice} dB, ruangan {room} dB. Kepekaan diatur ke {level}, tapi suaramu masih terlalu pelan. Naikkan level mikrofon di Pengaturan Windows, Sistem, Suara, Input, Properti perangkat, atau pakai mikrofon headset.",
+        "calibrate_too_noisy": "Suaramu {voice} dB, ruangan {room} dB. Kepekaan diatur ke {level}, tapi ruangannya terlalu bising untuk suaramu. Pakai mikrofon headset, atau naikkan level mikrofon di Pengaturan Windows, Sistem, Suara, Input, Properti perangkat.",
+        "calibrate_no_speech": "Aku tidak mendengar kamu bicara. Ruangan {room} dB. Tekan Tes mikrofon lalu ucapkan satu kalimat setelah nada. Kalau tadi kamu sudah bicara, naikkan level mikrofon di Pengaturan Windows, Sistem, Suara, Input, Properti perangkat, atau periksa apakah mikrofonnya dibisukan."
     }
 }

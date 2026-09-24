@@ -14,6 +14,9 @@ only).
                        winmm's waveIn (ctypes), on the calling worker thread
   VoiceActivity        a simple energy-based voice activity detector: when
                        speech started, and when it ended
+  SENSITIVITY          the microphone sensitivity presets it uses
+  measure(), calibrate()  the microphone test: the room's and the voice's
+                       level, and the sensitivity that suits them
   wav_bytes()          a recording as a WAV file, in memory
   microphone_blocked() Windows' privacy switches for the microphone
   level_db()           a loudness in dB below full scale, for the microphone test
@@ -22,6 +25,7 @@ A recording stays in memory. It is handed to the whisper.cpp program on this
 computer and then dropped: it is never written to disk or sent anywhere.
 """
 import array
+import collections
 import ctypes
 import ctypes.wintypes
 import io
@@ -51,6 +55,27 @@ WAVERR_BADFORMAT = 32
 # Windows' privacy switches (Settings, Privacy, Microphone).
 CONSENT_KEY = (r"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager"
                r"\ConsentStore\microphone")
+
+# Microphone sensitivity, least sensitive first: (the quietest level that can
+# start speech, as an RMS of 16-bit samples; how many times louder than the
+# room speech must be). Normal starts at about -47 dBFS; laptop microphones
+# with the Windows input level below 100% often record speech quieter than the
+# -41 dBFS the first version needed. Whisper evens out loudness itself.
+SENSITIVITY = {
+    "low": (400.0, 3.5),
+    "normal": (150.0, 2.5),
+    "high": (80.0, 2.0),
+    "very_high": (40.0, 1.6),
+}
+SENSITIVITIES = tuple(SENSITIVITY)
+DEFAULT_SENSITIVITY = "normal"
+
+KEEP_SHARE = 0.6            # while speaking, a frame counts from 60% of the start level...
+KEEP_OVER_ROOM = 1.25       # ...but never from the room's own level
+ROOM_FOLLOW_DOWN = 0.2      # the room gets quieter: follow it quickly
+ROOM_FOLLOW_UP = 0.03       # louder: slowly, and only
+ROOM_RISE_LIMIT = 1.5       # for frames less than 1.5 times the room
+NOISY_PAUSE_MS = 250        # a 12-second "speech" without a pause this long was noise
 
 
 class MicrophoneError(Exception):
@@ -121,6 +146,17 @@ def level_db(value):
     return max(-96.0, 20.0 * math.log10(value / 32768.0))
 
 
+def sensitivity_levels(name):
+    """(min_level, ratio) of a sensitivity; Normal for an unknown one."""
+    return SENSITIVITY.get(name, SENSITIVITY[DEFAULT_SENSITIVITY])
+
+
+def start_level(name, room):
+    """The level that starts speech with this sensitivity in a room this loud."""
+    min_level, ratio = sensitivity_levels(name)
+    return max(min_level, room * ratio)
+
+
 class VoiceActivity:
     """Feed it the recording as it comes; `state` says what it heard:
 
@@ -132,8 +168,16 @@ class VoiceActivity:
 
     Energy only: 30 ms frames, the first `calibrate_ms` measure the room;
     speech is `ratio` times louder than the room and at least `min_level`
-    (RMS of 16-bit samples), for `min_speech_ms` in a row. While speaking, a
-    frame counts as speech from 60% of that."""
+    (RMS of 16-bit samples), for `min_speech_ms` in a row. The microphone
+    sensitivity chooses both (SENSITIVITY); `min_level` and `ratio` override
+    it. While speaking, a frame counts as speech from 60% of that, but never
+    from a level the room itself reaches (1.25 times the room).
+
+    While waiting, the room's level follows quieter frames quickly and louder
+    ones slowly, and only those less than 1.5 times it: a quiet voice that
+    isn't loud enough to start never becomes "the room", so the start level
+    can't creep up to the voice. `noisy` tells a recording that ran into
+    `max_ms` without a single pause: that was the room, not speech."""
 
     WAITING, SPEAKING = "waiting", "speaking"
     DONE, NO_SPEECH, TOO_LONG = "done", "no_speech", "too_long"
@@ -141,7 +185,8 @@ class VoiceActivity:
 
     def __init__(self, sample_rate=SAMPLE_RATE, frame_ms=30, silence_ms=1000,
                  start_timeout_ms=5000, max_ms=12000, min_speech_ms=150, calibrate_ms=150,
-                 min_level=300.0, ratio=3.0):
+                 sensitivity=DEFAULT_SENSITIVITY, min_level=None, ratio=None):
+        preset_level, preset_ratio = sensitivity_levels(sensitivity)
         self.sample_rate = sample_rate
         self.frame_ms = frame_ms
         self.frame_samples = sample_rate * frame_ms // 1000
@@ -150,14 +195,16 @@ class VoiceActivity:
         self.max_ms = max_ms
         self.min_speech_ms = min_speech_ms
         self.calibrate_ms = calibrate_ms
-        self.min_level = float(min_level)
-        self.ratio = float(ratio)
+        self.sensitivity = sensitivity if sensitivity in SENSITIVITY else DEFAULT_SENSITIVITY
+        self.min_level = float(preset_level if min_level is None else min_level)
+        self.ratio = float(preset_ratio if ratio is None else ratio)
         self.state = self.WAITING
         self.elapsed_ms = 0
         self.noise = None
         self.peak = 0.0
         self.speech_start_ms = None     # where speech began, and ended
         self.speech_end_ms = None
+        self.longest_pause_ms = 0       # while speaking
         self._calibration = []
         self._run_ms = 0
         self._silent_ms = 0
@@ -172,10 +219,24 @@ class VoiceActivity:
     def heard_speech(self):
         return self.speech_start_ms is not None
 
+    @property
+    def noisy(self):
+        """It ran into `max_ms` without a pause: too noisy to hear the end."""
+        return self.state == self.TOO_LONG and self.longest_pause_ms < NOISY_PAUSE_MS
+
     def thresholds(self):
+        """(start, keep): the level that starts speech, and the level that
+        keeps it going."""
         noise = self.noise if self.noise is not None else 0.0
         start = max(self.min_level, noise * self.ratio)
-        return start, start * 0.6
+        return start, min(start, max(start * KEEP_SHARE, noise * KEEP_OVER_ROOM))
+
+    def _follow_room(self, level):
+        if level <= self.noise:
+            self.noise += ROOM_FOLLOW_DOWN * (level - self.noise)
+        elif level < self.noise * ROOM_RISE_LIMIT:
+            self.noise += ROOM_FOLLOW_UP * (level - self.noise)
+        # Louder than that: maybe a quiet voice; it never becomes the room.
 
     def feed(self, pcm):
         """Add recorded bytes (or an array of samples); returns the state. A
@@ -214,7 +275,7 @@ class VoiceActivity:
                     self._silent_ms = 0
             else:
                 self._run_ms = 0
-                self.noise = 0.9 * self.noise + 0.1 * level    # follow the room
+                self._follow_room(level)
                 if self.elapsed_ms >= self.start_timeout_ms:
                     self.state = self.NO_SPEECH
                     return
@@ -224,6 +285,7 @@ class VoiceActivity:
                 self.speech_end_ms = self.elapsed_ms
             else:
                 self._silent_ms += self.frame_ms
+                self.longest_pause_ms = max(self.longest_pause_ms, self._silent_ms)
                 if self._silent_ms >= self.silence_ms:
                     self.state = self.DONE
                     return
@@ -239,6 +301,82 @@ class VoiceActivity:
         start = max(0, (self.speech_start_ms - margin_ms)) * per_ms
         end = min(len(pcm), (self.speech_end_ms + margin_ms) * per_ms)
         return bytes(pcm[start:end])
+
+
+# ------------------------------------------------------------
+# The microphone test: how loud the room and the voice are, and the
+# sensitivity that suits them (pure: numbers in, numbers out)
+# ------------------------------------------------------------
+
+QUIET_SHARE = 0.25          # the quietest quarter of the test is the room
+VOICE_OVER_ROOM = 2.0       # a frame of the voice is at least twice the room...
+VOICE_MIN_LEVEL = 10.0      # ...and more than the faintest hiss (-70 dBFS)
+VOICE_PERCENTILE = 0.8      # the voice's level: the 80th percentile of its frames
+MIN_VOICE_FRAMES = 10       # 300 ms of voice at least, or nobody spoke
+NOISE_MARGIN = 1.5          # a preset's own start level: at least 1.5 times the room
+VOICE_MARGIN = 0.5          # its start level in the room: at most half the voice
+
+Calibration = collections.namedtuple("Calibration", "sensitivity problem room voice")
+Calibration.__doc__ = """What the microphone test found. `sensitivity` is the one
+to set (None: leave it); `problem` is None, "too_quiet", "too_noisy" or
+"no_speech"; `room` and `voice` are the levels measured (RMS; voice None when
+no voice was heard)."""
+
+
+def frame_levels(pcm, frame_ms=30, sample_rate=SAMPLE_RATE):
+    """The RMS of each whole `frame_ms` frame of 16-bit PCM bytes."""
+    samples = samples_of(pcm)
+    size = sample_rate * frame_ms // 1000
+    return [rms(samples[i:i + size]) for i in range(0, len(samples) - size + 1, size)]
+
+
+def _percentile(ordered, share):
+    return ordered[min(len(ordered) - 1, int(share * len(ordered)))]
+
+
+def measure(levels):
+    """(room, voice) from the frame levels of a test where the user said a
+    sentence: the room is the median of the quietest quarter of the frames
+    (before, between and after the words); the voice is the 80th percentile
+    of the frames at least twice as loud as that, or None when there are
+    fewer than 300 ms of them."""
+    if not levels:
+        return 0.0, None
+    ordered = sorted(levels)
+    quiet = ordered[:max(1, int(len(ordered) * QUIET_SHARE))]
+    room = quiet[len(quiet) // 2]
+    floor = max(room * VOICE_OVER_ROOM, VOICE_MIN_LEVEL)
+    voiced = [level for level in ordered if level >= floor]
+    if len(voiced) < MIN_VOICE_FRAMES:
+        return room, None
+    return room, _percentile(voiced, VOICE_PERCENTILE)
+
+
+def calibrate(room, voice):
+    """The sensitivity for a room and a voice this loud (RMS levels).
+
+    A preset hears the voice when its start level in this room (start_level)
+    is at most half the voice; the room allows it when the preset's own start
+    level (min_level) is at least 1.5 times the room, so the room alone never
+    starts a recording. Of the presets that hear the voice, the most sensitive
+    one the room allows; when the room allows none of them, the least
+    sensitive of them. When not even Very high hears it: "too_quiet" when the
+    voice is below twice Very high's own level (Very high is set), else
+    "too_noisy" (the most sensitive preset the room allows is set)."""
+    if voice is None:
+        return Calibration(None, "no_speech", room, None)
+    hears = [name for name in SENSITIVITIES if start_level(name, room) <= VOICE_MARGIN * voice]
+    allowed = [name for name in SENSITIVITIES
+               if SENSITIVITY[name][0] >= NOISE_MARGIN * room]
+    both = [name for name in hears if name in allowed]
+    if both:
+        return Calibration(both[-1], None, room, voice)
+    if hears:
+        return Calibration(hears[0], None, room, voice)
+    most_sensitive = SENSITIVITIES[-1]
+    if voice * VOICE_MARGIN < SENSITIVITY[most_sensitive][0]:
+        return Calibration(most_sensitive, "too_quiet", room, voice)
+    return Calibration(allowed[-1] if allowed else SENSITIVITIES[0], "too_noisy", room, voice)
 
 
 # ------------------------------------------------------------

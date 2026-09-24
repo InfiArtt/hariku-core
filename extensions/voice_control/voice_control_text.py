@@ -14,6 +14,7 @@ import os
 
 from core.i18n import get_current_language, get_translator
 
+import voice_control_audio as audio
 import voice_control_download as download
 import voice_control_engine as engine
 
@@ -74,6 +75,17 @@ def model_choices():
 
 def silence_label(milliseconds):
     return seconds_label(milliseconds / 1000.0)
+
+
+def sensitivity_choices():
+    """[(setting, label)] of the Microphone sensitivity choice, least sensitive first."""
+    labels = {"low": _("sensitivity_low"), "normal": _("sensitivity_normal"),
+              "high": _("sensitivity_high"), "very_high": _("sensitivity_very_high")}
+    return [(name, labels[name]) for name in audio.SENSITIVITIES]
+
+
+def sensitivity_label(name):
+    return dict(sensitivity_choices()).get(name, name)
 
 
 def prompt_words(language=None):
@@ -138,8 +150,31 @@ def download_error(error):
     return _("err_unexpected")
 
 
-def mic_test_result(level_db, heard):
-    level = f"{level_db:.0f}"
-    if heard:
-        return _("mic_test_heard", level=level)
-    return _("mic_test_not_heard", level=level)
+def db_label(level):
+    """A level (RMS of 16-bit samples) as whole dB below full scale: "-38"."""
+    return f"{audio.level_db(level):.0f}"
+
+
+def calibration_message(calibration):
+    """What the microphone test says: the voice's and the room's level, and
+    the sensitivity it set, or what's wrong and how to fix it."""
+    room = db_label(calibration.room)
+    if calibration.problem == "no_speech" or calibration.voice is None:
+        return _("calibrate_no_speech", room=room)
+    values = {"voice": db_label(calibration.voice), "room": room,
+              "level": sensitivity_label(calibration.sensitivity)}
+    if calibration.problem == "too_quiet":
+        return _("calibrate_too_quiet", **values)
+    if calibration.problem == "too_noisy":
+        return _("calibrate_too_noisy", **values)
+    return _("calibrate_done", **values)
+
+
+def mic_test_outcome(result, error):
+    """What the page does with the microphone test's answer: (the message to
+    show and say, the sensitivity to select or None)."""
+    if error is not None:
+        kind = getattr(error, "kind", None)
+        return (mic_error(kind) if kind else _("mic_test_busy")), None
+    calibration = result["calibration"]
+    return calibration_message(calibration), calibration.sensitivity
