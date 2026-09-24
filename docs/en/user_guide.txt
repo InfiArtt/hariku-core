@@ -462,11 +462,11 @@ hotkey:
 This is especially useful if Hariku is minimised to the tray and you want to
 bring it back without pressing alt tab.
 
-COMMAND BAR
-------------
+ARUNA, THE COMMAND BAR
+-----------------------
   Ctrl + Alt + Backspace  (default, works system-wide)
 
-Opens the command bar, a small window called "Hariku", from anywhere, even
+Opens Aruna, Hariku's command bar: a small window called "Aruna", from anywhere, even
 when Hariku is hidden in the tray. Type a command, such as "latest
 earthquake", "what time is it" or "evening summary", or a reminder, such as
 "remind me to take medicine tomorrow at 8", and press Enter:

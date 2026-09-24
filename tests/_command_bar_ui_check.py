@@ -134,9 +134,9 @@ action = core.hotkeys.actions["Hariku Core.command_bar"]
 assert (action.default_keycode, action.default_ctrl, action.default_alt, action.default_shift,
         action.default_win, action.default_global) == (wx.WXK_BACK, True, True, False, False,
                                                        True)
-assert action.description == "Open the command bar: type or say a command", action.description
+assert action.description == "Open Aruna: type or say a command", action.description
 assert cb.hotkey_label() == "Ctrl + Alt + Backspace", cb.hotkey_label()
-assert frame.item_command_bar.GetItemLabelText() == "Command bar... (Ctrl + Alt + Backspace)", \
+assert frame.item_command_bar.GetItemLabelText() == "Aruna... (Ctrl + Alt + Backspace)", \
     frame.item_command_bar.GetItemLabelText()
 assert "Hariku Core.speak_time" in core.hotkeys.actions
 print("OK action")
@@ -235,7 +235,7 @@ def focus_note(checked):
 
 # --- The bar: labels, focus, always on top ------------------------------------------------------
 bar, focus_ok = open_bar()
-assert bar.GetTitle() == "Hariku", bar.GetTitle()
+assert bar.GetTitle() == "Aruna", bar.GetTitle()
 assert bar.GetWindowStyleFlag() & wx.STAY_ON_TOP
 children = list(bar.GetChildren())
 kinds = [type(c).__name__ for c in children]
