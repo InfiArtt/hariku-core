@@ -6,313 +6,474 @@
 # Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+"""
+The Extension Manager (Extensions, Manage Extensions; Ctrl+X): four tabs, each
+with a Search field, the list (Name, Version, Status), a Details box and the
+tab's buttons.
+  * Installed    - Enable/Disable, Remove (Delete too), Update.
+  * Updates      - Update (Enter too), Update all.
+  * Available    - Install (Enter too).
+  * Incompatible - extensions made for a Hariku older than this one still
+                   runs, as in NVDA: Update (when the store has a newer
+                   version), Remove.
+An extension or update that needs a newer Hariku stays on its tab, says so and
+can't be installed; "Check for Hariku updates" appears for it.
+core.extension_catalog decides what each tab lists and says.
+
+The store answers on a worker thread, so the window opens at once with the
+Installed tab filled; the store's tabs fill in when it answers (the answer is
+kept for ten minutes; Refresh asks again). Downloads run on a worker thread
+too. Rows never jump while their tab is shown: what happened to one (installed,
+updated, removed) shows in its Status, and a tab picks up the new lists when
+it's shown next. Every label is created right before its control, and
+selecting never moves focus.
+"""
+
+import logging
+import threading
+import time
 
 import wx
+
+import core.extension_catalog as catalog
 import core.extension_manager
 import core.store
-import core.api
+from core.core_panels import _labeled, _speak
 from core.i18n import get_translator
 
 _ = get_translator("core")
+logger = logging.getLogger(__name__)
 
-class InstalledPanel(wx.Panel):
-    def __init__(self, parent, dialog):
-        super().__init__(parent)
-        self.dialog = dialog
-        self.extensions = []
-        self.InitUI()
-        self.LoadData()
-        
-    def InitUI(self):
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        
-        self.list_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
-        self.list_ctrl.InsertColumn(0, _("ext_col_name"),    width=150)
-        self.list_ctrl.InsertColumn(1, _("ext_col_version"), width=80)
-        self.list_ctrl.InsertColumn(2, _("ext_col_author"),  width=110)
-        self.list_ctrl.InsertColumn(3, _("ext_col_status"),  width=80)
-        self.list_ctrl.InsertColumn(4, _("ext_col_type"),    width=80)
-        self.list_ctrl.InsertColumn(5, "Update",             width=100)
-        
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected, self.list_ctrl)
-        vbox.Add(self.list_ctrl, 1, wx.EXPAND | wx.ALL, 5)
-        
-        self.desc_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 60))
-        vbox.Add(self.desc_text, 0, wx.EXPAND | wx.ALL, 5)
+REGISTRY_MAX_AGE = 600       # seconds the store's answer is reused
+SEARCH_SPEAK_MS = 700        # after typing stops, say how many match
 
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
+_registry_cache = {"time": 0.0, "entries": None}
 
-        self.btn_toggle = wx.Button(self, label=_("ext_btn_toggle"))
-        self.btn_toggle.Disable()
-        self.Bind(wx.EVT_BUTTON, self.OnToggle, self.btn_toggle)
-        
-        self.btn_uninstall = wx.Button(self, label=_("ext_btn_uninstall"))
-        self.btn_uninstall.Disable()
-        self.Bind(wx.EVT_BUTTON, self.OnUninstall, self.btn_uninstall)
-        
-        self.btn_update = wx.Button(self, label="Update Selected")
-        self.btn_update.Disable()
-        self.Bind(wx.EVT_BUTTON, self.OnUpdate, self.btn_update)
-        
-        hbox.Add(self.btn_toggle,    0, wx.RIGHT, 10)
-        hbox.Add(self.btn_uninstall, 0, wx.RIGHT, 10)
-        hbox.Add(self.btn_update,    0)
-        
-        vbox.Add(hbox, 0, wx.EXPAND | wx.ALL, 5)
-        self.SetSizer(vbox)
-        
-    def LoadData(self):
-        self.list_ctrl.DeleteAllItems()
-        self.extensions = core.extension_manager.get_installed_extensions_info()
-        
-        # Build update map from store registry (non-blocking: use cached result if any)
+
+def cached_registry():
+    """The store's answer from the last ten minutes, or None."""
+    if _registry_cache["entries"] and time.time() - _registry_cache["time"] < REGISTRY_MAX_AGE:
+        return _registry_cache["entries"]
+    return None
+
+
+def _fetch_worker(done, generation):
+    try:
+        entries = core.store.fetch_registry()
+    except Exception:
+        logger.exception("[Extensions] The store's list failed")
+        entries = []
+    if entries:
+        _registry_cache.update(time=time.time(), entries=entries)
+    wx.CallAfter(done, generation, entries)
+
+
+def _download_worker(done, finished, rows):
+    results = []
+    for row in rows:
         try:
-            import sys
-            _store = sys.modules.get('core.store')
-            if not _store:
-                import core.store as _store
-            
-            registry = _store.fetch_registry()
-            self._update_map = {
-                e["id"]: e for e in registry
-                if _store._parse_version(e.get("version", "0")) >
-                   _store._parse_version(
-                       core.extension_manager.LOADED_EXTENSIONS.get(e["id"], {}).get("manifest", {}).get("version", "0")
-                   )
-            }
+            ok = core.store.download_extension(row["id"], row["download_url"])
         except Exception:
-            self._update_map = {}
-        
-        for idx, ext in enumerate(self.extensions):
-            badge = " [Official]" if ext.get("is_official") else ""
-            self.list_ctrl.InsertItem(idx, f"{ext['name']}{badge}")
-            
-            # Show version with upgrade arrow if update available
-            upd = self._update_map.get(ext["id"])
-            ver_str = ext["version"]
-            if upd:
-                ver_str = f"{ext['version']} → {upd['version']}"
-            self.list_ctrl.SetItem(idx, 1, ver_str)
-            
-            self.list_ctrl.SetItem(idx, 2, ext["author"])
-            status_text = _("ext_status_enabled") if ext["is_enabled"] else _("ext_status_disabled")
-            self.list_ctrl.SetItem(idx, 3, status_text)
-            type_text = _("ext_status_unpacked") if ext["is_unpacked"] else _("ext_status_zipped")
-            self.list_ctrl.SetItem(idx, 4, type_text)
-            self.list_ctrl.SetItem(idx, 5, "⬆ Available" if upd else "")
-            self.list_ctrl.SetItemData(idx, idx)
-
-    def OnItemSelected(self, event):
-        idx = event.GetIndex()
-        ext = self.extensions[idx]
-        self.desc_text.SetValue(ext["description"])
-        self.btn_toggle.Enable()
-        self.btn_toggle.SetLabel(_("ext_btn_disable") if ext["is_enabled"] else _("ext_btn_enable"))
-        self.btn_uninstall.Enable()
-        # Enable update button only if this extension has an update
-        if hasattr(self, '_update_map') and ext["id"] in self._update_map:
-            self.btn_update.Enable()
-        else:
-            self.btn_update.Disable()
-        
-    def OnToggle(self, event):
-        idx = self.list_ctrl.GetFirstSelected()
-        if idx < 0: return
-        ext = self.extensions[idx]
-        new_status = not ext["is_enabled"]
-        
-        core.extension_manager.toggle_extension(ext["id"], new_status)
-        ext["is_enabled"] = new_status
-        self.dialog.requires_restart = True
-        
-        self.list_ctrl.SetItem(idx, 3, _("ext_status_enabled") if new_status else _("ext_status_disabled"))
-        self.btn_toggle.SetLabel(_("ext_btn_disable") if new_status else _("ext_btn_enable"))
-        
-    def OnUninstall(self, event):
-        idx = self.list_ctrl.GetFirstSelected()
-        if idx < 0: return
-        ext = self.extensions[idx]
-        
-        dlg = wx.MessageDialog(self, _("ext_msg_uninstall_confirm", name=ext['name']), 
-                               _("ext_title_uninstall"), wx.YES_NO | wx.ICON_WARNING)
-        if dlg.ShowModal() == wx.ID_YES:
-            success = core.extension_manager.uninstall_extension(ext["id"])
-            if success:
-                self.dialog.requires_restart = True
-                self.btn_toggle.Disable()
-                self.btn_uninstall.Disable()
-                self.btn_update.Disable()
-                self.desc_text.SetValue("")
-                self.LoadData()
-            else:
-                wx.MessageBox(_("ext_msg_uninstall_failed"), _("error"), wx.OK | wx.ICON_ERROR)
-        dlg.Destroy()
-
-    def OnUpdate(self, event):
-        idx = self.list_ctrl.GetFirstSelected()
-        if idx < 0: return
-        ext  = self.extensions[idx]
-        upd  = self._update_map.get(ext["id"])
-        if not upd: return
-
-        self.btn_update.Disable()
-        self.btn_update.SetLabel("Updating...")
-        wx.Yield()
-
-        # core.store is already imported globally
-        ok = core.store.download_extension(upd["id"], upd["download_url"])
-        if ok:
-            self.dialog.requires_restart = True
-            wx.MessageBox(
-                f"{ext['name']} updated to v{upd['version']}.\nRestart Hariku to apply.",
-                "Update Successful", wx.OK | wx.ICON_INFORMATION
-            )
-            self.LoadData()
-        else:
-            wx.MessageBox("Update failed. Please try again.", _("error"), wx.OK | wx.ICON_ERROR)
-        self.btn_update.SetLabel("Update Selected")
+            logger.exception("[Extensions] Download of %s failed", row["id"])
+            ok = False
+        results.append((row, ok))
+        wx.CallAfter(done, row, ok)
+    wx.CallAfter(finished, results)
 
 
-class StorePanel(wx.Panel):
-    def __init__(self, parent, dialog):
+# The buttons of each tab, in Tab order.
+BUTTONS = {
+    "installed": ("toggle", "uninstall", "update", "check_core"),
+    "updates": ("update", "update_all", "check_core"),
+    "available": ("install", "check_core"),
+    "incompatible": ("update", "uninstall"),
+}
+
+
+class ExtensionTab(wx.Panel):
+    """One tab: Search, the list, Details and the tab's buttons."""
+
+    def __init__(self, parent, dialog, tab):
         super().__init__(parent)
-        self.dialog = dialog
-        self.store_extensions = []
-        self.InitUI()
-        self.LoadStore()
-        
-    def InitUI(self):
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        
-        self.list_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
-        self.list_ctrl.InsertColumn(0, _("ext_col_name"), width=150)
-        self.list_ctrl.InsertColumn(1, _("ext_col_version"), width=60)
-        self.list_ctrl.InsertColumn(2, _("ext_col_author"), width=120)
-        self.list_ctrl.InsertColumn(3, _("ext_col_status"), width=250)
-        
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected, self.list_ctrl)
-        vbox.Add(self.list_ctrl, 1, wx.EXPAND | wx.ALL, 5)
-        
-        self.desc_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 60))
-        vbox.Add(self.desc_text, 0, wx.EXPAND | wx.ALL, 5)
-        
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        
-        self.btn_install = wx.Button(self, label=_("ext_btn_install"))
-        self.btn_install.Disable()
-        self.Bind(wx.EVT_BUTTON, self.OnInstall, self.btn_install)
-        
-        self.btn_refresh = wx.Button(self, label=_("ext_btn_refresh"))
-        self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btn_refresh)
-        
-        hbox.Add(self.btn_install, 0, wx.RIGHT, 10)
-        hbox.Add(self.btn_refresh, 0)
-        
-        vbox.Add(hbox, 0, wx.EXPAND | wx.ALL, 5)
-        self.SetSizer(vbox)
-        
-    def LoadStore(self):
-        self.list_ctrl.DeleteAllItems()
-        self.store_extensions = core.store.fetch_registry()
-        
-        installed = {ext["id"]: ext["version"] for ext in core.extension_manager.get_installed_extensions_info()}
-        
-        for idx, ext in enumerate(self.store_extensions):
-            author = ext.get("author", "").strip().lower()
-            badge = " [Official]" if author == "rafli" else ""
-            self.list_ctrl.InsertItem(idx, f"{ext['name']}{badge}")
-            self.list_ctrl.SetItem(idx, 1, ext["version"])
-            self.list_ctrl.SetItem(idx, 2, ext["author"])
-            
-            status = _("ext_status_not_installed")
-            if ext["id"] in installed:
-                if installed[ext["id"]] == ext["version"]:
-                    status = _("ext_status_installed_up_to_date")
-                else:
-                    status = _("ext_status_update_available", version=installed[ext['id']])
-            
-            self.list_ctrl.SetItem(idx, 3, status)
-            self.list_ctrl.SetItemData(idx, idx)
+        self.dialog, self.tab = dialog, tab
+        self.rows = []            # every row of this tab
+        self.shown = []           # the rows matching the search, as listed
+        self.pending = None       # newer rows to show when the tab is shown next
+        self.state = "ready"      # or "loading" / "failed" (the store's tabs)
+        self._search_timer = None
 
-    def OnRefresh(self, event):
-        self.LoadStore()
-        self.btn_install.Disable()
-        self.desc_text.SetValue(_("ext_msg_refreshed"))
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.search = _labeled(self, sizer, _("ext_search"), lambda: wx.TextCtrl(self))
+        self.search.Bind(wx.EVT_TEXT, self._on_search)
 
-    def OnItemSelected(self, event):
-        idx = event.GetIndex()
-        ext = self.store_extensions[idx]
-        self.desc_text.SetValue(ext.get("description", ""))
-        
-        installed = {e["id"]: e["version"] for e in core.extension_manager.get_installed_extensions_info()}
-        
-        self.btn_install.Enable()
-        if ext["id"] in installed:
-            if installed[ext["id"]] == ext["version"]:
-                self.btn_install.Disable()
-                self.btn_install.SetLabel(_("ext_status_installed_up_to_date"))
-            else:
-                self.btn_install.SetLabel(_("ext_btn_update"))
+        self.list = _labeled(self, sizer, _("ext_list_label"), lambda: wx.ListCtrl(
+            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN), proportion=1)
+        self.list.InsertColumn(0, _("ext_col_name"), width=230)
+        self.list.InsertColumn(1, _("ext_col_version"), width=110)
+        self.list.InsertColumn(2, _("ext_col_status"), width=300)
+        self.list.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_selected)
+        self.list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_selected)
+        self.list.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_activated)
+        self.list.Bind(wx.EVT_LIST_KEY_DOWN, self._on_list_key)
+
+        self.details = _labeled(self, sizer, _("ext_details"), lambda: wx.TextCtrl(
+            self, size=(-1, 120), style=wx.TE_MULTILINE | wx.TE_READONLY))
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        self.buttons = {}
+        for key in BUTTONS[tab]:
+            button = wx.Button(self, label=_("ext_btn_" + key))
+            button.Bind(wx.EVT_BUTTON, lambda evt, k=key: dialog.run(k, self))
+            row.Add(button, 0, wx.RIGHT, 8)
+            self.buttons[key] = button
+        sizer.Add(row, 0, wx.ALL, 10)
+        self.SetSizer(sizer)
+
+    # --- Rows ---------------------------------------------------------------------------
+
+    def set_rows(self, rows, state="ready"):
+        self.rows, self.state, self.pending = list(rows), state, None
+        self.refill()
+
+    def refill(self):
+        """List the rows matching the search. The same rows in the same order
+        are updated in place (nothing is re-read); otherwise the list is
+        rebuilt and the selected extension stays selected when it's still
+        there, else the first one is."""
+        chosen = self.selected_row()
+        shown = catalog.matching(self.rows, self.search.GetValue())
+        if [r["id"] for r in shown] == [r["id"] for r in self.shown]:
+            self.shown = shown
+            for index, row_data in enumerate(shown):
+                self._set_cells(index, row_data)
         else:
-            self.btn_install.SetLabel(_("ext_btn_install"))
-            
-    def OnInstall(self, event):
-        idx = self.list_ctrl.GetFirstSelected()
-        if idx < 0: return
-        ext = self.store_extensions[idx]
-        
-        self.btn_install.Disable()
-        self.btn_install.SetLabel(_("ext_btn_downloading"))
-        wx.Yield() 
-        
-        success = core.store.download_extension(ext["id"], ext["download_url"])
-        if success:
-            self.dialog.requires_restart = True
-            wx.MessageBox(_("ext_msg_download_success", name=ext['name']), _("ext_title_success"), wx.OK | wx.ICON_INFORMATION)
-            self.LoadStore()
-            # Also refresh the Installed tab
-            self.dialog.installed_panel.LoadData()
+            self.shown = shown
+            self.list.DeleteAllItems()
+            for index, row_data in enumerate(shown):
+                self.list.InsertItem(index, row_data["name"])
+                self._set_cells(index, row_data)
+            ids = [r["id"] for r in shown]
+            if shown:
+                index = ids.index(chosen["id"]) if chosen and chosen["id"] in ids else 0
+                self.list.Select(index)
+                self.list.Focus(index)
+        self.show_details()
+
+    def _set_cells(self, index, row):
+        done = self.dialog.done.get(row["id"], "")
+        self.list.SetItem(index, 0, row["name"])
+        self.list.SetItem(index, 1, catalog.version_text(row, self.tab))
+        self.list.SetItem(index, 2, catalog.status_text(row, self.tab, done))
+
+    def update_row(self, ext_id):
+        for index, row in enumerate(self.shown):
+            if row["id"] == ext_id:
+                self._set_cells(index, row)
+        self.show_details()
+
+    def selected_row(self):
+        index = self.list.GetFirstSelected()
+        return self.shown[index] if 0 <= index < len(self.shown) else None
+
+    def show_details(self):
+        row = self.selected_row()
+        if row:
+            text = catalog.details_text(row, self.tab, self.dialog.done.get(row["id"], ""))
+        elif self.state == "loading":
+            text = _("ext_msg_loading")
+        elif self.state == "failed":
+            text = _("ext_msg_store_failed")
+        elif self.rows and not self.shown:
+            text = _("ext_msg_no_match", query=self.search.GetValue().strip())
+        elif not self.rows:
+            text = _("ext_msg_empty_" + self.tab)
         else:
-            wx.MessageBox(_("ext_msg_download_failed"), _("error"), wx.OK | wx.ICON_ERROR)
-            self.btn_install.Enable()
-            self.btn_install.SetLabel(_("ext_btn_install"))
+            text = _("ext_msg_select")
+        if self.details.GetValue() != text:
+            self.details.SetValue(text)
+        self.dialog.update_buttons(self)
+
+    # --- Events -------------------------------------------------------------------------
+
+    def _on_selected(self, event):
+        self.show_details()
+        event.Skip()
+
+    def _on_activated(self, event):
+        if self.tab == "available":
+            self.dialog.run("install", self)
+        elif self.tab == "updates":
+            self.dialog.run("update", self)
+
+    def _on_list_key(self, event):
+        if event.GetKeyCode() == wx.WXK_DELETE and "uninstall" in self.buttons:
+            self.dialog.run("uninstall", self)
+        else:
+            event.Skip()
+
+    def _on_search(self, event):
+        self.refill()
+        if self._search_timer:
+            self._search_timer.Stop()
+        self._search_timer = wx.CallLater(SEARCH_SPEAK_MS, self._speak_found)
+        event.Skip()
+
+    def _speak_found(self):
+        self._search_timer = None
+        if self and self.search.HasFocus() and self.search.GetValue().strip():
+            _speak(_("ext_found", count=len(self.shown)))
 
 
 class ExtensionManagerDialog(wx.Dialog):
-    def __init__(self, parent):
-        super().__init__(parent, title=_("dlg_ext_mgr_title"), size=(800, 500))
+    def __init__(self, parent, tab="installed"):
+        super().__init__(parent, title=_("dlg_ext_mgr_title"), size=(840, 580),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self.requires_restart = False
-        self.InitUI()
-        self.CentreOnParent()
-        
-    def InitUI(self):
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        
+        self.done = {}              # ext id -> "installed" / "updated" / "removed" / "failed" / "downloading"
+        self.registry = cached_registry()
+        self.busy = False
+        self._generation = 0
+        self._closed = False
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
         self.notebook = wx.Notebook(self)
-        self.installed_panel = InstalledPanel(self.notebook, self)
-        self.store_panel = StorePanel(self.notebook, self)
-        
-        self.notebook.AddPage(self.installed_panel, _("ext_tab_installed"))
-        self.notebook.AddPage(self.store_panel, _("ext_tab_store"))
-        
-        vbox.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 10)
-        
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        hbox.AddStretchSpacer()
-        btn_close = wx.Button(self, label=_("ext_btn_close"))
-        self.Bind(wx.EVT_BUTTON, self.OnCloseButton, btn_close)
-        hbox.Add(btn_close, 0)
-        
-        vbox.Add(hbox, 0, wx.EXPAND | wx.ALL, 10)
-        self.SetSizer(vbox)
-        
+        self.tabs = {}
+        for key in catalog.TABS:
+            page = ExtensionTab(self.notebook, self, key)
+            self.notebook.AddPage(page, _("ext_tab_" + key))
+            self.tabs[key] = page
+        self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self._on_page_changed)
+        sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 10)
+
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.AddStretchSpacer()
+        self.btn_refresh = wx.Button(self, label=_("ext_btn_refresh"))
+        self.btn_refresh.Bind(wx.EVT_BUTTON, lambda evt: self.refresh())
+        row.Add(self.btn_refresh, 0, wx.RIGHT, 8)
+        btn_close = wx.Button(self, wx.ID_CLOSE, _("ext_btn_close"))
+        btn_close.Bind(wx.EVT_BUTTON, lambda evt: self._close())
+        row.Add(btn_close, 0)
+        sizer.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        self.SetSizer(sizer)
+        self.SetEscapeId(wx.ID_CLOSE)
+        self.Bind(wx.EVT_CLOSE, lambda evt: self._close())
+
         from core.i18n import apply_rtl_layout
         apply_rtl_layout(self)
-        
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-        
-    def OnCloseButton(self, event):
-        self.EndModal(wx.ID_OK)
-        
-    def OnClose(self, event):
-        self.EndModal(wx.ID_OK)
+
+        self._fill_all()
+        if tab in self.tabs:
+            self.notebook.SetSelection(catalog.TABS.index(tab))
+        if self.registry is None:
+            self.refresh()
+        self.CentreOnParent()
+
+    # --- Lists --------------------------------------------------------------------------
+
+    def current_tab(self):
+        index = self.notebook.GetSelection()
+        return self.tabs.get(catalog.TABS[index]) if 0 <= index < len(catalog.TABS) else None
+
+    def _data(self):
+        return catalog.build(core.extension_manager.get_installed_extensions_info(),
+                             self.registry, core.extension_manager.SYSTEM_EXTENSIONS_DIR,
+                             core.extension_manager.LOAD_ERRORS)
+
+    def _fill_all(self, keep_current=False):
+        """Give every tab its rows. With keep_current, the tab being shown keeps
+        its rows (only their Status changes) and gets the new ones when it's
+        shown next."""
+        data = self._data()
+        store_state = ("loading" if self.registry is None else
+                       "failed" if not self.registry else "ready")
+        shown = self.current_tab() if keep_current else None
+        for key, page in self.tabs.items():
+            state = store_state if key in ("updates", "available") else "ready"
+            if page is shown:
+                page.pending = (data[key], state)
+                page.refill()
+            else:
+                page.set_rows(data[key], state)
+            known = bool(self.registry) or key in ("installed", "incompatible")
+            self.notebook.SetPageText(catalog.TABS.index(key),
+                                      catalog.tab_title(key, len(data[key]) if known else None))
+
+    def _on_page_changed(self, event):
+        page = self.current_tab()
+        if page is not None and page.pending:
+            rows, state = page.pending
+            page.set_rows(rows, state)
+        event.Skip()
+
+    def refresh(self):
+        """Ask the store for its list again (on a worker thread)."""
+        self._generation += 1
+        self.registry = None
+        for key in ("updates", "available"):
+            page = self.tabs[key]
+            page.set_rows([], "loading")
+            self.notebook.SetPageText(catalog.TABS.index(key), catalog.tab_title(key, None))
+        self.update_buttons()
+        threading.Thread(target=_fetch_worker, args=(self._on_registry, self._generation),
+                         daemon=True, name="hariku-store-list").start()
+
+    def _on_registry(self, generation, entries):
+        if self._closed or not self or generation != self._generation:
+            return
+        self.registry = entries
+        self._fill_all()
+        page = self.current_tab()
+        if page is not None and page.tab != "installed":
+            if not entries:
+                _speak(_("ext_msg_store_failed"))
+            else:
+                _speak(self.notebook.GetPageText(self.notebook.GetSelection()))
+
+    def update_buttons(self, page=None):
+        pages = [page] if page else self.tabs.values()
+        for page in pages:
+            row = page.selected_row()
+            for key, button in page.buttons.items():
+                button.Enable(self._can(key, row, page))
+                if key == "toggle":
+                    label = (_("ext_btn_enable") if row and not row["enabled"]
+                             else _("ext_btn_disable"))
+                    if button.GetLabel() != label:
+                        button.SetLabel(label)
+        self.btn_refresh.Enable(not self.busy)
+
+    def _can(self, key, row, page):
+        if key == "update_all":
+            return not self.busy and bool(self._updatable(page))
+        done = self.done.get(row["id"], "") if row else ""
+        if not row or done == "removed":
+            return False
+        if key == "check_core":
+            return bool(catalog.waits_for_core(row))
+        if key == "toggle":
+            return row["installed"]
+        if key == "uninstall":
+            return row["installed"] and row["source"] != catalog.BUNDLED
+        if key == "update":
+            return (not self.busy and catalog.can_update(row)
+                    and done not in ("updated", "downloading"))
+        if key == "install":
+            return (not self.busy and catalog.can_install(row)
+                    and done not in ("installed", "downloading"))
+        return False
+
+    def _updatable(self, page):
+        return [r for r in page.rows if catalog.can_update(r)
+                and self.done.get(r["id"]) not in ("updated", "downloading", "removed")]
+
+    def _refresh_row(self, ext_id):
+        for page in self.tabs.values():
+            page.update_row(ext_id)
+
+    # --- Actions ------------------------------------------------------------------------
+
+    def run(self, key, page):
+        row = page.selected_row()
+        if not self._can(key, row, page):
+            return
+        getattr(self, "_do_" + key)(row, page)
+
+    def _do_toggle(self, row, page):
+        row["enabled"] = not row["enabled"]
+        core.extension_manager.toggle_extension(row["id"], row["enabled"])
+        self.requires_restart = True
+        self._refresh_row(row["id"])
+        _speak(_("ext_msg_enabled" if row["enabled"] else "ext_msg_disabled", name=row["name"]))
+
+    def confirm(self, message, title):
+        dlg = wx.MessageDialog(self, message, title, wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
+        try:
+            return dlg.ShowModal() == wx.ID_YES
+        finally:
+            dlg.Destroy()
+
+    def _do_uninstall(self, row, page):
+        if not self.confirm(_("ext_msg_uninstall_confirm", name=row["name"]),
+                            _("ext_title_uninstall")):
+            return
+        if core.extension_manager.uninstall_extension(row["id"]):
+            self.done[row["id"]] = "removed"
+            self.requires_restart = True
+            self._refresh_row(row["id"])
+            _speak(_("ext_msg_removed", name=row["name"]))
+        else:
+            wx.MessageBox(_("ext_msg_uninstall_failed"), _("error"), wx.OK | wx.ICON_ERROR, self)
+
+    def _do_install(self, row, page):
+        self._download([row])
+
+    def _do_update(self, row, page):
+        self._download([row])
+
+    def _do_update_all(self, row, page):
+        rows = self._updatable(page)
+        if rows:
+            self._download(rows)
+
+    def _do_check_core(self, row, page):
+        import core.updater
+        threading.Thread(target=core.updater.check_for_updates, args=(True,), daemon=True,
+                         name="hariku-core-update").start()
+
+    def _download(self, rows):
+        self.busy = True
+        for row in rows:
+            self.done[row["id"]] = "downloading"
+            self._refresh_row(row["id"])
+        self.update_buttons()
+        if len(rows) == 1:
+            _speak(_("ext_msg_downloading", name=rows[0]["name"]))
+        else:
+            _speak(_("ext_msg_downloading_many", count=len(rows)))
+        threading.Thread(target=_download_worker, args=(self._downloaded, self._downloads_finished,
+                                                        rows),
+                         daemon=True, name="hariku-store-download").start()
+
+    def _downloaded(self, row, ok):
+        if self._closed or not self:
+            return
+        if ok:
+            self.done[row["id"]] = "installed" if not row["installed"] else "updated"
+            self.requires_restart = True
+        else:
+            self.done[row["id"]] = "failed"
+        self._refresh_row(row["id"])
+
+    def _downloads_finished(self, results):
+        if self._closed or not self:
+            return
+        self.busy = False
+        good = [row for row, ok in results if ok]
+        bad = [row for row, ok in results if not ok]
+        if good:
+            self._fill_all(keep_current=True)
+        self.update_buttons()
+        if len(results) == 1:
+            row = results[0][0]
+            if good:
+                _speak(_("ext_msg_installed" if not row["installed"] else "ext_msg_updated",
+                         name=row["name"]))
+            else:
+                _speak(_("ext_msg_download_failed_one", name=row["name"]))
+        else:
+            message = (_("ext_msg_updated", name=good[0]["name"]) if len(good) == 1 else
+                       _("ext_msg_updated_many", count=len(good)) if good else "")
+            if bad:
+                message = (message + " " if message else "") + _(
+                    "ext_msg_failed_many", names=", ".join(r["name"] for r in bad))
+            _speak(message)
+
+    def _close(self):
+        self._closed = True
+        for page in self.tabs.values():
+            if page._search_timer:
+                page._search_timer.Stop()
+        if self.IsModal():
+            self.EndModal(wx.ID_OK)
+        else:
+            self.Hide()

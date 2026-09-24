@@ -162,6 +162,7 @@ Required fields:
   main                — Entry point module name (usually "main").
   language            — Primary language code (e.g., "en", "ar").
   minimum_core_version — The minimum Hariku core version required.
+  last_tested_core_version — Optional: the newest Hariku you tested it with.
 
 Rules:
 
@@ -172,6 +173,10 @@ Rules:
      extension actually works with. Do not set it to "1.0.0" unless you have
      verified compatibility. Do not set it to the latest version unless your
      extension requires features introduced in that version.
+     Hariku doesn't run an extension made for a core older than the oldest
+     extension API it still supports (core.constants.EXTENSION_API_BACK_COMPAT);
+     it's listed as Incompatible. After testing with a newer Hariku, set
+     "last_tested_core_version" so your extension keeps running.
 
   3. The "description" must explain what the extension does in at least one
      complete sentence. It is displayed to users in the store.

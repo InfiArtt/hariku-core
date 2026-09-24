@@ -24,6 +24,20 @@ Version 2.8.0 (Core Update)
   they sent the centre of your city more precisely). Earthquakes & Tsunami and
   Space work everything out on your computer, and Flight Radar and Cockpit
   still only send a rounded point or a wide box.
+- The Extension Manager (Ctrl+X) has four tabs: Installed, Updates,
+  Available and Incompatible, each with a Search field, the list (Name,
+  Version, Status), a Details box and only the buttons that tab needs.
+  Updates has "Update all". The window opens at once: the store's tabs fill
+  in when the store answers, and downloads no longer freeze Hariku.
+  Installing, updating or removing keeps your place in the list; the Status
+  says what happened and Hariku says it.
+- An extension, or an update of one, that needs a newer Hariku now says
+  "Needs Hariku 2.9" and can't be installed, with "Check for Hariku updates"
+  beside it. The Installed tab also says when an extension isn't running
+  because its manifest is broken or it stopped with an error.
+- Incompatible, like in NVDA, lists extensions made for a Hariku older than
+  this one still runs. No update has broken older extensions, so it's empty
+  for now.
 - Extension updates in the Store, for Hariku 2.8: Weather 1.2, Sea Conditions
   1.2, Air Quality 1.2, Earthquakes & Tsunami 1.2, Space 1.1, Cockpit 1.1 and
   Flight Radar 1.7.

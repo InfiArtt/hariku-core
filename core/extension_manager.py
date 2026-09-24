@@ -31,6 +31,10 @@ EXTENSIONS_DIR = USER_EXTENSIONS_DIR
 
 LOADED_EXTENSIONS = {}
 
+# Why an extension that Hariku tried to load didn't start, by id: the error it
+# stopped with (the Extension Manager's Installed tab shows it).
+LOAD_ERRORS = {}
+
 # [SEC MED-3] Hardcoded list of official Hariku extension IDs.
 # This prevents spoofing the [Official] badge via the manifest author field.
 #
@@ -75,6 +79,10 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
 ])
 
 
+_REQUIRED_MANIFEST_FIELDS = ("name", "version", "description", "main", "author", "language",
+                             "minimum_core_version")
+
+
 def _version_tuple(text):
     """(major, minor) from "2.4", "2.4.0" or "2.10", or None if unreadable.
     Tuples compare correctly where float("2.10") < float("2.4") would not."""
@@ -83,6 +91,27 @@ def _version_tuple(text):
     except ValueError:
         return None
     return tuple(parts + [0] * (2 - len(parts)))
+
+
+def needs_newer_core(manifest):
+    """The minimum_core_version of a manifest (or store entry) when this Hariku
+    is older than it, else ""."""
+    required = str((manifest or {}).get("minimum_core_version") or "").strip()
+    need = _version_tuple(required) if required else None
+    have = _version_tuple(core.constants.CORE_VERSION)
+    return required if need and have and need > have else ""
+
+
+def too_old_for_core(manifest):
+    """The Hariku version an extension was made for (its last_tested_core_version,
+    else its minimum_core_version) when this Hariku no longer runs extensions
+    that old (core.constants.EXTENSION_API_BACK_COMPAT), else ""."""
+    manifest = manifest or {}
+    made_for = str(manifest.get("last_tested_core_version")
+                   or manifest.get("minimum_core_version") or "").strip()
+    made = _version_tuple(made_for) if made_for else None
+    oldest = _version_tuple(core.constants.EXTENSION_API_BACK_COMPAT)
+    return made_for if made and oldest and made < oldest else ""
 
 
 def _safe_extractall(zip_ref, dest_path):
@@ -403,6 +432,7 @@ def load_zipped_extension(hrk_path):
         _load_extension_from_dir(extract_path, ext_id)
     except Exception as e:
         logger.exception(f"Failed to load {hrk_path}: {e}")
+        LOAD_ERRORS[ext_id] = f"{type(e).__name__}: {e}"[:300]
 
 def load_unpacked_extension(folder_path):
     ext_id = os.path.basename(folder_path)
@@ -419,8 +449,7 @@ def _load_extension_from_dir(ext_dir, ext_id):
             manifest = json.load(f)
             
         # --- Strict Manifest Validation ---
-        required_fields = ["name", "version", "description", "main", "author", "language", "minimum_core_version"]
-        missing = [f for f in required_fields if f not in manifest]
+        missing = [f for f in _REQUIRED_MANIFEST_FIELDS if f not in manifest]
         if missing:
             logger.error(f"Extension '{ext_id}' rejected. Missing required manifest fields: {missing}")
             return False
@@ -433,6 +462,10 @@ def _load_extension_from_dir(ext_dir, ext_id):
         elif current is not None and required > current:
             logger.error(f"Extension '{ext_id}' requires Core Version {manifest['minimum_core_version']}, "
                          f"but current is {core.constants.CORE_VERSION}")
+            return False
+        if too_old_for_core(manifest):
+            logger.error(f"Extension '{ext_id}' is made for Hariku {too_old_for_core(manifest)}, older "
+                         f"than {core.constants.EXTENSION_API_BACK_COMPAT}, the oldest this core runs")
             return False
         # ----------------------------------
             
@@ -450,6 +483,7 @@ def _load_extension_from_dir(ext_dir, ext_id):
         
         if not os.path.exists(entry_path):
             logger.error(f"Entry point {entry_point} not found in extension: {ext_id}")
+            LOAD_ERRORS[ext_id] = f"{entry_point} is missing"
             return False
             
         if ext_dir not in sys.path:
@@ -485,12 +519,14 @@ def _load_extension_from_dir(ext_dir, ext_id):
             "is_official": is_official
         }
         
+        LOAD_ERRORS.pop(ext_id, None)
         mode = "UNPACKED" if is_unpacked else "ZIPPED"
         badge = "[Official]" if is_official else "[Community]"
         logger.info(f"Successfully loaded extension [{mode}] {badge}: {manifest.get('name', ext_id)} v{manifest.get('version', '1.0')}")
         return True
     except Exception as e:
         logger.exception(f"Failed to load extension from dir {ext_dir}: {e}")
+        LOAD_ERRORS[ext_id] = f"{type(e).__name__}: {e}"[:300]
         return False
 
 def get_installed_extensions_info():
@@ -534,7 +570,10 @@ def get_installed_extensions_info():
                     "description": manifest.get("description", "No description available."),
                     "is_enabled": ext_id not in disabled,
                     "is_unpacked": is_unpacked,
-                    "path": full_path
+                    "path": full_path,
+                    "minimum_core_version": str(manifest.get("minimum_core_version") or ""),
+                    "last_tested_core_version": str(manifest.get("last_tested_core_version") or ""),
+                    "missing_fields": [f for f in _REQUIRED_MANIFEST_FIELDS if f not in manifest],
                 }
                 
     scan_dir(SYSTEM_EXTENSIONS_DIR)
