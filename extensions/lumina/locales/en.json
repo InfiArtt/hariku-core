@@ -41,6 +41,7 @@
         "self_birthday_date":        "My birth date (DD-MM):",
         "self_birthday_year":        "My birth year (optional):",
         "self_birthday_hint":        "Your name is taken from your Hariku profile.",
+        "self_birthday_in_profile":  "Your own birthday is set in Preferences, Profile. Lumina reminds you of it from there.",
         "notify_on_startup":         "Remind on Hariku startup",
         "remind_7_days":             "Remind 7 days before",
         "remind_3_days":             "Remind 3 days before",

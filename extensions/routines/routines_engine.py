@@ -341,7 +341,8 @@ def _menu_value(value, empty="not set"):
     return value if len(value) <= _MENU_VALUE_MAX else value[:_MENU_VALUE_MAX - 1] + "…"
 
 
-def placeholder_menu_entries(name="", nickname="", fields=(), variables=()):
+def placeholder_menu_entries(name="", nickname="", fields=(), variables=(), birthday="",
+                             age=""):
     """(token, label) pairs for the builder's Insert placeholder menu: the
     profile, the user's own keys, the Routines tokens, then this routine's
     variables. E.g. ("%myname%", "%myname%: your name (Rafli)")."""
@@ -349,6 +350,8 @@ def placeholder_menu_entries(name="", nickname="", fields=(), variables=()):
         ("%myname%", "%%myname%%: your name (%s)" % _menu_value(name)),
         ("%mynickname%", "%%mynickname%%: what Hariku calls you (%s)"
          % _menu_value(nickname or name)),
+        ("%mybirthday%", "%%mybirthday%%: your birthday (%s)" % _menu_value(birthday)),
+        ("%myage%", "%%myage%%: your age (%s)" % _menu_value(age)),
     ]
     for key, value in fields or ():
         entries.append(("%%%s%%" % key, "%%%s%%: your placeholder (%s)"

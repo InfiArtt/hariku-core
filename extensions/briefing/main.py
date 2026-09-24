@@ -10,11 +10,16 @@
 """
 Morning Briefing — Hariku V2 extension.
 
-A hotkey speaks a greeting (with the user's nickname from Preferences, Profile),
-today's date, today's reminders and whatever other extensions add through the
-"on_briefing_collect" event (the contract is documented in briefing_core.py).
-Optionally the briefing plays the first time Hariku starts each day (off by
-default; Preferences, Morning Briefing).
+A hotkey (B) speaks a greeting (with the user's nickname from Preferences,
+Profile), today's date, today's reminders and whatever other extensions add
+through the "on_briefing_collect" event (the contract is documented in
+briefing_core.py). Optionally the briefing plays the first time Hariku starts
+each day (off by default; Preferences, Morning Briefing).
+
+Shift+B speaks the evening summary: what's done today, what's left, tomorrow's
+first reminder, and what other extensions add through "on_evening_collect".
+Optionally it plays by itself at a chosen time between 18:00 and 23:00 (off by
+default).
 """
 
 import datetime
@@ -35,7 +40,9 @@ from briefing_core import _
 
 logger = logging.getLogger(__name__)
 
-DATA_KEY = "Briefing"   # {"auto_first_start": bool, "last_auto_date": "YYYY-MM-DD"}
+# {"auto_first_start": bool, "last_auto_date": "YYYY-MM-DD", "evening_auto": bool,
+#  "evening_time": "HH:MM", "last_evening_date": "YYYY-MM-DD"}
+DATA_KEY = "Briefing"
 AUTO_DELAY_MS = 5000    # let startup sounds and speech finish first
 
 _bus = None
@@ -57,24 +64,46 @@ def _today_str(now=None):
 # Action
 # ------------------------------------------------------------
 
-def briefing_text(now=None):
-    now = now or datetime.datetime.now()
+def _reminders_on(day):
     try:
-        reminders = core.reminders.get_reminders_for_date(_today_str(now))
+        return core.reminders.get_reminders_for_date(day.strftime("%Y-%m-%d"))
     except Exception:
-        logger.exception("[Briefing] Could not read today's reminders")
-        reminders = []
+        logger.exception("[Briefing] Could not read the reminders")
+        return []
+
+
+def briefing_text(now=None, greet=True):
+    now = now or datetime.datetime.now()
+    reminders = _reminders_on(now)
     core_config = core.api.load_data("Core")
     date_format = core_config.get("date_format") if isinstance(core_config, dict) else None
     return " ".join(briefing_core.build_briefing(now, reminders, date_format, _bus,
                                                  nickname=core.personal.get_nickname(),
-                                                 expand=core.personal.expand))
+                                                 expand=core.personal.expand,
+                                                 birthday=core.personal.is_birthday(now),
+                                                 greet=greet))
+
+
+def evening_text(now=None):
+    now = now or datetime.datetime.now()
+    return " ".join(briefing_core.build_evening(now, _reminders_on(now),
+                                                _reminders_on(now + datetime.timedelta(days=1)),
+                                                _bus,
+                                                nickname=core.personal.get_nickname(),
+                                                expand=core.personal.expand,
+                                                birthday=core.personal.is_birthday(now)))
 
 
 def play_briefing():
     if _bus is None:
         return
     speak(briefing_text(), interrupt=True)
+
+
+def play_evening_summary():
+    if _bus is None:
+        return
+    speak(evening_text(), interrupt=True)
 
 
 # ------------------------------------------------------------
@@ -98,28 +127,70 @@ def _auto_play():
         return
     config["last_auto_date"] = today
     core.api.save_data(DATA_KEY, config)
-    play_briefing()
+    if _bus is None:
+        return
+    # Hariku's startup greeting has just said "Good morning": don't say it twice.
+    speak(briefing_text(greet=not core.personal.startup_greeting_enabled()), interrupt=True)
+
+
+# ------------------------------------------------------------
+# Automatic evening summary
+# ------------------------------------------------------------
+
+def _on_minute_tick(now=None, *_args, **_kwargs):
+    if not _active:
+        return
+    now = now if isinstance(now, datetime.datetime) else datetime.datetime.now()
+    config = _load_config()
+    if not briefing_core.should_auto_evening(config, now):
+        return
+    config["last_evening_date"] = _today_str(now)
+    core.api.save_data(DATA_KEY, config)
+    play_evening_summary()
 
 
 # ------------------------------------------------------------
 # Preferences
 # ------------------------------------------------------------
 
+def _plain(label):
+    return label.replace("&", "").strip().rstrip(":").strip()
+
+
 class BriefingPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
+        config = _load_config()
         vbox = wx.BoxSizer(wx.VERTICAL)
         label = _("chk_auto")
         self.chk_auto = wx.CheckBox(self, label=label)
         self.chk_auto.SetName(label)
-        self.chk_auto.SetValue(bool(_load_config().get("auto_first_start", False)))
+        self.chk_auto.SetValue(bool(config.get("auto_first_start", False)))
         vbox.Add(self.chk_auto, 0, wx.ALL, 10)
+
+        label = _("chk_evening")
+        self.chk_evening = wx.CheckBox(self, label=label)
+        self.chk_evening.SetName(label)
+        self.chk_evening.SetValue(bool(config.get("evening_auto", False)))
+        vbox.Add(self.chk_evening, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
+        label = _("lbl_evening_time")
+        vbox.Add(wx.StaticText(self, label=label), 0, wx.LEFT | wx.RIGHT, 10)
+        self.choice_evening_time = wx.Choice(self, choices=briefing_core.EVENING_TIMES)
+        self.choice_evening_time.SetName(_plain(label))
+        self.choice_evening_time.SetSelection(
+            briefing_core.EVENING_TIMES.index(briefing_core.evening_time(config)))
+        vbox.Add(self.choice_evening_time, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         self.SetSizer(vbox)
         core.ui_scale.apply_appearance(self)
 
     def ApplyChanges(self):
         config = _load_config()
         config["auto_first_start"] = bool(self.chk_auto.GetValue())
+        config["evening_auto"] = bool(self.chk_evening.GetValue())
+        index = self.choice_evening_time.GetSelection()
+        if 0 <= index < len(briefing_core.EVENING_TIMES):
+            config["evening_time"] = briefing_core.EVENING_TIMES[index]
         core.api.save_data(DATA_KEY, config)
 
 
@@ -146,9 +217,13 @@ def register(bus):
     _bus = bus
     _active = True
     bus.subscribe("on_app_startup", _on_app_startup)
-    # B: free in the core and the bundled extensions (Lumina uses Ctrl+Shift+B).
+    bus.subscribe("on_minute_tick", _on_minute_tick)
+    # B and Shift+B: free in the core, every extension and store package (Lumina
+    # uses Ctrl+Shift+B).
     core.hotkeys.register_action("Morning Briefing", "play_briefing", _("action_play"),
                                  ord("B"), False, play_briefing)
+    core.hotkeys.register_action("Morning Briefing", "evening_summary", _("action_evening"),
+                                 ord("B"), False, play_evening_summary, default_shift=True)
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
     logger.info("Morning Briefing extension loaded.")
 
@@ -164,13 +239,15 @@ def teardown():
         _auto_timer = None
     if _bus is not None:
         unsubscribe = getattr(_bus, "unsubscribe", None)
-        try:
-            if callable(unsubscribe):
-                unsubscribe("on_app_startup", _on_app_startup)
-            else:
-                listeners = getattr(_bus, "_listeners", {}).get("on_app_startup")
-                if listeners and _on_app_startup in listeners:
-                    listeners.remove(_on_app_startup)
-        except Exception:
-            pass
+        for event_name, handler in (("on_app_startup", _on_app_startup),
+                                    ("on_minute_tick", _on_minute_tick)):
+            try:
+                if callable(unsubscribe):
+                    unsubscribe(event_name, handler)
+                else:
+                    listeners = getattr(_bus, "_listeners", {}).get(event_name)
+                    if listeners and handler in listeners:
+                        listeners.remove(handler)
+            except Exception:
+                pass
     logger.info("Morning Briefing extension unloaded.")

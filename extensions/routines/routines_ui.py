@@ -40,6 +40,7 @@ import uuid
 import wx
 
 import core.api
+import core.personal
 from core.speech import speak
 
 import routines_engine as engine
@@ -298,13 +299,12 @@ class ItemDialog(wx.Dialog):
         return self._field_ctrls[key][0]
 
     def placeholder_entries(self):
-        try:
-            import core.personal
-            profile = core.personal.get_profile()
-        except Exception:
-            profile = {"name": "", "nickname": "", "fields": []}
-        return engine.placeholder_menu_entries(profile["name"], profile["nickname"],
-                                               profile["fields"], self._variables)
+        profile = core.personal.get_profile()
+        age = core.personal.get_age(birthday=profile["birthday"])
+        return engine.placeholder_menu_entries(
+            profile["name"], profile["nickname"], profile["fields"], self._variables,
+            birthday=core.personal.birthday_text(profile["birthday"]),
+            age="" if age is None else str(age))
 
     def _on_insert_placeholder(self, event=None):
         if self.target_text_field() is None:

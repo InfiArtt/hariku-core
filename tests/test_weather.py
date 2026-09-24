@@ -598,3 +598,42 @@ def test_register_and_teardown(wmain, fresh_event_bus, monkeypatch, tmp_data_dir
     for event_name, handler in wmain._SUBSCRIPTIONS:
         assert handler not in fresh_event_bus._listeners.get(event_name, [])
     assert not wmain._active
+
+
+# --- Evening summary (Weather 1.1) --------------------------------------------------
+
+def test_evening_sentence(text, lang, forecast):
+    # The sample's tomorrow (24 September) is overcast with a high of 32.4.
+    assert text.evening_sentence(forecast, "metric", NOW_UTC) == "Tomorrow: overcast, 32 degrees."
+    assert text.evening_sentence(forecast, "imperial", NOW_UTC) == "Tomorrow: overcast, 90 degrees."
+    lang("id")
+    assert text.evening_sentence(forecast, "metric", NOW_UTC) == "Besok: mendung, 32 derajat."
+
+
+def test_evening_sentence_without_tomorrow(text, lang, forecast):
+    last_day = NOW_UTC + datetime.timedelta(days=2)
+    assert text.evening_sentence(forecast, "metric", last_day) == ""
+    forecast["daily"][1]["code"] = None
+    assert text.evening_sentence(forecast, "metric", NOW_UTC) == "Tomorrow: high 32."
+    forecast["daily"][1]["high"] = None
+    assert text.evening_sentence(forecast, "metric", NOW_UTC) == ""
+
+
+def test_evening_contribution_uses_the_cache_only(wmain, api, forecast, lang, monkeypatch):
+    import time
+    calls = _fetch_calls(monkeypatch, api, error="offline")
+    real = wmain.weather_text.evening_sentence
+    monkeypatch.setattr(wmain.weather_text, "evening_sentence",
+                        lambda fc, units, now_utc=None: real(fc, units, NOW_UTC))
+    _set_location(wmain)
+    wmain._cache = api.make_cache(JAKARTA, forecast)
+    lines = []
+    wmain._on_evening_collect(lines)
+    assert lines == ["Tomorrow: overcast, 32 degrees."]
+    lines = []
+    wmain._cache = api.make_cache(JAKARTA, forecast, now=time.time() - 4 * 3600)
+    wmain._on_evening_collect(lines)
+    assert lines == []              # too old
+    _set_location(wmain, None)
+    wmain._on_evening_collect(lines)
+    assert lines == [] and calls == []

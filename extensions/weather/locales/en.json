@@ -29,6 +29,7 @@
         "piece_low": "low {temp}",
         "piece_rain_chance": "{value} percent chance of rain",
         "today_prefix": "Today: {text}.",
+        "tomorrow_prefix": "Tomorrow: {text}.",
         "weather_in": "Weather in {place}: {text}.",
         "day_today": "Today, {date}",
         "day_tomorrow": "Tomorrow, {date}",

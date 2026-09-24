@@ -205,7 +205,8 @@ def test_every_python_file_has_the_licence_header():
 def test_manifest():
     with open(os.path.join(EQ_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["version"] == "1.0" and manifest["minimum_core_version"] == "2.4"
+    # 1.1: quiet hours (core.personal.is_quiet_time, core 2.7).
+    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"
     assert manifest["main"] == "main.py" and "BMKG" in manifest["description"]
 
 
@@ -1361,3 +1362,53 @@ def test_applying_use_weather_saves_no_city(eqmain, lang):
     assert eqmain.text.location_text(place, weather) == \
         "Ruteng, East Nusa Tenggara, Indonesia (from the Weather settings)"
     eqmain._panel = None
+
+
+# ------------------------------------------------------------
+# Quiet hours (Earthquakes & Tsunami 1.1, core 2.7)
+# ------------------------------------------------------------
+
+def _quiet(monkeypatch, value):
+    import core.personal
+    state = {"quiet": value}
+    monkeypatch.setattr(core.personal, "is_quiet_time", lambda now=None: state["quiet"])
+    return state
+
+
+def test_quiet_hours_drop_nearby_and_felt_alerts(eqmain, api, lang, monkeypatch):
+    quiet = _quiet(monkeypatch, True)
+    eqmain._settings = api.normalize_settings({"location": RUTENG, "nearby_alerts": True,
+                                               "felt_alerts": True})
+    eqmain._poll()
+    assert eqmain.spoken == [] and eqmain.sounds == []
+    # Dropped, not saved for later: after quiet hours the same quake stays quiet.
+    quiet["quiet"] = False
+    eqmain.clock.now += 60
+    eqmain._poll()
+    assert eqmain.spoken == []
+    # The first alert heard still carries the disclaimer.
+    eqmain.responses[api.AUTOGEMPA_URL] = _autogempa(DateTime="2026-09-23T02:11:00+00:00",
+                                                     Jam="09:11:00 WIB")
+    eqmain._poll()
+    msg, _interrupt = eqmain.spoken[-1]
+    assert msg.startswith("Earthquake near you") and "official warning system" in msg
+
+
+def test_quiet_hours_never_hold_a_tsunami_alert(eqmain, api, lang, monkeypatch):
+    _quiet(monkeypatch, True)
+    eqmain._settings = api.normalize_settings({"location": RUTENG, "nearby_alerts": True})
+    eqmain.responses[api.AUTOGEMPA_URL] = _autogempa(**TSUNAMI)
+    eqmain._poll()
+    [(msg, interrupt)] = eqmain.spoken
+    assert interrupt is True and msg.startswith("Tsunami potential, according to BMKG.")
+    assert eqmain.sounds == [eqmain.TSUNAMI_SOUND]
+
+
+def test_quiet_hours_drop_worldwide_alerts(eqmain, api, lang, monkeypatch):
+    quiet = _quiet(monkeypatch, True)
+    eqmain._save_settings({"world_alerts": True})
+    eqmain._world_timer.callback()
+    assert eqmain.spoken == []
+    quiet["quiet"] = False
+    eqmain._world_timer.callback()
+    assert eqmain.spoken == []            # remembered, so not announced afterwards

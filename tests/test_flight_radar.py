@@ -2523,3 +2523,52 @@ def test_speak_tracked(frmain, api, lang, wall, monkeypatch):
     rows = frmain.tracked_rows()
     assert [key for key, _row in rows] == [("callsign", "GIA408"), ("callsign", "SIA12")]
     assert rows[1][1].startswith("Singapore Airlines 12: not transmitting. Checked at ")
+
+
+# ------------------------------------------------------------
+# Quiet hours (Flight Radar 1.6, core 2.7)
+# ------------------------------------------------------------
+
+def _quiet(monkeypatch, value):
+    import core.personal
+    state = {"quiet": value}
+    monkeypatch.setattr(core.personal, "is_quiet_time", lambda now=None: state["quiet"])
+    return state
+
+
+def test_quiet_hours_silence_overhead_alerts_and_the_watch(frmain, api, lang, monkeypatch):
+    calls = _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    quiet = _quiet(monkeypatch, True)
+    _set(frmain, api, alerts=True, emergency_watch=True)
+    frmain._update_polling()
+    for _ in range(3):
+        timer = _poll_timers(frmain)[0]
+        frmain.clock.now += timer.seconds
+        timer.fire()
+    # Nothing said, nothing fetched just to be dropped, and polling goes on.
+    assert frmain.spoken == [] and frmain.sounds == [] and calls == []
+    [timer] = _poll_timers(frmain)
+    assert timer.seconds == frmain.POLL_SECONDS
+    # Quiet hours over: what is overhead now is announced; nothing was saved up.
+    quiet["quiet"] = False
+    frmain.clock.now += timer.seconds
+    timer.fire()
+    assert len(calls) == 1
+    assert frmain.spoken == [MAYDAY, "Overhead: Citilink 991, Airbus A320, 4.5 kilometres south, "
+                                     "1,500 metres, climbing."]
+
+
+def test_quiet_hours_checks_skip_even_with_fresh_data(frmain, api, lang, monkeypatch):
+    _fake_sources(monkeypatch, api, fi=EMERGENCY_JSON)
+    _set(frmain, api, alerts=True, emergency_watch=True)
+    assert frmain.refresh()
+    _quiet(monkeypatch, True)
+    frmain._check_emergencies()
+    frmain._check_alerts()
+    assert frmain.spoken == [] and frmain.sounds == []
+
+
+def test_manifest_needs_core_2_7_for_quiet_hours():
+    with open(os.path.join(FR_DIR, "manifest.json"), encoding="utf-8") as f:
+        manifest = json.load(f)
+    assert manifest["version"] == "1.6" and manifest["minimum_core_version"] == "2.7"

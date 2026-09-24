@@ -37,6 +37,7 @@ from core.speech import init_speech, unload_speech, speak
 from core.extension_manager import load_all_extensions
 from core.events import bus
 import core.hotkeys
+import core.personal
 import core.preferences
 import core.reminders
 import core.api
@@ -130,9 +131,14 @@ class HarikuApp(wx.App):
         else:
             if config.get("play_startup_sound", True):
                 core.sounds.play_internal_sound("start.wav")
-                
+
             if init_speech():
-                speak(_("welcome_message", version=core.constants.CORE_VERSION))
+                welcome = _("welcome_message", version=core.constants.CORE_VERSION)
+                if core.personal.startup_greeting_enabled():
+                    # Said once the main window is ready, together with the greeting.
+                    self._startup_welcome = welcome
+                else:
+                    speak(welcome)
             
         # Check onboarding.
         completed = config.get("onboarding_completed", False)
@@ -169,6 +175,13 @@ class HarikuApp(wx.App):
         self.frame = MainWindow(None, title=_("app_title_safe_mode") if self.is_safe_mode else _("app_title"))
         self.SetTopWindow(self.frame)
         self.frame.Show(True)
+
+        # "Good morning, Bro. Welcome to Hariku ...": one announcement, after the
+        # screen reader has read the window. A timer, so startup doesn't wait.
+        welcome = getattr(self, "_startup_welcome", None)
+        if welcome is not None:
+            wx.CallLater(core.personal.STARTUP_GREETING_DELAY_MS,
+                         core.personal.speak_startup_greeting, welcome)
 
         # Send the telemetry ping.
         import core.telemetry

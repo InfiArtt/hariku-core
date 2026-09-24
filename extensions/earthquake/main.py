@@ -17,7 +17,8 @@ optionally with USGS worldwide), and announces in the background:
   * earthquakes BMKG reports as felt in the user's region (opt-in);
   * strong earthquakes worldwide from USGS, M6.5+ (opt-in).
 Hariku is not an official warning system; the settings page and the first
-alert of each session say so.
+alert of each session say so. During the user's quiet hours only tsunami alerts
+sound; the others are dropped, not saved for later.
 
   earthquake_api.py    - requests, parsing, settings, the cache, distances
   earthquake_alerts.py - when to announce, and remembering what was announced
@@ -40,6 +41,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.personal
 import core.preferences
 from core.speech import speak
 
@@ -288,16 +290,17 @@ def _announce(message, urgent=False):
 def _check_bmkg_alert(quake):
     now = _wall()
     reason = _tracker.check_bmkg(quake, _settings, get_location(), now)
-    _save_tracker()
-    if reason is not None:
-        _announce(text.alert_text(reason, quake, get_location(), now), urgent=reason == "tsunami")
+    _save_tracker()   # remembered even when quiet hours skip it
+    if reason is None or (reason != "tsunami" and core.personal.is_quiet_time()):
+        return
+    _announce(text.alert_text(reason, quake, get_location(), now), urgent=reason == "tsunami")
 
 
 def _check_world_alerts(quakes):
     now = _wall()
     new = _tracker.check_usgs(quakes, _settings, now)
-    _save_tracker()
-    if new:
+    _save_tracker()   # remembered even when quiet hours skip it
+    if new and not core.personal.is_quiet_time():
         _announce(text.world_alert_text(new, get_location(), now))
 
 

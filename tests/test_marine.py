@@ -880,3 +880,31 @@ def test_register_and_teardown(mmain, fresh_event_bus, monkeypatch, tmp_data_dir
     for event_name, handler in mmain._SUBSCRIPTIONS:
         assert handler not in fresh_event_bus._listeners.get(event_name, [])
     assert not mmain._active
+
+
+# ------------------------------------------------------------
+# Quiet hours (Sea Conditions 1.1, core 2.7)
+# ------------------------------------------------------------
+
+def test_quiet_hours_hold_the_high_wave_alert(mmain, api, forecast, lang, monkeypatch):
+    import core.api
+    import core.personal
+    _fetch_calls(monkeypatch, api, error="offline")
+    monkeypatch.setattr(mmain, "_today", lambda: "2026-09-23")
+    quiet = {"on": True}
+    monkeypatch.setattr(core.personal, "is_quiet_time", lambda now=None: quiet["on"])
+    _set(mmain, alert=True)
+    mmain._cache = api.make_cache(PRIOK, _rough(forecast, current=2.83, today_max=None))
+    mmain._check_alert()
+    assert mmain.spoken == [] and mmain.sounds == []
+    assert core.api.load_data(mmain.DATA_KEY).get("alert_date") is None
+    # After quiet hours the next check looks at the waves again.
+    quiet["on"] = False
+    mmain._check_alert()
+    assert mmain.spoken == ["Sea alert for Tanjung Priok: waves up to 2.8 metres today, rough."]
+
+
+def test_manifest_needs_core_2_7_for_quiet_hours():
+    with open(os.path.join(MARINE_DIR, "manifest.json"), encoding="utf-8") as f:
+        manifest = json.load(f)
+    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"

@@ -12,8 +12,8 @@ Flight Radar — Hariku V2 extension.
 
 Hear the aircraft flying near your city: the nearest few on a hotkey, a list of
 everything in range, optional announcements when one passes overhead or
-reports an emergency, and a shortcut to LiveATC's web page for the nearby
-airport. Aircraft positions come from adsb.fi (adsb.lol when adsb.fi fails),
+reports an emergency (both silent during the user's quiet hours), and a
+shortcut to LiveATC's web page for the nearby airport. Aircraft positions come from adsb.fi (adsb.lol when adsb.fi fails),
 routes from adsbdb.com; none need an account or key. The city, radius and
 units are chosen in Preferences, Flight Radar.
 
@@ -46,6 +46,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.personal
 import core.preferences
 from core.speech import speak
 
@@ -782,12 +783,14 @@ def _poll():
     _poll_running = True
     _prune_tracked()
     tasks = []
-    if _area_polling_wanted():
+    # Quiet hours: no overhead alerts or emergency watch, so no area requests
+    # either. Tracked flights, which the user asked for, still report.
+    if _area_polling_wanted() and not core.personal.is_quiet_time():
         tasks.append(_poll_area)
     for entry in tracked_flights():
         tasks.append(lambda done, entry=entry: _check_tracked(entry, done))
     if not tasks:
-        _poll_running = False
+        _after_poll()   # keeps polling through quiet hours, stops when unwanted
         return
     state = {"left": len(tasks), "errors": 0}
 
@@ -828,8 +831,9 @@ def _after_poll(errors=0):
 
 
 def _check_emergencies():
-    """Announce emergencies not heard in the last 30 minutes, first."""
-    if not current_cache():
+    """Announce emergencies not heard in the last 30 minutes, first. Nothing
+    during quiet hours, and nothing saved up for afterwards."""
+    if not current_cache() or core.personal.is_quiet_time():
         return
     new = _emergency_tracker.check(visible_aircraft(), _now())
     if new:
@@ -839,7 +843,7 @@ def _check_emergencies():
 
 def _check_alerts():
     cache = current_cache()
-    if not cache or not _settings["alerts"]:
+    if not cache or not _settings["alerts"] or core.personal.is_quiet_time():
         return
     new = _tracker.check(cache["aircraft"], _settings["alert_km"], _now())
     if not new:

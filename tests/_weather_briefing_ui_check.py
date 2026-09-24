@@ -298,6 +298,18 @@ assert text.endswith("Weather in Jakarta: Light rain, 27 degrees, high 31, low 2
                      "80 percent chance of rain."), text
 print("OK briefing_action")
 
+# --- The evening summary (Shift+B), with tomorrow's weather ----------------------
+evening = core.hotkeys.actions["Morning Briefing.evening_summary"]
+assert evening.default_keycode == ord("B") and evening.default_shift and not evening.default_ctrl
+spoken.clear()
+evening.callback()
+assert len(spoken) == 1, spoken
+text = spoken[0]
+assert text.startswith(("Good morning.", "Good day.", "Good afternoon.", "Good evening.")), text
+assert ("You finished 0 of 1 reminders today. Not done yet: 09:00, Team meeting. "
+        "You have no reminders tomorrow. Tomorrow: overcast, 32 degrees.") in text, text
+print("OK briefing_evening")
+
 # --- Briefing preferences and the once-a-day automatic briefing ------------------
 prefs = PreferencesDialog(frame, select_tab="Morning Briefing")
 prefs.Show()
@@ -305,11 +317,34 @@ wx.Yield()
 bpanel = briefing._panel
 assert bpanel is not None and bpanel.IsShown(), "Briefing settings page was not created"
 assert bpanel.chk_auto.GetValue() is False
+# Minute ticks come from this check only, so the real clock can't start the
+# automatic evening summary in between.
+frame.heartbeat_timer.Stop()
+assert bpanel.chk_evening.GetValue() is False                 # off by default
+assert bpanel.choice_evening_time.GetName() == "Time of the evening summary"
+assert bpanel.choice_evening_time.GetStringSelection() == "20:00"
+checked = browse(bpanel.choice_evening_time, wx.EVT_CHOICE)
 bpanel.chk_auto.SetValue(True)
+bpanel.chk_evening.SetValue(True)
+bpanel.choice_evening_time.SetSelection(bpanel.choice_evening_time.FindString("21:30"))
 prefs.OnApply(None)
-assert core.api.load_data("Briefing")["auto_first_start"] is True
+saved = core.api.load_data("Briefing")
+assert saved["auto_first_start"] is True
+assert saved["evening_auto"] is True and saved["evening_time"] == "21:30", saved
 prefs.Destroy()
 wx.Yield()
+print(f"OK briefing_evening_settings ({focus_note(checked)})")
+
+# The automatic evening summary plays once when its time has come.
+spoken.clear()
+late = datetime.datetime.combine(TODAY, datetime.time(21, 29))
+bus.emit("on_minute_tick", late)
+assert spoken == [], spoken
+bus.emit("on_minute_tick", late + datetime.timedelta(minutes=1))
+bus.emit("on_minute_tick", late + datetime.timedelta(minutes=2))
+assert len(spoken) == 1 and "You finished 0 of 1 reminders today." in spoken[0], spoken
+assert core.api.load_data("Briefing")["last_evening_date"] == TODAY.isoformat()
+print("OK briefing_evening_auto")
 
 briefing.AUTO_DELAY_MS = 50
 spoken.clear()

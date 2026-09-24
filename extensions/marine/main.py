@@ -40,6 +40,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.personal
 import core.preferences
 from core.speech import speak
 
@@ -224,10 +225,13 @@ def _refresh_interval(cache):
 # ------------------------------------------------------------
 
 def _check_alert():
-    """Announce high waves once a day, from recent data only."""
+    """Announce high waves once a day, from recent data only. Not during quiet
+    hours: the next check after them looks at the waves again."""
     location = get_location()
     cache = current_cache()
     if not _active or not location or not api.is_fresh(cache, ALERT_MAX_AGE):
+        return
+    if core.personal.is_quiet_time():
         return
     today = _today()
     height = api.should_alert(_settings, cache["forecast"], today)

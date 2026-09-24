@@ -106,6 +106,33 @@ def briefing_sentence(location, forecast, units, now_utc=None):
     return _("weather_in", place=location["name"], text=", ".join(p for p in parts if p))
 
 
+def evening_sentence(forecast, units, now_utc=None):
+    """Tomorrow for the evening summary, e.g. "Tomorrow: light rain, 31
+    degrees.", or "" without tomorrow in the forecast."""
+    try:
+        tomorrow = (datetime.datetime.strptime(weather_api.location_today(forecast, now_utc),
+                                               "%Y-%m-%d")
+                    + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    except ValueError:
+        return ""
+    day = weather_api.day_entry(forecast, tomorrow)
+    if not day:
+        return ""
+    condition = condition_text(day["code"]) if day.get("code") is not None else None
+    if condition:
+        condition = condition[:1].lower() + condition[1:]
+    high = _temp(day.get("high"), units)
+    if condition and high is not None:
+        text = _("piece_condition_temp", condition=condition, temp=high)
+    elif condition:
+        text = condition
+    elif high is not None:
+        text = _("piece_high", temp=high)
+    else:
+        return ""
+    return _("tomorrow_prefix", text=text)
+
+
 def forecast_rows(forecast, units, now_utc=None):
     """One line per day from today on, e.g. 'Tomorrow, Thursday 24 September: ...'."""
     today = weather_api.location_today(forecast, now_utc)

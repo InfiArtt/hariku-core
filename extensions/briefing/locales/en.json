@@ -29,6 +29,19 @@
         "agenda_many": "You have {count} reminders today.",
         "agenda_item": "{time}, {title}",
         "agenda_untitled": "Untitled reminder",
-        "agenda_more": "And {count} more."
+        "agenda_more": "And {count} more.",
+
+        "action_evening": "Play the evening summary",
+        "chk_evening": "Play the evening summary automatically every evening",
+        "lbl_evening_time": "Time of the evening summary:",
+        "happy_birthday": "Happy birthday!",
+        "evening_none": "You had no reminders today.",
+        "evening_all_done": "You finished all of today's reminders.",
+        "evening_done_count": "You finished {done} of {count} reminders today.",
+        "evening_not_done": "Not done yet:",
+        "tomorrow_none": "You have no reminders tomorrow.",
+        "tomorrow_one": "Tomorrow you have 1 reminder: {item}",
+        "tomorrow_many": "Tomorrow you have {count} reminders.",
+        "tomorrow_first": "The first one: {item}"
     }
 }

@@ -29,6 +29,19 @@
         "agenda_many": "Ada {count} pengingat hari ini.",
         "agenda_item": "{time}, {title}",
         "agenda_untitled": "Pengingat tanpa judul",
-        "agenda_more": "Dan {count} lainnya."
+        "agenda_more": "Dan {count} lainnya.",
+
+        "action_evening": "Putar ringkasan malam",
+        "chk_evening": "Putar ringkasan malam secara otomatis setiap malam",
+        "lbl_evening_time": "Waktu ringkasan malam:",
+        "happy_birthday": "Selamat ulang tahun!",
+        "evening_none": "Hari ini tidak ada pengingat.",
+        "evening_all_done": "Semua pengingat hari ini sudah selesai.",
+        "evening_done_count": "{done} dari {count} pengingat hari ini sudah selesai.",
+        "evening_not_done": "Belum selesai:",
+        "tomorrow_none": "Besok tidak ada pengingat.",
+        "tomorrow_one": "Besok ada 1 pengingat: {item}",
+        "tomorrow_many": "Besok ada {count} pengingat.",
+        "tomorrow_first": "Yang pertama: {item}"
     }
 }

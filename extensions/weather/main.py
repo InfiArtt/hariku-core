@@ -23,7 +23,8 @@ and about every 30 minutes, and on demand when it is older than 10 minutes. All
 network calls run on worker threads; results come back via wx.CallAfter.
 
 Also adds a one-sentence summary to the Morning Briefing through the
-"on_briefing_collect" event, from the cache only (see briefing_core.py).
+"on_briefing_collect" event, and tomorrow's forecast to its evening summary
+through "on_evening_collect", both from the cache only (see briefing_core.py).
 """
 
 import logging
@@ -234,10 +235,21 @@ def _on_briefing_collect(lines):
         lines.append(weather_text.briefing_sentence(location, cache["forecast"], get_units()))
 
 
+def _on_evening_collect(lines):
+    # Evening summary contract (the same as the briefing's): tomorrow's weather.
+    location = get_location()
+    cache = current_cache()
+    if location and cache and weather_api.is_fresh(cache, BRIEFING_MAX_AGE):
+        sentence = weather_text.evening_sentence(cache["forecast"], get_units())
+        if sentence:
+            lines.append(sentence)
+
+
 _SUBSCRIPTIONS = (
     ("on_app_startup", _on_app_startup),
     ("on_minute_tick", _on_minute_tick),
     ("on_briefing_collect", _on_briefing_collect),
+    ("on_evening_collect", _on_evening_collect),
 )
 
 

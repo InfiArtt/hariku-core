@@ -1,7 +1,7 @@
 {
     "id": "weather",
     "name": "Weather",
-    "version": "1.0",
+    "version": "1.1",
     "description": "Hear the current weather and a 7-day forecast for your city. Choose the city in Preferences, Weather. Weather data by Open-Meteo.com (no account or API key needed).",
     "author": "Rafli",
     "main": "main.py",

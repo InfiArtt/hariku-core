@@ -715,3 +715,30 @@ def test_register_and_teardown(amain, fresh_event_bus, monkeypatch, tmp_data_dir
     for event_name, handler in amain._SUBSCRIPTIONS:
         assert handler not in fresh_event_bus._listeners.get(event_name, [])
     assert not amain._active
+
+
+# ------------------------------------------------------------
+# Quiet hours (Air Quality 1.1, core 2.7)
+# ------------------------------------------------------------
+
+def test_quiet_hours_hold_the_unhealthy_air_alert(amain, api, forecast, lang, monkeypatch):
+    import core.api
+    import core.personal
+    _fetch_calls(monkeypatch, api, error="offline")
+    monkeypatch.setattr(amain, "_today", lambda: "2026-09-23")
+    quiet = {"on": True}
+    monkeypatch.setattr(core.personal, "is_quiet_time", lambda now=None: quiet["on"])
+    _set(amain, alert=True)
+    amain._cache = api.make_cache(JAKARTA, forecast)
+    amain._check_alert()
+    assert amain.spoken == [] and amain.sounds == []
+    assert core.api.load_data(amain.DATA_KEY).get("alert_date") is None
+    quiet["on"] = False
+    amain._check_alert()
+    assert amain.spoken[0].startswith("Air quality alert for Jakarta: index 231")
+
+
+def test_manifest_needs_core_2_7_for_quiet_hours():
+    with open(os.path.join(AIR_DIR, "manifest.json"), encoding="utf-8") as f:
+        manifest = json.load(f)
+    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"

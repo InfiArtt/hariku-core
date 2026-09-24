@@ -12,8 +12,9 @@
 # ============================================================
 # Features:
 #   - Store birthdays for friends & family (name, DD-MM, optional year)
-#   - The user's OWN birthday with a special greeting — the name is taken
-#     automatically from the Hariku onboarding profile
+#   - The user's OWN birthday with a special greeting. On Hariku 2.7+ the
+#     birthday and name come from Preferences, Profile (Lumina's own copy moves
+#     there once); older versions keep them in Lumina's settings
 #   - Automatic reminders 7, 3, and 1 day before, and on the day itself
 #   - Custom greeting per person
 #   - List dialog with Add / Edit / Delete
@@ -31,6 +32,13 @@ import core.preferences
 from core.events import bus
 from core.speech import speak
 from core.i18n import get_translator
+
+# Hariku 2.7+ keeps the user's birthday in the Profile; older versions don't
+# have it, and Lumina keeps its own copy there.
+try:
+    import core.personal as _personal
+except ImportError:
+    _personal = None
 
 logger  = logging.getLogger(__name__)
 EXT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -76,9 +84,15 @@ def _save_settings(s: dict):
 
 def _get_self_birthday() -> dict:
     """
-    Return the user's own birthday data.
-    The name comes from the Core profile (onboarding), not stored in Lumina.
+    Return the user's own birthday as {"date": "DD-MM", "year": ...}: from the
+    Profile when Hariku has one, otherwise Lumina's own copy.
     """
+    if _personal is not None:
+        birthday = _personal.get_birthday()
+        if not birthday:
+            return {}
+        day, month, year = birthday
+        return {"date": f"{day:02d}-{month:02d}", "year": year}
     return _load().get("self_birthday", {})
 
 def _save_self_birthday(sb: dict):
@@ -87,9 +101,36 @@ def _save_self_birthday(sb: dict):
     _save(data)
 
 def _get_user_name() -> str:
-    """Get the user's name from Core onboarding data."""
+    """What Hariku calls the user (the Profile's nickname or name)."""
+    if _personal is not None:
+        return _personal.get_nickname() or "Kamu"
     core_data = core.api.load_data("Core")
     return core_data.get("user_name", "").strip() or "Kamu"
+
+
+def _migrate_self_birthday():
+    """Once, on Hariku 2.7+: Lumina's own birthday moves into the Profile if the
+    Profile has none yet."""
+    if _personal is None:
+        return
+    data = _load()
+    if data.get("self_birthday_migrated"):
+        return
+    sb = data.get("self_birthday") or {}
+    parsed = _parse_birthday(sb.get("date", "")) if isinstance(sb, dict) else None
+    if parsed and _personal.get_birthday() is None:
+        try:
+            _personal.set_birthday(parsed[0], parsed[1], sb.get("year"))
+        except _personal.ProfileError:
+            _personal.set_birthday(parsed[0], parsed[1])   # a bad year: keep the date
+        logger.info("Lumina: moved the user's birthday into the Hariku profile.")
+    data["self_birthday_migrated"] = True
+    _save(data)
+
+
+def _greeted_by_hariku() -> bool:
+    """Hariku's own startup greeting already says "Happy birthday!"."""
+    return _personal is not None and _personal.startup_greeting_enabled()
 
 
 # ============================================================
@@ -177,13 +218,14 @@ def _check_all_and_announce():
     """Check the whole list plus the self birthday and announce the relevant ones."""
     delay_ms = 2500
 
-    # Check the user's own birthday
+    # Check the user's own birthday. On the day itself Hariku's startup greeting
+    # says it when that is on, so it isn't said twice.
     sb = _get_self_birthday()
     if sb.get("date"):
         parsed = _parse_birthday(sb["date"])
         if parsed:
             days = _days_until(*parsed)
-            if days in (0, 1, 3, 7):
+            if days in (0, 1, 3, 7) and not (days == 0 and _greeted_by_hariku()):
                 wx.CallLater(delay_ms, _announce_one, sb, True)
                 delay_ms += 3000
 
@@ -477,21 +519,28 @@ class LuminaSettingsPanel(wx.Panel):
         # --- The user's own birthday ---
         box     = wx.StaticBox(self, label=_("self_birthday_section"))
         box_sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        self.txt_self_date = self.txt_self_year = None
 
-        hint = wx.StaticText(box, label=_("self_birthday_hint"))
-        hint.SetForegroundColour(wx.Colour(120, 120, 120))
-        box_sizer.Add(hint, 0, wx.ALL, 6)
+        if _personal is not None:
+            # Set in Preferences, Profile; two places saving it would clash.
+            note = wx.StaticText(box, label=_("self_birthday_in_profile"))
+            note.Wrap(420)
+            box_sizer.Add(note, 0, wx.ALL, 6)
+        else:
+            hint = wx.StaticText(box, label=_("self_birthday_hint"))
+            hint.SetForegroundColour(wx.Colour(120, 120, 120))
+            box_sizer.Add(hint, 0, wx.ALL, 6)
 
-        box_sizer.Add(wx.StaticText(box, label=_("self_birthday_date")),
-                      0, wx.LEFT, 6)
-        self.txt_self_date = wx.TextCtrl(box, value=sb.get("date", ""))
-        box_sizer.Add(self.txt_self_date, 0, wx.EXPAND | wx.ALL, 6)
+            box_sizer.Add(wx.StaticText(box, label=_("self_birthday_date")),
+                          0, wx.LEFT, 6)
+            self.txt_self_date = wx.TextCtrl(box, value=sb.get("date", ""))
+            box_sizer.Add(self.txt_self_date, 0, wx.EXPAND | wx.ALL, 6)
 
-        box_sizer.Add(wx.StaticText(box, label=_("self_birthday_year")),
-                      0, wx.LEFT, 6)
-        yr_val = str(sb.get("year", "")) if sb.get("year") else ""
-        self.txt_self_year = wx.TextCtrl(box, value=yr_val)
-        box_sizer.Add(self.txt_self_year, 0, wx.EXPAND | wx.ALL, 6)
+            box_sizer.Add(wx.StaticText(box, label=_("self_birthday_year")),
+                          0, wx.LEFT, 6)
+            yr_val = str(sb.get("year", "")) if sb.get("year") else ""
+            self.txt_self_year = wx.TextCtrl(box, value=yr_val)
+            box_sizer.Add(self.txt_self_year, 0, wx.EXPAND | wx.ALL, 6)
 
         vbox.Add(box_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 12)
 
@@ -525,18 +574,19 @@ class LuminaSettingsPanel(wx.Panel):
         self.SetSizer(vbox)
 
     def ApplyChanges(self):
-        # Save the self birthday
-        date_val = self.txt_self_date.GetValue().strip()
-        year_val = None
-        try:
-            year_val = int(self.txt_self_year.GetValue().strip())
-        except ValueError:
-            pass
+        # Save the self birthday (only where Lumina keeps it itself)
+        if self.txt_self_date is not None:
+            date_val = self.txt_self_date.GetValue().strip()
+            year_val = None
+            try:
+                year_val = int(self.txt_self_year.GetValue().strip())
+            except ValueError:
+                pass
 
-        if date_val and _parse_birthday(date_val):
-            _save_self_birthday({"date": date_val, "year": year_val})
-        elif not date_val:
-            _save_self_birthday({})
+            if date_val and _parse_birthday(date_val):
+                _save_self_birthday({"date": date_val, "year": year_val})
+            elif not date_val:
+                _save_self_birthday({})
 
         nav_val = ["none", "speak", "agenda"][self.choice_nav.GetSelection()]
         _save_settings({
@@ -655,6 +705,10 @@ def on_fetch_agenda(payload):
 
 def register(bus):
     logger.info("Lumina — Birthday Reminder loaded.")
+    try:
+        _migrate_self_birthday()
+    except Exception:
+        logger.exception("Lumina: could not move the birthday into the profile")
 
     bus.subscribe("on_app_startup", on_app_startup)
     bus.subscribe("on_date_changed", on_date_changed)

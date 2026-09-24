@@ -70,6 +70,30 @@ CORE_FEATURES_SINCE = {
 }
 
 
+def _without_guarded_imports(source):
+    """The source minus `try: import x / except ImportError:` blocks: an
+    extension that copes with an older core that lacks x doesn't need a newer one."""
+    tree = ast.parse(source)
+    lines = source.splitlines()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        catches_import_error = any(
+            isinstance(h.type, ast.Name) and h.type.id in ("ImportError", "ModuleNotFoundError")
+            for h in node.handlers)
+        if catches_import_error and all(isinstance(n, (ast.Import, ast.ImportFrom))
+                                        for n in node.body):
+            for i in range(node.body[0].lineno - 1, node.body[-1].end_lineno):
+                lines[i] = ""
+    return "\n".join(lines)
+
+
+def test_guarded_imports_are_not_a_dependency():
+    source = "try:\n    import core.personal as p\nexcept ImportError:\n    p = None\nx = p\n"
+    assert "core.personal" not in _without_guarded_imports(source)
+    assert "core.personal" in _without_guarded_imports("import core.personal\n")
+
+
 def test_minimum_core_version_covers_the_features_used():
     from core.extension_manager import _version_tuple
     problems = []
@@ -80,7 +104,7 @@ def test_minimum_core_version_covers_the_features_used():
         for name in os.listdir(ext_dir):
             if name.endswith(".py"):
                 with open(os.path.join(ext_dir, name), encoding="utf-8") as f:
-                    source += f.read()
+                    source += _without_guarded_imports(f.read()) + "\n"
         for feature, since in CORE_FEATURES_SINCE.items():
             if feature in source and declared < since:
                 problems.append(f"{ext_id} uses {feature} (core {since[0]}.{since[1]}) but "

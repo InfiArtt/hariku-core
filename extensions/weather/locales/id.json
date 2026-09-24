@@ -29,6 +29,7 @@
         "piece_low": "terendah {temp}",
         "piece_rain_chance": "peluang hujan {value} persen",
         "today_prefix": "Hari ini: {text}.",
+        "tomorrow_prefix": "Besok: {text}.",
         "weather_in": "Cuaca di {place}: {text}.",
         "day_today": "Hari ini, {date}",
         "day_tomorrow": "Besok, {date}",

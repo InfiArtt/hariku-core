@@ -281,7 +281,8 @@ class TestInsertPlaceholderMenu:
             ["greeting", "_routine_depth", "greeting", "", "50%"])
         tokens = [t for t, _label in entries]
         labels = dict(entries)
-        assert tokens[:4] == ["%myname%", "%mynickname%", "%kantor%", "%kosong%"]
+        assert tokens[:6] == ["%myname%", "%mynickname%", "%mybirthday%", "%myage%",
+                              "%kantor%", "%kosong%"]
         assert labels["%myname%"] == "%myname%: your name (Rafli)"
         assert labels["%mynickname%"] == "%mynickname%: what Hariku calls you (Bro)"
         assert labels["%kantor%"] == "%kantor%: your placeholder (Jl. Sudirman 1)"
@@ -390,3 +391,26 @@ def test_speak_agenda_fills_in_reminder_titles(actions, monkeypatch):
                         lambda date: [{"time": "09:00", "title": "Call %myname% at %kantor%"}])
     actions.ACTION_RUNNERS["speak_agenda"]({"date": ""}, CTX, {})
     assert actions.spoken == ["1 reminders. 09:00 Call Rafli at Jl. Sudirman 1"]
+
+
+def test_birthday_tokens_in_routines(eng, tmp_data_dir, monkeypatch):
+    import core.api
+    import datetime
+    from core import i18n
+    monkeypatch.setitem(i18n._language_cache, "core", {})
+    i18n._load_domain("core", i18n.CORE_LOCALES_DIR)   # month names
+    monkeypatch.setattr(i18n, "_current_language", "en")
+    core.api.save_data("Core", {"user_birthday": {"day": 24, "month": 9, "year": 1999}})
+    out = eng.process_placeholders("Born %mybirthday%, age %myage%, at {time}", CTX)
+    today = datetime.date.today()
+    age = today.year - 1999 - (today < datetime.date(today.year, 9, 24))
+    assert out == f"Born 24 September 1999, age {age}, at 08:00"
+
+
+def test_birthday_menu_entries(eng):
+    labels = dict(eng.placeholder_menu_entries("Rafli", birthday="24 September 1999", age="27"))
+    assert labels["%mybirthday%"] == "%mybirthday%: your birthday (24 September 1999)"
+    assert labels["%myage%"] == "%myage%: your age (27)"
+    labels = dict(eng.placeholder_menu_entries())
+    assert labels["%mybirthday%"] == "%mybirthday%: your birthday (not set)"
+    assert labels["%myage%"] == "%myage%: your age (not set)"

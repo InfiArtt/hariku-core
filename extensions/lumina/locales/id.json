@@ -41,6 +41,7 @@
         "self_birthday_date":        "Tanggal lahir saya (DD-MM):",
         "self_birthday_year":        "Tahun lahir saya (opsional):",
         "self_birthday_hint":        "Nama diambil dari profil Hariku kamu.",
+        "self_birthday_in_profile":  "Ulang tahunmu diatur di Pengaturan, Profil. Lumina mengingatkanmu dari sana.",
         "notify_on_startup":         "Ingatkan ulang tahun saat Hariku dibuka",
         "remind_7_days":             "Ingatkan H-7",
         "remind_3_days":             "Ingatkan H-3",

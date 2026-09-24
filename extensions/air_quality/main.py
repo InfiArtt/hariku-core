@@ -40,6 +40,7 @@ import wx
 
 import core.api
 import core.hotkeys
+import core.personal
 import core.preferences
 from core.speech import speak
 
@@ -217,10 +218,13 @@ def _retry_gap():
 # ------------------------------------------------------------
 
 def _check_alert():
-    """Announce unhealthy air once a day, from recent data only."""
+    """Announce unhealthy air once a day, from recent data only. Not during
+    quiet hours: the next check after them looks at the air again."""
     location = get_location()
     cache = current_cache()
     if not _active or not location or not api.is_fresh(cache, ALERT_MAX_AGE):
+        return
+    if core.personal.is_quiet_time():
         return
     today = _today()
     aqi = api.should_alert(_settings, cache["forecast"], today)
