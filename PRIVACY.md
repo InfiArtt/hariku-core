@@ -157,6 +157,41 @@ The speech that comes back is saved in `%APPDATA%\Hariku2\voice_cache\edge`
 again, like your greeting, plays at once and without the internet. The voice
 list is kept there too. Delete that folder to remove them.
 
+## Piper Voices
+
+The Piper Voices extension speaks entirely on this computer: the text being
+read never leaves it, and speaking needs no internet connection. It connects
+only when you work with voices in Preferences, Piper Voices:
+
+- When you open that page, it downloads the list of voices (`voices.json`)
+  from Hugging Face (`huggingface.co`), at most once a week, or when you press
+  "Refresh catalogue".
+- When you press Download for a voice, it first downloads that voice's model
+  card from Hugging Face, so you can see its dataset, license and size before
+  you decide. If you choose Download, it downloads the voice's files from
+  Hugging Face and its download servers (`*.hf.co`).
+- With your first voice, it also downloads the Piper program (the official
+  `piper_windows_amd64.zip`, release 2023.11.14-2) from GitHub (`github.com`
+  and its download server, `release-assets.githubusercontent.com` or
+  `objects.githubusercontent.com`).
+
+These requests go over encrypted connections. Like every web request they
+include your IP address, and they carry a user agent that names Hariku and its
+version, but no identifier, no account and none of your data. Hugging Face's
+handling of them is covered by the
+[Hugging Face Privacy Policy](https://huggingface.co/privacy), and GitHub's by
+the GitHub General Privacy Statement linked above. Hariku
+refuses to download from any other server, even when redirected, and deletes
+any file whose checksum doesn't match: the Piper program must match the
+SHA-256 built into the extension, and each voice file the checksum in the
+voice list.
+
+Everything is stored in `%APPDATA%\Hariku2\piper`: the Piper program in
+`runtime`, each voice in `voices`, and the voice list. What a voice has said
+is saved in `%APPDATA%\Hariku2\voice_cache\piper` (up to 30 MB; the least
+recently used goes first), so a phrase it says again plays at once. Remove a
+voice on the Piper Voices page, or delete those folders to remove everything.
+
 ## When you ask for it
 
 - Opening the extension store, or installing or updating an extension,

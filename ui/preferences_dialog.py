@@ -22,8 +22,9 @@ class PreferencesDialog(wx.Dialog):
     def __init__(self, parent, select_tab=None):
         super().__init__(parent, title=_("dlg_prefs_title"), size=(800, 500))
         
-        self.panels = []
+        self.panels = []           # one entry per page, in page order
         self.select_tab = select_tab
+        self._realizing = False
         self.InitUI()
         self.CentreOnParent()
         
@@ -40,18 +41,19 @@ class PreferencesDialog(wx.Dialog):
         self.treebook.AddPage(input_panel, _("prefs_tab_input"))
         self.panels.append({"panel": input_panel, "apply": input_panel.ApplyChanges})
         
-        # 2. Extension Settings
+        # 2. Extension Settings. Each page is built the first time it is shown:
+        # building every page up front made Preferences slow to open, and a
+        # screen reader walks every control of a dialog when it appears.
         registered = core.preferences.get_all_panels()
         for category, items in registered.items():
             for item in items:
-                try:
-                    panel_instance = item["create"](self.treebook)
-                    page_title = item['name'] if item['name'] else category
-                    self.treebook.AddPage(panel_instance, page_title)
-                    self.panels.append({"panel": panel_instance, "apply": item["apply"]})
-                except Exception as e:
-                    logger.error(f"Failed to create settings panel '{item['name']}': {e}")
-                
+                page_title = item['name'] if item['name'] else category
+                holder = wx.Panel(self.treebook)
+                holder.SetSizer(wx.BoxSizer(wx.VERTICAL))
+                self.treebook.AddPage(holder, page_title)
+                self.panels.append({"panel": None, "holder": holder, "title": page_title,
+                                    "create": item["create"], "apply": item["apply"]})
+
         vbox.Add(self.treebook, 1, wx.EXPAND | wx.ALL, 10)
         
         if self.select_tab:
@@ -75,8 +77,11 @@ class PreferencesDialog(wx.Dialog):
         
         from core.i18n import apply_rtl_layout
         apply_rtl_layout(self)
-        # Large text and high contrast for every page, including extension panels.
+        # Large text and high contrast for every page, including extension panels
+        # (pages built later get it in _realize).
         core.ui_scale.apply_appearance(self)
+        self._realize(self.treebook.GetSelection())
+        self.treebook.Bind(wx.EVT_TREEBOOK_PAGE_CHANGED, self._on_page_changed)
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_BUTTON, self.OnCancel, id=wx.ID_CANCEL)
@@ -96,8 +101,48 @@ class PreferencesDialog(wx.Dialog):
         wx.CallAfter(self.ResetDirty)
         
     def MarkDirty(self, event):
-        self.is_dirty = True
+        if not self._realizing:   # a page filling in its values isn't a change
+            self.is_dirty = True
         event.Skip()
+
+    def _on_page_changed(self, event):
+        # Only builds the page; focus stays where the user is (the page list).
+        self._realize(event.GetSelection())
+        event.Skip()
+
+    def _realize(self, index):
+        """Build page `index` if it hasn't been built yet."""
+        if not 0 <= index < len(self.panels):
+            return
+        entry = self.panels[index]
+        if entry["panel"] is not None or entry.get("failed"):
+            return
+        holder = entry["holder"]
+        self._realizing = True
+        try:
+            panel = entry["create"](holder)
+            holder.GetSizer().Add(panel, 1, wx.EXPAND)
+            entry["panel"] = panel
+            from core.i18n import apply_rtl_layout
+            apply_rtl_layout(panel)
+            core.ui_scale.apply_appearance(panel)
+        except Exception as e:
+            entry["failed"] = True
+            logger.error(f"Failed to create settings panel '{entry['title']}': {e}")
+            holder.GetSizer().Add(wx.StaticText(holder, label=_("prefs_page_failed")),
+                                  0, wx.ALL, 10)
+        finally:
+            holder.Layout()
+            # Events a page posts while filling in arrive later; ignore those too.
+            wx.CallAfter(self._end_realizing)
+
+    def _end_realizing(self):
+        self._realizing = False
+
+    def realize_all(self):
+        """Build every page now (checks that look at all pages use this)."""
+        for index in range(len(self.panels)):
+            self._realize(index)
         
     def ResetDirty(self):
         self.is_dirty = False
@@ -113,6 +158,8 @@ class PreferencesDialog(wx.Dialog):
         dialog open: its page is shown, the message said, and focus put on the
         control to fix. Nothing is saved."""
         for index, p in enumerate(self.panels):
+            if p["panel"] is None:
+                continue   # never shown, so nothing changed
             check = getattr(p["panel"], "ValidateChanges", None)
             if check is None:
                 continue
@@ -133,7 +180,7 @@ class PreferencesDialog(wx.Dialog):
         if not self._validate():
             return False
         for p in self.panels:
-            if p["apply"]:
+            if p["panel"] is not None and p["apply"]:
                 try:
                     p["apply"]()
                 except Exception as e:

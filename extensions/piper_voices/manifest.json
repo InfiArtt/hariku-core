@@ -1,0 +1,10 @@
+{
+    "id": "piper_voices",
+    "name": "Piper Voices",
+    "version": "1.0",
+    "description": "Adds Piper neural voices to Hariku Voice. They speak on this computer, without the internet, and include an Indonesian voice. Download the voices you want in Preferences, Piper Voices; Hariku then also downloads the Piper program once, from GitHub. Each voice shows its size, quality and license before you download it.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.7"
+}

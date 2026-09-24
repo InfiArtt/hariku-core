@@ -90,6 +90,7 @@ OFFICIAL_EXTENSION_IDS = {
     "space",
     "edge_voices",
     "sleep_tracker",
+    "piper_voices",
     # add new official extension IDs here
 }
 

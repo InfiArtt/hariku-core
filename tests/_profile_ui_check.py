@@ -360,6 +360,7 @@ def interact():
     print(f"OK profile_edit ({focus_note(state['focus'])})")
 
     # --- Quiet Hours, a page of its own -------------------------------------
+    prefs.realize_all()   # pages are built when first shown
     quiet = core.core_panels._quiet_panel_instance
     assert quiet is not None, "the Quiet Hours page was not created"
     assert quiet.chk_enabled.GetName() == "Turn on quiet hours"
@@ -423,6 +424,7 @@ print("OK profile_saved")
 prefs = PreferencesDialog(frame, select_tab="Profile")
 prefs.Show()
 wx.Yield()
+prefs.realize_all()
 panel = core.core_panels._profile_panel_instance
 assert panel.txt_name.GetValue() == "Rafli" and panel.txt_nickname.GetValue() == "Bro"
 assert rows(panel) == [("%kantor_baru%", "Jl. Thamrin 2")], rows(panel)
