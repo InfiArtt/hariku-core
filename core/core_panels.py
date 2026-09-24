@@ -982,10 +982,25 @@ def apply_voice_settings():
     core.voice_panel.apply_voice_settings()
 
 
+# ---------------------------------------------------------------------------
+# Places Panel (core/places_ui.py, core 2.8), imported when Preferences opens
+# ---------------------------------------------------------------------------
+
+def create_places_panel(parent):
+    import core.places_ui
+    return core.places_ui.create_places_panel(parent)
+
+
+def apply_places_settings():
+    import core.places_ui
+    core.places_ui.apply_places_settings()
+
+
 def register():
     import core.preferences
     core.preferences.register_panel("General",             "", create_panel,             apply_general_settings)
     core.preferences.register_panel(_("prefs_tab_profile"), "", create_profile_panel,    apply_profile_settings)
+    core.preferences.register_panel(_("prefs_tab_places"), "", create_places_panel,     apply_places_settings)
     core.preferences.register_panel(_("prefs_tab_quiet"),  "", create_quiet_panel,      apply_quiet_settings)
     core.preferences.register_panel(_("prefs_tab_reminders"), "", create_reminders_panel, apply_reminders_settings)
     core.preferences.register_panel(_("prefs_tab_voice"),  "", create_voice_panel,      apply_voice_settings)

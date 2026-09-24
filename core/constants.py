@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 APP_NAME = "Hariku"
-CORE_VERSION = "2.7.0"
+CORE_VERSION = "2.8.0"
 
 # Split major and minor for extension validation (e.g. "2.0").
 _parts = CORE_VERSION.split(".")
