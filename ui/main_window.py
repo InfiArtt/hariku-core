@@ -270,7 +270,7 @@ class MainWindow(wx.Frame):
         if bindings:
             keycode, ctrl, shift, alt, win, is_global = sorted(bindings)[0]
             key = core.hotkeys.format_key_name(keycode, ctrl, shift, alt, win)
-            label = _("menu_with_shortcut", label=label, key=key)
+            label = _("menu_with_shortcut", label=label, shortcut=key)
         if self.item_quick_reminder.GetItemLabel() != label:
             self.item_quick_reminder.SetItemLabel(label)
 
