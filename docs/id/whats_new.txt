@@ -57,9 +57,22 @@ Versi 2.8.0 (Pembaruan Inti)
   100 MB memori, dilepas setelah sepuluh menit tidak dipakai), dan teks
   panjang seperti briefing diucapkan kalimat demi kalimat: kalimat pertama
   diputar sementara Piper membuat kalimat berikutnya.
+- Voice Control 1.1 menambahkan frasa pemanggil: ucapkan "Hey Aruna" (atau
+  frasa yang kamu ketik), lalu Aruna terbuka dan langsung mendengarkan, tanpa
+  menekan tombol. Fitur ini tidak aktif sampai kamu menyalakan "Dengarkan
+  frasa pemanggil" di Pengaturan, Voice Control, dan mengunduh pendengar
+  frasa pemanggil di sana (sherpa-onnx dan model kata kunci bahasa Inggris,
+  38,1 MB, dari GitHub). Ia mendengarkan di komputermu saja; tidak ada yang
+  disimpan atau dikirim ke mana pun, dan ia tidak mendengarkan selama Hariku
+  atau screen reader-mu berbicara lewat Hariku. "Tes frasa pemanggil..."
+  menghitung berapa kali ia mendengarmu selama 20 detik, supaya kamu bisa
+  memilih kepekaannya: kata bahasa Inggris paling mudah didengar, dan nama
+  seperti Aruna mungkin butuh kepekaan Tinggi. "Jeda atau lanjutkan frasa
+  pemanggil" (tanpa tombol bawaan; minta saja ke Aruna) menjedanya, dan ia
+  bisa berhenti sendiri selama jam tenang.
 - Pembaruan ekstensi di Toko, untuk Hariku 2.8: Cuaca 1.2, Kondisi Laut 1.2,
   Kualitas Udara 1.2, Gempa & Tsunami 1.2, Antariksa 1.1, Kokpit 1.1, Radar
-  Pesawat 1.7, dan Piper Voices 1.1.
+  Pesawat 1.7, Piper Voices 1.1, dan Voice Control 1.1.
 - Untuk pembuat ekstensi: core.places memberi ekstensimu tempat-tempat
   pengguna, tempat utama, pembulatan, jarak, dan zona waktu, dan
   core.place_search mencari alamat dan kota (lihat DEVELOPERS.md).

@@ -1551,7 +1551,7 @@ def teardown():
 If your extension needs a library that is **not** part of the Python standard library and **not** bundled with Hariku core, you must include it yourself.
 
 ### What's already available (no need to bundle):
-- Python standard library (`json`, `os`, `datetime`, `zoneinfo`, `urllib`, `sqlite3`, `socket`, `ssl`, `html`, `csv`, `re`, `math`, `collections`, `threading`, `subprocess`, `hashlib`, `xml`, `http`, etc.)
+- Python standard library (`json`, `os`, `datetime`, `zoneinfo`, `urllib`, `sqlite3`, `socket`, `ssl`, `html`, `csv`, `re`, `math`, `collections`, `threading`, `subprocess`, `hashlib`, `xml`, `http`, etc.). *(core 2.8)* `tarfile` and `bz2` too; a compiled Hariku older than 2.8 may lack them, so import them guarded (`try: import tarfile` / `except ImportError:`) if your extension also runs there. The compiled Hariku only contains the modules the core imports (`core/stdlib_includes.py` lists the extra ones), and `tests/test_extension_stdlib.py` fails for an extension that imports anything else.
 - `wx` (wxPython) — UI framework
 - `cytolk` / `tolk` — Screen reader speech
 - `cryptography` — Encryption (Fernet, etc.)

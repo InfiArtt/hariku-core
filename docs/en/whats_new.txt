@@ -53,9 +53,20 @@ Version 2.8.0 (Core Update)
   voice. Now the voice stays loaded while you use it (about 100 MB of memory,
   freed after ten quiet minutes), and a long text, such as the briefing, is
   said sentence by sentence: the first one plays while Piper makes the next.
+- Voice Control 1.1 adds a wake phrase: say "Hey Aruna" (or a phrase you
+  type) and Aruna opens and listens, without pressing a key. It is off until
+  you turn on "Listen for a wake phrase" in Preferences, Voice Control, and
+  download the wake phrase listener there (sherpa-onnx and an English keyword
+  model, 38.1 MB, from GitHub). It listens on your computer only; nothing is
+  saved or sent anywhere, and it doesn't listen while Hariku or your screen
+  reader speaks through Hariku. "Test the wake phrase..." counts how often it
+  hears you for 20 seconds, so you can choose the sensitivity: English words
+  work best, and a name like Aruna may need High. "Pause or resume the wake
+  phrase" (no key by default; ask Aruna for it) pauses it, and it can pause
+  itself during quiet hours.
 - Extension updates in the Store, for Hariku 2.8: Weather 1.2, Sea Conditions
   1.2, Air Quality 1.2, Earthquakes & Tsunami 1.2, Space 1.1, Cockpit 1.1,
-  Flight Radar 1.7 and Piper Voices 1.1.
+  Flight Radar 1.7, Piper Voices 1.1 and Voice Control 1.1.
 - For extension developers: core.places gives your extension the user's
   places, the main place, rounding, distances and time zones, and
   core.place_search finds addresses and cities (see DEVELOPERS.md).
