@@ -307,7 +307,7 @@ assert themes.GetName() == "Themes" and sounds.GetName() == "Sounds in Default",
     (themes.GetName(), sounds.GetName())
 assert [themes.GetString(i) for i in range(themes.GetCount())] == \
     ["Default, Hariku's own sounds, in use"]
-assert sounds.GetCount() == len(store.sound_names()) == 24
+assert sounds.GetCount() == len(store.sound_names()) == 25   # 23 own sounds, 5 Writing*, reminder
 assert sounds.GetString(row(sounds, "confirm")) == "confirm, confirmation"
 focus_checked.append(browse(themes, "themes list"))
 focus_checked.append(browse(sounds, "sounds list"))

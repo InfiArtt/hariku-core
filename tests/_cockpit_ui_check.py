@@ -370,7 +370,7 @@ assert pump(lambda: said("The Cockpit sound theme is installed.")), spoken
 themes_store = sys.modules["sound_themes_store"]
 assert "Cockpit" in themes_store.list_themes(), themes_store.list_themes()
 assert sorted(themes_store.custom_sounds("Cockpit")) == [
-    "confirm.wav", "error.wav", "info.wav", "penClick.wav", "start.wav"]
+    "confirm.wav", "error.wav", "info.wav", "penClick.wav", "reminder.wav", "start.wav"]
 assert core.sounds.get_theme_dir() is None     # installed, not switched on
 print("OK sound_theme")
 

@@ -20,10 +20,16 @@ boxes). Prints "PROBLEM ..." lines and, when there are none, "OK labels".
 Run by tests/test_label_order_ui.py in a separate process with APPDATA
 pointing at a temporary folder. The dialog is built but never shown.
 """
+import faulthandler
+import functools
 import logging
 import os
 import sys
 import traceback
+
+# A crash inside wx would otherwise lose everything still buffered.
+faulthandler.enable()
+print = functools.partial(print, flush=True)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -192,8 +198,10 @@ if not problems:
     print("OK labels")
 
 stray_timer.Stop()
+print("closing")
 prefs.Destroy()
 em.unload_all_extensions()
+print("extensions unloaded")
 frame.Destroy()
 wx.CallAfter(app.ExitMainLoop)
 app.MainLoop()
