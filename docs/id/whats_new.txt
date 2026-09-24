@@ -1,3 +1,38 @@
+Versi 2.8.0 (Pembaruan Inti)
+================================================================================
+- Tempat: di Pengaturan ada halaman baru, Tempat, tepat setelah Profil. Beri
+  nama tempat-tempat yang kamu pakai, misalnya Rumah, Kantor, atau Rumah Mama,
+  lalu jadikan salah satunya tempat utama. Untuk menambah tempat, cari alamat
+  jalannya (OpenStreetMap) atau kotanya (Open-Meteo), atau tempel koordinat
+  atau tautan peta dari Google Maps, Apple Maps, atau OpenStreetMap, termasuk
+  tautan pendek maps.app.goo.gl. Sebelum kamu menekan Oke, dialognya
+  menyebutkan titik yang kamu pilih. Enter pada sebuah tempat untuk
+  mengubahnya, Delete untuk menghapusnya (setelah ditanya dulu).
+- Cuaca, Kondisi Laut, Kualitas Udara, Gempa & Tsunami, Antariksa, Kokpit, dan
+  Radar Pesawat sekarang memakai tempat utamamu. Halaman masing-masing punya
+  daftar Tempat yang baru: pilih tempatmu yang lain, atau "Tempat sendiri..."
+  untuk mencari tempat khusus ekstensi itu, misalnya pantai untuk Kondisi
+  Laut. Tombol "Gunakan lokasi Cuaca" sudah tidak ada. Kokpit tetap memakai
+  bandara favoritmu; kalau belum ada, ia mencari bandara terdekat dari tempat
+  yang kamu pilih.
+- Saat pertama kali menjalankan 2.8, Hariku membuat "Rumah" dari yang sudah
+  kamu punya: rumah persis di Radar Pesawat kalau pernah kamu atur, kalau
+  tidak, kota Cuaca-mu. Ekstensi yang sudah punya tempat sendiri tetap
+  memakainya, jadi tidak ada yang berubah sampai kamu memilih yang lain.
+- Privasi: tempat-tempatmu tetap di komputermu. Cuaca, Kondisi Laut, dan
+  Kualitas Udara sekarang mengirim tempatmu ke Open-Meteo dengan pembulatan
+  sekitar 1 kilometer (sebelumnya pusat kotamu dikirim lebih persis). Gempa &
+  Tsunami dan Antariksa menghitung semuanya di komputermu, sedangkan Radar
+  Pesawat dan Kokpit tetap hanya mengirim titik yang dibulatkan atau kotak
+  yang lebar.
+- Pembaruan ekstensi di Toko, untuk Hariku 2.8: Cuaca 1.2, Kondisi Laut 1.2,
+  Kualitas Udara 1.2, Gempa & Tsunami 1.2, Antariksa 1.1, Kokpit 1.1, dan
+  Radar Pesawat 1.7.
+- Untuk pembuat ekstensi: core.places memberi ekstensimu tempat-tempat
+  pengguna, tempat utama, pembulatan, jarak, dan zona waktu, dan
+  core.place_search mencari alamat dan kota (lihat DEVELOPERS.md).
+
+
 Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
 ================================================================================
 - Kenalkan Aruna, bilah perintah Hariku: tekan Ctrl+Alt+Backspace di mana saja, bahkan saat Hariku ada di
