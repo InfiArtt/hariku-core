@@ -877,6 +877,14 @@ Budi" or "crew captain Budi", and "moto kru" or "crew motto" and a line. Every
 XP your crew's members earn is a point for the crew; "papan kru" or "crews"
 shows the board.
 
+Duels. In the Zero-G Gym or on Pixel Pier's Tournament Stage, challenge
+someone there to a quick-draw duel: "duel Budi", or "duel Budi 20" for a
+stake of up to 100 credits each; they answer "terima" (accept) or "tolak"
+(decline). When you hear "draw", type any number and Enter: the first wins
+the round, best of three, but typing before it loses the round. The winner
+takes both stakes. "duels" shows your record; "matikan duel" or "duels off"
+refuses every challenge ("duels on" takes them again).
+
 The arcade. On Pixel Pier, Cabinet Row has four games played by ear, and a
 token machine: "beli 10 token" or "buy 10 tokens" (5 credits each). Then
 "main" or "play" and a game: Quick Draw ("adu cepat": wait for the beep,

@@ -290,16 +290,17 @@ which, like any web host, sees your IP address; see the
   its ship (model, name, where it's docked or flying, fuel and cargo), the
   events it took part in (and how much it helped), its achievements, its
   lottery tickets for the week's draw, its best score and how many games it
-  played at each arcade cabinet, its crew and its role there, how far it got
-  in each season of the hunt (its riddle, how many tries and wrong answers,
-  when it may try again, when it finished and in which place; the answers
-  you type are only checked, never kept), what it won or lost at the casino
-  in all (and its bets of the last hour, a minute at a time, for the hourly
-  limit), how many trades it made, when it was made and last seen, and
-  whether an admin muted or banned it. There is no password and no email. If
-  an admin bans you, a salted hash of your IP address is kept for 7 days.
-  Trade offers, coin-flip challenges and crew invitations are kept only in
-  the server's memory, until they are answered or run out.
+  played at each arcade cabinet, its crew and its role there, how many duels
+  it won and lost, how far it got in each season of the hunt (its riddle,
+  how many tries and wrong answers, when it may try again, when it finished
+  and in which place; the answers you type are only checked, never kept),
+  what it won or lost at the casino in all (and its bets of the last hour, a
+  minute at a time, for the hourly limit), how many trades it made, when it
+  was made and last seen, and whether an admin muted or banned it. There is
+  no password and no email. If an admin bans you, a salted hash of your IP
+  address is kept for 7 days. Trade offers, coin-flip challenges, crew
+  invitations and duel challenges are kept only in the server's memory,
+  until they are answered or run out.
 - Moving your character to another computer: the server keeps only a keyed
   hash of the transfer code, for 10 minutes or until it is used. After a
   move, the hash of the old computer's secret is kept so that computer can be
