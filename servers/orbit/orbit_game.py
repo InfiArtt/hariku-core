@@ -64,6 +64,7 @@ from orbit_lang import pick
 from orbit_local import LocalMixin
 from orbit_nav import NavMixin
 from orbit_npcs import NpcsMixin
+from orbit_pets import PetsMixin
 from orbit_progress import ProgressMixin
 from orbit_trade import TradeMixin
 from orbit_travel import TravelMixin
@@ -144,12 +145,12 @@ class Session:
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-          AdminMixin)
+          PetsMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
            TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-           AdminMixin):
+           PetsMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -447,6 +448,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         ripe = self.ripe_plots(char)
         if ripe:
             notes.append(self.render(lang, "farm_ripe_join", n=ripe))
+        notes.extend(self.pet_join_notes(session))
         if self.daily_ready(char) and not new:
             notes.append(self.render(lang, "daily_ready"))
         notes.extend(self.check_achievements(session, quiet=True))
@@ -1056,6 +1058,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                    "pixel pier", "dermaga piksel", "high scores", "skor tertinggi"),
         "people": ("people", "residents", "resident", "npc", "npcs", "penduduk", "warga", "orang", "tokoh",
                    "characters", "karakter"),
+        "pets": ("pets", "pet", "hewan", "peliharaan", "hewan peliharaan", "tricks", "trik"),
         "admin": ("admin",),
     }
 
@@ -1114,6 +1117,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_ferry(session, now)
         self.tick_gig(session, now)
         self.tick_arcade(session, now)
+        self.tick_pets(session, now)
 
     def shutdown(self):
         """The server is stopping: say so, and save everyone."""

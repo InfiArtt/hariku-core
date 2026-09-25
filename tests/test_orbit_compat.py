@@ -144,6 +144,13 @@ PHRASEBOOK = [
     ("lihat Bayu", "id", "look"), ("look at Bayu", "en", "look"), ("beri Bayu 1 kerupuk", "id", "give"),
     ("give Bayu a cracker", "en", "give"),
     ("penduduk", "id", "residents"), ("residents", "en", "residents"),
+    # pets (1.2)
+    ("status hewan", "id", "pet"), ("pet status", "en", "pet"), ("hewanku", "id", "pet"), ("my pets", "en", "pet"),
+    ("beri makan hewan", "id", "pet"), ("kasih makan Kiki", "id", "pet"), ("feed pet", "en", "pet"),
+    ("feed Kiki a treat", "en", "pet"), ("main dengan hewan", "id", "pet"), ("play with pet", "en", "pet"),
+    ("istirahatkan hewan", "id", "pet"), ("tidurkan Kiki", "id", "pet"), ("rest pet", "en", "pet"),
+    ("ajari trik duduk", "id", "pet"), ("teach trick sit", "en", "pet"), ("trik duduk", "id", "pet"),
+    ("do trick sit", "en", "pet"), ("rename pet Kiki", "en", "pet"), ("ganti nama Kiki jadi Momo", "id", "pet"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

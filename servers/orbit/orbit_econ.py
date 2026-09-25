@@ -734,11 +734,15 @@ class EconomyMixin:
         self.give_thing(char, thing, 1)
         self._set_cooldown(char, "salvage", float(salvage["cooldown"]))
         key_found = self._rare_key(char, float(salvage.get("key_chance", 0)))
-        self._save(session)
         text = self.render(lang, "salvaged", things=self._count_of(thing, 1),
                            time=self._duration(lang, float(salvage["cooldown"])))
         if key_found:
             text += " " + self.render(lang, "found_key")
+        found = self.maybe_find_pet(session, "collect")
+        if found:
+            text += " " + found
+            key_found = True
+        self._save(session)
         self._send(session, "paid", text=text,
                    extra={"sound": "rare" if thing in RARE_ORE or key_found else "mine"})
 

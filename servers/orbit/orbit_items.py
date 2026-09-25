@@ -17,7 +17,7 @@ Things you own, and what they do (economy.json "things"):
              bigger bags, and each job's tools (more pay, lower fees)
   food       iced coffee (more XP for a while), martabak (a shorter break
              after your next shift), crackers (just crunchy)
-  seeds, furniture for your cabin, clothes, titles, and pets
+  seeds, furniture for your cabin, clothes, rings, titles, and pets
 
   list / daftar         what the shop you're in sells
   buy X / beli X        buy it (the market's goods too, on the Promenade)
@@ -26,8 +26,8 @@ Things you own, and what they do (economy.json "things"):
   take off X / lepas X  stop wearing it
   examine X / periksa X what it is and does
 
-A pet is a companion (a table of its own, so pets can one day be cared
-for, grow, and belong to two people). Things stay in the inventory; seeds,
+A pet is a companion (a table of its own; orbit_pets.py cares for them).
+Things stay in the inventory; seeds,
 food, furniture, clothes and a brass key can be given or traded to other
 players, the rest can't (the pawn shop buys most of it back).
 
@@ -67,8 +67,7 @@ class ItemsMixin:
     def commands():
         return {"list": ItemsMixin.cmd_list, "use": ItemsMixin.cmd_use,
                 "unequip": ItemsMixin.cmd_unequip, "open": ItemsMixin.cmd_open,
-                "pet": ItemsMixin.cmd_pet, "ring": ItemsMixin.cmd_ring,
-                "lantern": ItemsMixin.cmd_lantern}
+                "ring": ItemsMixin.cmd_ring, "lantern": ItemsMixin.cmd_lantern}
 
     # --- what your things do ------------------------------------------------------------------
 
@@ -149,9 +148,9 @@ class ItemsMixin:
                 wearing.append((thing.get("effects") or {}).get("look") or thing["one"])
         if wearing:
             lines.append(self.render(lang, "look_wearing", things=wearing))
-        for comp in self.store.companions_of(char["id"]):
-            kind = self.world.things.get(comp["kind"], {}).get("effects", {}).get("pet", {})
-            lines.append(self.render(lang, "look_pet", pet=comp["name"], species=kind.get("kind", comp["kind"])))
+        lines.extend(self.pet_lines(lang, char))
+        if hasattr(self, "family_lines"):
+            lines.extend(self.family_lines(lang, char))
         crew = self.crew_line(lang, char)
         if crew:
             lines.append(crew)
@@ -169,7 +168,7 @@ class ItemsMixin:
             thing = self.world.things.get(tid)
             if thing and thing.get("type") == "furniture" and char["inventory"][tid] > 0:
                 lines.append(pick(thing["effects"]["cabin"], session.lang))
-        for comp in self.store.companions_of(char["id"]):
+        for comp in self.pets_of(char):
             lines.append(self.render(session.lang, "cabin_pet", pet=comp["name"]))
         return lines
 
@@ -336,7 +335,7 @@ class ItemsMixin:
         elif thing["type"] == "pet":
             pet = thing["effects"]["pet"]
             self.store.add_companion(tid, pet.get("name", "Bip"), [char["id"]],
-                                     stats={"since": self.now()}, state={})
+                                     stats=self.new_pet_stats(), state={})
             key = "bought_pet"
         else:
             self.give_thing(char, tid, n)
@@ -440,6 +439,8 @@ class ItemsMixin:
             self.cmd_scan(session, {})
         elif effects.get("comm"):
             self.cmd_friends(session, {})
+        elif effects.get("pet_food"):
+            self.cmd_pet(session, {"op": "feed", "a": text})
         elif thing["type"] == "consumable":
             self.consume(session, tid)
         elif thing["type"] == "seed":
@@ -590,59 +591,3 @@ class ItemsMixin:
                    extra={"sound": "lantern"})
         self._to_room(self.room_of(char), "emote", "lantern_other", exclude=(session,),
                       extra={"actor": session.name, "sound": "lantern"}, actor=session.name, n=count)
-
-    # --- pets -----------------------------------------------------------------------------
-
-    def cmd_pet(self, session, message):
-        char, lang = session.char, session.lang
-        pets = self.store.companions_of(char["id"])
-        if not pets:
-            self._error(session, "no_pet")
-            return
-        comp = pets[0]
-        if self._arg(message, "op", 10) == "name":
-            name = orbit_safety.tidy(self._arg(message), 16)
-            if not name or not all(c.isalnum() or c == " " for c in name) or self.filter.contains(name):
-                self._error(session, "pet_name_bad")
-                return
-            comp["name"] = name
-            self.store.save_companion(comp)
-            self._info(session, "pet_named", pet=name)
-            return
-        if not self._slow(session):
-            return
-        self._send(session, "emote", "pet_pat", pet=comp["name"])
-        self._to_room(self.room_of(char), "emote", "pet_pat_other", exclude=(session,),
-                      extra={"actor": session.name}, actor=session.name, pet=comp["name"])
-        self.pet_reacts(session, chance=1.0)
-
-    def pet_reacts(self, session, chance=0.3):
-        """The pet of `session`'s player reacts, for everyone in the room to see."""
-        if session is None or session.invisible:
-            return
-        pets = self.store.companions_of(session.char["id"])
-        if not pets or self.rng.random() >= chance:
-            return
-        comp = pets[0]
-        reactions = self.world.things.get(comp["kind"], {}).get("effects", {}).get("pet", {}).get("reactions")
-        if not reactions:
-            return
-        index = self.rng.randrange(len(reactions["en"]))
-        for other in self._in_room(self.room_of(session.char)):
-            line = reactions[other.lang][index].format(pet=comp["name"], owner=session.name)
-            self._send(other, "emote", text=line, extra={"sound": "pet_" + comp["kind"].split("_")[0]})
-
-    def pet_follows(self, session):
-        """A pet walks in with its owner, now and then."""
-        self.pet_reacts(session, chance=0.15)
-
-    def emote_at_companion(self, session, name, eid, emote):
-        """A gesture at your own pet or child (orbit_pets.py). False: none by that name."""
-        return False
-
-    def companions_join_in(self, session, eid):
-        """Your pet (or child) joins in a gesture of yours."""
-
-    def give_to_companion(self, session, name, message):
-        """ "beri makan Kiki" (read by the clients as giving "makan" something). False: not that."""
-        return False

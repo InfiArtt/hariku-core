@@ -1973,6 +1973,81 @@ def npc_warm():
     return mono_bytes(_reverb(out, RATE, size=0.7, wet=0.3), RATE, 0.3, fade_out=0.12)
 
 
+def pet_fox():
+    """A space fox: two quick, breathy yips."""
+    rng = random.Random(SEED + 470)
+    out = _zeros(0.55)
+    for k, (f0, f1) in enumerate(((900, 1500), (1000, 1650))):
+        yip = _chirp(f0, f1, 0.09, shape="arch")
+        breath = _band(_noise(len(yip), rng), 2200, q=1.5)
+        _put(out, 0.05 + 0.2 * k, [y + 0.25 * b * math.sin(math.pi * i / len(yip))
+                                   for i, (y, b) in enumerate(zip(yip, breath))], 0.9 - 0.15 * k)
+    return mono_bytes(out, RATE, 0.26)
+
+
+def pet_jelly():
+    """A glow jellyfish: bubbles rising through water, and a soft glassy shimmer."""
+    rng = random.Random(SEED + 471)
+    out = _zeros(0.9)
+    for k in range(4):
+        _put(out, 0.04 + 0.11 * k + rng.uniform(0, 0.03), _chirp(420 + 90 * k, 900 + 150 * k, 0.05, decay=30), 0.5)
+    shimmer = _bell(1318.5, 0.6, 5.0, partials=((1, 1.0), (2.0, 0.3), (3.01, 0.12)))
+    _put(out, 0.3, shimmer, 0.35)
+    return mono_bytes(_reverb(out, RATE, size=0.6, wet=0.35), RATE, 0.26, fade_out=0.1)
+
+
+def pet_minidrone():
+    """A mini drone: its rotors spin up, and it whistles two happy notes."""
+    rng = random.Random(SEED + 472)
+    n = int(0.45 * RATE)
+    whir = []
+    for i in range(n):
+        t = i / RATE
+        rate = 90 + 160 * t / 0.45
+        whir.append((0.5 + 0.5 * math.sin(TAU * rate * t)) * rng.uniform(-1, 1))
+    whir = _band(whir, 1800, q=1.2)
+    env = _env(n, 0.05, 2.0)
+    out = _zeros(0.8)
+    _put(out, 0.0, [w * e for w, e in zip(whir, env)], 0.7)
+    _put(out, 0.42, _soft_square(C6, 0.12, 12), 0.35)
+    _put(out, 0.56, _soft_square(G5 * 2, 0.16, 10), 0.35)
+    return mono_bytes(out, RATE, 0.26)
+
+
+def pet_robocat():
+    """A robot cat: a buzzing mechanical purr, and a synthetic little mew."""
+    out = _zeros(0.95)
+    n = int(0.55 * RATE)
+    purr = [_square_ish(55.0, i) * (0.5 + 0.5 * math.sin(TAU * 24 * i / RATE)) * min(1.0, i / 1500.0)
+            for i in range(n)]
+    _put(out, 0.0, _low(purr, 700), 0.8)
+    mew = []
+    phase = 0.0
+    m = int(0.28 * RATE)
+    for i in range(m):
+        x = i / m
+        f = 620 + 380 * math.sin(math.pi * x) - 120 * x
+        phase += TAU * f / RATE
+        mew.append((1.0 if math.sin(phase) > 0 else -1.0) * math.sin(math.pi * x) * 0.4)
+    _put(out, 0.6, _low(mew, 3000), 0.6)
+    return mono_bytes(out, RATE, 0.26)
+
+
+def _square_ish(frequency, i):
+    v = math.sin(TAU * frequency * i / RATE)
+    return max(-0.6, min(0.6, 2.0 * v))
+
+
+def pet_trick():
+    """A pet shows off a trick: a quick sparkling rise and a little ta-da."""
+    out = _zeros(0.8)
+    for k, note in enumerate((E5, G5, C6)):
+        _put(out, 0.06 * k, _bell(note * 2, 0.25, 12.0, partials=((1, 1.0), (2.76, 0.3))), 0.5)
+    _put(out, 0.22, _soft_square(C6, 0.2, 9.0), 0.3)
+    _put(out, 0.3, _soft_square(E5 * 2, 0.35, 7.0), 0.3)
+    return mono_bytes(_reverb(out, RATE, size=0.5, wet=0.25), RATE, 0.28, fade_out=0.1)
+
+
 # ------------------------------------------------------------
 # Recorded cues (Kenney's CC0 packs)
 # ------------------------------------------------------------
@@ -2251,7 +2326,8 @@ SOUNDS = (
        ("arcade_whoosh.wav", arcade_whoosh), ("arcade_crash.wav", arcade_crash),
        ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over),
        ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join), ("duel_start.wav", duel_start),
-       ("npc_warm.wav", npc_warm)]
+       ("npc_warm.wav", npc_warm), ("pet_fox.wav", pet_fox), ("pet_jelly.wav", pet_jelly),
+       ("pet_minidrone.wav", pet_minidrone), ("pet_robocat.wav", pet_robocat), ("pet_trick.wav", pet_trick)]
 )
 
 

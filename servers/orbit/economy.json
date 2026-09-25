@@ -1824,6 +1824,31 @@
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
+  "pets": {
+    "_note": "Pets (orbit_pets.py). Needs (food, fun, rest) fall by decay points an hour, never below 0; care for a need below care_below counts towards the next stage (care points and days since it came); lessons teach a trick (at least half of them work, more when the pet is happy). finds: a pet that may choose you on a world (on: collect or face), when you haven't one of its kind.",
+    "decay": {"food": 3.0, "fun": 4.0, "rest": 2.0},
+    "start": {"food": 80, "fun": 80, "rest": 80},
+    "play": {"fun": 30, "rest": -8, "cooldown": 300},
+    "rest": {"rest": 45, "cooldown": 1200},
+    "pat_fun": 4,
+    "full": 95,
+    "tired": 15,
+    "care_below": 75,
+    "stages": [{"care": 0, "days": 0}, {"care": 8, "days": 2}, {"care": 25, "days": 7}],
+    "lessons": 3,
+    "lesson_cooldown": 300,
+    "lesson_rest": 10,
+    "lesson_mood": 40,
+    "sad": 30,
+    "happy": 70,
+    "nudge_seconds": 3600,
+    "nudge_below": 25,
+    "finds": [
+      {"room": "grove_wood", "on": "face", "kind": "fox_pet", "chance": 0.02},
+      {"room": "glasir_crevasse", "on": "collect", "kind": "jelly_pet", "chance": 0.01},
+      {"room": "debris_field", "on": "collect", "kind": "minidrone_pet", "chance": 0.005}
+    ]
+  },
   "prices": {
     "wobble": 0.1,
     "special": 0.2,

@@ -271,7 +271,8 @@ class AdminMixin:
         thing = self.world.things[tid]
         n = self._count(message, default=1, high=100) or 1
         if thing["type"] == "pet":
-            self.store.add_companion(tid, thing["effects"]["pet"].get("name", "Bip"), [char["id"]])
+            self.store.add_companion(tid, thing["effects"]["pet"].get("name", "Bip"), [char["id"]],
+                                     stats=self.new_pet_stats())
         elif thing.get("service") == "plot":
             char["stats"]["plots"] = min(int(self.econ["farm"]["max_plots"]), self.plot_count(char) + n)
         else:

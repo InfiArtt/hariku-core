@@ -92,6 +92,20 @@ VERBS = [
     (("elus",), "pat"), (("pat",), "pat"), (("usap",), "pat"), (("pet",), "pat"),
     (("namai",), "name_pet"), (("name", "pet"), "name_pet"), (("name", "my", "pet"), "name_pet"),
     (("rename", "pet"), "name_pet"),
+    (("ganti", "nama"), "name_pet"), (("ganti", "nama", "hewan"), "name_pet"), (("rename",), "name_pet"),
+    (("status", "hewan"), "pet_status"), (("status", "peliharaan"), "pet_status"), (("pet", "status"), "pet_status"),
+    (("hewanku",), "pet_status"), (("peliharaanku",), "pet_status"), (("my", "pet"), "pet_status"),
+    (("my", "pets"), "pet_status"), (("kabar", "hewan"), "pet_status"), (("kabar", "peliharaan"), "pet_status"),
+    (("beri", "makan"), "pet_feed"), (("kasih", "makan"), "pet_feed"), (("beri", "pakan"), "pet_feed"),
+    (("feed",), "pet_feed"), (("suapi",), "pet_feed"),
+    (("main", "dengan"), "pet_play"), (("main", "sama"), "pet_play"), (("bermain", "dengan"), "pet_play"),
+    (("bermain", "sama"), "pet_play"), (("ajak", "main"), "pet_play"), (("play", "with"), "pet_play"),
+    (("istirahatkan",), "pet_rest"), (("tidurkan",), "pet_rest"), (("rest",), "pet_rest"),
+    (("ajari", "trik"), "pet_teach"), (("ajari",), "pet_teach"), (("latih",), "pet_teach"),
+    (("teach", "trick"), "pet_teach"), (("teach",), "pet_teach"), (("train",), "pet_teach"),
+    (("trik",), "pet_trick"), (("trick",), "pet_trick"), (("tricks",), "pet_trick"), (("do", "trick"), "pet_trick"),
+    (("show", "trick"), "pet_trick"), (("perform",), "pet_trick"), (("tunjukkan", "trik"), "pet_trick"),
+    (("lakukan", "trik"), "pet_trick"),
     # you, your progress
     (("harian",), "daily"), (("daily",), "daily"), (("bonus", "harian"), "daily"),
     (("daily", "bonus"), "daily"), (("klaim", "harian"), "daily"), (("klaim",), "daily"),
@@ -409,6 +423,8 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "pet", "op": "pat"}
     if meaning == "name_pet":
         return {"c": "pet", "op": "name", "a": rest}
+    if meaning.startswith("pet_"):
+        return {"c": "pet", "op": meaning[4:], "a": rest}
     if meaning == "open":
         return {"c": "open", "a": rest}
     if meaning == "ring":

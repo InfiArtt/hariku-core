@@ -97,6 +97,9 @@ class LocalMixin:
         else:
             parts.append(self.render(lang, "face_won_full"))
         char["stats"]["creatures"] = int(char["stats"].get("creatures") or 0) + 1
+        found = self.maybe_find_pet(session, "face")
+        if found:
+            parts.append(found)
         self._save(session)
         self._send(session, "paid", text=" ".join(parts), extra=extra)
         self.award_xp(session, int(creature.get("xp", 5)))

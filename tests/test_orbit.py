@@ -1742,6 +1742,10 @@ def _server_cues():
             for m in re.finditer(r'sound(?:"\s*:\s*|=)"([a-z_]+)"(?:\s+if\s+.*?\s+else\s+"([a-z_]+)")?', text):
                 found.update(w for w in m.groups() if w and not w.endswith("_"))
     found.update({"pet_robot", "pet_cat"})
+    with open(os.path.join(server, "economy.json"), encoding="utf-8") as f:
+        economy = json.load(f)
+    found.update(t["effects"]["pet"]["sound"] for t in economy["things"].values()
+                 if (t.get("effects") or {}).get("pet"))             # each kind of pet's own
     with open(os.path.join(server, "world.json"), encoding="utf-8") as f:
         world = json.load(f)
     found.update(f"emote_{e}" for e in world["emotes"])
