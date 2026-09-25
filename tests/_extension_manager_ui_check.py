@@ -105,6 +105,7 @@ bus.subscribe("on_before_speak", _capture_speech)
 
 # --- Fakes --------------------------------------------------------------------------------------
 core.constants.EXTENSION_API_BACK_COMPAT = "2.0"
+core.constants.CORE_VERSION = "2.8.0"        # the fake store's "needs 2.9" and "needs 3.0" entries rely on it
 SYSTEM = os.path.join(ROOT, "extensions")
 USER = os.path.join(os.environ["APPDATA"], "Hariku2", "extensions")
 manager.SYSTEM_EXTENSIONS_DIR = SYSTEM
