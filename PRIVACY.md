@@ -269,34 +269,51 @@ generated and come with the extension.
 The Orbit extension is a multiplayer game, so it talks to a game server: the
 address in Preferences, Orbit, by default `infiartt.com` (Hariku's developer
 runs it). It connects only when you open Orbit, press Connect or give it a
-command, always over an encrypted connection (`wss://`; an unencrypted
-`ws://` address is refused unless it is this computer). `infiartt.com` is
-served through Cloudflare, which, like any web host, sees your IP address; see
-the [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/).
+command (or when Hariku starts, if you turn that on), always over an
+encrypted connection (`wss://`; an unencrypted `ws://` address is refused
+unless it is this computer). `infiartt.com` is served through Cloudflare,
+which, like any web host, sees your IP address; see the
+[Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/).
 
 - What is sent: the first time you join, your character's name and job; every
   time, a random secret made on your computer when you first joined that
   server (it stands for a password; the server keeps only a salted hash of it
   and cannot read it back), Hariku's language, and what you type or say in
-  Orbit. Nothing else about you: not your profile, places or reminders.
+  Orbit. When you leave, a goodbye; when the window has been closed and you
+  have been idle for five minutes, that you're away. Nothing else about you:
+  not your profile, places or reminders.
 - What the server keeps: your character's name, job, the description you
-  write, credits, items, where it is, cooldowns and missions, when it was made
-  and last seen, and whether an admin muted or banned it. There is no
-  password and no email. If an admin bans you, a salted hash of your IP
-  address is kept for 7 days.
+  write, credits, things, where it is, its progress (XP and level, the daily
+  streak, what it mined and harvested, its farm plots, the rooms it has
+  visited, its friends list and its beacon), cooldowns and missions, the
+  voice number you chose for others to hear, its pet (a name and a kind),
+  when it was made and last seen, and whether an admin muted or banned it.
+  There is no password and no email. If an admin bans you, a salted hash of
+  your IP address is kept for 7 days.
+- Moving your character to another computer: the server keeps only a keyed
+  hash of the transfer code, for 10 minutes or until it is used. After a
+  move, the hash of the old computer's secret is kept so that computer can be
+  told the character moved. A short log of transfers (the character, what
+  happened, when) is kept for the admins, as is a log of what admins do.
+  To limit guessing, the server remembers wrong codes per connection
+  address for 15 minutes, in memory only.
 - Chat is not stored. What you say is passed on to the players in the same
   place, a whisper to one player, a shout to everyone online, and then it is
-  gone: the server writes no chat, secrets or IP addresses to its log (only
-  names, and who joined, left or was muted). Other players see your
-  character's name, job, where it is, what you say and do, and its
-  description.
-- On your computer, in `%APPDATA%\Hariku2`: your Orbit settings and, for each
-  server you joined, its secret and your character's name (`OrbitAccounts`).
-  Anyone who copies that secret can play as your character on that server.
+  gone: the server writes no chat, secrets, codes or IP addresses to its log
+  (only names, and who joined, left or was muted). Other players see your
+  character's name, job and rank, where it is, what you say and do, what it
+  wears, its pet, its public progress and its description.
+- On your computer, in `%APPDATA%\Hariku2`: your Orbit settings (including the
+  players you ignore) and, for each server you joined, its secret and your
+  character's name (`OrbitAccounts`). Anyone who copies that secret can play
+  as your character on that server. `orbit_sounds` holds your own sound
+  files if you add any, and `orbit_sound_cache` copies of Orbit's sounds made
+  for your volume and for where things happen.
 - Other players' words may be read with Hariku Voice: with an Edge voice,
   that text is sent to Microsoft's speech service (see Edge Voices below);
   Piper and Windows voices speak on your computer. Orbit's sounds are
-  generated and come with the extension.
+  generated and come with the extension. Credits are only for playing: they
+  have no real-money value and can't be bought or cashed out.
 
 ## Dropbox
 

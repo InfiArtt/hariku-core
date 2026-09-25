@@ -707,13 +707,15 @@ your computer.
 
 ORBIT (EXTENSION)
 ------------------
-Orbit (it needs Hariku 2.9) is a small multiplayer text game on a space
-station orbiting the Earth, played with other Hariku users: hang out and chat
-in the Cantina, look down at Indonesia from the Observation Deck, repair the
-reactor, fly cargo to the Moon, trade on the Promenade and take small
-missions. The station has ten places: the Dock, the Promenade, the Cantina,
-the Observation Deck, Engineering, Hydroponics, the Medbay, the Bridge, the
-Cargo Bay and your own cabin, where nobody else can come.
+Orbit (it needs Hariku 2.9) is a multiplayer text game played with other
+Hariku users: a space station orbiting the Earth, the hub of a shared
+simulation. Walk its decks by compass, chat in the Cantina, look down at
+Indonesia from the Observation Deck, work your job, grow crops in your own
+plots, mine the Asteroid Belt, buy gadgets and furniture for your cabin, and
+climb the ranks. The station has three decks (the Upper Deck: command and
+science; the Main Deck: the Promenade, shops, the Cantina and the cabins;
+the Lower Deck: Engineering, the Cargo Bay and the Dock), the hull outside,
+and the Asteroid Belt, about forty rooms.
 
   1. The first time, open Preferences, Orbit: type a character name (3 to 20
      letters and digits) and choose a job (pilot, engineer, trader, scientist
@@ -723,49 +725,125 @@ Cargo Bay and your own cabin, where nobody else can come.
      in Input Gestures) or by telling Aruna "orbit" or "buka orbit". It has
      the Messages list (newest last; read it with the arrow keys; a new
      message never moves your focus), the Command field (Enter sends; Up and
-     Down bring back earlier commands), Connect or Disconnect, Help and the
-     status. Escape hides the window; the game goes on.
-  3. Type commands in Indonesian or English: "pergi ke kantin" or "go to the
-     cantina", "lihat" or "look", "lihat Sari", "bilang halo" or "say hi"
-     (or start with a quote mark), "bisik Sari ketemu di dek", "teriak halo
-     semua", gestures ("senyum", "lambai", "tertawa", "peluk Sari", "smile",
-     "wave"), "siapa" or "who", "tas" or "inventory", "beri Sari 50 kredit",
-     "deskripsi aku" followed by a few words. "bantuan" or "help" lists them
-     all; "ulangi" or "repeat" reads the last message again.
+     Down bring back earlier commands), Connect or Leave Orbit, Help,
+     Settings (this Preferences page) and the status. The title says whether
+     you're connected.
+  3. Type commands in Indonesian or English. "bantuan" or "help" lists the
+     help topics: "bantuan bergerak" (moving), "bantuan ngobrol" (talking),
+     "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko" (shops)
+     and "bantuan pengaturan" (settings); "ulangi" or "repeat" reads the last
+     message again.
 
-Work: engineers type "kerja" in Engineering and repeat the reactor's tones by
-typing their numbers ("3 1 4 2"); pilots type "kerja" at the Dock for a cargo
-run to the Moon (about a minute, and you can still whisper and shout while
-you fly); traders get a market report anywhere, then buy low and sell high on
-the Promenade ("harga", "beli 2 kopi", "jual semua kopi"), where prices move
-every few minutes. Everyone can do missions: "misi" reads today's board,
-"ambil misi 1" takes one, "ambil peti" picks up what it needs, and
-"selesaikan misi" delivers it. Work pays credits, with a short break before
-the next shift.
+Walking. You walk one room at a time by compass: n, s, e, w, ne, nw, se,
+sw, up and down, or north, south and so on; in Indonesian utara, selatan,
+timur, barat, timur laut, barat laut, tenggara, barat daya, naik and turun
+(short: u, s, t, b, tl, bl, tg, bd). "u" means north (utara) when Hariku
+speaks Indonesian and up when it speaks English. "lihat" or "look" describes
+the room and ends with its exits: "Jalan keluar: utara, barat daya, turun."
+Walking into a wall says which exits there are. "arah ke kantin" or "way to
+the cantina" gives the steps from where you are ("timur, timur, selatan,
+naik, utara, barat, barat"); "pergi ke kantin" or "go to the cantina" walks
+there only when it's next door, and otherwise tells you the way. You can
+always ask the way to the Dock, the Promenade, the Cantina, Star Supply, the
+lift lobbies, your workplace and your cabin; a pocket mapper (from Star
+Supply) knows every room you've been to, and a holo mapper every public
+room. "peta" or "map" describes the deck around you, "di mana aku" or "where
+am I" names the room and the deck, "kompas" your heading, and "lihat utara"
+peeks into the next room. Some doors need a keycard (you get one as you
+level up), the maintenance tunnels are dark (wear a headlamp), and outside
+the hull there's no air: wear an EVA suit ("pasang pakaian eva"), listen for
+the warnings, and if the air runs out the station's tow drone brings you
+back to the airlock for a small fee. "naik kancil" or "ride the Kancil" at
+the Dock flies the little shuttle to the Asteroid Belt.
+
+Talking. "bilang halo" or "say hi" (or start with a quote mark), "bisik
+Sari ketemu di dek" (to anyone, anywhere), "teriak halo semua", and gestures
+("senyum", "lambai", "tertawa", "tepuk tangan", "peluk Sari", "smile",
+"wave"). "siapa" or "who", "lihat Sari", "profil Sari". Your cabin is south
+of the Crew Quarters: "undang Sari" invites her, and she types "kunjungi"
+and your name from the Crew Quarters.
+
+Work and progress. Type "kerja" or "work" at your workplace: engineers
+repeat the reactor's tones in Engineering (the Reactor Core pays more),
+pilots fly cargo to the Moon from the Dock, traders get a market report
+anywhere, scientists find the next number in a row of readings in the
+Science Lab, and security officers spot the smuggler among the travellers in
+the Cargo Bay. Answer with the numbers ("3 1 4 2", "18", "2"). Work and the
+daily missions ("misi", "ambil misi 1", "ambil peti", "selesaikan misi") give
+XP; levels raise your pay, give you a rank ("senior pilot") and keycards;
+"peringkat" or "rank" shows how far you are. "harian" or "daily" gives a
+bonus once a day, bigger for each day in a row.
+
+Money. The market is on the Promenade: "harga" or "prices" (also "harga
+panen", "harga bijih"), "beli 2 kopi", "jual semua bijih". In Hydroponics you
+have your own plots: buy seeds ("daftar", then "beli bibit tomat"), "tanam
+tomat", "siram" (water once for a bigger crop), and "panen" when it's ripe;
+crops grow in real time, from ten minutes to a day, and Orbit tells you when
+they're ripe. At the Asteroid Belt, "tambang" or "mine" (richer out on the
+Asteroid Surface and in the Crystal Cave); outside the hull, "kumpulkan" or
+"collect" in the Debris Field. Star Supply on the East Promenade sells
+devices (mappers, a scanner, a headlamp, a beacon, a communicator,
+keycards, the EVA suit), tools (better drills, bigger bags, job tools that
+raise your pay), seeds, furniture for your cabin, clothes, titles and pets;
+the Cantina's bar sells iced coffee (more XP for ten minutes) and snacks.
+"pakai X" or "use X" uses a thing, "pasang X" or "wear X" puts it on, "lepas
+X" or "remove X" takes it off, "periksa X" or "examine X" says what it does.
+Credits are only for playing: they have no real-money value, and can't be
+bought or cashed out.
 
 From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
-"orbit pergi ke kantin", "orbit bilang halo", "orbit bisik Sari nanti ya",
-"orbit siapa online", "orbit lihat sekitar", "orbit cek kredit". The answer
-shows in Aruna's Last result.
+"orbit utara", "orbit bilang halo", "orbit bisik Sari nanti ya", "orbit
+siapa online", "orbit harian", "orbit panen", "orbit profil", "orbit status",
+"orbit keluar". The answer shows in Aruna's Last result.
 
-What happens is read aloud as it comes, in your language. Other players'
-words are read in a voice of their own (always the same one for the same
-player) when Hariku Voice has at least two voices of your language: Edge
-Voices, from the Extension Store, adds two Indonesian voices; otherwise your
-usual voice reads everything. Your own actions are only confirmed briefly
-("Terkirim."), and the Messages list keeps the whole line. Sounds tell what
-happened: a door when you move, a chime when someone arrives or leaves, a
-soft sound in your right ear for a whisper, the reactor's tones from left to
-right. While the window is open, a quiet sound of the place plays (the vents,
-the Cantina's murmur, the reactor's thrum, the garden's water) and goes quiet
-while Hariku speaks. In Preferences, Orbit, you can change the server
-address, turn off speaking messages, the players' voices, the ambience (and
-set its volume) or the sounds. Commands from Aruna are always answered aloud.
+What you hear. What happens is read aloud as it comes, in your language.
+Other players' words are read in a voice of their own when Hariku Voice has
+at least two voices of your language (Edge Voices, from the Extension Store,
+adds two Indonesian voices): the voice they chose ("suaraku 3" or "my voice
+3", 1 to 10; the same number is always the same voice on your computer) or
+one picked from their name. Your own actions are only confirmed briefly
+("Terkirim."), and the Messages list keeps the whole line. Sounds come from
+where things happen: your steps (metal, carpet, grass, stone, rock...) on
+the side you walk to, someone arriving from the west on your left, the lift
+humming up, an airlock hissing, each gesture, coins, a harvest, the drill,
+the temple's bell, with the room's echo. While the window is open, a quiet
+sound of the place plays and goes quiet while Hariku speaks.
 
-Orbit connects only when you open it, press Connect or give it a command, and
-reconnects by itself if the connection drops. "sambungkan" or "putuskan"
-("connect", "disconnect") connects or disconnects. See PRIVACY.md for what the
-server keeps.
+Settings. In Preferences, Orbit, or typed in the game: speaking messages
+("bacakan pesan mati" or "speech off"), the players' voices ("suara pemain
+mati" or "voices off"), the ambience ("suasana mati", "volume suasana 30"),
+the sounds ("suara efek mati", "volume efek 60") and other players' sounds
+("suara orang lain mati"). Preferences also chooses what is read aloud
+(chat and gestures, whispers, shouts, arrivals and departures, work and
+money, announcements; what isn't read still goes to the Messages list),
+what is read while the window is closed (everything; only whispers, your
+name and station news; or nothing), what closing the window does, when you
+are logged out while away, and whether Orbit connects when Hariku starts.
+"abaikan Budi" or "ignore Budi" hides a player's words and gestures on your
+computer ("dengar lagi Budi" or "unignore Budi" to hear them again).
+Commands from Aruna are always answered aloud.
+
+Staying and leaving. Closing the window (Escape or the close button) keeps
+you connected in the background, and Orbit says how to come back; or, if you
+choose so in Preferences, it leaves Orbit. "keluar" or "quit", the Leave
+Orbit button, "orbit keluar" and quitting Hariku log you out at once, and
+the others hear that you left. With the window closed and nothing typed for
+five minutes, others see you as away; after 30 minutes (or 15, 60, or never)
+Orbit logs you out. If the connection drops, Orbit reconnects by itself and
+says "Reconnected".
+
+Moving your character to another computer. Your character lives on the
+computer that made it. To move it (a second laptop, a new Windows), press
+"Move my character to another computer" in Preferences, Orbit, while
+connected (or type "kode pindah"). Orbit shows and reads a code of 16
+letters; on the other computer, type it in "Have a transfer code?" and press
+"Use the code" within 10 minutes. The character moves, it isn't copied: the
+first computer can't play it any more. If you lose your computer, an admin
+can make a code for you.
+
+Orbit connects only when you open it, press Connect or give it a command (or
+when Hariku starts, if you ask it to). See PRIVACY.md for what the server
+keeps.
 
 DROPBOX (EXTENSION)
 --------------------
