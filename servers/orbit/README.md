@@ -15,7 +15,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | Path | What |
 |---|---|
 | `GET /orbit/ws` | the game, over WebSocket |
-| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.1", "protocol": 1, "online": 3}` |
+| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.2", "protocol": 1, "online": 3}` |
 
 `/ws` and `/health` work too, for a proxy that strips the `/orbit` prefix.
 
@@ -27,7 +27,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_ws.py` | the WebSocket protocol (RFC 6455), shared with the Hariku extension |
 | `orbit_game.py` | the game's core: joining, talking, looking, time passing (no I/O) |
 | `orbit_nav.py` | walking by compass, the way, maps, dark rooms, locks, air, the Kancil, cabins |
-| `orbit_items.py` | things: shops, using, wearing, examining, food, pets, the temple |
+| `orbit_items.py` | things: shops, using, wearing, examining, food, the temple |
 | `orbit_work.py` | jobs and their mini-games, XP and levels, missions, the daily bonus |
 | `orbit_econ.py` | the markets, the farm, mining and salvage, profiles, the economy's totals |
 | `orbit_casino.py` | the Casino Corner: dice, slots, blackjack, coin flips, the weekly lottery |
@@ -39,6 +39,10 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_arcade.py` | Pixel Pier's arcade: four cabinet games, tokens, prize tickets, high scores |
 | `orbit_crews.py` | crews: founding, invitations, crew chat, the captain, points and the board |
 | `orbit_duels.py` | duels: quick-draw contests between two players in the contest zones |
+| `orbit_npcs.py`, `npcs.json` | the residents who aren't players: their days, talking, topics, memory and affinity |
+| `orbit_pets.py` | pets: feeding, playing, resting, growing up, tricks, finds on the worlds |
+| `orbit_family.py` | families: partners (both agree), adopting, children growing up, the naming rite |
+| `orbit_weddings.py` | weddings: the ring, booking a hall, invitations, the two ceremonies, the memory |
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
@@ -53,8 +57,8 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `config.example.json` | a configuration to copy to `config.json` |
 | `orbit.service` | a systemd user unit |
 
-`world.json`, `economy.json` and `texts.json` are only read; everything that
-changes while people play is in the database.
+`world.json`, `economy.json`, `npcs.json` and `texts.json` are only read;
+everything that changes while people play is in the database.
 
 ## Running it
 
@@ -66,7 +70,7 @@ mkdir -p ~/orbit
 cd ~/orbit
 cp config.example.json config.json        # then put your character's name in "admins"
 python3 orbit_server.py --config config.json
-# "Orbit 1.1 listening on 127.0.0.1:7340"; Ctrl+C stops it
+# "Orbit 1.2 listening on 127.0.0.1:7340"; Ctrl+C stops it
 ```
 
 As a systemd **user** service (no sudo; linger is already on):
@@ -104,6 +108,33 @@ To update: copy the new files over and `systemctl --user restart orbit`.
 Players hear "the station's computer is restarting" and their Orbit reconnects
 by itself. The database is `~/orbit/orbit.db` (with `orbit.db-wal` next to it
 while running).
+
+### Updating to 1.2 (the database migrates by itself)
+
+1. Copy every file of this folder to `~/orbit/`, but never `private/`. New
+   in 1.2: `orbit_npcs.py`, `npcs.json`, `orbit_pets.py`,
+   `orbit_family.py`, `orbit_weddings.py`; changed: the other `orbit_*.py`,
+   `world.json`, `economy.json`, `texts.json`. `config.json` needs no new
+   keys (`npcs` names another residents' file, if you ever want one; by
+   default the one next to the program is read).
+2. `systemctl --user restart orbit`.
+3. On its first start, the server sees a version 7 database (Orbit 1.1's),
+   saves a copy of it as `orbit.db.before-v8.bak` next to it, and migrates
+   it to version 8 in one transaction: one new column, `duels_won` (filled
+   from the duels each character already won, for the new leaderboard), and
+   four new tables, `npc_memory`, `partnerships`, `weddings` and
+   `wedding_guests`. Nothing is dropped or changed; a 1.0 database goes all
+   the way from 0 to 8 at once. The log says "the database was migrated
+   from version 7 to 8". If the migration fails, nothing is changed and the
+   server stops with the error in the log; the copy is there.
+4. Pets bought before 1.2 start on the first day of 1.2 as if new (fed and
+   content, 80 of 100, and little).
+   Returning players hear once what's new (from 1.0: both notes).
+5. The 1.0 and 1.1 clients keep working: everything new goes as plain text
+   and comes back as ordinary lines. The 1.2 client adds the new sounds and
+   the celebration's ambience at a wedding.
+6. Check: `curl -fsS http://127.0.0.1:7340/orbit/health` says `"version":
+   "1.2"`, and `journalctl --user -u orbit -n 20` shows the migration line.
 
 ### Updating to 1.1 (the database migrates by itself)
 
@@ -246,7 +277,7 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 |---|---|---|
 | `host`, `port` | `127.0.0.1`, `7340` | where to listen |
 | `database` | `orbit.db` | the SQLite file |
-| `world`, `economy`, `texts` | the bundled files | the map, the balance, the lines |
+| `world`, `economy`, `npcs`, `texts` | the bundled files | the map, the balance, the residents, the lines |
 | `words` | `words.json` | the word filter's list (Indonesian and English; edit freely) |
 | `hunt` | `""` (none) | the hunt's season file, e.g. `private/season1.hunt.json` (never in the repository) |
 | `max_connections`, `max_per_ip` | 200, 8 | connections at once, in all and from one address |
@@ -274,14 +305,14 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 | `game.events_min_gap`, `game.events_max_gap` | 1800, 3600 | seconds between random events with one player online... |
 | `game.events_crowd_factor`, `game.events_min_factor` | 0.1, 0.5 | ...each extra player online makes the gap 10% shorter, down to half |
 | `game.events_party_cooldown` | 7200 | how often one player may throw a party |
-| `game.events_weekly` | trading fair Saturday 14:00, jackpot night Friday 13:00, night rush Wednesday 13:00 | `[{"event", "weekday" (0 Monday), "hour", "minute"}]`, in UTC |
+| `game.events_weekly` | trading fair Saturday 14:00, jackpot night Friday 13:00, night rush Wednesday 13:00, the duel tournament Sunday 15:00 | `[{"event", "weekday" (0 Monday), "hour", "minute"}]`, in UTC |
 | `game.hunt_admins_compete` | false | admins on the hunt's board and in its prizes (they can know the answers) |
 | `game.hunt_wrong_base`, `game.hunt_wrong_max` | 60, 86400 | seconds to wait after a wrong answer, doubling each time up to this |
 
 ### The balance (economy.json)
 
 Everything in `economy.json` can be changed; it's read when the server starts.
-What 1.1 ships with:
+What 1.2 ships with:
 
 - **Levels:** reaching level L takes 60 × L × (L-1) / 2 XP (level 2 at 60,
   5 at 600, 10 at 2,700, 20, the top, at 11,400). XP: a repair 10 (+2 for
@@ -315,7 +346,9 @@ What 1.1 ships with:
   40, gold foil 120.
 - **Money sinks:** the shops (devices 100 to 5,000, tools 250 to 2,000,
   furniture 60 to 1,500, clothes 150 to 2,500, titles 200 to 5,000, pets
-  600 and 900), seeds, food (3 to 20), plots, the Kancil's fare (5 from the
+  600 to 1,600, pet food 6 and treats 15, rings 500 to 4,000), seeds, food
+  (3 to 20), adopting (300), weddings (1,000 to 10,000, less what a
+  cancellation gives back), plots, the Kancil's fare (5 from the
   Dock; pilots ride free), the tow when your air runs out (20), lanterns
   in the temple (3), the casino's edge, the lottery's cut, and the market's
   fees (10% on buying and 12% on selling; traders 2% and 4%, less with their
@@ -323,8 +356,9 @@ What 1.1 ships with:
 - **The shops** are Star Supply on the East Promenade (the basics) and the
   Mall Ring, up the lift from the Upper Lift Lobby: Gearworks (devices,
   keycards, the suit, drills, job tools), Orbit Outfitters (clothes, titles),
-  Cosy Corner (furniture), Whiskers & Widgets (pets), the Food Court, and
-  Second Orbit, the pawn shop. Prices move up to 10% either way each day
+  Cosy Corner (furniture), Whiskers & Widgets (pets), Starglint Jewellers
+  (rings, and the wedding desk), the Food Court, and Second Orbit, the pawn
+  shop. Prices move up to 10% either way each day
   (`prices.wobble`), the same for everyone that day, and one thing in each
   shop is today's special, 20% cheaper still (`prices.special`); the bar,
   the seed rack and the lottery booth keep fixed prices, and so do plots.
@@ -359,8 +393,8 @@ What 1.1 ships with:
   events, arcade games, a high score, a crew, duels won), paying 0 to 2,000
   credits and sometimes a title; the big ones (`station`) are news for
   everyone, and the first to earn one is named as the first on the station.
-- **Leaderboards:** richest, level, miners, farmers, daily streak and casino,
-  the top 5 and your own place; admins are left out.
+- **Leaderboards:** richest, level, miners, farmers, daily streak, casino and
+  duels, the top 5 and your own place; admins are left out.
 - **The arcade** (`arcade` in economy.json; see `orbit_arcade.py`): a token
   costs 5 credits (the token machine on Cabinet Row sells up to 100 at a
   time) and plays one game. Prize tickets: Quick Draw points × 0.02 (five
@@ -404,7 +438,7 @@ What 1.1 ships with:
   the Gate, 35% by the ferry, 25% by ship (half with a scanner bay), times
   the world's own; a search takes all contraband and fines half its usual
   value.
-- **Events** (world.json `events`; see `orbit_events.py`): 21 in all. Random,
+- **Events** (world.json `events`; see `orbit_events.py`): 22 in all. Random,
   every 30 to 60 minutes while someone is online (sooner when more are),
   never two big ones at once, each with its own cooldown: a meteor shower
   (collect meteorites, 5 each, at the Observation Deck, on the hull walk or
@@ -420,10 +454,13 @@ What 1.1 ships with:
   player online; each successful tug does 1 or 2; everyone who helped gets
   40 + 15 a point, at most 300, or 10 if it gets away). Weekly: the trading
   fair (the Mall Ring a fifth off for two hours), jackpot night (three of a
-  kind pays double), the night rush (courier gigs pay double). Seasonal:
+  kind pays double), the night rush (courier gigs pay double), the duel
+  tournament (see [Duels](#duels)). Seasonal:
   the station's birthday on 25 September (100 credits and an iced coffee
   each), New Year (watch the fireworks for 50), the Lantern Festival on the
-  hundredth day of the year (free lanterns and a 25-credit thank-you).
+  hundredth day of the year (free lanterns, a 25-credit thank-you, and a
+  gift for everyone when 30 are lit: see [The Way of
+  Starlight](#the-way-of-starlight)).
   Parties: a player's cabin is open to everyone for half an hour, once in
   two hours. Admins can start, stop and schedule events.
 - **The worlds' work:** helium-3 in the Moon's tunnels (mining, like the
@@ -439,8 +476,9 @@ What 1.1 ships with:
 The admins' **economy** report shows the credits in circulation (all
 characters), the richest, and every credit earned by source (work,
 missions, daily, market, finds, pawn, casino wins, lottery prizes,
-achievements, admin) and spent by sink (shops, market, fares, rescues,
-lanterns, casino bets, lottery, admin), so you can see whether money grows
+achievements, events, favours, weddings (what cancellations gave back),
+admin) and spent by sink (shops, market, fares, rescues, lanterns, casino
+bets, lottery, adoption, weddings, admin), so you can see whether money grows
 too fast and adjust these numbers.
 
 ## Crews
@@ -460,7 +498,9 @@ takes over, and the last one out ends the crew. Every XP a member earns
 while in it is a point for the crew; `crews` (`papan kru`) shows the board.
 Others see a player's crew when they look at them or at their profile.
 Admins can disband a crew (`bubarkan kru Bintang` / `disband crew Bintang`).
-The numbers are `crews` in economy.json.
+The Crew Hangar, north of the Hangar, is a room each crew has to itself:
+only members get in, each crew meets only its own, and its board says the
+crew's points and place. The numbers are `crews` in economy.json.
 
 ## Duels
 
@@ -479,6 +519,194 @@ waits five minutes before challenging the same person again; `duels off`
 refuses every challenge (`duels` shows the record); muted players can't
 challenge; admins can stop a duel (`hentikan duel Budi` / `stop duel Budi`,
 the stakes go back). The numbers are `duels` in economy.json.
+
+Every duel won counts on the duels' leaderboard (`leaderboard duels`,
+`papan peringkat duel`; the `duels_won` column). The weekly **duel tournament**
+(Sunday 15:00 UTC, two hours; `game.events_weekly`) counts the duels won on
+the Tournament Stage while it's on: the most wins take 500, 200 and 100
+credits and the champion the title Tournament Champion (`prizes` and `prize_thing` of
+`tournament` in world.json's events; a tie goes to who got there first).
+Ciko, the stage's host, knows who leads. Admins can start one at any time
+(`mulai acara turnamen` / `start event tournament`).
+
+## Residents (npcs.json)
+
+The simulation has 14 residents who aren't players, each with a voice
+number of their own (the 1.2 client reads their words in it) and every
+line in both languages. Eleven keep a post: Bang Jali, the Cantina's
+bartender; Pak Harsa, the old engineer in Engineering; Ibu Sekar, the
+keeper of the Way of Starlight in the Star Dome Hall; Mas Tegar at
+Gearworks; Kak Nilam at Whiskers & Widgets; Bu Safira, the jeweller and
+wedding planner, at Starglint Jewellers; Kapten Bayu, the ferry's pilot, at
+the Dock; Bayang in the Drift Bazaar's back alley; Ciko, the host of Pixel
+Pier's Tournament Stage; Kelana, a traveller at the Observation Deck from
+19:00 to 05:00 only; and Laras, a curious girl who spends her day in the
+Archive, the park, the Food Court and at the Observation Deck. Three walk
+the map on a daily schedule (station time, UTC), room by room by the
+compass, and the rooms they pass hear them come and go: Pak Gino (the Dock,
+the Food Court, Cargo, the Cantina), Mbak Tari (Hydroponics, the park, the
+Jasmine Pavilion, the Cantina) and Nenek Rimba in Evergrove.
+
+- **Honesty:** residents are never in `who`, the online count or any list
+  of players; `look` names them on a line of their own ("Residents here:
+  ..."), looking at one says it's a resident, not a player, and so does
+  whispering to one. Players can't take their names. `penduduk` /
+  `residents` lists them all and where they are now.
+- **Talking:** `talk to Jali` / `bicara dengan Jali` (a greeting and the
+  topics), `ask Jali about gossip` / `tanya Jali tentang gosip`, `greet
+  Jali` / `sapa Jali` (also `hi Jali`, and any gesture at them), and giving
+  them things. Some answers are live: the gossip (a wedding, the richest,
+  the top miner, the leading crew), who's online, the market, the events,
+  the station time, your own progress, today's specials, the ferry, your
+  pet, the arcade, the duels' board, the tournament, the weddings to come,
+  the Lantern Festival, the hunt (never its answers). A topic they don't
+  know gets a kind "I don't know that one", in character.
+- **Memory and affinity** (0 to 100, in the `npc_memory` table): talking,
+  greeting or a gesture 1 (once a day), a topic asked for the first time 1,
+  a gift 2 (4 for something they like; one gift a day counts), a favour
+  done 6. A stranger, then an acquaintance at 5, a friend at 15, close at
+  30: some topics and errands open only to friends, and a shopkeeper gives
+  friends 5% off in their own shop, close friends 10% (`discount`). A
+  resident who knows you well may greet you when you walk in (half of the
+  times, at most once in half an hour).
+- **Favours:** `ask Harsa about work` names what they need (3 pieces of
+  scrap, later circuit boards, satellite chips...); give it to them for
+  credits, XP or a thing, each favour once a day.
+- **Idle lines** are rare (7 to 15 minutes apart, at most one in a room
+  every 5 minutes, never the same line twice in a row), fit the room they're
+  in, and never come while players have talked there in the last 90
+  seconds.
+
+`npcs.json` is checked when the server starts (every line in both languages
+with the same placeholders, schedules, rooms that exist, routes that avoid
+airless, dark and private rooms, voices 1 to 10, names unique); a mistake
+stops the server with the reason in the log. Its `rules` are the numbers
+above: `walk_seconds` (8 to 14 seconds a room), `idle_gap`, `room_gap`,
+`quiet_seconds`, `notice_seconds`, `notice_chance`, `affinity`, `levels`
+and `discount`.
+
+## Pets
+
+Whiskers & Widgets on the Mall Ring sells a little robot (600), an orange
+space cat (900), a mini drone (1,000), a robot cat (1,100), a space fox
+(1,300) and a glow jellyfish (1,600), pet food (6) and treats (15). The fox,
+the jellyfish and the drone may also choose a player out on the worlds, if
+that player has none of the kind: a fox 2% of the times someone faces Grove
+Wood's creatures, a jellyfish 1% of collecting in Glasir's crevasse, a drone
+0.5% of salvage in the Debris Field. The numbers are `pets` in economy.json,
+and each kind's `pet` (its sound, what it eats, its tricks).
+
+- **Needs** (0 to 100): food falls 3 an hour, fun 4, rest 2 (`decay`). Pet
+  food gives 35 food, a treat 20 food and 20 fun; playing 30 fun and costs
+  8 rest (a tired pet gets a gentle cuddle instead), 5 minutes apart;
+  resting 45, 20 minutes apart; a pat a little fun. A pet whose mood (the
+  average) falls under 30 is sad and quiet (no tricks, no reactions); it
+  never dies, runs away or falls ill, and a little care always cheers it
+  up. A reminder, at most hourly, says when a need is under 25.
+- **Growing up:** caring for a need that was under 75 counts. Young after 8
+  such cares and 2 days, grown after 25 and 7 days (`stages`).
+- **Tricks:** young pets learn two, grown ones a third; 3 lessons each
+  (`lessons`), 5 minutes apart, when the pet is content and not tired.
+- `pet status`, `feed Kiki`, `play with Kiki`, `rest Kiki`, `pat`, `teach
+  trick sit`, `trick sit`, `name pet Kiki`, `rename Kiki to Momo` (and in
+  Indonesian `status hewan`, `beri makan`, `main dengan`, `istirahatkan`,
+  `elus`, `ajari trik duduk`, `trik duduk`, `namai`, `ganti nama ... jadi
+  ...`). Pets follow their owner, join in their gestures and react to
+  others'.
+
+## Families
+
+- **Partners:** `partner with Budi` / `ajak berpasangan Budi`; Budi answers
+  `accept` or `decline` within 2 minutes (`ask_seconds`); after a no, the
+  same player can't be asked again for 10 minutes (`snub_seconds`). Ending
+  it takes two commands: `end partnership` / `akhiri kemitraan`, then
+  `confirm end` / `konfirmasi akhiri` within a minute; the other partner is
+  told kindly (at once, or when they next come). A new partnership waits a
+  day after one ended (`partner_cooldown`). Admins can end one for players
+  who can't (`akhiri kemitraan Budi` / `end partnership Budi`). It stays
+  wholesome: partners are partners, and the texts never turn romantic.
+- **Adopting,** at the Medbay's family desk: 300 credits, from level 3, at
+  most 2 children each, 3 days apart. Partners decide together (the other
+  is asked and must say yes; both are then the child's parents, and stay so
+  if the partnership ends). **A player on their own may adopt too:** many
+  play alone, and a family here is about looking after someone, not about
+  having a partner.
+- **A child's needs** fall more gently than a pet's (food 1.5 an hour, fun
+  2, rest 1): baby porridge from the Food Court (8 credits, 40 food; a
+  martabak 30, kerupuk 15), play (30 fun, 5 minutes apart), a story (15 fun
+  and 15 rest, 10 minutes apart), rest (45, 20 minutes apart). A child left
+  alone grows quiet and asks for you; it's never harmed. With care it grows
+  over real days: a toddler after 6 cares and 2 days, a child after 18 and
+  5 (`stages`), saying more as it grows, in a voice of its own.
+- **Helping:** a happy child (the third stage) at your side adds 5% to the
+  XP from work (`xp_bonus`); once a day `ask Mira for help` / `minta tolong
+  Mira` fetches something small (kerupuk, kangkung seeds, a pet treat or an
+  iced coffee, by the weights in `fetch`). `bring Mira` / `bawa Mira`: the
+  child follows you.
+- **The naming rite:** `naming rite Mira` / `upacara nama Mira` in the Star
+  Dome Hall, with Ibu Sekar there: a lantern lit, the name spoken under the
+  dome, the star bell once.
+
+The numbers are `family` in economy.json (with the children's lines, by
+stage).
+
+## Weddings
+
+- **The ring:** Starglint Jewellers, north-east of the Mall Ring's east
+  side, sells silver (500), gold (1,500) and star (4,000) rings. `propose
+  to Budi` / `lamar Budi` in the same room; Budi answers `accept` (engaged)
+  or `decline` (the ring stays yours) within 2 minutes; after a no, 10
+  minutes before asking again.
+- **Booking,** at the jeweller's wedding desk, for an engaged couple: a hall
+  (the rooms marked `venue`: the Star Dome Hall, the Jasmine Pavilion,
+  Evergrove's Great Hall), a tier, a ceremony and a time in station time
+  (`book wedding pavilion grand neutral 14:00`, also `besok 14:00` or
+  `2026-10-03 14:00`), at least 10 minutes and at most 14 days ahead.
+  Tiers: simple 1,000 credits (10 guests), grand 4,000 (30 guests, music
+  and the celebration's ambience), luxurious 10,000 (60 guests, and
+  fireworks for the whole station). A hall takes one wedding an hour
+  (`slot_minutes`); a wedding lasts 45 minutes. Cancelling gives all the
+  money back a day or more ahead, half of it an hour or more ahead, and
+  nothing later. A character marries again only after 7 days
+  (`cooldown_days`). Admins can cancel any wedding, all the money back
+  (`batalkan pernikahan Budi` / `cancel wedding Budi`).
+- **Guests:** `invite Budi to the wedding`; guests answer `rsvp yes` or
+  `rsvp no` (`hadir`, `tidak hadir`), hear of invitations waiting when they
+  join and are reminded 10 minutes before. At the ceremony they `throw
+  flowers`, cheer and clap, each with its sound.
+- **The ceremony** waits 20 minutes for both partners at the hall
+  (`wait_minutes`); if they don't come, it's missed and half the price
+  comes back. Two kinds, chosen when booking. The **Starlight rite**, led by
+  Ibu Sekar: each partner lights a lantern, the two lights are joined into
+  one, a moment of silence, the vows the two write themselves, the star bell
+  three times. A **neutral ceremony**, led by Bu Safira as the station's
+  registrar: the vows, each partner's yes, their signatures. Neither
+  borrows from any real faith's rites. Each step waits a few minutes
+  (`lantern_seconds`, `join_seconds`, `vow_seconds`, `consent_seconds`,
+  `sign_seconds`); the keeper's hands light a lantern or join the lights
+  for a couple who don't, a vow can be left unspoken, a yes or signatures
+  not given stop the ceremony (half back), and a "no" ends it kindly, with
+  all the money back. A partner who steps out pauses it; 20 minutes away
+  stops it.
+- **Afterwards:** the station hears the news, the couple get a title
+  (Starlit or Wedded) and a keepsake, and the day is kept as a memory (who
+  came, the vows, the flowers and cheers) that the couple and their guests
+  can read (`read memory` / `baca kenangan`).
+
+The numbers are `weddings` in economy.json.
+
+## The Way of Starlight
+
+The station's own quiet tradition, made up for Orbit (no real faith's
+rites, words or symbols): lanterns lit in the Star Dome Hall for someone,
+the star bell, the naming rite and the Starlight wedding, kept by Ibu
+Sekar. On the Lantern Festival (the hundredth day of the year) lanterns
+are free and each one lit is thanked with a small gift; the lanterns lit
+that day also count towards the festival's goal, 30 in all and at most 5
+from each player (`temple.festival_goal`, `festival_cap`). Reaching it
+gives everyone on the station 60 credits and a lantern charm
+(`festival_reward`, `festival_thing`), and players who come later that day
+too.
 
 ## The arcade (Pixel Pier)
 
@@ -608,7 +836,7 @@ Typed in the game by a character in `game.admins` (Indonesian first):
 | `cabut akses Budi` / `revoke Budi` | no computer can play Budi until a transfer code is used (a stolen laptop) |
 | `kode pindah untuk Budi` / `transfer code for Budi` | a code for someone who lost their computer |
 | `log admin` / `admin log` | the last admin actions |
-| `mulai acara hujan meteor` / `start event meteor shower` | start any event now |
+| `mulai acara hujan meteor` / `start event meteor shower` | start any event now (`start event tournament`: the duel tournament) |
 | `hentikan acara` / `stop event` (and a name) | stop the event (or cancel a scheduled one) |
 | `jadwalkan acara 2026-09-27 14:00 ...` / `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
 | `status perburuan` / `hunt status` | the hunt: everyone's riddle, tries and waits |
@@ -616,6 +844,8 @@ Typed in the game by a character in `game.admins` (Indonesian first):
 | `umumkan petunjuk 2` / `release hint 2` | the next hint of the hunt's riddle 2, to everyone |
 | `hentikan duel Budi` / `stop duel Budi` | stop a duel (the stakes go back) |
 | `bubarkan kru Bintang` / `disband crew Bintang` | end a crew (its members are told) |
+| `akhiri kemitraan Budi` / `end partnership Budi` | end Budi's partnership, for players who can't (both are told kindly) |
+| `batalkan pernikahan Budi` / `cancel wedding Budi` | cancel Budi's coming wedding, all the money back (the couple and guests are told) |
 | `uji perburuan` / `hunt test` | play the hunt from the start without counting (again: back) |
 | `bantuan admin` / `help admin` | this list, in the game (players don't see it) |
 
@@ -665,9 +895,25 @@ lanterns, the lottery's next draw and carried-over pot, and the events'
 pacing (when the next random one may come, when each last came, which weekly
 and seasonal ones have run) and the hunt's season (the rival's progress, the
 hints released, how many have finished). Every event that runs or is
-scheduled is a row in `events`, with its state and how it ended. Trade
-offers, coin-flip challenges, crew invitations, duel challenges, a duel and
-a blackjack hand in progress live only in memory (a hand is played out,
+scheduled is a row in `events`, with its state and how it ended (the
+tournament's wins and the Lantern Festival's lanterns are its points).
+
+Since 1.2 also: what each resident remembers of each character
+(`npc_memory`: affinity, how many talks, gifts and favours, when they first
+and last met, the topics asked, the favours done today); a pet's needs,
+stage, care and tricks (in its companion's stats); partnerships
+(`partnerships`: the two characters, partners, engaged or married, since
+when, and when and by whom one ended); children (companions owned by their
+parents: name, voice, stage, needs); weddings (`weddings`: the couple's
+partnership, hall, tier, ceremony, time, what was paid and given back, and
+the memory of the day: who came, the vows the couple wrote, the flowers and
+cheers) and their guests (`wedding_guests`: who was invited, their answer,
+whether they came). Vows are written by the couple to be kept (they're told
+so when asked for them) and are read back only by the couple and those who
+came; everything else said at a wedding is chat, never stored. Trade
+offers, coin-flip challenges, crew invitations, duel challenges, partnership,
+adoption and ring proposals, a duel, a naming rite and a blackjack hand in
+progress live only in memory (a hand is played out,
 standing, if its player leaves or the server stops). Accounts have no
 password or email: the client makes a random 256-bit secret the first time
 it joins this server and keeps it on the player's computer; the server keeps
@@ -684,14 +930,16 @@ never contains secrets, codes, chat or addresses.
 
 JSON text messages over WebSocket (text frames only; 4096 bytes at most from
 a client). Everything the server sends is already in the player's language.
-Protocol version 1 is unchanged since Orbit 1.0: everything 1.1 added is
-optional, so the 1.0 client keeps working (it only misses the new sounds).
+Protocol version 1 is unchanged since Orbit 1.0: everything 1.1 and 1.2
+added is optional, so the 1.0 and 1.1 clients keep working (they only miss
+the new sounds; every 1.2 command reaches the server from them as plain
+text).
 
 **Joining.** The client's first message:
 
 ```json
 {"t": "hello", "v": 1, "lang": "id", "secret": "<64 hex characters>",
- "name": "Rafli", "job": "pilot", "client": "Hariku Orbit 1.1"}
+ "name": "Rafli", "job": "pilot", "client": "Hariku Orbit 1.2"}
 ```
 
 A known secret resumes its character (the name and job are then ignored); an
@@ -747,6 +995,10 @@ commands need no new client:
 | `hunt`, `investigate`, `solve` (`a`: the answer), `hunt_board` | | the hunt |
 | `crew`, `crew_create` (`a`: the name), `crew_invite` (`to`), `crew_say` (`a`), `crew_leave`, `crew_kick` (`to`), `crew_captain` (`to`), `crew_motto` (`a`), `crews` | | crews (an invitation is answered with `accept` or `decline`) |
 | `duel` (`to`, `n`: the stake), `duels` (`op`: on, off) | | duels (answered with `accept` or `decline`) |
+| `talk` (`to`), `ask` (`to`, `a`: the topic), `greet` (`to`), `residents` | | the residents |
+| `pet` (`op`: status, feed, play, rest, pat, teach, trick, name; `a`) | | pets |
+| `partner` (`op`: status, ask, end, end_confirm; `to`), `adopt`, `family`, `child` (`op`: feed, play, rest, story, fetch, take, talk; `a`: the child), `naming` (`a`: the name) | | families (a proposal or an adoption is answered with `accept` or `decline`) |
+| `wedding` (`op`: status, propose, book, cancel, schedule, invite, invitations, rsvp_yes, rsvp_no, flowers, vow, join, yes, no, sign, memory; `to`, `a`) | | weddings (a proposal is answered with `accept` or `decline`) |
 | `arcade`, `play` (`a`: a game), `stop_game`, `high_scores` (`a`: a game) | | the arcade; a game's input is `answer` (numbers alone: both clients send them so) |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
@@ -763,7 +1015,8 @@ heard and said; Orbit 1.0 reads them as plain lines),
 fields: `actor` (who did it), `brief` (a short line to say for your own
 action), `room`, `amb` (`vent`, `cantina`, `engine`, `garden`, `deck`,
 `space`, `belt`, `venue`, `mall`, `casino`, `gate`, `moon`, `colony`, `ice`, `bazaar`, `forest`,
-`neon`, `arcade`), `floor` and `acoustics` (where you are now),
+`neon`, `arcade`, and `wedding` during a grand or luxurious wedding, for
+a 1.2 client), `floor` and `acoustics` (where you are now),
 `dir` (the way you walked, or the side someone came from or left by), `via`
 (`lift`, `ladder`, `slide`, `airlock`, `door`), `codes` (the reactor's
 or a hunt clue's tones, 1 to 4), `sound` (a cue more specific than the kind's), `emote`
@@ -771,8 +1024,10 @@ or a hunt clue's tones, 1 to 4), `sound` (a cue more specific than the kind's), 
 lines, yours), `words` (on a line said, whispered or shouted, yours or
 another player's: the words alone, so a client can read the name in one
 voice and the words in the speaker's), `to` (who you whispered to),
-`preview` (read this line in `voice`), `ask` (an invitation, an offer, a challenge: answer
-with accept or decline), `transfer_code` and `expires`, `reels` (a slot
+`preview` (read this line in `voice`), `ask` (an invitation, an offer, a challenge, a
+proposal: answer with accept or decline; `partner`, `adopt` and `ring` are
+1.2's), a resident's lines are `say` and `emote` events with its name as
+`actor`, its `voice` and its `words`, like a player's, `transfer_code` and `expires`, `reels` (a slot
 machine's three symbols, left to right) and `outcome` (`win`, `lose`,
 `push`, `jackpot`: the client plays it after the dice land, the cards turn
 or the reels stop), `event` (on an announcement: the event it belongs to,
@@ -828,7 +1083,10 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `coins`, `register`, `trade` | money changing hands; a shop's till; a trade done |
 | `mine`, `rare`, `plant`, `water`, `harvest`, `ripe` | mining, a rare find, the farm |
 | `levelup`, `daily`, `achievement` | a new level; the daily bonus; an achievement |
-| `equip`, `gadget`, `scan`, `air`, `rescue`, `gulp`, `crunch`, `pet_robot`, `pet_cat` | things: wearing, devices, the scanner, the air warning, the tow, food, pets |
+| `equip`, `gadget`, `scan`, `air`, `rescue`, `gulp`, `crunch` | things: wearing, devices, the scanner, the air warning, the tow, food |
+| `pet_robot`, `pet_cat`, `pet_robocat`, `pet_minidrone`, `pet_fox`, `pet_jelly`, `pet_trick` | each kind of pet's own sound; a trick shown off |
+| `npc_warm`, `baby` | a resident grows fonder of you (and warm moments: partners, a rite's end); a child |
+| `ring`, `wedding_music`, `lanterns_join`, `flowers` | a proposal, a wedding beginning, the Starlight rite's two lights joined, flowers thrown |
 | `bell`, `lantern` | the temple's star bell; lighting a lantern |
 | `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
 | `creature` | one of Evergrove's creatures |
@@ -839,10 +1097,13 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `hunt_clue`, `hunt_found`, `hunt_rival` | the hunt: a clue (and others' progress, a hint), a note found, the rival ahead |
 | `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
-| `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
+| `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade`, `amb_wedding` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 191 files, about 10.1 MB: 104 recorded (2.9 MB) and 87 synthesized;
-the ambience loops are at 11 kHz.
+The set: 203 files, about 10.7 MB: 106 recorded (3.0 MB) and 97
+synthesized; the ambience loops are at 11 kHz. 1.2 added 12 (0.7 MB): the
+ring (a box opening and two glass chimes) and the flowers (cloth and
+synthesized petals) are mixed from Kenney's recordings, the rest
+synthesized.
 
 ### Credits: recorded sounds
 
@@ -867,7 +1128,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from
@@ -878,28 +1139,15 @@ rescue in the same world) and the travel links between the worlds.
 
 `tests/orbit_parse_1_0.py` is a frozen copy of the 1.0 client's command
 reader: `test_orbit_compat.py` checks that every command added later still
-reaches the server from it.
+reaches the server from it. The residents', pets', families' and weddings'
+tests run on a fixed clock with seeded randomness; `test_orbit_npcs.py` also
+migrates a version 7 database to 8.
 
-## Later (not in 1.1)
+## Later (not in 1.2)
 
-- **Characters who aren't players (1.2):** people to talk to about topics,
-  and residents who walk the compass map on daily schedules and remember
-  players; always marked as such, never listed as online players. The room
-  code already sends looking, who's here, arrivals, departures, their
-  positional sounds and chat through the same few paths (`_in_room`,
-  `_to_room`, the `actor` and `dir` fields), so an entity that isn't a
-  connection can later be placed in a room and speak through them.
-
-- **Companions:** a pet is already a general `companions` record (its kind,
-  name, JSON stats and state, when it came, and its owners in
-  `companion_owners`), so later versions can add feeding and attention,
-  growing up and learning tricks, several kinds, and companions shared by two
-  players, without another big migration.
-- **Families:** two players partnering up with consent, and a baby companion
-  that needs care, grows into a child, and follows and helps its family.
-- **Ceremonies at the venues** (the Star Dome Hall, the Jasmine Pavilion and
-  Evergrove's Great Hall are marked `venue` in world.json): a wedding with two lanterns joined into
-  one light, a moment of silence, vows the two write themselves and three
-  chimes of the star bell (and a neutral ceremony without the temple); a
-  naming ceremony for a baby companion; and the yearly Lantern Festival of
-  the Way of Starlight as a station-wide event.
+- **Pets shared by two players:** a companion already has any number of
+  owners (`companion_owners`), as children do; a pet could be given to a
+  partner too.
+- **More residents,** and residents on the other worlds' posts: `npcs.json`
+  takes new ones without code, as long as their live topics are among
+  `World.NPC_LIVE` in `orbit_world.py`.
