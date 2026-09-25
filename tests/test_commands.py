@@ -581,3 +581,108 @@ def test_command_bar_strings_exist_in_both_languages():
     # Spoken replies may say "kamu"/"aku", like the quick reminder's read-back.
     indonesian = _messages("locales", "id")
     assert indonesian["cmd_not_understood"] == "Maaf, aku tidak paham."
+
+
+# ------------------------------------------------------------
+# Commands with content: intents (core 2.9)
+# ------------------------------------------------------------
+
+@pytest.fixture
+def no_intents(monkeypatch):
+    import core.commands
+    monkeypatch.setattr(core.commands, "_intents", {})
+    return core.commands
+
+
+def _ignore(request):
+    return None
+
+
+def test_intent_patterns_are_checked(no_intents):
+    c = no_intents
+    for bad in ("catat", "{text}", "catat {text} dan {text}", ""):
+        with pytest.raises(ValueError):
+            c.add_intent("Notes.add", [bad], _ignore)
+    with pytest.raises(TypeError):
+        c.add_intent("Notes.add", ["catat {text}"], "not a function")
+    with pytest.raises(ValueError):
+        c.add_intent("Notes.add", [], _ignore)
+    with pytest.raises(TypeError):
+        c.Reply("x", confirm="yes")
+
+
+@pytest.mark.parametrize("text, slot", [
+    ("catat beli gula", "beli gula"),
+    ("Catat: beli Gula Aren.", "beli Gula Aren"),              # capitals kept, edges trimmed
+    ("Tolong catat beli gula dong", "beli gula dong"),         # a filler before it is skipped
+    ("Aruna, catat beli gula", "beli gula"),
+    ("katat beli gula", "beli gula"),                          # misheard
+    ("tambahkan kopi susu ke daftar belanja", "kopi susu"),   # a pattern with words after
+    ("Tambahkan kopi ke daftar belanja.", "kopi"),
+    ("note: call the bank", "call the bank"),
+])
+def test_intents_match_and_keep_the_text(no_intents, text, slot):
+    c = no_intents
+    c.add_intent("Notes.add", ["catat {text}", "note {text}",
+                               "tambahkan {text} ke daftar belanja"], _ignore)
+    found = c.match_intents(text)
+    assert [(m.intent.id, m.text) for m in found] == [("Notes.add", slot)]
+
+
+@pytest.mark.parametrize("text", ["catat", "catat.", "gempa terbaru", "catatan hari ini",
+                                  "ke daftar belanja", "beli gula"])
+def test_no_intent_without_its_words_or_content(no_intents, text):
+    c = no_intents
+    c.add_intent("Notes.add", ["catat {text}", "{text} ke daftar belanja"], _ignore)
+    assert c.match_intents(text) == []
+
+
+def test_the_most_specific_pattern_wins(no_intents):
+    c = no_intents
+    c.add_intent("Timer.start", ["timer {text}"], _ignore)
+    c.add_intent("Timer.stop", ["hentikan timer {text}"], _ignore)
+    found = c.match_intents("hentikan timer mie")
+    assert [(m.intent.id, m.text) for m in found] == [("Timer.stop", "mie")]
+    found = c.match_intents("timer mie 3 menit")
+    assert [m.intent.id for m in found] == ["Timer.start"]
+
+
+def test_adding_again_replaces_and_removing_works(no_intents):
+    c = no_intents
+    c.add_intent("Notes.add", ["catat {text}"], _ignore, title="Notes")
+    c.add_intent("Notes.add", ["tulis {text}"], _ignore)
+    assert [i.id for i in c.intents()] == ["Notes.add"]
+    assert c.match_intents("catat x") == [] and c.match_intents("tulis x")
+    assert c.remove_intent("Notes.add") is True and c.remove_intent("Notes.add") is False
+    assert c.intents() == []
+
+
+def test_vocabulary_holds_the_patterns_words(no_intents):
+    c = no_intents
+    c.add_intent("Notes.add", ["catat {text}", "tambahkan {text} ke daftar belanja"], _ignore)
+    words = c.vocabulary(real_actions("id"))
+    assert "catat" in words and "tambahkan ke daftar belanja" in words
+
+
+def test_decide_puts_intents_before_dates_but_after_reminder_triggers(no_intents):
+    c = no_intents
+    c.add_intent("Timer.start", ["timer {text}"], _ignore)
+    c.add_intent("Notes.add", ["ingat {text}"], _ignore)
+    actions = c.commands(real_actions("id"))
+    decision = c.decide("timer mie 10 menit", actions, parse=parse_reminder)
+    assert decision.kind == "intent"
+    assert [(m.intent.id, m.text) for m in decision.intents] == [("Timer.start", "mie 10 menit")]
+    assert decision.fallback is not None and decision.fallback.kind != "intent"
+    decision = c.decide("ingatkan aku minum obat besok jam 8", actions, parse=parse_reminder)
+    assert decision.kind == "reminder"
+    decision = c.decide("gempa terbaru", actions, parse=parse_reminder)
+    assert decision.kind == "run"                        # no intent: as before
+
+
+def test_reply_of(no_intents):
+    c = no_intents
+    assert c.Reply.of(None) is None
+    reply = c.Reply.of("Dicatat.")
+    assert isinstance(reply, c.Reply) and reply.say == "Dicatat." and not reply.wait
+    same = c.Reply("x", wait=True)
+    assert c.Reply.of(same) is same

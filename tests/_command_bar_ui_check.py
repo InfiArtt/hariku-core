@@ -430,6 +430,39 @@ assert pump(lambda: cb.current_bar() is None)
 assert not frame.IsShown()
 print("OK hidden_main_window")
 
+# --- Core 2.9: a command with content, asked about, then done; one that acts after closing --------
+noted, typed_into = [], []
+core.commands.add_intent(
+    "Notes.add", ["catat {text}", "note {text}"],
+    lambda request: core.commands.Reply(f"Note \"{request.text}\"?",
+                                        confirm=lambda: noted.append(request.text) or "Noted."),
+    title="Notes")
+core.commands.add_intent(
+    "Dictation.type", ["type {text}"],
+    lambda request: core.commands.Reply(then=lambda: typed_into.append(
+        (request.text, cb.current_bar() is None))), title="Dictation")
+focus_calls.clear()
+bar, focus_ok = open_bar()
+spoken.clear()
+type_text(bar, "Note: buy Palm Sugar.")
+press_enter(bar)
+assert spoken[-1] == 'Note "buy Palm Sugar"?', spoken
+assert bar.txt_status.GetValue().startswith("Aruna asks"), bar.txt_status.GetValue()
+if focus_ok:
+    assert wx.Window.FindFocus() is bar.txt_input, "the question moved focus"
+press_enter(bar)                                   # Enter again: yes
+assert pump(lambda: noted == ["buy Palm Sugar"]), noted
+assert pump(lambda: spoken[-1] == "Noted."), spoken
+assert cb.current_bar() is bar and bar.txt_input.GetValue() == ""
+type_text(bar, "type Hello there")
+press_enter(bar)
+assert pump(lambda: typed_into), "the intent's then() did not run"
+assert typed_into == [("Hello there", True)], typed_into      # after the bar had closed
+assert focus_calls == [PREVIOUS], focus_calls
+core.commands.remove_intent("Notes.add")
+core.commands.remove_intent("Dictation.type")
+print(f"OK intents ({focus_note(focus_ok)})")
+
 # --- Nothing went wrong along the way -------------------------------------------------------------
 assert not network_attempts, f"network access attempted: {network_attempts}"
 assert not problems, "\n".join(problems)

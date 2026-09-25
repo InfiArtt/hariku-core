@@ -1,3 +1,15 @@
+Versi 2.9.0 (Pembaruan Inti)
+================================================================================
+- Untuk pembuat ekstensi: perintah dengan isi. Ekstensi sekarang bisa
+  mengajari Aruna perintah yang membawa kata-katanya sendiri, misalnya "catat
+  beli gula", "timer mie 3 menit", atau "tambahkan kopi ke daftar belanja":
+  Aruna menyerahkan kata-kata itu ke ekstensinya, yang lalu menjawab, meminta
+  konfirmasimu dulu, menjawab sebentar kemudian, atau melakukan sesuatu setelah
+  Aruna tertutup (misalnya mengetik ke jendela yang tadi kamu pakai). Lihat
+  core.commands.add_intent di DEVELOPERS.md. Ekstensi yang memakainya butuh
+  Hariku 2.9; Pengelola Ekstensi akan memberitahukannya.
+
+
 Versi 2.8.0 (Pembaruan Inti - 25 September 2026)
 ================================================================================
 - Tempat: di Pengaturan ada halaman baru, Tempat, tepat setelah Profil. Beri

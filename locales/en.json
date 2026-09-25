@@ -424,6 +424,7 @@
         "cmd_done": "Done: {name}.",
         "cmd_empty": "Type or say a command, for example \"what time is it\" or \"remind me to take medicine tomorrow at 8\".",
         "cmd_did_you_mean": "Did you mean: {name}?",
+        "cmd_intent_confirm": "Shall I go ahead?",
         "cmd_offer_reminder": "I didn't understand that as a command. Open it as a quick reminder?",
         "cmd_not_understood": "Sorry, I didn't understand that.",
         "cmd_cancelled": "OK, cancelled.",
