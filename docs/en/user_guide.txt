@@ -29,9 +29,53 @@ TABLE OF CONTENTS
 1. GETTING STARTED
 ================================================================================
 
-When you launch Hariku V2 for the first time, an Onboarding dialog will appear
-and walk you through a short setup. You can re-run the onboarding at any time
-from Help > Show Welcome Screen.
+THE WELCOME
+------------
+The first time you start Hariku, before the main window, Hariku gets to know
+you in a short conversation of eight pages. Each page's question is read
+together with its first field, and the rest of the page follows a moment
+later. Press Enter to go on (Next), Alt+B for Back, and Escape to stop.
+
+  1. Hello. Choose your language: English or Bahasa Indonesia. It changes at
+     once, starting with the page you are on.
+  2. Your name, and what Hariku should call you. The second field fills in
+     the first word of your name; change it if you like. From here on,
+     Hariku uses that name: "Nice to meet you, Rafli!"
+  3. Where you live. Type your city and press Enter; the cities found are
+     listed (use the arrow keys, then Enter to go on). Hariku then tells you
+     the time there and, when you're online, the weather: "In Batam it's
+     14:20 now, mostly clear, 31 degrees." Your city becomes your main
+     place, called Home, in Preferences, Places; places you already had
+     stay. If you have a main place already, it is shown, and pressing Next
+     keeps it. Only the name you type is sent to Open-Meteo, and for the
+     weather a point rounded to about 1 kilometre.
+  4. Your birthday: the day and the month, and the year if you want. On the
+     day, Hariku wishes you a happy birthday.
+  5. Meet Aruna, Hariku's assistant (Ctrl+Alt+Backspace from anywhere, or
+     the key you gave it). Try it on the page: type "what time is it" or
+     "what's the date" and press Enter. Here Aruna only answers these two;
+     the real Aruna does much more.
+  6. Extensions Hariku suggests, from the Extension Store: tick the ones you
+     want with the Space bar. The box below the list tells you about the
+     one selected. Only extensions this Hariku can run, and that you don't
+     have yet, are listed. Nothing is downloaded until you press Finish.
+  7. Start-up: whether Hariku starts with Windows, and whether it greets you
+     when it starts ("Good afternoon, Rafli. Welcome to Hariku ...").
+  8. A summary of what you chose, then Finish. The extensions you ticked are
+     then installed one by one, each one announced; if one fails, the others
+     still install, and you can try it again in the Extension Manager.
+     Press Enter once they are done.
+
+You can skip any page: just press Next. Your name, what Hariku calls you and
+your birthday are saved in Preferences, Profile, and can be changed there any
+time.
+
+Cancel (Escape) saves nothing; if you have typed something, Hariku asks
+first. On the very first start, Hariku then starts as usual and the welcome
+doesn't come back by itself. Open it again any time from Help > Welcome
+Dialog: it shows what you have now, and changes only what you change. If
+you install extensions or change the language there, Hariku offers to
+restart.
 
 If you hold the Shift key on your keyboard while the application is loading,
 Hariku will start in Safe Mode instead of normal mode. You will hear a soft
@@ -704,7 +748,8 @@ HELP MENU
   What's New                  View the release notes for the current version.
   Get Support                 Opens the Hariku community discussion page.
   Report a Bug                Opens the Hariku issue tracker on GitHub.
-  Show Welcome Screen         Re-run the first-launch onboarding wizard.
+  Welcome Dialog              Meet Hariku again: the welcome from the first
+                              start (Section 1), with your settings filled in.
   Check for Updates           Manually check if a new version is available.
   About Hariku                Version information, credits, and license.
 

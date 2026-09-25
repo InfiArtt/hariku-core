@@ -138,6 +138,7 @@ class HarikuApp(wx.App):
             # Sound Themes extension itself only loads later.
             core.sounds.load_remembered_theme()
         
+        speech_ready = False
         if self.is_safe_mode:
             logger.warning(_("safe_mode_log"))
             if config.get("play_startup_sound", True):
@@ -147,24 +148,26 @@ class HarikuApp(wx.App):
         else:
             if config.get("play_startup_sound", True):
                 core.sounds.play_internal_sound("start.wav")
+            speech_ready = init_speech()
 
-            if init_speech():
-                welcome = _("welcome_message", version=core.constants.CORE_VERSION)
-                if core.personal.startup_greeting_enabled():
-                    # Said once the main window is ready, together with the greeting.
-                    self._startup_welcome = welcome
-                else:
-                    speak(welcome)
-            
-        # Check onboarding.
-        completed = config.get("onboarding_completed", False)
-        if not completed:
+        # The first time, the welcome (core 2.10) asks the user's name, city and
+        # so on, before the main window. However it ends, Hariku goes on
+        # starting (Cancel marks it done: core.onboarding.cancel), in the
+        # language chosen there; Help, Welcome Dialog shows it again.
+        if not config.get("onboarding_completed", False):
             from ui.onboarding_dialog import run_onboarding
-            success = run_onboarding()
-            if not success:
-                logger.info("Onboarding cancelled, exiting.")
-                return False
-        
+            if not run_onboarding(first_run=True):
+                logger.info("Welcome cancelled; starting anyway.")
+
+        if speech_ready:
+            # Made after the welcome, so it is in the language chosen there.
+            welcome = _("welcome_message", version=core.constants.CORE_VERSION)
+            if core.personal.startup_greeting_enabled():
+                # Said once the main window is ready, together with the greeting.
+                self._startup_welcome = welcome
+            else:
+                speak(welcome)
+
         # Init Core Reminders
         core.reminders.init(bus)
         
