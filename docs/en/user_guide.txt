@@ -834,6 +834,42 @@ fine them. In Evergrove, "hadapi peri lumut" or "face moss sprite" is a
 test of wits with a creature (nobody gets hurt); in Lumina City, "gig" at
 the Courier Hub gives you a parcel to carry to another room in time.
 
+Events. Now and then something happens to everyone, announced with a sound
+of its own: a meteor shower ("kumpulkan" or "collect" where the meteorites
+fall), a solar storm, a runaway robot pet ("dengar" or "listen" says which
+way its beeps come from; "tangkap" or "catch" in the right room), a
+stowaway ("geledah" or "search"), a comet ("tonton" or "watch" from the
+Observation Deck), a market boom on one world, a double XP hour, happy
+hour at the Cantina, a power cut, and a runaway maintenance drone at the
+Dock that everyone fixes together ("perbaiki drone" or "fix drone"; the
+more you help, the bigger your reward). Every week there's a trading fair
+on the Mall Ring, a jackpot night and a night rush in Lumina City; every
+year the station's birthday on 25 September, New Year and the Lantern
+Festival. "acara" or "events" says what's on and what's coming; "ikut" or
+"join" takes part where needed. In your own cabin, "adakan pesta" or
+"host party" invites everyone for half an hour. "ingatkan aku" or "remind
+me" (and an event's name), or the "Remind me of the next event" button in
+the Orbit window, sets an ordinary Hariku reminder five minutes before it
+starts, so it rings even with Orbit closed.
+
+Events. Now and then something happens to everyone, announced with a sound
+of its own: a meteor shower ("kumpulkan" or "collect" where the meteorites
+fall), a solar storm, a runaway robot pet ("dengar" or "listen" says which
+way its beeps come from; "tangkap" or "catch" in the right room), a
+stowaway ("geledah" or "search"), a comet ("tonton" or "watch" from the
+Observation Deck), a market boom on one world, a double XP hour, happy
+hour at the Cantina, a power cut, and a runaway maintenance drone at the
+Dock that everyone fixes together ("perbaiki drone" or "fix drone"; the
+more you help, the bigger your reward). Every week there's a trading fair
+on the Mall Ring, a jackpot night and a night rush in Lumina City; every
+year the station's birthday on 25 September, New Year and the Lantern
+Festival. "acara" or "events" says what's on and what's coming; "ikut" or
+"join" takes part where needed. In your own cabin, "adakan pesta" or
+"host party" invites everyone for half an hour. "ingatkan aku" or "remind
+me" (and an event's name), or the "Remind me of the next event" button in
+the Orbit window, sets an ordinary Hariku reminder five minutes before it
+starts, so it rings even with Orbit closed.
+
 The casino. The Casino Corner is west of the Cantina; "kasino" or "casino"
 there lists the games. "dadu 50 tinggi" or "dice 50 high" (or low, or seven),
 "slot 20" or "slots 20" (three reels, heard stopping from left to right),
@@ -888,7 +924,8 @@ names before their words ("nama pemain mati" or "names off"), the ambience
 the sounds ("suara efek mati", "volume efek 60") and other players' sounds
 ("suara orang lain mati"). Preferences also chooses what is read aloud
 (chat and gestures, whispers, shouts, arrivals and departures, work and
-money, announcements; what isn't read still goes to the Messages list),
+money, announcements, special events; what isn't read still goes to the
+Messages list),
 what is read while the window is closed (everything; only whispers, your
 name and station news; or nothing), what closing the window does, when you
 are logged out while away, and whether Orbit connects when Hariku starts.

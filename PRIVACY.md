@@ -287,8 +287,9 @@ which, like any web host, sees your IP address; see the
   streak, what it mined and harvested, its farm plots, the rooms it has
   visited, its friends list and its beacon), cooldowns and missions, the
   voice number you chose for others to hear, its pet (a name and a kind),
-  its ship (model, name, where it's docked or flying, fuel and cargo), its
-  achievements, its lottery tickets for the week's draw, what it won or
+  its ship (model, name, where it's docked or flying, fuel and cargo), the
+  events it took part in (and how much it helped), its achievements, its
+  lottery tickets for the week's draw, what it won or
   lost at the casino in all (and its bets of the last hour, a minute at a
   time, for the hourly limit), how many trades it made, when it was made
   and last seen, and whether an admin muted or banned it. There is no
@@ -312,6 +313,8 @@ which, like any web host, sees your IP address; see the
   crops, the daily streak and casino winnings) and its description. Big
   casino wins, the lottery's winner and some achievements are announced to
   everyone online. Admins are left off the leaderboards.
+- "Remind me" makes an ordinary Hariku reminder on your computer; the server
+  isn't told.
 - On your computer, in `%APPDATA%\Hariku2`: your Orbit settings (including the
   players you ignore) and, for each server you joined, its secret and your
   character's name (`OrbitAccounts`). Anyone who copies that secret can play
