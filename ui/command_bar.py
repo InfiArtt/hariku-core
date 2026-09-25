@@ -31,6 +31,10 @@ decides what it means):
     "the answer comes later", or something to do once the bar has closed;
   * anything else: "I didn't understand".
 
+An answer told in steps (core 2.9, core.commands.hold_answer) stays in Last
+result across its pauses, and lines an extension plays in another voice come
+in through core.commands.show_answer.
+
 Status says "Aruna is thinking..." from the moment a message is sent until
 Aruna answers. With "Aruna's sounds" (core 2.8, on by default) a typed message
 plays aruna_send.wav and every answer aruna_reply.wav (a sound theme can
@@ -202,11 +206,14 @@ class _Awaited:
     """An action (or a command with content) running with the bar open, whose
     answer the bar waits for."""
 
-    def __init__(self, title, windows):
+    def __init__(self, title, windows, passive=False):
         self.title = title
         self.windows = windows          # the top-level windows before it ran
         self.lines = []
         self.timers = []
+        # Speech held for an answer told in steps (core.commands.hold_answer)
+        # while no command was waiting: shown, but no "answered" sound.
+        self.passive = passive
 
 
 class _Pending:
@@ -260,6 +267,7 @@ class CommandBar(wx.Dialog):
         self._saying = False             # the bar is saying its own words
         self._sent_at = 0.0
         bus.subscribe("on_before_speak", self._on_speech)
+        core.commands.set_answer_sink(self._show_line)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         # Each label right before its control (screen readers name a control
@@ -645,18 +653,48 @@ class CommandBar(wx.Dialog):
 
     def _on_speech(self, payload):
         """on_before_speak, on any thread: while an action answers with the bar
-        open, what it says is its answer (the bar's own words aren't)."""
-        answer = self._awaiting
-        if answer is None or self._saying or self._closed:
+        open, what it says is its answer (the bar's own words aren't). While an
+        answer told in steps is held (core.commands.hold_answer), speech with
+        no answer waiting starts one."""
+        if self._saying or self._closed:
             return
         text = payload.get("text") if isinstance(payload, dict) else None
-        if isinstance(text, str) and text.strip():
-            _call_after(self._heard_answer, answer, " ".join(text.split()))
+        if not isinstance(text, str) or not text.strip():
+            return
+        text = " ".join(text.split())
+        answer = self._awaiting
+        if answer is not None:
+            _call_after(self._heard_answer, answer, text)
+        elif core.commands.answer_hold_left() > 0:
+            _call_after(self._held_line, text)
+
+    def _show_line(self, text):
+        """core.commands.show_answer(), on any thread: a line for Last result
+        that isn't spoken. Returns whether the bar takes it."""
+        if not self._alive() or self._pending is not None:
+            return False
+        answer = self._awaiting
+        if answer is not None:
+            _call_after(self._heard_answer, answer, text)
+            return True
+        if core.commands.answer_hold_left() > 0:
+            _call_after(self._held_line, text)
+            return True
+        return False
+
+    def _held_line(self, text):
+        """Held speech with no answer waiting: it starts one (shown, no sound)."""
+        if not self._alive() or self._pending is not None:
+            return
+        if self._awaiting is None:
+            self._awaiting = _Awaited("", self._top_windows(), passive=True)
+            self._set_status(_("cmd_status_answered"))
+        self._heard_answer(self._awaiting, text)
 
     def _heard_answer(self, answer, text):
         if answer is not self._awaiting or not self._alive():
             return
-        if not answer.lines:
+        if not answer.lines and not answer.passive:
             self._responded()
         answer.lines.append(text)
         self.last_said = "\n".join(answer.lines)
@@ -666,8 +704,13 @@ class CommandBar(wx.Dialog):
                                           len(answer.lines)))
 
     def _gathered(self, answer, count):
-        if answer is self._awaiting and len(answer.lines) == count:
-            self._end_answer()
+        if answer is not self._awaiting or len(answer.lines) != count:
+            return
+        if core.commands.answer_hold_left() > 0:
+            # An answer told in steps: its next step may be a while coming.
+            answer.timers.append(wx.CallLater(ANSWER_GATHER_MS, self._gathered, answer, count))
+            return
+        self._end_answer()
 
     def _check_windows(self, answer):
         """The action opened a window after all: the bar steps aside for it."""
@@ -681,6 +724,9 @@ class CommandBar(wx.Dialog):
 
     def _answer_timeout(self, answer):
         if answer is not self._awaiting or not self._alive():
+            return
+        if core.commands.answer_hold_left() > 0:
+            answer.timers.append(wx.CallLater(ANSWER_GATHER_MS, self._answer_timeout, answer))
             return
         if not answer.lines:
             self.last_said = _("cmd_done", name=answer.title)
@@ -837,6 +883,7 @@ class CommandBar(wx.Dialog):
         self._cancel_follow_up()
         self._end_answer()
         bus.unsubscribe("on_before_speak", self._on_speech)
+        core.commands.remove_answer_sink(self._show_line)
         if self._listening:
             self.stop_listening(discard=True)
         self._closed = True
