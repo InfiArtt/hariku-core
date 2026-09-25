@@ -544,6 +544,11 @@ Control:
      Low. Press OK to save.
 
 Say the phrase, and Aruna opens with the tone and listens to your command.
+With Voice Control 1.2 and Hariku 2.9 you choose what the phrase does in
+"When you say the wake phrase": "Open Aruna" (the window opens and gets the
+focus) or "Listen without opening a window" (the window you're in keeps the
+focus and your screen reader stays there; you talk, Aruna answers aloud,
+asks and hears "yes" or "no" by voice, and closes by itself when it's done).
 The Status line on the page says whether Hariku is listening for your phrase.
 It doesn't listen while Hariku or your screen reader speaks through Hariku,
 while Voice Control listens to a command, or, if you tick "Pause the wake

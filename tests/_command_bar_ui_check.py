@@ -463,6 +463,23 @@ core.commands.remove_intent("Notes.add")
 core.commands.remove_intent("Dictation.type")
 print(f"OK intents ({focus_note(focus_ok)})")
 
+# --- Core 2.9: in the background (the wake phrase): no focus taken, closes by itself --------------
+focus_calls.clear()
+frame.Show()
+frame.Raise()
+pump(lambda: False, timeout=0.3)
+bar = cb.open_command_bar(background=True, listen=False)
+pump(lambda: bar.IsShown(), timeout=2.0)
+assert bar.IsShown() and bar._background and not bar.IsActive(), "Aruna took the focus"
+spoken.clear()
+bar.submit("what time is it", source="voice")
+assert pump(lambda: any(s.startswith("It's ") for s in spoken), timeout=5), spoken
+assert pump(lambda: cb.current_bar() is None, timeout=8), "Aruna didn't close by itself"
+assert focus_calls == [], focus_calls                    # nothing to give the focus back to
+frame.Hide()
+pump(lambda: not frame.IsShown(), timeout=2.0)
+print("OK background")
+
 # --- Nothing went wrong along the way -------------------------------------------------------------
 assert not network_attempts, f"network access attempted: {network_attempts}"
 assert not problems, "\n".join(problems)
