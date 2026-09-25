@@ -7,3 +7,4 @@ cryptography>=42.0  # bundled for extensions (see core/stdlib_includes.py); Fern
 pyperclip>=1.8  # clipboard API (core.api.set_clipboard / get_clipboard)
 
 pytest>=7.0.0
+pytest-xdist>=3.5  # runs the tests in parallel (pytest -n auto); tests only, not in the app
