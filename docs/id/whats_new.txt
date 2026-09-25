@@ -26,6 +26,29 @@ Versi 2.9.0 (Pembaruan Inti)
   di Pengaturan, Timer & Alarm. Semuanya tetap di komputermu.
 - Aruna: kalau Aruna bertanya "..., Pasang?" atau "..., Set it?", jawaban
   "pasang" dan "set it" juga berarti ya.
+- Baru di Toko Ekstensi: Keliling Dunia (World Trip). Bilang ke Aruna "bawa
+  aku ke Tokyo", "terbang ke Paris", "bawa aku ke Jepang" (negara mendarat di
+  ibu kota atau kota paling terkenalnya), atau "bawa aku ke mana saja". Bunyi
+  bel kabin dan pengumuman kapten menyebutkan jarak dan lama penerbangan dari
+  tempat utamamu, mesin pesawat menderu (tekan tombol apa saja, atau bilang
+  "lewati", untuk melewati penerbangan), lalu kamu tiba: jam setempat,
+  selisihnya dengan rumah, dan cuacanya. Salam sesuai waktu dan "selamat
+  datang di Tokyo" diucapkan dalam bahasa setempat oleh suara aslinya (Edge
+  Voices punya suara untuk hampir semua bahasa) lalu diterjemahkan, dan radio
+  lokal diputar pelan, mengecil sendiri saat Hariku bicara.
+- Keliling Dunia: selama perjalanan, bilang "ceritakan tentang kota ini" (dari
+  Wikipedia), "ajari aku satu kalimat" (delapan kalimat sehari-hari dalam
+  tiap 31 bahasa, dengan cara bacanya dan artinya), "ganti stasiun",
+  "keraskan", "kecilkan", "jam berapa di sana", "di mana aku", atau
+  "pulang". Semua yang diucapkan selama perjalanan ada di Hasil terakhir
+  Aruna, dan perjalanannya tetap berlanjut walau Aruna kamu tutup.
+  Pengaturannya ada di Pengaturan, Keliling Dunia. Hanya kota tujuan yang
+  dikirim ke Open-Meteo, Wikipedia, dan Radio Browser; tempatmu sendiri tetap
+  di komputermu.
+- Untuk pembuat ekstensi: jawaban yang diceritakan bertahap tetap ada di Hasil
+  terakhir Aruna. core.commands.hold_answer(detik) menahannya melewati jeda,
+  dan core.commands.show_answer(teks) menambahkan baris yang tidak diucapkan,
+  misalnya kalimat yang diputar dengan suara lain. Lihat DEVELOPERS.md.
 
 
 Versi 2.8.0 (Pembaruan Inti - 25 September 2026)

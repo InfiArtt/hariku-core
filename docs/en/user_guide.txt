@@ -603,6 +603,55 @@ a ring lasts and how long a snooze is. The commands "Stop the ringing alarm or
 timer", "Snooze the alarm" and the others have no key by default; give them
 one in Input Gestures if you like. Everything stays on your computer.
 
+WORLD TRIP (EXTENSION)
+-----------------------
+With the World Trip extension (from the Extension Store; it needs Hariku 2.9;
+"Keliling Dunia" in Indonesian), you fly anywhere by asking Aruna: "take me to
+Tokyo", "fly to Seoul", "visit New York", "bawa aku ke Tokyo", "terbang ke
+Paris", "jalan-jalan ke Istanbul". A country lands in its capital or its
+best-known city ("take me to Japan" flies to Tokyo), and "take me anywhere"
+("bawa aku ke mana saja") picks a surprise city.
+
+  1. Departure: a cabin chime, then the captain's announcement, for example
+     "Flight from Batam to Tokyo, about 5,300 kilometres, roughly 7 hours.
+     Please fasten your seat belt." (the distance from your main place in
+     Preferences, Places), then the engines. Press any key, or say "skip", to
+     skip straight to the arrival.
+  2. Arrival: a chime, then the city, its local time, how far ahead of or
+     behind home it is, and the weather: "Welcome to Tokyo, Japan. Local time
+     21:30, Friday night, 2 hours ahead of Batam. 18 degrees, drizzle."
+  3. A greeting in the local language for the time of day, with "welcome to
+     Tokyo", spoken by a voice of that language ("Konbanwa! Tōkyō e
+     yōkoso!"), then what it means. Native voices come from Hariku Voice's
+     sources: Edge Voices (from the Extension Store) has one for nearly every
+     language; Piper and Windows voices are used when they have one. Without
+     one, the greeting is read in your own voice, spelled out.
+  4. Local radio: a live station from that city or country (from the Radio
+     Browser directory) plays quietly, and turns itself down while Hariku
+     speaks.
+
+During the trip, ask Aruna:
+  - "tell me about this city" / "ceritakan tentang kota ini": a few sentences
+    from Wikipedia, in your language when it has them, else in English.
+  - "teach me a phrase" / "ajari aku satu kalimat": an everyday phrase (thank
+    you, excuse me, how much is this, delicious, where is the toilet, nice to
+    meet you, goodbye, cheers) in the native voice, then how to say it and what
+    it means; a different one each time. About 30 languages are included.
+  - "next station" / "ganti stasiun", "radio louder" or "keraskan", "radio
+    quieter" or "kecilkan", "which station is this".
+  - "what time is it there" / "jam berapa di sana", "where am I" / "di mana
+    aku".
+  - "go home" / "pulang": the radio stops and you land back home.
+
+Everything the trip says shows in Aruna's "Last result", and the trip goes on
+when you close Aruna. A new trip replaces the one you are on. The radio stops
+when Hariku closes. In Preferences, World Trip, you can turn off the departure
+announcement, the engine sound, the radio or native voices, set the radio's
+volume, and see which voice each language would use. The commands have no key
+by default; give them one in Input Gestures if you like. Only the destination
+is sent to Open-Meteo, Wikipedia and Radio Browser; your own place stays on
+your computer.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on
