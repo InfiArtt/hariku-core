@@ -373,7 +373,8 @@ def typed(text, expect):
 
 
 typed("go to the cantina", "To the Cantina: 2 east, south, up, north, then 2 west.")
-assert pump(lambda: any(s.startswith("To the Cantina: 2 east, south, up, north, then 2 west.") for s in spoken)), \
+# "go to" first says the station is walked one direction at a time, then the way.
+assert pump(lambda: any("To the Cantina: 2 east, south, up, north, then 2 west." in s for s in spoken)), \
     spoken[-3:]
 for step, place in (("e", "the Cargo Bay"), ("e", "the Service Corridor"), ("s", "the Lower Lift Lobby")):
     typed(step, f"to {place}.")
