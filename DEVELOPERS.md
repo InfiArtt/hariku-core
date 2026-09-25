@@ -1039,6 +1039,44 @@ How matching works (so you can choose good aliases): case, accents, punctuation 
 | `core.commands.is_answer_action(action_id)` | `bool` | Whether the bar stays open for it (`core.commands.ANSWER_ACTIONS` lists the core's and the official extensions'). |
 | `core.commands.bar_settings()` | `dict` | *(core 2.8)* `{"keep_open": bool, "sounds": bool}`, the user's Aruna settings. The bar plays `core.commands.SEND_SOUND` (`aruna_send.wav`) for a typed command and `REPLY_SOUND` (`aruna_reply.wav`) for an answer; sound themes can replace both. |
 
+**Commands with content (intents)** *(core 2.9)*. A command can carry words of its own: "catat beli gula", "timer mie 3 menit", "tambahkan kopi ke daftar belanja", "putar Elshinta". Register a pattern with one `{text}`; Aruna gives your handler what `{text}` held, as typed or heard, and does what your `Reply` says. Declare `"minimum_core_version": "2.9"`.
+
+```python
+import core.commands
+from core.commands import Reply
+
+def on_note(request):                     # on the UI thread; keep it quick
+    note = request.text                   # "beli Gula Aren" (capitals and punctuation kept)
+    if not note.strip():
+        return None                       # not mine: Aruna carries on as before
+    return Reply(f"Catat \"{note}\"?", confirm=lambda: save(note) or "Sudah dicatat.")
+
+def register(bus):
+    core.commands.add_intent("Notes.add", ["catat {text}", "note {text}",
+                                           "tambahkan {text} ke daftar belanja"],
+                             on_note, title="Notes")
+
+def teardown():
+    core.commands.remove_intent("Notes.add")
+```
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.commands.add_intent(intent_id, patterns, handler, title=None)` | `Intent` | Patterns in any language, each with exactly one `{text}` and at least one word of its own, before, after or around it. The words are matched like command names (case, accents and punctuation don't count, misheard words like "katat" still match "catat", but a longer word such as "catatan" doesn't), and fillers before the pattern ("tolong", "Aruna") are skipped. When several intents match, the pattern with more words of its own is asked first. A command with content comes before commands and dates ("timer 10 menit" is not a reminder), but after a reminder trigger ("ingatkan aku"). The same id again replaces it. |
+| `core.commands.remove_intent(intent_id)` | `bool` | In `teardown()`. |
+| `core.commands.match_intents(text)` | `list` | The `IntentMatch`es (`.intent`, `.text`, `.score`) of a text, as Aruna sees them. |
+
+`handler(request)` gets a `core.commands.Request`: `.text` (what `{text}` held), `.full_text`, `.source` (`"typed"` or `"voice"`) and `.intent_id`. It returns `None` when the text isn't for it (Aruna asks the next intent, then handles the text as before), a string to say, or a `Reply`:
+
+| `Reply(...)` | What Aruna does |
+|---|---|
+| `say="..."` | Shows it in Last result and says it (Hariku Voice for commands). With "Keep Aruna open" off, Aruna closes afterwards. |
+| `say="...?", confirm=fn, cancel=fn` | Asks `say`. Enter, "ya" or "yes" calls `confirm()`, whose return value (a string, a `Reply` or `None`) is the answer; Escape, "tidak" or "no" calls `cancel()` and says "OK, cancelled". By voice, Aruna listens for the answer. |
+| `wait=True` | You started something slow (on a thread): speak its answer with `core.speech.speak()` when it's ready. Aruna says `say` (if any), shows "Aruna is thinking..." and puts what is spoken in Last result. |
+| `then=fn` | Aruna says `say` (if any), closes, gives the focus back to the window the user was in, then calls `fn()`: type into that window, or open a window of yours. |
+
+A handler that raises makes Aruna say "That command didn't work" (and it is logged). Everything your handler and `confirm()` speak with `core.speech.speak()` comes in Hariku Voice, like an action's answer.
+
 Hariku's own aliases for the core and the official extensions are in `core.commands.BUILTIN_ALIASES`. The core also has **Say the time** and **Say today's date** (no key by default) for "jam berapa" and "what time is it".
 
 **A speech recogniser** (the Voice Control extension) registers itself; there is one at a time:

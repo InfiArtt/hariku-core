@@ -674,6 +674,8 @@ def test_the_core_imports_what_extensions_need():
         assert "import core.places\n" in f.read()
 
 
-def test_core_version_is_2_8():
+def test_core_version_is_at_least_2_8():
+    # Places came with 2.8; extensions using them declare that minimum.
     from core.constants import CORE_VERSION
-    assert CORE_VERSION == "2.8.0"
+    from core.extension_manager import _version_tuple
+    assert _version_tuple(CORE_VERSION) >= (2, 8)

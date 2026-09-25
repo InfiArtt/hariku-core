@@ -19,6 +19,9 @@ spoken command. No wx here; the window is ui/command_bar.py.
     set_fallback(handler)         -> reserved for a future AI fallback
     add_answer_actions([...])     -> actions that only say something (core 2.8):
                                      Aruna stays open and shows their answer
+    add_intent(id, [...], handler) -> commands with content (core 2.9): "catat
+                                     {text}", "timer {text}"; handler(request)
+                                     returns a Reply (say, confirm, wait, then)
     bar_settings()                -> Aruna's "keep open" and "sounds" (core 2.8)
 
 How a command is matched
@@ -50,7 +53,9 @@ Commands or reminders
 Command names can hold date words ("briefing pagi", "cuaca hari ini"), so a
 sentence core.when reads a date or time in isn't always a reminder. decide()
 settles it in this order: a reminder trigger ("ingatkan aku", "remind me")
-makes a reminder; a clear command runs; a strong date or time (a clock time,
+makes a reminder; a command with content an extension added ("catat {text}",
+core 2.9) goes to that extension, unless its handler turns it down; a clear
+command runs; a strong date or time (a clock time,
 a date, a weekday, "tomorrow", a repeat) makes a reminder, whose read-back
 says what is missing, if anything; a close command is asked about (with the
 reminder as the alternative when the sentence also had a weaker date word);
@@ -119,7 +124,7 @@ FILLERS = {
     "hei", "hey", "hariku", "ucapkan", "sebutkan", "katakan", "bacakan", "baca", "putar",
     "putarkan", "beri", "berikan", "kasih", "tahu", "saya", "aku", "gue", "gw", "mau",
     "ingin", "pengen", "minta", "apa", "di", "ke", "dari", "yang", "untuk", "dan", "itu",
-    "sekarang", "tentang", "soal", "info", "informasi",
+    "sekarang", "tentang", "soal", "info", "informasi", "aruna",
     # English
     "please", "hi", "hello", "ok", "okay", "the", "a", "an", "me", "my", "tell", "speak",
     "say", "read", "play", "what", "whats", "is", "are", "it", "its", "of", "to", "from",
@@ -247,6 +252,7 @@ def normalize(text):
 
 
 _FILLERS = {normalize(w) for w in FILLERS}
+_LEADING_FILLERS = _FILLERS     # words an intent's pattern may come after
 _YES = {normalize(w) for w in YES_WORDS}
 _NO = {normalize(w) for w in NO_WORDS}
 
@@ -422,11 +428,17 @@ def commands(actions=None):
 
 def vocabulary(actions=None):
     """Words a speech recogniser should expect: the commands' names and
-    aliases, yes and no, and reminder words. For a recogniser's prompt."""
+    aliases, and the words of commands with content ("catat", "timer"). For a
+    recogniser's prompt."""
     phrases = []
     for command in commands(actions):
         for text in [command.name] + aliases_for(command.id):
             if text not in phrases:
+                phrases.append(text)
+    for intent in intents():
+        for pattern in intent.patterns:
+            text = " ".join(w for w in pattern.pattern.replace(SLOT, " ").split())
+            if text and text not in phrases:
                 phrases.append(text)
     return phrases
 
@@ -506,6 +518,226 @@ def answer(text):
 
 
 # ------------------------------------------------------------
+# Commands with content: intents (core 2.9)
+# ------------------------------------------------------------
+
+INTENT_SCORE = 0.80     # the pattern's own words must match this well on average
+SLOT = "{text}"
+_TOKEN_RE = re.compile(r"\S+")
+_SLOT_EDGE = " \t:;,.-–—\"'“”"
+
+_intents = {}           # intent id -> Intent, in the order they were added
+
+
+class Reply:
+    """What an intent's handler answers (core 2.9). Return None instead when
+    the text isn't one for you: Aruna then tries the next intent, then treats
+    the text as it always did (a command, a reminder...). A plain string is a
+    Reply that only says it.
+
+      say      what Aruna shows in Last result and says (Hariku Voice for
+               commands, when the user set it up)
+      confirm  a function: `say` is then a question ("..., save it?"). Enter,
+               "ya" or "yes" calls confirm(), and what it returns (a string, a
+               Reply or None) is the answer. Escape, "tidak" or "no" says "OK,
+               cancelled" and calls cancel(), when given.
+      cancel   see confirm
+      wait     True: you started something slow (a download) whose answer you
+               will speak later with core.speech.speak(); Aruna says `say`
+               first (if any), shows "Aruna is thinking..." and puts what is
+               spoken in Last result, as for a command that only answers
+      then     a function to run after Aruna has closed and given the focus
+               back to the window the user was in: typing into it, or opening
+               a window of yours. `say`, if any, is said before Aruna closes
+    """
+
+    def __init__(self, say="", confirm=None, cancel=None, wait=False, then=None):
+        for name, value in (("confirm", confirm), ("cancel", cancel), ("then", then)):
+            if value is not None and not callable(value):
+                raise TypeError(f"{name} must be callable or None")
+        self.say = str(say or "")
+        self.confirm = confirm
+        self.cancel = cancel
+        self.wait = bool(wait)
+        self.then = then
+
+    @classmethod
+    def of(cls, value):
+        """A handler's answer as a Reply (a string says it); None stays None."""
+        if value is None or isinstance(value, Reply):
+            return value
+        return cls(say=str(value))
+
+    def __repr__(self):
+        return f"Reply({self.say!r}, confirm={self.confirm is not None}, wait={self.wait})"
+
+
+class Request:
+    """What an intent's handler gets: `text` (the words in the pattern's
+    {text}, as typed or heard, capitals and punctuation kept), `full_text`
+    (the whole sentence), `source` ("typed" or "voice") and `intent_id`."""
+
+    def __init__(self, text, full_text, source="typed", intent_id=""):
+        self.text = text
+        self.full_text = full_text
+        self.source = source
+        self.intent_id = intent_id
+
+    def __repr__(self):
+        return f"Request({self.text!r}, {self.intent_id!r}, {self.source})"
+
+
+class _Pattern:
+    def __init__(self, pattern):
+        pattern = " ".join(str(pattern or "").split())
+        if pattern.count(SLOT) != 1:
+            raise ValueError(f"an intent pattern needs one {SLOT}: {pattern!r}")
+        before, after = pattern.split(SLOT)
+        self.pattern = pattern
+        self.prefix = normalize(before).split()
+        self.suffix = normalize(after).split()
+        if not self.prefix and not self.suffix:
+            raise ValueError(f"an intent pattern needs words besides {SLOT}: {pattern!r}")
+
+    @property
+    def size(self):
+        return len(self.prefix) + len(self.suffix)
+
+
+class Intent:
+    """A command with content, from add_intent()."""
+
+    def __init__(self, intent_id, patterns, handler, title=None):
+        if not callable(handler):
+            raise TypeError("handler must be callable")
+        if isinstance(patterns, str):
+            patterns = [patterns]
+        self.id = str(intent_id)
+        self.patterns = [_Pattern(p) for p in patterns]
+        if not self.patterns:
+            raise ValueError("an intent needs at least one pattern")
+        self.handler = handler
+        self.title = title or self.id
+
+    def __repr__(self):
+        return f"Intent({self.id!r})"
+
+
+class IntentMatch:
+    """An intent a text matched: `text` is what its {text} held."""
+
+    def __init__(self, intent, text, score, size):
+        self.intent = intent
+        self.text = text
+        self.score = score
+        self.size = size
+
+    def __repr__(self):
+        return f"IntentMatch({self.intent.id!r}, {self.text!r}, {self.score:.2f})"
+
+
+def add_intent(intent_id, patterns, handler, title=None):
+    """Teach Aruna a command with content (core 2.9): `patterns` are phrases
+    with one {text} in any language, such as "catat {text}", "note {text}" or
+    "tambahkan {text} ke daftar belanja". When a sentence matches one, Aruna
+    calls handler(request) (a Request; request.text is what {text} held) on
+    the UI thread, and does what its Reply says. Keep it quick: start slow
+    work on a thread and return Reply(wait=True). A new call with the same id
+    replaces the intent. Call it in register(); remove_intent() in teardown()."""
+    intent = Intent(intent_id, patterns, handler, title)
+    with _lock:
+        _intents.pop(intent.id, None)
+        _intents[intent.id] = intent
+    return intent
+
+
+def remove_intent(intent_id):
+    with _lock:
+        return _intents.pop(str(intent_id), None) is not None
+
+
+def intents():
+    with _lock:
+        return list(_intents.values())
+
+
+def _tokens(text):
+    """[(start, end, word)] of the normalized words of `text`, each with the
+    span of the original it came from ("Tua-tahari" gives two words, one span)."""
+    found = []
+    for m in _TOKEN_RE.finditer(text):
+        for word in normalize(m.group()).split():
+            found.append((m.start(), m.end(), word))
+    return found
+
+
+def _match_words(tokens, expected):
+    """The mean similarity of tokens to the expected words, or 0 when any
+    word doesn't match at all."""
+    if len(tokens) != len(expected):
+        return 0.0
+    total = 0.0
+    for (_start, _end, word), want in zip(tokens, expected):
+        s = _word_similarity(word, want)
+        # A longer word that starts with this one is another word, not a
+        # mishearing: "catatan" (notes) is not "catat" (note down).
+        if word != want and abs(len(word) - len(want)) >= 2 and \
+                (word.startswith(want) or want.startswith(word)):
+            s = 0.0
+        if s <= 0:
+            return 0.0
+        total += s
+    return total / len(expected) if expected else 1.0
+
+
+def _match_pattern(text, tokens, pattern):
+    """(score, slot text) of one pattern, or None."""
+    best = None
+    # Fillers before the pattern ("tolong", "Aruna") may be skipped.
+    skips = [0]
+    while skips[-1] < len(tokens) and tokens[skips[-1]][2] in _LEADING_FILLERS:
+        skips.append(skips[-1] + 1)
+    for skip in skips:
+        first = skip + len(pattern.prefix)
+        last = len(tokens) - len(pattern.suffix)
+        if last - first < 1:
+            continue
+        head = _match_words(tokens[skip:first], pattern.prefix) if pattern.prefix else 1.0
+        tail = _match_words(tokens[last:], pattern.suffix) if pattern.suffix else 1.0
+        if head <= 0 or tail <= 0:
+            continue
+        score = (head * len(pattern.prefix) + tail * len(pattern.suffix)) / pattern.size
+        if score < INTENT_SCORE:
+            continue
+        start = max(tokens[first][0], tokens[first - 1][1] if first else 0)
+        end = tokens[last - 1][1]
+        slot = text[start:end].strip(_SLOT_EDGE)
+        if slot and (best is None or score > best[0]):
+            best = (score, slot)
+    return best
+
+
+def match_intents(text, candidates=None):
+    """The intents `text` matches, most specific first (the pattern with
+    more words of its own), then the best matched: [IntentMatch]."""
+    text = " ".join(str(text or "").split())
+    tokens = _tokens(text)
+    if not tokens:
+        return []
+    found = []
+    for intent in (intents() if candidates is None else candidates):
+        best = None
+        for pattern in intent.patterns:
+            m = _match_pattern(text, tokens, pattern)
+            if m is not None and (best is None or (pattern.size, m[0]) > (best.size, best.score)):
+                best = IntentMatch(intent, m[1], m[0], pattern.size)
+        if best is not None:
+            found.append(best)
+    found.sort(key=lambda m: (-m.size, -m.score))
+    return found
+
+
+# ------------------------------------------------------------
 # Deciding: a reminder, a command, a question, or not understood
 # ------------------------------------------------------------
 
@@ -551,16 +783,22 @@ class Decision:
          "offer_reminder"  not understood, but it looks like a date or time:
                            offer the quick reminder with the text
          "unknown"         not understood
+         "intent"          (core 2.9) it matched commands with content:
+                           `intents` ([IntentMatch], best first) are asked in
+                           turn; if none takes it, `fallback` is the decision
+                           without them
     """
 
     def __init__(self, kind, text="", command=None, result=None, match=None,
-                 alternative=None):
+                 alternative=None, intents=None, fallback=None):
         self.kind = kind
         self.text = text
         self.command = command
         self.result = result
         self.match = match
         self.alternative = alternative
+        self.intents = intents or []
+        self.fallback = fallback
 
     @property
     def action_id(self):
@@ -581,16 +819,26 @@ def _parse(text, parse=None):
         return None
 
 
-def decide(text, candidates=None, parse=None):
+def decide(text, candidates=None, parse=None, intent_candidates=None):
     """Decide what `text` asks for (see the module notes for the order).
     `parse(text)` reads a reminder (default core.quick_reminder.parse_text);
-    `candidates` defaults to commands()."""
+    `candidates` defaults to commands(), `intent_candidates` to intents()."""
     text = " ".join(str(text or "").split())
     if not normalize(text):
         return Decision("empty", text)
     result = _parse(text, parse)
     if result is not None and result.trigger:
         return Decision("reminder", text, result=result)
+    found_intents = match_intents(text, intent_candidates)
+    if found_intents:
+        # A command with content comes before commands and dates ("timer 10
+        # menit" is not a reminder); its handler may still turn it down.
+        return Decision("intent", text, intents=found_intents,
+                        fallback=_decide_without_intents(text, result, candidates))
+    return _decide_without_intents(text, result, candidates)
+
+
+def _decide_without_intents(text, result, candidates):
     found = match(text, candidates)
     if found.kind == "run":
         return Decision("run", text, command=found.best, match=found)
