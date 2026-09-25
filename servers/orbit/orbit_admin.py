@@ -153,7 +153,7 @@ class AdminMixin:
                    "event_schedule": lambda s, m: self.admin_event_schedule(s, self._arg(m)),
                    "hunt_status": self.admin_hunt_status, "new_season": self.admin_new_season,
                    "release_hint": self.admin_release_hint, "hunt_test": self.admin_hunt_test,
-                   "crew_disband": self.admin_crew_disband}.get(op)
+                   "crew_disband": self.admin_crew_disband, "duel_stop": self.admin_duel_stop}.get(op)
         if handler is not None:
             handler(session, message)
             return

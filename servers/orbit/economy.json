@@ -1869,6 +1869,23 @@
       "at": 1,
       "credits": 25,
       "desc": {"en": "join or found a crew", "id": "bergabung dengan atau mendirikan kru"}
+    },
+    "duelist": {
+      "en": "Duelist",
+      "id": "Petarung",
+      "stat": "duels_won",
+      "at": 1,
+      "credits": 20,
+      "desc": {"en": "win a duel", "id": "menangkan satu duel"}
+    },
+    "quickest_draw": {
+      "en": "Quickest Draw",
+      "id": "Tercepat di Arena",
+      "stat": "duels_won",
+      "at": 10,
+      "credits": 150,
+      "station": true,
+      "desc": {"en": "win 10 duels", "id": "menangkan 10 duel"}
     }
   },
   "travel": {
@@ -2068,5 +2085,17 @@
     "invite_seconds": 120,
     "motto_max": 80,
     "board_size": 5
+  },
+  "duels": {
+    "_note": "Duels (orbit_duels.py), only in rooms marked arena: a quick-draw contest, first to wins rounds (at most max_rounds); stakes up to max_stake credits each, the winner takes both less fee; rest_seconds between duels, declined_seconds before challenging someone who declined again.",
+    "max_stake": 100,
+    "fee": 0.05,
+    "wins": 2,
+    "max_rounds": 5,
+    "wait": [2, 5],
+    "draw_seconds": 3,
+    "rest_seconds": 60,
+    "declined_seconds": 300,
+    "ask_seconds": 60
   }
 }

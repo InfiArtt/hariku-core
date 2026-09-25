@@ -235,6 +235,15 @@ VERBS = [
     (("daftar", "kru"), "crews"), (("papan", "kru"), "crews"), (("crews",), "crews"), (("crew", "board"), "crews"),
     (("top", "crews"), "crews"), (("peringkat", "kru"), "crews"),
     (("bubarkan", "kru"), "crew_disband"), (("disband", "crew"), "crew_disband"),
+    # duels
+    (("duel",), "duel"), (("tantang", "duel"), "duel"), (("ajak", "duel"), "duel"),
+    (("challenge", "to", "a", "duel"), "duel"),
+    (("duel", "with"), "duel"), (("duel", "dengan"), "duel"), (("adu", "cepat", "dengan"), "duel"),
+    (("duels", "off"), "duels_off"), (("duel", "off"), "duels_off"), (("no", "duels"), "duels_off"),
+    (("matikan", "duel"), "duels_off"), (("duel", "mati"), "duels_off"),
+    (("duels", "on"), "duels_on"), (("duel", "on"), "duels_on"), (("nyalakan", "duel"), "duels_on"),
+    (("duel", "nyala"), "duels_on"), (("duels",), "duels"), (("status", "duel"), "duels"),
+    (("hentikan", "duel"), "duel_stop"), (("stop", "duel"), "duel_stop"), (("stop", "the", "duel"), "duel_stop"),
     # trading (and anything waiting for a yes)
     (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
     (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
@@ -279,7 +288,8 @@ VERBS.sort(key=lambda entry: -len(entry[0]))
 
 ADMIN_OPS = {"grant", "take_credits", "give_item", "economy", "set_price", "reset_streak", "goto",
              "invisible", "transfers", "revoke", "transfer_for", "admin_log", "event_start", "event_stop",
-             "event_schedule", "hunt_status", "new_season", "release_hint", "hunt_test", "crew_disband"}
+             "event_schedule", "hunt_status", "new_season", "release_hint", "hunt_test", "crew_disband",
+             "duel_stop"}
 BOARD_WORDS = {"kancil", "shuttle", "pesawat", "ulang-alik"}
 _ALL_WORDS = {"all", "semua", "semuanya", "everything"}
 
@@ -444,8 +454,17 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "play", "a": rest, "raw": text}       # "main street" is a place, not a game
     if meaning == "high_scores":
         return {"c": "high_scores", "a": rest}
-    if meaning in ("arcade", "stop_game", "crew", "crew_leave", "crews"):
+    if meaning in ("arcade", "stop_game", "crew", "crew_leave", "crews", "duels"):
         return {"c": meaning}
+    if meaning in ("duels_on", "duels_off"):
+        return {"c": "duels", "op": meaning[6:]}
+    if meaning == "duel":
+        name, _more = _name_and_rest(text, tokens, used)
+        message = {"c": "duel", "to": name}
+        numbers = [_number(t[2]) for t in tokens[used + 1:] if _number(t[2]) is not None]
+        if numbers:
+            message["n"] = numbers[0]
+        return message
     if meaning in ("crew_create", "crew_say", "crew_motto"):
         return {"c": meaning, "a": rest}
     if meaning in ("crew_invite", "crew_kick", "crew_captain"):
@@ -481,7 +500,7 @@ def _admin(op, text, tokens, used):
         if numbers:
             message["n"] = numbers[0]
         return message
-    if op in ("goto", "event_start", "event_stop", "event_schedule", "crew_disband"):
+    if op in ("goto", "event_start", "event_stop", "event_schedule", "crew_disband", "duel_stop"):
         message["a"] = _rest(text, tokens, used)
         return message
     if op == "set_price":

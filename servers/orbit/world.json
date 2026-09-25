@@ -1130,8 +1130,8 @@
       "ambience": "vent",
       "exits": {"n": "promenade_east"},
       "desc": {
-        "en": "Padded walls, dumbbells floating on elastic cords, and a treadmill with a harness. It smells of rubber and determination.",
-        "id": "Dinding berbantal, barbel melayang terikat tali elastis, dan treadmill dengan sabuk pengaman. Baunya karet dan tekad."
+        "en": "Padded walls, dumbbells floating on elastic cords, and a treadmill with a harness. It smells of rubber and determination. A ring painted on the padded floor is for duels: challenge someone here with duel and their name.",
+        "id": "Dinding berbantal, barbel melayang terikat tali elastis, dan treadmill dengan sabuk pengaman. Baunya karet dan tekad. Lingkaran yang dilukis di lantai berbantal itu untuk duel: tantang seseorang di sini dengan duel dan namanya."
       },
       "objects": {
         "treadmill": {
@@ -1149,7 +1149,8 @@
           }
         }
       },
-      "acoustics": "open"
+      "acoustics": "open",
+      "arena": true
     },
     "cabins_hall": {
       "name": {"en": "Crew Quarters", "id": "Lorong Kabin Kru"},
@@ -3794,8 +3795,8 @@
       "ambience": "arcade",
       "exits": {"s": "pixel_hall", "e": "pixel_scores"},
       "desc": {
-        "en": "A stage under spotlights with two big chairs facing a giant screen, waiting for the next tournament. The high score wall glows to the east.",
-        "id": "Panggung di bawah lampu sorot dengan dua kursi besar menghadap layar raksasa, menunggu turnamen berikutnya. Dinding skor tertinggi bersinar di timur."
+        "en": "A stage under spotlights with two big chairs facing a giant screen, where players settle quick-draw duels: duel and a name. The high score wall glows to the east.",
+        "id": "Panggung di bawah lampu sorot dengan dua kursi besar menghadap layar raksasa, tempat para pemain beradu cepat dalam duel: duel dan sebuah nama. Dinding skor tertinggi bersinar di timur."
       },
       "floor": "wood",
       "acoustics": "hall",
@@ -3807,7 +3808,8 @@
             "id": "Layar raksasa menampilkan hitung mundur yang tampaknya tak pernah sampai nol."
           }
         }
-      }
+      },
+      "arena": true
     },
     "pixel_scores": {
       "name": {"en": "High Score Wall", "id": "Dinding Skor Tertinggi"},

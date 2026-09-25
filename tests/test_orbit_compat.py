@@ -129,6 +129,10 @@ PHRASEBOOK = [
     ("keluar kru", "id", "crew_leave"), ("leave crew", "en", "crew_leave"), ("kru keluarkan Budi", "id", "crew_kick"),
     ("jadikan kapten Budi", "id", "crew_captain"), ("moto kru ke bintang", "id", "crew_motto"),
     ("papan kru", "id", "crews"), ("crews", "en", "crews"), ("bubarkan kru Bintang", "id", "admin"),
+    # duels
+    ("duel Budi 50", "en", "duel"), ("tantang duel Budi 50", "id", "duel"), ("duel dengan Budi", "id", "duel"),
+    ("duels", "en", "duels"), ("duels off", "en", "duels"), ("matikan duel", "id", "duels"),
+    ("nyalakan duel", "id", "duels"), ("hentikan duel Budi", "id", "admin"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

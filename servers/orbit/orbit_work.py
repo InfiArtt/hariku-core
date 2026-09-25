@@ -202,6 +202,8 @@ class WorkMixin:
                    extra={"codes": codes})
 
     def cmd_answer(self, session, message):
+        if self.duel_answer(session):
+            return
         if session.arcade:
             self.arcade_answer(session, self._arg(message, "a", 60))
             return
