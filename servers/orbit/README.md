@@ -37,6 +37,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_local.py` | the other worlds' own work: Evergrove's creatures, Lumina City's courier gigs |
 | `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
 | `orbit_arcade.py` | Pixel Pier's arcade: four cabinet games, tokens, prize tickets, high scores |
+| `orbit_crews.py` | crews: founding, invitations, crew chat, the captain, points and the board |
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
@@ -109,22 +110,23 @@ while running).
    hunt's seasons: see below) (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
    `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`, `orbit_travel.py`, `orbit_local.py`,
-   `orbit_events.py`, `orbit_arcade.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
+   `orbit_events.py`, `orbit_arcade.py`, `orbit_crews.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
    keys: every new setting has a default (below).
 2. `systemctl --user restart orbit`.
 3. On its first start, the server sees an older database (Orbit 1.0's is
-   schema version 0), saves a copy of it as `orbit.db.before-v6.bak` next to
-   it, and migrates it to version 6 in one transaction: new columns (voice,
+   schema version 0), saves a copy of it as `orbit.db.before-v7.bak` next to
+   it, and migrates it to version 7 in one transaction: new columns (voice,
    XP, the daily streak, what a character mined and harvested, what it won
    or lost at the casino) and new tables (companions, ships, events and who
-   took part in them, hunt progress, arcade high scores, achievements, lottery tickets, transfer codes, old
+   took part in them, hunt progress, arcade high scores,
+   crews and their members, achievements, lottery tickets, transfer codes, old
    secrets, transfers, the admins' log) are added; nothing is dropped or
    changed, and work done before 1.1 counts as XP (10 a repair, 20 a cargo
    run, 25 a mission). The log says "the database was migrated from version
-   0 to 6". If the migration fails,
+   0 to 7". If the migration fails,
    nothing is changed and the server stops with the error in the log; the
    copy is there.
 4. Every room of 1.0 still exists, so characters wake up where they were.
@@ -439,6 +441,25 @@ achievements, admin) and spent by sink (shops, market, fares, rescues,
 lanterns, casino bets, lottery, admin), so you can see whether money grows
 too fast and adjust these numbers.
 
+## Crews
+
+`crew create` and a name founds a crew (500 credits, from level 3; a name of
+3 to 24 letters, digits and spaces, through the word filter, and unlike any
+other crew's however its spaces and capitals fall); its founder is the
+captain. `crew invite Budi` (also `kru undang Budi`, `undang Budi ke kru`)
+asks someone in: they `accept` or `decline` within two minutes, like an
+offer (a crew holds 12). `crew say` and the words (`kru bilang ...`, `cs
+...`, or a whisper to `crew`) reach every member online, anywhere; it is
+filtered, rate-limited and muted like the rest of the chat and never
+stored, and players can ignore a member there as anywhere. `crew` shows the
+crew, `crew leave`, `crew kick Budi`, `crew captain Budi` (hand it over),
+`crew motto` and a line; when the captain leaves, the longest-serving member
+takes over, and the last one out ends the crew. Every XP a member earns
+while in it is a point for the crew; `crews` (`papan kru`) shows the board.
+Others see a player's crew when they look at them or at their profile.
+Admins can disband a crew (`bubarkan kru Bintang` / `disband crew Bintang`).
+The numbers are `crews` in economy.json.
+
 ## The arcade (Pixel Pier)
 
 Cabinet Row, west of Pixel Pier's Grand Arcade Hall, has four cabinets and a
@@ -573,6 +594,7 @@ Typed in the game by a character in `game.admins` (Indonesian first):
 | `status perburuan` / `hunt status` | the hunt: everyone's riddle, tries and waits |
 | `musim baru` / `new season` | read the hunt's season file again (a new season begins when its number changed) |
 | `umumkan petunjuk 2` / `release hint 2` | the next hint of the hunt's riddle 2, to everyone |
+| `bubarkan kru Bintang` / `disband crew Bintang` | end a crew (its members are told) |
 | `uji perburuan` / `hunt test` | play the hunt from the start without counting (again: back) |
 | `bantuan admin` / `help admin` | this list, in the game (players don't see it) |
 
@@ -611,11 +633,12 @@ pet: kind, name, and its own stats); its ship (model, name, where it's
 docked or flying to, fuel and cargo); the events it took part in (and how
 much, for the drone's rewards); its achievements (which, and when); its
 lottery tickets (how many, for which week's draw); its best score and games
-played at each arcade cabinet; how far it got in each season of the hunt
-(its riddle, tries, wrong answers in a row and the wait, when it finished
-and in which place; the answers it typed are only compared, never kept);
-transfer codes (a hash, for 10 minutes); secrets that no longer work (a
-hash); the transfers log; the admins' log; and, in `meta`, the market's
+played at each arcade cabinet; its crew and its role there (a crew keeps its
+name, motto, points and when it was founded); how far it got in each season
+of the hunt (its riddle, tries, wrong answers in a row and the wait, when it
+finished and in which place; the answers it typed are only compared, never
+kept); transfer codes (a hash, for 10 minutes); secrets that no longer work
+(a hash); the transfers log; the admins' log; and, in `meta`, the market's
 prices, each world's own prices, the economy's totals, today's temple
 lanterns, the lottery's next draw and carried-over pot, and the events'
 pacing (when the next random one may come, when each last came, which weekly
@@ -700,17 +723,19 @@ commands need no new client:
 | `face` (`a`: a creature), `gig` | | Evergrove's creatures, Lumina's courier gigs |
 | `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
 | `hunt`, `investigate`, `solve` (`a`: the answer), `hunt_board` | | the hunt |
+| `crew`, `crew_create` (`a`: the name), `crew_invite` (`to`), `crew_say` (`a`), `crew_leave`, `crew_kick` (`to`), `crew_captain` (`to`), `crew_motto` (`a`), `crews` | | crews (an invitation is answered with `accept` or `decline`) |
 | `arcade`, `play` (`a`: a game), `stop_game`, `high_scores` (`a`: a game) | | the arcade; a game's input is `answer` (numbers alone: both clients send them so) |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
 | `text` | `a`: plain words | the server reads them (see above) |
-| `admin` | `op`: mute, unmute, kick, ban, unban, announce, grant, take_credits, give_item, economy, set_price, reset_streak, goto, invisible, transfers, revoke, transfer_for, admin_log, event_start, event_stop, event_schedule, hunt_status, new_season, release_hint, hunt_test; `to`, `n`, `a`, `item` | admins only |
+| `admin` | `op`: mute, unmute, kick, ban, unban, announce, grant, take_credits, give_item, economy, set_price, reset_streak, goto, invisible, transfers, revoke, transfer_for, admin_log, event_start, event_stop, event_schedule, hunt_status, new_season, release_hint, hunt_test, crew_disband; `to`, `n`, `a`, `item` | admins only |
 
 **Events** (`{"t": "ev", "k": kind, "text": "...", ...}`). `k` tells the
 client which sound fits and whose voice reads it: `room`, `moved`, `arrive`,
 `leave`, `say`/`said`, `whisper`/`whispered`, `shout`/`shouted`, `emote`,
-`who`, `info`, `error`, `tones`, `task`, `paid`, `failed`, `received`,
+`who`, `info`, `error`, `tones`, `task`, `paid`, `failed`, `received`, `crew`/`crew_sent` (crew chat,
+heard and said; Orbit 1.0 reads them as plain lines),
 `gave`, `mission`, `trade`, `flight`, `offer`, `announce`, `system`. Optional
 fields: `actor` (who did it), `brief` (a short line to say for your own
 action), `room`, `amb` (`vent`, `cantina`, `engine`, `garden`, `deck`,
@@ -785,13 +810,14 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
 | `creature` | one of Evergrove's creatures |
 | `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
+| `crew_chat`, `crew_join` | a line on your crew's chat; someone joins (or you found) a crew |
 | `arcade_start`, `arcade_ready`, `arcade_go`, `arcade_hit`, `arcade_beat`, `arcade_meteor`, `arcade_whoosh`, `arcade_crash`, `arcade_ticket`, `arcade_over` | the arcade: a coin in, ready and go, a point, a beat, a meteor (placed on its side), dodged, hit, tickets out, game over |
 | `hunt_clue`, `hunt_found`, `hunt_rival` | the hunt: a clue (and others' progress, a hint), a note found, the rival ahead |
 | `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
 | `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 188 files, about 10 MB: 104 recorded (2.9 MB) and 84 synthesized;
+The set: 190 files, about 10 MB: 104 recorded (2.9 MB) and 86 synthesized;
 the ambience loops are at 11 kHz.
 
 ### Credits: recorded sounds
@@ -817,7 +843,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from
