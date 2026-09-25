@@ -30,6 +30,7 @@ import random
 import re
 
 import orbit_safety
+import orbit_travel
 from orbit_lang import pick
 
 logger = logging.getLogger("orbit.game")
@@ -539,7 +540,14 @@ class WorkMixin:
         char = session.char
         text = self._arg(message, "item", 60) or self._arg(message)
         if session.blackjack and orbit_safety.name_key(text) in CARD_WORDS:
-            self.cmd_hit(session, message)          # "ambil kartu" at the card table
+            self.run(session, {"c": "hit"})          # "ambil kartu" at the card table
+            return
+        if orbit_safety.name_key(text) in ("gig", "a gig", "paket", "parcel"):
+            self.run(session, {"c": "gig"})          # "ambil gig" (read by a client as take)
+            return
+        ferry = orbit_travel._after(text, orbit_travel.FERRY_WORDS)
+        if ferry is not None:
+            self.run(session, {"c": "ferry", "a": ferry})    # "take the ferry to the Moon" (Orbit 1.0: take)
             return
         item = self.world.find_item(text)
         if item is None:

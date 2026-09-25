@@ -22,15 +22,17 @@ salt made once for this server, so a leaked database can't be used to log in.
 Chat is never stored here.
 
 Other tables: companions (a pet, and later other companions, with its
-owners), achievements, lottery tickets, transfer codes (only a hash, for 10
-minutes), secrets that no longer work (moved to another computer, or revoked
+owners), ships (each player's own: its model and name, where it's docked or
+where it's flying, its fuel and cargo), achievements, lottery tickets,
+transfer codes (only a hash, for 10 minutes), secrets that no longer work (moved to another computer, or revoked
 by an admin, so the old computer is told why), the transfers log, the
 admins' log, bans by address (a salted hash), and "meta" for server values
-(the market's prices, the economy's totals, the lottery's pot, the salt).
+(the market's prices, each world's market, the economy's totals, the
+lottery's pot, the salt).
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is
-saved next to it (orbit.db.before-v2.bak); columns and tables are only ever
+saved next to it (orbit.db.before-v3.bak); columns and tables are only ever
 added, never dropped.
 
 Everything is written at once (autocommit, or one transaction for things
@@ -50,7 +52,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -158,6 +160,21 @@ CREATE TABLE IF NOT EXISTS lottery_tickets (
 );
 """
 
+# Version 3 (Orbit 1.1, ships and the other worlds).
+V3_TABLES = """
+CREATE TABLE IF NOT EXISTS ships (
+    id INTEGER PRIMARY KEY,
+    owner INTEGER NOT NULL UNIQUE,
+    model TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    dock TEXT NOT NULL DEFAULT '',
+    fuel REAL NOT NULL DEFAULT 0,
+    cargo TEXT NOT NULL DEFAULT '{}',
+    flight TEXT NOT NULL DEFAULT '',
+    created REAL NOT NULL
+);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
 FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
@@ -225,6 +242,8 @@ class Store:
                 self._migrate_1()
             if version < 2:
                 self._migrate_2()
+            if version < 3:
+                self._migrate_3()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -273,6 +292,11 @@ class Store:
             if name not in have:
                 self.db.execute(f"ALTER TABLE characters ADD COLUMN {name} {decl}")
         for statement in V2_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+
+    def _migrate_3(self):
+        for statement in V3_TABLES.split(";"):
             if statement.strip():
                 self.db.execute(statement)
 
@@ -575,6 +599,45 @@ class Store:
         self.db.execute("UPDATE companions SET name = ?, stats = ?, state = ? WHERE id = ?",
                         (comp["name"], json.dumps(comp.get("stats") or {}),
                          json.dumps(comp.get("state") or {}), comp["id"]))
+
+    # --- ships ------------------------------------------------------------------------------
+
+    @staticmethod
+    def _ship(row):
+        ship = dict(row)
+        for name, empty in (("cargo", {}), ("flight", None)):
+            try:
+                value = json.loads(ship.get(name) or "null")
+            except ValueError:
+                value = None
+            ship[name] = value if isinstance(value, dict) else empty
+        return ship
+
+    def add_ship(self, owner_id, model, name, dock, fuel):
+        cursor = self.db.execute("INSERT INTO ships (owner, model, name, dock, fuel, cargo, flight, created) "
+                                 "VALUES (?, ?, ?, ?, ?, '{}', '', ?)",
+                                 (owner_id, model, name, dock, float(fuel), self.clock()))
+        return self.ship_by_id(cursor.lastrowid)
+
+    def ship_by_id(self, ship_id):
+        row = self.db.execute("SELECT * FROM ships WHERE id = ?", (ship_id,)).fetchone()
+        return self._ship(row) if row else None
+
+    def ship_of(self, owner_id):
+        """A character's own ship, or None."""
+        row = self.db.execute("SELECT * FROM ships WHERE owner = ?", (owner_id,)).fetchone()
+        return self._ship(row) if row else None
+
+    def save_ship(self, ship):
+        self.db.execute("UPDATE ships SET model = ?, name = ?, dock = ?, fuel = ?, cargo = ?, flight = ? "
+                        "WHERE id = ?",
+                        (ship["model"], ship.get("name") or "", ship.get("dock") or "", float(ship.get("fuel") or 0),
+                         json.dumps({k: int(v) for k, v in (ship.get("cargo") or {}).items() if int(v) > 0}),
+                         json.dumps(ship["flight"]) if ship.get("flight") else "", ship["id"]))
+
+    def flying_ships(self):
+        rows = self.db.execute("SELECT * FROM ships WHERE flight != ''").fetchall()
+        return [self._ship(row) for row in rows]
 
     # --- bans by address (only a hash of it is kept) ------------------------------------
 

@@ -15,7 +15,13 @@ cantina", "Kantin!").
 world.json
   directions  n, ne, e, se, s, sw, w, nw, u, d: their names and the words for
               them in both languages ("u" is north in Indonesian, up in English)
-  areas       the decks and places rooms belong to (Main Deck, Asteroid Belt...)
+  areas       the decks and places rooms belong to (Main Deck, Asteroid Belt...),
+              each in a world
+  worlds      the station and the other worlds of the simulation (the Moon,
+              Karmina, Glasir, the Drift Bazaar, Evergrove, Lumina City, Pixel
+              Pier, the Asteroid Belt): where ships dock, the ferry stops and
+              the Gate opens in each, how far apart they are, their customs,
+              fuel and market prices
   locations   the rooms: names, descriptions, ambience, compass exits (an exit
               may be locked, one-way, or lead into vacuum), objects, and flags
               (dark, airless, private, landmark, market, shop...)
@@ -40,14 +46,16 @@ import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LANGS = ("en", "id")
-AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino")
+AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino",
+             "gate", "moon", "colony", "ice", "bazaar", "forest", "neon", "arcade")
 DIRECTIONS = ("n", "ne", "e", "se", "s", "sw", "w", "nw", "u", "d")
 LOCKS = ("crew", "tech", "officer", "brass")
 FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet", "sand", "snow", "wood", "dust")
 ACOUSTICS = ("room", "small", "hall", "hangar", "outside", "cave", "open")
 VIAS = ("walk", "lift", "ladder", "slide", "airlock", "door", "gate")
 THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture", "outfit",
-               "title", "pet", "service")
+               "title", "pet", "service", "ship")
+GOOD_KINDS = ("trade", "crop", "ore", "salvage", "contraband")
 _ARTICLES = {"the", "a", "an", "to", "ke", "di", "my", "ku"}
 _NOT_WORD = re.compile(r"[^\w\s]")
 
@@ -87,6 +95,7 @@ class World:
         self.areas = data.get("areas", {})
         self.directions = data["directions"]
         self.shuttles = data.get("shuttles", {})
+        self.worlds = data.get("worlds", {})
         self.moved = data.get("moved", {})
         self.jobs = data["jobs"]
         self.goods = data["goods"]
@@ -105,6 +114,9 @@ class World:
                                         extra=lambda lid: [self.locations[lid]["name"][lang]
                                                            for lang in LANGS])
         self._good_names = self._index({gid: g["names"] for gid, g in self.goods.items()})
+        self._world_names = self._index({wid: wd.get("aliases", {}) for wid, wd in self.worlds.items()},
+                                        extra=lambda wid: [self.worlds[wid]["name"][lang] for lang in LANGS]
+                                        + [self.worlds[wid]["ref"][lang] for lang in LANGS])
         self._item_names = self._index({iid: i["names"] for iid, i in self.items.items()})
         self._thing_names = self._index({tid: t.get("names", {}) for tid, t in self.things.items()},
                                         extra=lambda tid: [self.things[tid]["one"][lang]
@@ -186,6 +198,7 @@ class World:
         for a, b in self.shuttles.get("links", []):
             if a not in self.locations or b not in self.locations:
                 problems.append(f"shuttle link {a} - {b}: unknown room")
+        problems.extend(self._check_worlds())
         for old, new in self.moved.items():
             if new not in self.locations:
                 problems.append(f"moved {old} -> unknown {new}")
@@ -221,6 +234,80 @@ class World:
                 problems.append(f"crop {cid}: unknown seed or good")
         if problems:
             raise WorldError("; ".join(problems))
+
+    def _check_worlds(self):
+        problems = []
+        for aid, area in self.areas.items():
+            if area.get("world") is not None and area["world"] not in self.worlds:
+                problems.append(f"area {aid}: unknown world {area['world']!r}")
+            if area.get("rescue") and area["rescue"] not in self.locations:
+                problems.append(f"area {aid}: unknown rescue room {area['rescue']!r}")
+        for wid, world in self.worlds.items():
+            for field in ("name", "ref", "in", "about"):
+                if not all(isinstance(world.get(field, {}).get(lang), str) for lang in LANGS):
+                    problems.append(f"world {wid}: {field} needs en and id")
+            for field in ("port", "ferry", "gate"):
+                lid = world.get(field)
+                if field == "port" and lid is None:
+                    problems.append(f"world {wid}: needs a port")
+                if lid is not None and (lid not in self.locations or self.world_of(lid) != wid):
+                    problems.append(f"world {wid}: its {field} {lid!r} is not one of its rooms")
+            for gid in world.get("prices", {}):
+                if gid not in self.goods:
+                    problems.append(f"world {wid}: a price for the unknown good {gid!r}")
+        for lid, loc in self.locations.items():
+            if self.areas.get(loc.get("area"), {}).get("world") is None and not loc.get("hidden"):
+                problems.append(f"{lid}: its area is in no world")
+        for gid, good in self.goods.items():
+            if good.get("kind", "trade") not in GOOD_KINDS:
+                problems.append(f"good {gid}: unknown kind {good.get('kind')!r}")
+        economy = self.economy
+        for lid, loc in self.locations.items():
+            if loc.get("mine") and loc["mine"] not in economy.get("mining", {}).get("tables", {}):
+                problems.append(f"{lid}: no mining table {loc['mine']!r}")
+            if loc.get("salvage") and loc["salvage"] not in economy.get("salvage", {}).get("tables", {}):
+                problems.append(f"{lid}: no collecting table {loc['salvage']!r}")
+            for cid in loc.get("creatures", []):
+                if cid not in economy.get("creatures", {}):
+                    problems.append(f"{lid}: unknown creature {cid!r}")
+        for spot, tables in economy.get("mining", {}).get("tables", {}).items():
+            for tier, table in tables.items():
+                for gid in table:
+                    if gid not in self.goods:
+                        problems.append(f"mining {spot}/{tier}: unknown good {gid!r}")
+        for spot, table in economy.get("salvage", {}).get("tables", {}).items():
+            for gid in table:
+                if gid not in self.goods:
+                    problems.append(f"collecting {spot}: unknown good {gid!r}")
+        for cid, creature in economy.get("creatures", {}).items():
+            for gid in creature.get("loot", {}):
+                if gid not in self.goods:
+                    problems.append(f"creature {cid}: unknown loot {gid!r}")
+        for lid in economy.get("gigs", {}).get("to", []):
+            if lid not in self.locations:
+                problems.append(f"gigs: unknown room {lid!r}")
+        return problems
+
+    # --- the worlds ----------------------------------------------------------------------
+
+    def world_of(self, lid):
+        """The world a room is in ("station", "moon"...), or None (a ship, the ferry)."""
+        loc = self.locations.get(lid)
+        if loc is None:
+            return None
+        return self.areas.get(loc.get("area"), {}).get("world")
+
+    def find_world(self, text):
+        return self._lookup(self._world_names, text)
+
+    def distance(self, a, b):
+        """How far apart two worlds are (at least 1)."""
+        return max(1, abs(int(self.worlds[a]["pos"]) - int(self.worlds[b]["pos"])))
+
+    def travel_rooms(self, wid):
+        """The rooms of a world where the ferry stops, the Gate opens and ships dock."""
+        world = self.worlds[wid]
+        return {lid for lid in (world.get("port"), world.get("ferry"), world.get("gate")) if lid}
 
     # --- finding by name -----------------------------------------------------------------
 
@@ -339,17 +426,23 @@ class World:
                 queue.append(nxt)
         return None
 
-    def reachable(self, start=None):
-        """Every room that can be reached from the start (doors and shuttles)."""
+    def reachable(self, start=None, travel=True):
+        """Every room that can be reached from the start (doors and shuttles, and,
+        with `travel`, the ferry, the Gate and ships between worlds)."""
         start = start or self.start
         seen = {start}
         queue = collections.deque([start])
+        hubs = set()
+        for wid in self.worlds:
+            hubs |= self.travel_rooms(wid)
         while queue:
             here = queue.popleft()
             nexts = [ex["to"] for _d, ex in self.neighbours(here)]
             partner = self.shuttle_partner(here)
             if partner:
                 nexts.append(partner)
+            if travel and here in hubs:
+                nexts.extend(hubs)
             for nxt in nexts:
                 if nxt not in seen:
                     seen.add(nxt)

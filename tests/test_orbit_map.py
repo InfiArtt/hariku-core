@@ -66,7 +66,7 @@ def test_every_exit_leads_somewhere_and_back(world):
 
 def test_every_room_can_be_reached_and_left(world):
     places = {lid for lid, loc in world.locations.items() if not loc.get("hidden")}
-    assert 30 <= len(places) <= 60
+    assert 30 <= len(places) <= 150
     assert world.reachable() == places
     for lid in places:
         assert world.reachable(lid) >= {world.start}, f"stuck in {lid}"
@@ -110,7 +110,9 @@ def test_the_places_everyone_needs_are_open_to_everyone(world):
     must |= {m[f] for m in world.missions.values() for f in ("from", "to")}
     must |= {lid for lid, loc in world.locations.items() if loc.get("shop") or loc.get("farm")}
     for lid in must:
-        assert world.route(world.start, lid, no_keys) is not None, lid
+        wid = world.world_of(lid)
+        start = world.start if wid in ("station", "belt") else world.worlds[wid]["port"]
+        assert world.route(start, lid, no_keys) is not None, lid
     locks = {ex["lock"] for exits in world.exits.values() for ex in exits.values() if ex["lock"]}
     keys = {a for t in world.things.values() for a in (t.get("effects") or {}).get("access", [])}
     assert locks <= keys

@@ -22,6 +22,7 @@ every client can use them:
     parse("arah ke kantin")       -> {"c": "way", "a": "kantin"}
     parse("tanam 2 tomat")        -> {"c": "plant", "item": "tomat", "n": 2}
     parse("naik kancil")          -> {"c": "board"}
+    parse("terbang ke Karmina")   -> {"c": "fly", "a": "Karmina"}
     parse("dadu 50 tinggi")       -> {"c": "dice", "a": "tinggi", "n": 50}
     parse("tawarkan Budi 3 besi untuk 200 kredit")
                                   -> {"c": "offer", "to": "Budi", "a": "3 besi untuk 200 kredit"}
@@ -114,6 +115,42 @@ VERBS = [
     (("dig",), "mine"),
     (("kumpulkan",), "collect"), (("collect",), "collect"), (("salvage",), "collect"),
     (("pulung",), "collect"), (("memulung",), "collect"), (("kais",), "collect"),
+    # travel between worlds, ships
+    (("dunia",), "worlds"), (("worlds",), "worlds"), (("planets",), "worlds"), (("planet",), "worlds"),
+    (("daftar", "dunia"), "worlds"), (("list", "worlds"), "worlds"), (("semua", "dunia"), "worlds"),
+    (("gerbang",), "gate"), (("gerbang", "ke"), "gate"), (("masuk", "gerbang"), "gate"),
+    (("masuk", "gerbang", "ke"), "gate"), (("lewat", "gerbang", "ke"), "gate"), (("gate",), "gate"),
+    (("gate", "to"), "gate"), (("enter", "the", "gate", "to"), "gate"),
+    (("step", "through", "the", "gate", "to"), "gate"),
+    (("take", "the", "gate", "to"), "gate"), (("use", "the", "gate", "to"), "gate"),
+    (("feri",), "ferry"), (("feri", "ke"), "ferry"), (("naik", "feri"), "ferry"), (("naik", "feri", "ke"), "ferry"),
+    (("ferry",), "ferry"), (("ferry", "to"), "ferry"), (("take", "the", "ferry", "to"), "ferry"),
+    (("ride", "the", "ferry", "to"), "ferry"), (("catch", "the", "ferry", "to"), "ferry"),
+    (("take", "the", "ferry"), "ferry"), (("ride", "the", "ferry"), "ferry"),
+    (("naik", "kapal"), "embark"), (("masuk", "kapal"), "embark"), (("naik", "ke", "kapal"), "embark"),
+    (("masuk", "ke", "kapal"), "embark"), (("embark",), "embark"), (("go", "aboard"), "embark"),
+    (("board", "ship"), "embark"), (("board", "my", "ship"), "embark"), (("enter", "my", "ship"), "embark"),
+    (("get", "in", "the", "ship"), "embark"), (("aboard",), "embark"),
+    (("turun", "kapal"), "disembark"), (("turun", "dari", "kapal"), "disembark"), (("keluar", "kapal"), "disembark"),
+    (("keluar", "dari", "kapal"), "disembark"), (("disembark",), "disembark"), (("leave", "the", "ship"), "disembark"),
+    (("leave", "ship"), "disembark"), (("get", "off", "the", "ship"), "disembark"), (("turun", "feri"), "disembark"),
+    (("turun", "dari", "feri"), "disembark"), (("get", "off", "the", "ferry"), "disembark"),
+    (("terbang", "ke"), "fly"), (("fly", "to"), "fly"), (("set", "course", "for"), "fly"),
+    (("set", "course", "to"), "fly"), (("berlayar", "ke"), "fly"), (("berangkat", "ke"), "fly"),
+    (("launch", "to"), "fly"), (("terbangkan", "kapal", "ke"), "fly"),
+    (("isi", "bahan", "bakar"), "refuel"), (("isi", "bensin"), "refuel"), (("isi", "tangki"), "refuel"),
+    (("tambah", "bahan", "bakar"), "refuel"), (("refuel",), "refuel"), (("fuel", "up"), "refuel"),
+    (("muat",), "load"), (("muatkan",), "load"), (("load",), "load"),
+    (("bongkar",), "unload"), (("bongkar", "muatan"), "unload"), (("unload",), "unload"),
+    (("kargo",), "cargo"), (("cargo",), "cargo"), (("palka",), "cargo"), (("kapalku",), "cargo"),
+    (("my", "ship"), "cargo"), (("status", "kapal"), "cargo"), (("ship", "status"), "cargo"),
+    (("namai", "kapal"), "name_ship"), (("name", "ship"), "name_ship"), (("name", "my", "ship"), "name_ship"),
+    (("rename", "ship"), "name_ship"), (("beri", "nama", "kapal"), "name_ship"),
+    # the other worlds' work
+    (("hadapi",), "face"), (("temui",), "face"), (("dekati",), "face"), (("face",), "face"),
+    (("approach",), "face"),
+    (("gig",), "gig"), (("ambil", "gig"), "gig"), (("take", "a", "gig"), "gig"), (("kurir",), "gig"),
+    (("courier", "job"), "gig"), (("antar", "paket"), "gig"), (("delivery",), "gig"),
     # the casino
     (("kasino",), "casino"), (("casino",), "casino"), (("menu", "kasino"), "casino"),
     (("casino", "menu"), "casino"),
@@ -261,7 +298,7 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "way", "a": rest}
     if meaning in ("map", "where", "compass", "scan", "board", "daily", "rank", "harvest", "water",
                    "farm", "mine", "collect", "transfer", "friends", "status", "casino", "hit", "stand",
-                   "lottery", "decline", "cancel_offer"):
+                   "lottery", "decline", "cancel_offer", "worlds", "disembark", "cargo", "gig"):
         if meaning == "board" and used == 1 and words[0] == "naik" and rest:
             return None
         return {"c": meaning}
@@ -329,6 +366,20 @@ def parse(text, lang="en", find_direction=None):
     if meaning == "offer":
         name, more = _name_and_rest(text, tokens, used)
         return {"c": "offer", "to": name, "a": more}
+    if meaning in ("gate", "ferry", "fly", "face", "name_ship"):
+        return {"c": meaning, "a": rest}
+    if meaning == "embark":
+        name, _more = _name_and_rest(text, tokens, used)
+        return {"c": "embark", "to": name} if name else {"c": "embark"}
+    if meaning == "refuel":
+        numbers = [_number(t[2]) for t in tokens[used:] if _number(t[2]) is not None]
+        return {"c": "refuel", "n": numbers[0]} if numbers else {"c": "refuel"}
+    if meaning in ("load", "unload"):
+        item, n = _thing_and_count(tokens, used, allow_all=True)
+        message = {"c": meaning, "item": item}
+        if n is not None:
+            message["n"] = n
+        return message
     if meaning == "achievements":
         return {"c": "achievements", "to": _word(text, tokens[used]) if used < len(tokens) else ""}
     if meaning == "leaderboard":

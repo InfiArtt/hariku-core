@@ -539,7 +539,7 @@ def test_joining_welcomes_you_and_tells_the_room(make_game):
     first = rafli.sent[1]
     assert first["k"] == "room" and first["text"].startswith("Selamat datang di Orbit, Rafli!")
     assert "Dermaga." in first["text"] and "Pilot: ketik kerja" in first["text"]
-    assert "Jalan keluar: timur, selatan, naik kancil." in first["text"]
+    assert "Jalan keluar: timur, selatan, barat, naik kancil." in first["text"]
     sari = join(game, "Sari", "engineer", "en")
     assert rafli.last()["k"] == "arrive" and rafli.last()["actor"] == "Sari"
     assert rafli.last()["text"] == "Sari baru pertama kali masuk ke stasiun. Sapa, yuk!"
@@ -614,7 +614,7 @@ def test_looking_around_at_people_and_things(make_game):
     cmd(game, rafli, "look")
     text = rafli.last()["text"]
     assert text.startswith("Dock. The docking ring hums") and "Here: Sari the engineer." in text
-    assert "Exits: east, south, ride the Kancil." in text and "Things to look at: shuttle" in text
+    assert "Exits: east, south, west, ride the Kancil." in text and "Things to look at: shuttle" in text
     cmd(game, rafli, "look", a="sari")
     assert rafli.last()["text"] == "Sari, trainee engineer. A tall engineer with a red scarf."
     cmd(game, rafli, "look", a="the shuttle")
@@ -652,7 +652,7 @@ def test_walking_tells_both_rooms_which_way(make_game):
     cmd(game, rafli, "move", d="s")
     up = cmd(game, rafli, "move", d="u")
     assert up["text"].startswith("Kamu naik ke Lobi Lift Utama.") and up["dir"] == "u"
-    assert cmd(game, rafli, "go", a="atlantis")["text"] == "Tidak ada tempat bernama atlantis di stasiun."
+    assert cmd(game, rafli, "go", a="atlantis")["text"] == "Tidak ada tempat bernama atlantis yang kukenal."
 
 
 def test_no_teleporting_only_the_way(make_game):

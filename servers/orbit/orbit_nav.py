@@ -137,8 +137,10 @@ class NavMixin:
             known.append(lid)
 
     def in_transit(self, session):
-        if session.char["location"] in ("shuttle", "kancil"):
-            self._error(session, "in_flight" if session.char["location"] == "shuttle" else "in_kancil")
+        loc = session.char["location"]
+        if loc in ("shuttle", "kancil", "ferry", "ship"):
+            self._error(session, {"shuttle": "in_flight", "kancil": "in_kancil", "ferry": "in_ferry",
+                                  "ship": "in_ship"}[loc])
             return True
         return False
 
@@ -191,7 +193,7 @@ class NavMixin:
         old_loc = self._loc(char)
         came_from = old_loc
         char["location"] = dest
-        if dest == "cabin" and host:
+        if dest in ("cabin", "ship") and host:
             char["stats"]["visit"] = host
         else:
             char["stats"].pop("visit", None)
@@ -225,6 +227,7 @@ class NavMixin:
             extra["sound"] = sound
         self._send(session, "moved", text=f"{line} {self.look_text(session, full=first)}", extra=extra)
         self.pet_follows(session)
+        self.gig_arrived(session)
 
     def _announce_leave(self, session, old_room, old_loc, new_loc, d, host):
         name = session.name
@@ -285,6 +288,10 @@ class NavMixin:
             return
         if self.is_admin(session):
             self.admin_goto(session, text)
+            return
+        if self.go_travel(session, text):
+            return
+        if self.in_transit(session):
             return
         char = session.char
         dest = self.find_place(session, text)
@@ -351,10 +358,19 @@ class NavMixin:
             self._error(session, "no_beacon")
             return
         if dest is None:
+            wid = self.world.find_world(text)
+            if wid and wid != self.world_here(session.char):
+                self.travel_options(session, wid)
+                return
             if self._find_session(text) is not None:
                 self._error(session, "way_player", name=self._find_session(text).name)
             else:
                 self._error(session, "no_place", what=text)
+            return
+        wid = self.world.world_of(dest)
+        if wid and wid != self.world_here(session.char) and \
+                self.world.route(session.char["location"], dest) is None:
+            self.travel_options(session, wid, dest)
             return
         self.way_to(session, dest)
 
@@ -732,6 +748,12 @@ class NavMixin:
                     guest.char["stats"].get("visit") == session.key:
                 self._send(guest, "system", "visit_ended", name=session.name)
                 self._move_to(guest, "cabins_hall", "n")
+            elif guest is not None and guest.char["location"] == "ship" and \
+                    guest.char["stats"].get("visit") == session.key:
+                ship = self.ship_of(session.char)
+                if ship is not None and ship.get("dock"):
+                    self._send(guest, "system", "ship_visit_ended", name=session.name)
+                    self._move_to(guest, ship["dock"])
             self._info(session, "uninvited", name=guest.name if guest else name or "?")
             return
         if target is None or target.conn is None or target.invisible:
@@ -743,6 +765,15 @@ class NavMixin:
         if not self._slow(session):
             return
         session.invites[target.key] = self.now() + 600
+        ship = self.ship_of(session.char) if session.char["location"] == "ship" and \
+            not session.char["stats"].get("visit") else None
+        if ship is not None:
+            where = self.world.locations[ship["dock"]]["in"] if ship.get("dock") else \
+                self.world.worlds[ship["flight"]["to"]]["in"]
+            self._send(target, "offer", "invited_you_ship", actor=session.name, where=where,
+                       extra={"actor": session.name, "ask": True, "sound": "offer"})
+            self._info(session, "invited_ship", name=target.name)
+            return
         self._send(target, "offer", "invited_you", extra={"actor": session.name, "ask": True, "sound": "offer"},
                    actor=session.name)
         self._info(session, "invited", name=target.name)

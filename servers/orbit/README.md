@@ -1,8 +1,10 @@
 # Orbit server
 
-Orbit is a small multiplayer text game (a MUD) on a space station orbiting the
-Earth, the entry hub of a shared simulation, played through Hariku's **Orbit**
-extension (`extensions/orbit`). This folder is the server: Python 3.10 or
+Orbit is a small multiplayer text game (a MUD) set in a shared simulation:
+players enter at a space station orbiting the Earth, its hub, and travel on
+to other worlds (the Moon, the red planet Karmina, the ice moon Glasir, the
+Drift Bazaar, the fantasy world Evergrove, Lumina City and Pixel Pier). It is
+played through Hariku's **Orbit** extension (`extensions/orbit`). This folder is the server: Python 3.10 or
 newer, **standard library only**, one process, one SQLite file. The server
 decides everything (movement, money, things, progress); the client only sends
 commands and shows or speaks the results.
@@ -31,9 +33,11 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_casino.py` | the Casino Corner: dice, slots, blackjack, coin flips, the weekly lottery |
 | `orbit_trade.py` | trading between players (offer, accept), and the pawn shop |
 | `orbit_progress.py` | achievements and the leaderboards |
+| `orbit_travel.py` | the worlds: the Gate, the ferry, players' own ships, customs |
+| `orbit_local.py` | the other worlds' own work: Evergrove's creatures, Lumina City's courier gigs |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
 | `orbit_verbs.py` | the commands the server reads from plain text (both languages) |
-| `orbit_world.py`, `world.json` | the map: rooms, compass exits, objects, goods, missions, gestures |
+| `orbit_world.py`, `world.json` | the map: worlds, rooms, compass exits, objects, goods, missions, gestures |
 | `economy.json` | the balance: levels, ranks, the daily bonus, crops, mining, the shops' things |
 | `orbit_earth.py` | what you see from the Observation Deck, from the real time |
 | `orbit_lang.py`, `texts.json` | everything the server says, in English and Indonesian |
@@ -99,21 +103,21 @@ while running).
 
 1. Copy every file of this folder to `~/orbit/` (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
-   `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`,
+   `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`, `orbit_travel.py`, `orbit_local.py`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
    keys: every new setting has a default (below).
 2. `systemctl --user restart orbit`.
 3. On its first start, the server sees an older database (Orbit 1.0's is
-   schema version 0), saves a copy of it as `orbit.db.before-v2.bak` next to
-   it, and migrates it to version 2 in one transaction: new columns (voice,
+   schema version 0), saves a copy of it as `orbit.db.before-v3.bak` next to
+   it, and migrates it to version 3 in one transaction: new columns (voice,
    XP, the daily streak, what a character mined and harvested, what it won
-   or lost at the casino) and new tables (companions, achievements, lottery
-   tickets, transfer codes, old secrets, transfers, the admins' log) are
-   added; nothing is dropped or changed, and work done before 1.1 counts as
-   XP (10 a repair, 20 a cargo run, 25 a mission). The log says "the
-   database was migrated from version 0 to 2". If the migration fails,
+   or lost at the casino) and new tables (companions, ships, achievements,
+   lottery tickets, transfer codes, old secrets, transfers, the admins' log)
+   are added; nothing is dropped or changed, and work done before 1.1 counts
+   as XP (10 a repair, 20 a cargo run, 25 a mission). The log says "the
+   database was migrated from version 0 to 3". If the migration fails,
    nothing is changed and the server stops with the error in the log; the
    copy is there.
 4. Every room of 1.0 still exists, so characters wake up where they were.
@@ -333,6 +337,44 @@ What 1.1 ships with:
   everyone, and the first to earn one is named as the first on the station.
 - **Leaderboards:** richest, level, miners, farmers, daily streak and casino,
   the top 5 and your own place; admins are left out.
+- **Worlds and travel** (`worlds` in world.json, `travel` in economy.json).
+  Each world sits at a position on one long orbit (the station 0, the Belt 1,
+  the Moon 2, Lumina City 3, Pixel Pier 4, Evergrove 5, Karmina 6, the Drift
+  Bazaar 7, Glasir 8); the distance between two is the difference (at least
+  1). The Gate: at once, 25 credits and 10 a unit of distance (the Moon 45,
+  Glasir 105). The ferry: 5 credits and 3 a unit (the Moon 11, Glasir 29),
+  leaving every 2 minutes and taking 40 seconds a unit (at least a minute).
+  Your own ship: 25 seconds a unit divided by its speed (a pilot flies a
+  quarter faster), burning fuel at each world's price (2 to 6 credits a
+  unit). The Belt is still the Kancil's.
+- **Ships** (the Orbit Shipyard on the Mall Ring; one each, a new one trades
+  the old in for half its list price): the Swiftlet shuttle (2,500, level 2:
+  hold 40, tank 24, speed 1), the Heron courier (9,000, level 5: 60, 40,
+  1.7), the Buffalo hauler (16,000, level 7: 200, 60, 0.8, thirsty), the
+  Hornbill explorer (40,000, level 12: 120, 100, 1.5, and a scanner bay that
+  reads other worlds' prices and halves the chance of a customs search).
+- **Markets on other worlds** start from the station's prices times the
+  world's own factor for each good (ice 0.45 on Glasir and 2.0 on Karmina,
+  helium-3 0.55 on the Moon and 1.8 in Lumina, spices 0.55 at the Bazaar and
+  1.6 on Glasir and in Evergrove...); each world's prices wander by 3% every
+  few minutes and move 1% with every unit traded there, coming back 15% of
+  the way each time (economy.json `travel.market`). New goods: helium-3,
+  red quinoa, rust salt, frost pearls, moonpetals, ember crystals, and two
+  kinds of contraband (star orchids, ghost chips) sold only in the Bazaar's
+  back alley and bought only at Lumina's Night Market.
+- **Customs:** arriving with contraband on a world that checks (the station,
+  the Moon and Karmina fully, Glasir and Lumina 0.8, Pixel Pier 0.5; the
+  Bazaar, Evergrove and the Belt never), the chance of a search is 60% by
+  the Gate, 35% by the ferry, 25% by ship (half with a scanner bay), times
+  the world's own; a search takes all contraband and fines half its usual
+  value.
+- **The worlds' work:** helium-3 in the Moon's tunnels (mining, like the
+  Belt); collecting in Karmina's farming domes, on its Rust Flats, in
+  Glasir's ice quarry and its blue crevasse; Evergrove's creatures (a d20
+  plus half your level against 6 to 14; a win gives a moonpetal or an ember
+  crystal and 5 to 14 XP, a loss only a 20-second wait); Lumina's courier
+  gigs (20 credits and 12 a step, raised by your level, within 25 seconds
+  and 14 a step, 8 XP).
 - **The EVA suit** holds 3 minutes of air, an oxygen tank 3 more; warnings at
   60 and 20 seconds.
 
@@ -394,15 +436,16 @@ place, the short description its player wrote, XP, the daily streak, the
 voice number others hear it in, what it mined and harvested, a JSON "stats"
 field with the rest of its play state (cooldowns, missions, farm plots and
 their timers, worn things, the rooms it knows, its beacon, friends, air left
-outside, a shuttle ride in progress, its casino bets of the last hour a
-minute at a time, how many trades, jackpots and naturals), what it won or
-lost at the casino, when it was made and last seen, and whether it is
+outside, a shuttle ride or ferry trip in progress, a courier gig, its casino
+bets of the last hour a minute at a time, how many trades, jackpots,
+naturals, gigs and creatures), what it won or lost at the casino, when it was made and last seen, and whether it is
 banned or muted; its companions (a pet: kind, name, and its own stats); its
+ship (model, name, where it's docked or flying to, fuel and cargo); its
 achievements (which, and when); its lottery tickets (how many, for which
 week's draw); transfer codes (a hash, for 10 minutes); secrets that no
 longer work (a hash); the transfers log; the admins' log; and, in `meta`,
-the market's prices, the economy's totals, today's temple lanterns and the
-lottery's next draw and carried-over pot. Trade offers, coin-flip
+the market's prices, each world's own prices, the economy's totals, today's
+temple lanterns and the lottery's next draw and carried-over pot. Trade offers, coin-flip
 challenges and a blackjack hand in progress live only in memory (a hand is
 played out, standing, if its player leaves or the server stops). Accounts
 have no password or email: the client makes a random 256-bit secret the
@@ -477,6 +520,8 @@ commands need no new client:
 | `casino`, `dice` (`a`: high, low or seven; `n`: the bet), `slots` (`n`), `blackjack` (`n`), `hit`, `stand`, `challenge` (`to`, `n`), `lottery` | | the casino (tickets: `buy` there) |
 | `offer` (`to`, `a`: "3 iron for 200 credits"), `decline`, `cancel_offer` | | trading |
 | `achievements` (`to`), `leaderboard` (`a`: richest, level, miners, farmers, streak, casino) | | |
+| `worlds`, `gate` (`a`: a world), `ferry` (`a`), `embark` (`to`: a friend's ship), `disembark`, `fly` (`a`), `refuel` (`n`), `load`, `unload` (`item`, `n` or `"all"`), `cargo`, `name_ship` (`a`) | | travel and ships |
+| `face` (`a`: a creature), `gig` | | Evergrove's creatures, Lumina's courier gigs |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
@@ -490,7 +535,8 @@ client which sound fits and whose voice reads it: `room`, `moved`, `arrive`,
 `gave`, `mission`, `trade`, `flight`, `offer`, `announce`, `system`. Optional
 fields: `actor` (who did it), `brief` (a short line to say for your own
 action), `room`, `amb` (`vent`, `cantina`, `engine`, `garden`, `deck`,
-`space`, `belt`, `venue`, `mall`, `casino`), `floor` and `acoustics` (where you are now),
+`space`, `belt`, `venue`, `mall`, `casino`, `gate`, `moon`, `colony`, `ice`, `bazaar`, `forest`,
+`neon`, `arcade`), `floor` and `acoustics` (where you are now),
 `dir` (the way you walked, or the side someone came from or left by), `via`
 (`lift`, `ladder`, `slide`, `airlock`, `door`), `codes` (the reactor's
 tones, 1 to 4), `sound` (a cue more specific than the kind's), `emote`
@@ -544,13 +590,14 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `levelup`, `daily`, `achievement` | a new level; the daily bonus; an achievement |
 | `equip`, `gadget`, `scan`, `air`, `rescue`, `gulp`, `crunch`, `pet_robot`, `pet_cat` | things: wearing, devices, the scanner, the air warning, the tow, food, pets |
 | `bell`, `lantern` | the temple's star bell; lighting a lantern |
-| `launch`, `landing` | shuttles |
+| `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
+| `creature` | one of Evergrove's creatures |
 | `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
-| `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino` | the ambience loops (4 seconds, seamless) |
+| `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 153 files, about 7.6 MB (the extension zips to about 5.8 MB): 99
-recorded (2.7 MB) and 54 synthesized (4.8 MB).
+The set: 167 files, about 9.1 MB (the extension zips to about 7.2 MB): 104
+recorded (2.9 MB) and 63 synthesized (6.2 MB).
 
 ### Credits: recorded sounds
 
@@ -575,12 +622,14 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from
 economy.json (blackjack with perfect hit-or-stand play), so a change that
-would give players the edge fails there.
+would give players the edge fails there. `test_orbit_worlds.py` checks every
+world's map (each room reached from its port and back, 6 to 15 rooms, air
+rescue in the same world) and the travel links between the worlds.
 
 `tests/orbit_parse_1_0.py` is a frozen copy of the 1.0 client's command
 reader: `test_orbit_compat.py` checks that every command added later still

@@ -54,9 +54,11 @@ from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
 from orbit_items import ItemsMixin
 from orbit_lang import pick
+from orbit_local import LocalMixin
 from orbit_nav import NavMixin
 from orbit_progress import ProgressMixin
 from orbit_trade import TradeMixin
+from orbit_travel import TravelMixin
 from orbit_work import WorkMixin
 
 logger = logging.getLogger("orbit.game")
@@ -129,11 +131,12 @@ class Session:
         return self.char["name_key"]
 
 
-MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin, AdminMixin)
+MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
+          TravelMixin, LocalMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-           AdminMixin):
+           TravelMixin, LocalMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -157,6 +160,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.challenges = {}              # name key -> the coin flip they're challenged to
         self._lottery = None              # the lottery's state (meta "lottery"), when read
         self.init_economy()
+        self.init_travel()
 
     # ------------------------------------------------------------------ helpers
 
@@ -412,6 +416,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         notes.append(self._settle_flight(session, on_join=True))
         notes.append(self.settle_ride(session, on_join=True))
         notes.append(self.settle_air(session, on_join=True))
+        notes.append(self.settle_travel(session))
         char["stats"].pop("visit", None)          # guests wake up at home
         if not new and char["stats"].get("seen_version") != "1.1":
             char["stats"]["seen_version"] = "1.1"
@@ -515,6 +520,22 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             parts.append(self.render(lang, "look_in_flight",
                                      time=self._duration(lang, float(ride.get("arrive", 0)) - self.now())))
             return " ".join(parts)
+        if char["location"] == "ship":
+            return self.ship_look(session)
+        if char["location"] == "ferry":
+            trip = char["stats"].get("ferry") or {}
+            parts.append(pick(loc["desc"], lang))
+            if trip.get("to") in self.world.worlds:
+                now = self.now()
+                key = "ferry_look_waiting" if now < float(trip.get("depart", 0)) else "ferry_look_moving"
+                parts.append(self.render(lang, key, place=self.world.worlds[trip["to"]]["ref"],
+                                         wait=self._duration(lang, float(trip.get("depart", 0)) - now),
+                                         time=self._duration(lang, float(trip.get("arrive", 0)) - now)))
+            others = self._in_room(self.room_of(char), exclude=(session,), visible=True)
+            if others:
+                parts.append(self.render(lang, "look_people", people=[self._person(lang, o) for o in
+                                                                      sorted(others, key=lambda o: o.key)]))
+            return " ".join(parts)
         if self.in_the_dark(char):
             parts.append(self.dark_text(session))
             return " ".join(p for p in parts if p)
@@ -564,6 +585,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             if dark:
                 self._error(session, "too_dark_to_see")
                 return
+            if obj.get("worlds"):
+                self.cmd_worlds(session, {})
+                return
             if obj.get("earth"):
                 text = self._earth(lang)
             elif obj.get("farm"):
@@ -574,6 +598,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             else:
                 text = pick(obj["desc"], lang)
             self._send(session, "info", text=text or self.render(lang, "look_nothing_special"))
+            return
+        creature, _here = self.creature_here(session.char, target)
+        if creature is not None and not dark:
+            self._send(session, "info", text=pick(self.econ["creatures"][creature]["desc"], lang))
             return
         if orbit_safety.name_key(target) in ("me", "myself", "aku", "diriku", "saya", "self"):
             description = session.char["description"] or self.render(lang, "describe_none")
@@ -903,6 +931,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                   "trade", "trading", "tukar", "dagang", "pawn", "loak"),
         "casino": ("casino", "kasino", "judi", "gambling", "dadu", "dice", "slot", "slots", "blackjack",
                    "lotre", "lottery", "undian"),
+        "ships": ("ships", "ship", "kapal", "travel", "perjalanan", "worlds", "dunia", "planets", "planet",
+                  "ferry", "feri", "gate", "gerbang", "trade runs", "berdagang"),
         "progress": ("progress", "kemajuan", "prestasi", "achievements", "leaderboard", "leaderboards",
                      "papan", "skor", "score", "scores"),
         "admin": ("admin",),
@@ -915,8 +945,11 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 if name == "admin" and not self.is_admin(session):
                     break
                 casino = self.econ["casino"]
-                self._send(session, "info", f"help_{name}", low=casino["min_bet"], high=casino["max_bet"],
-                           limit=casino["hour_limit"])
+                text = self.render(session.lang, f"help_{name}", low=casino["min_bet"], high=casino["max_bet"],
+                                   limit=casino["hour_limit"])
+                if name == "ships":
+                    text += " " + self.render(session.lang, "help_worlds_work")
+                self._send(session, "info", text=text)
                 return
         self._send(session, "info", "help")
 
@@ -942,6 +975,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 self._remove(session)
         self.tick_offers(now)
         self.tick_lottery(now)
+        self.tick_ships(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):
@@ -951,6 +985,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_farm(session, now)
         self.tick_invites(session, now)
         self.tick_casino(session, now)
+        self.tick_ferry(session, now)
+        self.tick_gig(session, now)
 
     def shutdown(self):
         """The server is stopping: say so, and save everyone."""

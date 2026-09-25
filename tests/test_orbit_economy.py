@@ -585,7 +585,7 @@ def test_a_migrated_character_plays_on(tmp_path, make_game, clock):
     conn = join(game, "Quilafly", lang="id")
     assert conn.sent[0]["name"] == "Quilafly" and conn.sent[0]["credits"] == 1234 and conn.sent[0]["room"] == "cantina"
     room = conn.sent[1]["text"]
-    assert room.startswith("Selamat datang kembali, Quilafly. Baru di stasiun: sekarang kamu berjalan dengan arah")
+    assert room.startswith("Selamat datang kembali, Quilafly. Baru di Orbit: sekarang ini sebuah simulasi utuh.")
     assert "Kantin." in room and "Jalan keluar: timur, barat." in room
     char = game.sessions["quilafly"].char
     assert char["inventory"]["compass"] == 1 and char["inventory"]["keycard_crew"] == 1   # level 2 already

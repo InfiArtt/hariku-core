@@ -44,7 +44,7 @@ from orbit_lang import pick
 
 TYPE_GROUPS = {"gear": "devices", "tool": "tools", "seed": "seeds", "furniture": "furniture",
                "outfit": "clothes", "title": "titles", "pet": "pets", "consumable": "food",
-               "service": "tools"}
+               "service": "tools", "ship": "ships"}
 GROUP_WORDS = {
     "devices": ("devices", "device", "gadgets", "perangkat", "alat elektronik", "gawai"),
     "tools": ("tools", "tool", "alat", "perkakas", "upgrades"),
@@ -54,6 +54,7 @@ GROUP_WORDS = {
     "titles": ("titles", "title", "gelar"),
     "pets": ("pets", "pet", "peliharaan", "hewan"),
     "food": ("food", "makanan", "minuman", "snacks", "camilan", "drinks"),
+    "ships": ("ships", "ship", "kapal", "pesawat", "spaceships"),
 }
 LIST_GROUP_LIMIT = 12
 
@@ -282,6 +283,10 @@ class ItemsMixin:
             return
         if thing.get("service") == "ticket":
             self.buy_tickets(session, n)
+            return
+        if thing["type"] == "ship":
+            sid, _shop = self.shop_here(char)
+            self.buy_ship(session, tid, self.price_of(char, tid, sid))
             return
         sid, _shop = self.shop_here(char)
         total = self.price_of(char, tid, sid) * n

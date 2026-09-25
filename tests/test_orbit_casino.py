@@ -467,10 +467,11 @@ def test_achievements_are_earned_once_and_the_big_ones_are_news(make_game, clock
            "earn it!" in mine
     assert "Achievement unlocked: Getting There (reach level 5). You get 100 credits." in mine
     listed = cmd(game, ani, "achievements")["text"]
-    assert listed.startswith("Your achievements, 3 of 24: Finding Your Feet, Getting There and Chief.")
+    total = len(game.econ["achievements"])
+    assert listed.startswith(f"Your achievements, 3 of {total}: Finding Your Feet, Getting There and Chief.")
     assert "Closest: Living Legend, reach level 20: 10 of 20;" in listed
     assert "Closest: " in listed
-    assert cmd(game, budi, "achievements", to="Ani")["text"].startswith("Ani's achievements, 3 of 24:")
+    assert cmd(game, budi, "achievements", to="Ani")["text"].startswith(f"Ani's achievements, 3 of {total}:")
     char_of(game, "Budi")["xp"] = game.xp_for_level(10)
     ani.clear()
     cmd(game, budi, "look")
@@ -520,7 +521,7 @@ def test_leaderboards_leave_the_admins_out(make_game):
 # The database
 # ------------------------------------------------------------
 
-def test_a_version_1_database_moves_to_version_2(tmp_path, clock, monkeypatch):
+def test_a_version_1_database_moves_to_the_current_version(tmp_path, clock, monkeypatch):
     path = str(tmp_path / "orbit.db")
     _old_database(path)
     with monkeypatch.context() as m:                          # as Orbit 1.1's first stage left it
@@ -531,7 +532,7 @@ def test_a_version_1_database_moves_to_version_2(tmp_path, clock, monkeypatch):
         store.close()
     os.remove(path + ".before-v1.bak")
     store = orbit_store.Store(path, clock=clock, iterations=1000, durable=False)
-    assert store.version() == 2 and store.migrated_from == 1
+    assert store.version() == orbit_store.SCHEMA_VERSION and store.migrated_from == 1
     columns = {row["name"] for row in store.db.execute("PRAGMA table_info(characters)")}
     assert "casino_net" in columns and store.by_name("quilafly")["casino_net"] == 0
     assert store.by_name("quilafly")["xp"] == 3 * 20 + 2 * 25                 # kept from version 1
@@ -540,7 +541,7 @@ def test_a_version_1_database_moves_to_version_2(tmp_path, clock, monkeypatch):
     store.add_tickets("2026-09-27", 1, 3)
     assert store.tickets("2026-09-27", 1) == 5 and store.lottery_entries("2026-09-27") == [(1, 5)]
     store.close()
-    backup = sqlite3.connect(path + ".before-v2.bak")
+    backup = sqlite3.connect(path + f".before-v{orbit_store.SCHEMA_VERSION}.bak")
     assert backup.execute("PRAGMA user_version").fetchone()[0] == 1
     backup.close()
 

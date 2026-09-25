@@ -42,7 +42,7 @@
   "mining": {
     "cooldown": {"1": 25, "2": 20, "3": 16},
     "vein_chance": 0.08,
-    "key_chance": {"rim": 0.004, "cave": 0.006},
+    "key_chance": {"rim": 0.004, "cave": 0.006, "moon": 0.003},
     "tables": {
       "platform": {
         "1": {"iron": 55, "nickel": 28, "ice": 15, "titanium": 2},
@@ -58,13 +58,24 @@
         "1": {"iron": 30, "nickel": 25, "titanium": 25, "platinum": 15, "meteorite": 4, "quantum": 1},
         "2": {"iron": 25, "nickel": 22, "titanium": 25, "platinum": 18, "meteorite": 6, "quantum": 4},
         "3": {"iron": 18, "nickel": 18, "titanium": 25, "platinum": 22, "meteorite": 9, "quantum": 8}
+      },
+      "moon": {
+        "1": {"helium3": 50, "iron": 25, "titanium": 13, "ice": 10, "meteorite": 2},
+        "2": {"helium3": 55, "iron": 18, "titanium": 16, "ice": 8, "platinum": 2, "meteorite": 1},
+        "3": {"helium3": 58, "iron": 12, "titanium": 18, "ice": 6, "platinum": 4, "meteorite": 2}
       }
     }
   },
   "salvage": {
     "cooldown": 20,
     "key_chance": 0.015,
-    "tables": {"debris": {"scrap": 62, "circuit": 28, "satchip": 9, "goldfoil": 1}}
+    "tables": {
+      "debris": {"scrap": 62, "circuit": 28, "satchip": 9, "goldfoil": 1},
+      "domes": {"red_quinoa": 60, "tomato": 25, "chilli": 15},
+      "flats": {"rustsalt": 80, "iron": 15, "meteorite": 5},
+      "quarry": {"ice": 88, "frostpearl": 12},
+      "crevasse": {"ice": 55, "frostpearl": 40, "quantum": 5}
+    }
   },
   "kancil": {"fare": 5, "seconds": 30, "pilot_factor": 0.5, "min_seconds": 8},
   "eva": {"warn": [60, 20], "rescue_fee": 20},
@@ -238,7 +249,11 @@
     },
     "pets": {"name": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"}, "stock": ["robot_pet", "cat_pet"]},
     "food": {"name": {"en": "the Food Court", "id": "Pujasera"}, "stock": ["iced_coffee", "martabak", "kerupuk"]},
-    "casino": {"name": {"en": "the lottery booth", "id": "loket lotre"}, "stock": ["lottery_ticket"], "fixed": true}
+    "casino": {"name": {"en": "the lottery booth", "id": "loket lotre"}, "stock": ["lottery_ticket"], "fixed": true},
+    "shipyard": {
+      "name": {"en": "the Orbit Shipyard", "id": "Galangan Kapal Orbit"},
+      "stock": ["ship_swiftlet", "ship_heron", "ship_buffalo", "ship_hornbill"]
+    }
   },
   "things": {
     "compass": {
@@ -1311,6 +1326,86 @@
       "slot": "title",
       "pawn": false,
       "effects": {"title": {"en": "Lucky Star", "id": "Bintang Hoki"}}
+    },
+    "ship_swiftlet": {
+      "type": "ship",
+      "one": {"en": "Swiftlet shuttle", "id": "pesawat Walet"},
+      "many": {"en": "Swiftlet shuttles", "id": "pesawat Walet"},
+      "names": {
+        "en": ["swiftlet", "swiftlet shuttle", "shuttle", "small ship"],
+        "id": ["walet", "pesawat walet", "kapal kecil"]
+      },
+      "desc": {
+        "en": "A snub-nosed two-seat shuttle: a cargo hold for 40 goods, a tank of 24 fuel, and a steady cruising speed. Everyone's first ship.",
+        "id": "Pesawat dua kursi berhidung pesek: palka untuk 40 barang, tangki 24 bahan bakar, dan kecepatan jelajah yang mantap. Kapal pertama semua orang."
+      },
+      "price": 2500,
+      "level": 2,
+      "unique": true,
+      "pawn": false,
+      "effects": {"ship": {"cargo": 40, "tank": 24, "speed": 1.0, "burn": 1.0, "scanner": false}}
+    },
+    "ship_heron": {
+      "type": "ship",
+      "one": {"en": "Heron courier", "id": "kurir Bangau"},
+      "many": {"en": "Heron couriers", "id": "kurir Bangau"},
+      "names": {"en": ["heron", "heron courier", "courier"], "id": ["bangau", "kurir bangau"]},
+      "desc": {
+        "en": "A long-legged courier built for speed: 60 goods in the hold, a tank of 40, and nearly twice as fast as a Swiftlet.",
+        "id": "Kurir berkaki panjang yang dibuat untuk kecepatan: 60 barang di palka, tangki 40, dan hampir dua kali lebih cepat dari Walet."
+      },
+      "price": 9000,
+      "level": 5,
+      "unique": true,
+      "pawn": false,
+      "effects": {"ship": {"cargo": 60, "tank": 40, "speed": 1.7, "burn": 1.3, "scanner": false}}
+    },
+    "ship_buffalo": {
+      "type": "ship",
+      "one": {"en": "Buffalo hauler", "id": "kapal angkut Kerbau"},
+      "many": {"en": "Buffalo haulers", "id": "kapal angkut Kerbau"},
+      "names": {"en": ["buffalo", "buffalo hauler", "hauler"], "id": ["kerbau", "kapal angkut kerbau", "kapal angkut"]},
+      "desc": {
+        "en": "A slow, patient cargo hauler with a hold for 200 goods and a tank of 60. It drinks fuel, but it moves a market's worth at once.",
+        "id": "Kapal angkut yang lambat dan sabar dengan palka untuk 200 barang dan tangki 60. Boros bahan bakar, tapi sekali jalan membawa isi satu pasar."
+      },
+      "price": 16000,
+      "level": 7,
+      "unique": true,
+      "pawn": false,
+      "effects": {"ship": {"cargo": 200, "tank": 60, "speed": 0.8, "burn": 2.2, "scanner": false}}
+    },
+    "ship_hornbill": {
+      "type": "ship",
+      "one": {"en": "Hornbill explorer", "id": "penjelajah Rangkong"},
+      "many": {"en": "Hornbill explorers", "id": "penjelajah Rangkong"},
+      "names": {
+        "en": ["hornbill", "hornbill explorer", "explorer"],
+        "id": ["rangkong", "penjelajah rangkong", "penjelajah"]
+      },
+      "desc": {
+        "en": "A long explorer with folded solar wings: 120 goods in the hold, a tank of 100, fast, and a scanner bay that reads other worlds' prices from the cockpit and keeps nosy customs scanners guessing.",
+        "id": "Kapal penjelajah panjang dengan sayap surya terlipat: 120 barang di palka, tangki 100, cepat, dan ruang pemindai yang membaca harga dunia lain dari kokpit dan membuat pemindai pabean kebingungan."
+      },
+      "price": 40000,
+      "level": 12,
+      "unique": true,
+      "pawn": false,
+      "effects": {"ship": {"cargo": 120, "tank": 100, "speed": 1.5, "burn": 1.6, "scanner": true}}
+    },
+    "title_globetrotter": {
+      "type": "title",
+      "one": {"en": "title 'Globetrotter'", "id": "gelar 'Penjelajah Dunia'"},
+      "many": {"en": "titles 'Globetrotter'", "id": "gelar 'Penjelajah Dunia'"},
+      "names": {"en": ["globetrotter", "title globetrotter"], "id": ["penjelajah dunia", "gelar penjelajah dunia"]},
+      "desc": {
+        "en": "A title: 'Globetrotter'. Earned by setting foot on every world of the simulation. Wear it to show it.",
+        "id": "Gelar: 'Penjelajah Dunia'. Didapat dengan menginjakkan kaki di setiap dunia simulasi. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Globetrotter", "id": "Penjelajah Dunia"}}
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
@@ -1548,6 +1643,155 @@
       "at": 1,
       "credits": 25,
       "desc": {"en": "trade with another player", "id": "berdagang dengan pemain lain"}
+    },
+    "captain": {
+      "en": "Captain",
+      "id": "Kapten",
+      "stat": "ship",
+      "at": 1,
+      "credits": 100,
+      "desc": {"en": "own a ship", "id": "punya kapal sendiri"}
+    },
+    "globetrotter": {
+      "en": "Globetrotter",
+      "id": "Penjelajah Dunia",
+      "stat": "worlds",
+      "at": "all",
+      "credits": 500,
+      "thing": "title_globetrotter",
+      "station": true,
+      "desc": {"en": "set foot on every world", "id": "menginjakkan kaki di setiap dunia"}
+    },
+    "courier": {
+      "en": "Special Delivery",
+      "id": "Kiriman Kilat",
+      "stat": "gigs",
+      "at": 25,
+      "credits": 200,
+      "desc": {"en": "deliver 25 parcels in Lumina City", "id": "mengantar 25 paket di Kota Lumina"}
+    },
+    "forest_friend": {
+      "en": "Friend of the Forest",
+      "id": "Sahabat Rimba",
+      "stat": "creatures",
+      "at": 25,
+      "credits": 200,
+      "desc": {"en": "win over 25 creatures in Evergrove", "id": "memenangkan hati 25 makhluk di Rimba Abadi"}
     }
+  },
+  "travel": {
+    "_note": "Ferry: every `every` seconds from each world's ferry berth; a trip takes `seconds_per` a unit of distance. Gate: instant, for a fee. Ships: `seconds_per` a unit of distance divided by the ship's speed (pilots fly faster), burning the ship's `burn` of fuel a unit. Customs: the chance of a search by the way you came, times the world's own `customs`.",
+    "ferry": {
+      "every": 120,
+      "seconds_per": 40,
+      "min_seconds": 60,
+      "ticket_base": 5,
+      "ticket_per": 3,
+      "board_before": 10
+    },
+    "gate": {"fee_base": 25, "fee_per": 10},
+    "ship": {"seconds_per": 25, "min_seconds": 20, "pilot_factor": 0.75, "trade_in": 0.5},
+    "customs": {"gate": 0.6, "ferry": 0.35, "ship": 0.25, "scanner_factor": 0.5, "fine": 0.5},
+    "market": {"impact": 0.01, "drift": 0.03, "revert": 0.15, "low": 0.6, "high": 1.6}
+  },
+  "creatures": {
+    "moss_sprite": {
+      "one": {"en": "moss sprite", "id": "peri lumut"},
+      "names": {"en": ["moss sprite", "sprite", "sprites"], "id": ["peri lumut", "peri"]},
+      "difficulty": 6,
+      "xp": 5,
+      "loot": {"moonpetal": 85, "ember_crystal": 5},
+      "n": 1,
+      "desc": {
+        "en": "A thumb-sized sprite made of moss and giggles. It challenges you to catch it.",
+        "id": "Peri seukuran ibu jari dari lumut dan tawa. Ia menantangmu menangkapnya."
+      },
+      "win": {
+        "en": "You cup your hands at just the right moment. The sprite laughs, wriggles free, and leaves you a gift.",
+        "id": "Kamu menangkupkan tangan tepat pada waktunya. Peri itu tertawa, meloloskan diri, dan meninggalkan hadiah untukmu."
+      },
+      "lose": {
+        "en": "The sprite zips between your fingers, tickles your ear and vanishes into the ferns.",
+        "id": "Peri itu melesat di sela jarimu, menggelitik telingamu, lalu menghilang ke balik pakis."
+      }
+    },
+    "puffcap_imp": {
+      "one": {"en": "puffcap imp", "id": "jin topi-jamur"},
+      "names": {"en": ["puffcap imp", "imp", "puffcap", "imps"], "id": ["jin topi-jamur", "jin", "jin jamur"]},
+      "difficulty": 9,
+      "xp": 7,
+      "loot": {"moonpetal": 60, "ember_crystal": 25},
+      "n": 1,
+      "desc": {
+        "en": "A round little imp in a spotted mushroom cap, who asks riddles and hates losing.",
+        "id": "Jin kecil bulat bertopi jamur berbintik, yang suka memberi teka-teki dan benci kalah."
+      },
+      "win": {
+        "en": "You answer the imp's riddle before it finishes asking. It sulks, then pays up.",
+        "id": "Kamu menjawab teka-teki jin itu sebelum ia selesai bertanya. Ia merajuk, lalu membayar."
+      },
+      "lose": {
+        "en": "The imp's riddle ties your tongue in a knot. It bounces away, cackling.",
+        "id": "Teka-teki jin itu membuat lidahmu terpilin. Ia melompat pergi sambil terkekeh."
+      }
+    },
+    "ember_beetle": {
+      "one": {"en": "ember beetle", "id": "kumbang bara"},
+      "names": {"en": ["ember beetle", "beetle", "beetles"], "id": ["kumbang bara", "kumbang"]},
+      "difficulty": 11,
+      "xp": 9,
+      "loot": {"ember_crystal": 60, "moonpetal": 25},
+      "n": 1,
+      "desc": {
+        "en": "A beetle whose shell glows like a coal. It only shares its crystals with the patient.",
+        "id": "Kumbang yang cangkangnya berpendar seperti arang. Ia hanya berbagi kristalnya dengan yang sabar."
+      },
+      "win": {
+        "en": "You wait, perfectly still, until the beetle trusts you and nudges a crystal your way.",
+        "id": "Kamu menunggu, diam sempurna, sampai kumbang itu percaya dan mendorong sebutir kristal ke arahmu."
+      },
+      "lose": {
+        "en": "You fidget. The beetle's glow winks out and it scuttles under a root.",
+        "id": "Kamu gelisah. Cahaya kumbang itu padam dan ia bergegas ke bawah akar."
+      }
+    },
+    "bramble_bear": {
+      "one": {"en": "bramble bear", "id": "beruang semak"},
+      "names": {"en": ["bramble bear", "bear"], "id": ["beruang semak", "beruang"]},
+      "difficulty": 14,
+      "xp": 14,
+      "loot": {"ember_crystal": 70, "moonpetal": 30},
+      "n": 2,
+      "desc": {
+        "en": "An enormous, fluffy, very sleepy bear who guards a hoard of crystals. Wake it gently.",
+        "id": "Beruang raksasa, berbulu lebat, dan sangat mengantuk yang menjaga timbunan kristal. Bangunkan dengan lembut."
+      },
+      "win": {
+        "en": "You hum a lullaby so sweet the bear rolls over, smiling, and pushes two treasures towards you in its sleep.",
+        "id": "Kamu menyenandungkan lagu nina bobo begitu merdu sampai beruang itu berguling, tersenyum, dan mendorong dua harta ke arahmu dalam tidurnya."
+      },
+      "lose": {
+        "en": "The bear yawns an enormous yawn and blows you gently back out of the thicket.",
+        "id": "Beruang itu menguap lebar sekali dan meniupmu pelan keluar dari semak belukar."
+      }
+    }
+  },
+  "creature_rules": {"cooldown": 20, "die": 20, "level_bonus": 0.5},
+  "gigs": {
+    "cooldown": 30,
+    "pay": 20,
+    "pay_per_step": 12,
+    "seconds_base": 25,
+    "seconds_per_step": 14,
+    "xp": 8,
+    "to": [
+      "lumina_market",
+      "lumina_alley",
+      "lumina_track",
+      "lumina_plaza",
+      "lumina_skybar",
+      "lumina_tower",
+      "lumina_port"
+    ]
   }
 }

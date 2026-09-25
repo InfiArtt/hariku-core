@@ -86,6 +86,24 @@ PHRASEBOOK = [
     ("papan skor", "id", "leaderboard"), ("papan skor penambang", "id", "leaderboard"),
     ("leaderboard", "en", "leaderboard"), ("leaderboard miners", "en", "leaderboard"),
     ("jual senter", "id", "sell"), ("sell headlamp", "en", "sell"),
+    # ships and the other worlds (stage 3)
+    ("dunia", "id", "worlds"), ("worlds", "en", "worlds"),
+    ("gerbang ke Karmina", "id", "gate"), ("gate to Karmina", "en", "gate"), ("masuk gerbang ke Bulan", "id", "gate"),
+    ("feri ke Glasir", "id", "ferry"), ("naik feri ke Glasir", "id", "ferry"), ("ferry to Glasir", "en", "ferry"),
+    ("take the ferry to Glasir", "en", "ferry"),
+    ("naik kapal", "id", "embark"), ("masuk kapal", "id", "embark"), ("embark", "en", "embark"),
+    ("turun kapal", "id", "disembark"), ("keluar dari kapal", "id", "disembark"), ("disembark", "en", "disembark"),
+    ("set course for Karmina", "en", "fly"), ("berangkat ke Karmina", "id", "fly"),
+    ("isi bahan bakar", "id", "refuel"), ("refuel", "en", "refuel"), ("muat 20 es", "id", "load"),
+    ("load 20 ice", "en", "load"), ("bongkar semua", "id", "unload"), ("unload all", "en", "unload"),
+    ("kargo", "id", "cargo"), ("my ship", "en", "cargo"), ("namai kapal Bintang", "id", "name_ship"),
+    ("hadapi peri lumut", "id", "face"), ("face moss sprite", "en", "face"),
+    ("gig", "id", "gig"), ("ambil gig", "id", "gig"),
+]
+# Only the current client: Orbit 1.0 read these as work, take or the mission board.
+PHRASEBOOK_NOW = [
+    ("fly to Karmina", "en", "fly"), ("terbang ke Bulan", "id", "fly"), ("board my ship", "en", "embark"),
+    ("take a gig", "en", "gig"),
 ]
 
 
@@ -121,6 +139,16 @@ def test_every_new_command_reaches_the_server(spy, client, text, lang, handler):
     assert conn.sent[-1]["t"] == "ev" and conn.sent[-1]["text"]
     assert "oops" not in conn.sent[-1]["text"] and conn.sent[-1]["text"] != \
         "The station's computer doesn't know that command."
+
+
+@pytest.mark.parametrize("text, lang, handler", PHRASEBOOK_NOW)
+def test_the_current_client_reaches_the_rest(spy, text, lang, handler):
+    game, calls = spy
+    conn = join(game, "Tono", "engineer", lang)
+    parsed = orbit_parse.parse(text)
+    calls.clear()
+    game.receive(conn, dict(parsed, t="cmd"))
+    assert calls and calls[-1] == handler, (text, parsed, calls)
 
 
 def test_the_old_client_ignores_what_it_doesnt_know(make_game):

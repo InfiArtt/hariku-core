@@ -73,11 +73,17 @@ class ProgressMixin:
                        if self.world.things.get(tid, {}).get("type") == "furniture" and n > 0)
         if stat == "capsule":
             return 1 if stats.get("capsule") else 0
+        if stat == "worlds":
+            return len({self.world.world_of(lid) for lid in stats.get("map") or []} & set(self.world.worlds))
+        if stat == "ship":
+            return 1 if stats.get("ship") else 0
         return int(stats.get(stat) or 0)
 
     def achievement_goal(self, achievement):
         at = achievement["at"]
-        return len(self.public_rooms()) if at == "all" else int(at)
+        if at == "all":
+            return len(self.world.worlds) if achievement["stat"] == "worlds" else len(self.public_rooms())
+        return int(at)
 
     @staticmethod
     def _title(achievement):

@@ -76,7 +76,8 @@
       "name": {"en": "the Upper Deck", "id": "Dek Atas"},
       "deck": 1,
       "about": {"en": "command and science", "id": "komando dan sains"},
-      "in": {"en": "on the Upper Deck", "id": "di Dek Atas"}
+      "in": {"en": "on the Upper Deck", "id": "di Dek Atas"},
+      "world": "station"
     },
     "main": {
       "name": {"en": "the Main Deck", "id": "Dek Utama"},
@@ -85,25 +86,29 @@
         "en": "the Promenade, shops, the Cantina and the crew cabins",
         "id": "Promenade, toko, Kantin, dan kabin kru"
       },
-      "in": {"en": "on the Main Deck", "id": "di Dek Utama"}
+      "in": {"en": "on the Main Deck", "id": "di Dek Utama"},
+      "world": "station"
     },
     "lower": {
       "name": {"en": "the Lower Deck", "id": "Dek Bawah"},
       "deck": 3,
       "about": {"en": "Engineering, the Cargo Bay and the Dock", "id": "Ruang Mesin, Gudang Kargo, dan Dermaga"},
-      "in": {"en": "on the Lower Deck", "id": "di Dek Bawah"}
+      "in": {"en": "on the Lower Deck", "id": "di Dek Bawah"},
+      "world": "station"
     },
     "outside": {
       "name": {"en": "outside the hull", "id": "luar lambung stasiun"},
       "about": {"en": "vacuum: an EVA suit only", "id": "hampa udara: hanya dengan pakaian EVA"},
       "in": {"en": "outside the hull", "id": "di luar lambung stasiun"},
-      "rescue": "airlock"
+      "rescue": "airlock",
+      "world": "station"
     },
     "belt": {
       "name": {"en": "the Asteroid Belt", "id": "Sabuk Asteroid"},
       "about": {"en": "a mining platform on a tumbling asteroid", "id": "platform tambang di asteroid yang berputar"},
       "in": {"en": "in the Asteroid Belt", "id": "di Sabuk Asteroid"},
-      "rescue": "belt"
+      "rescue": "belt",
+      "world": "belt"
     },
     "transit": {
       "name": {"en": "in flight", "id": "dalam penerbangan"},
@@ -116,7 +121,77 @@
       "about": {
         "en": "shops and the Food Court, a lift up from the Upper Deck",
         "id": "toko-toko dan Pujasera, naik lift dari Dek Atas"
+      },
+      "world": "station"
+    },
+    "moon": {
+      "name": {"en": "Moon Base Tranquility", "id": "Pangkalan Bulan Tranquility"},
+      "world": "moon",
+      "in": {"en": "at Moon Base Tranquility", "id": "di Pangkalan Bulan Tranquility"},
+      "about": {"en": "the spaceport, the exchange, the helium tunnels", "id": "bandar, bursa, terowongan helium"}
+    },
+    "moon_surface": {
+      "name": {"en": "the lunar surface", "id": "permukaan bulan"},
+      "world": "moon",
+      "in": {"en": "on the lunar surface", "id": "di permukaan bulan"},
+      "about": {"en": "vacuum: an EVA suit only", "id": "hampa udara: hanya dengan pakaian EVA"},
+      "rescue": "moon_airlock"
+    },
+    "karmina": {
+      "name": {"en": "Karmina Colony", "id": "Koloni Karmina"},
+      "world": "karmina",
+      "in": {"en": "in Karmina Colony", "id": "di Koloni Karmina"},
+      "about": {"en": "domes, a market and the colonists' homes", "id": "kubah, pasar, dan rumah para kolonis"}
+    },
+    "karmina_out": {
+      "name": {"en": "Karmina's surface", "id": "permukaan Karmina"},
+      "world": "karmina",
+      "in": {"en": "on Karmina's surface", "id": "di permukaan Karmina"},
+      "about": {
+        "en": "air too thin to breathe: an EVA suit only",
+        "id": "udara terlalu tipis untuk bernapas: hanya dengan pakaian EVA"
+      },
+      "rescue": "kar_garage"
+    },
+    "glasir": {
+      "name": {"en": "Glasir Station", "id": "Stasiun Glasir"},
+      "world": "glasir",
+      "in": {"en": "at Glasir Station", "id": "di Stasiun Glasir"},
+      "about": {"en": "a research station on an ice moon", "id": "stasiun riset di sebuah bulan es"}
+    },
+    "glasir_out": {
+      "name": {"en": "Glasir's ice fields", "id": "padang es Glasir"},
+      "world": "glasir",
+      "in": {"en": "on Glasir's ice fields", "id": "di padang es Glasir"},
+      "about": {"en": "deadly cold: an EVA suit only", "id": "dingin mematikan: hanya dengan pakaian EVA"},
+      "rescue": "glasir_lodge"
+    },
+    "bazaar": {
+      "name": {"en": "the Drift Bazaar", "id": "Pasar Apung"},
+      "world": "bazaar",
+      "in": {"en": "in the Drift Bazaar", "id": "di Pasar Apung"},
+      "about": {"en": "a market inside a tumbling asteroid", "id": "pasar di dalam asteroid yang berputar"}
+    },
+    "evergrove": {
+      "name": {"en": "Evergrove", "id": "Rimba Abadi"},
+      "world": "evergrove",
+      "in": {"en": "in Evergrove", "id": "di Rimba Abadi"},
+      "about": {"en": "woods, a village and a castle", "id": "hutan, desa, dan kastel"}
+    },
+    "lumina": {
+      "name": {"en": "Lumina City", "id": "Kota Lumina"},
+      "world": "lumina",
+      "in": {"en": "in Lumina City", "id": "di Kota Lumina"},
+      "about": {
+        "en": "neon streets, a night market and a racing track",
+        "id": "jalan-jalan neon, pasar malam, dan sirkuit balap"
       }
+    },
+    "pixel": {
+      "name": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
+      "world": "pixel",
+      "in": {"en": "on Pixel Pier", "id": "di Dermaga Piksel"},
+      "about": {"en": "a world of arcade halls", "id": "dunia aula arkade"}
     }
   },
   "shuttles": {"links": [["dock", "belt"]]},
@@ -127,13 +202,13 @@
       "ref": {"en": "the Dock", "id": "Dermaga"},
       "in": {"en": "at the Dock", "id": "di Dermaga"},
       "aliases": {
-        "en": ["dock", "docks", "docking ring", "docking", "hangar", "shuttle bay"],
-        "id": ["dermaga", "dok", "pelabuhan", "hangar"]
+        "en": ["dock", "docks", "docking ring", "docking", "shuttle bay", "ferry", "ferry berth"],
+        "id": ["dermaga", "dok", "pelabuhan", "feri", "tambatan feri"]
       },
       "area": "lower",
       "at": [-2, 0],
       "ambience": "vent",
-      "exits": {"e": "cargo", "s": "airlock"},
+      "exits": {"e": "cargo", "s": "airlock", "w": "hangar"},
       "job": "pilot",
       "desc": {
         "en": "The docking ring hums with pumps and clamps. Through a thick window you can see the cargo shuttle Merpati latched on, its belly scorched from the last reentry. A schedule board lists flights to Moon Base Tranquility. In the next berth, the little mining shuttle Kancil ferries miners to the Asteroid Belt.",
@@ -145,8 +220,8 @@
           "id": "Pilot: ketik kerja untuk terbang mengantar kargo ke Bulan."
         },
         "all": {
-          "en": "Type ride the Kancil for the shuttle to the Asteroid Belt.",
-          "id": "Ketik naik kancil untuk menumpang pesawat ke Sabuk Asteroid."
+          "en": "Type ride the Kancil for the shuttle to the Asteroid Belt, or ferry to and a world (the Moon, Karmina...) for the slow public ferry. Your own ship waits in the Hangar, west.",
+          "id": "Ketik naik kancil untuk menumpang ke Sabuk Asteroid, atau feri ke dan nama dunia (Bulan, Karmina...) untuk feri umum yang lambat. Kapalmu sendiri menunggu di Hanggar, di barat."
         }
       },
       "objects": {
@@ -189,7 +264,8 @@
         }
       },
       "landmark": true,
-      "acoustics": "hangar"
+      "acoustics": "hangar",
+      "ferry": true
     },
     "cargo": {
       "name": {"en": "Cargo Bay", "id": "Gudang Kargo"},
@@ -1178,7 +1254,8 @@
         "n": "command",
         "w": "archive",
         "d": {"to": "lift_main", "via": "lift"},
-        "u": {"to": "lift_mall", "via": "lift"}
+        "u": {"to": "lift_mall", "via": "lift"},
+        "e": "gate_hall"
       },
       "landmark": true,
       "desc": {
@@ -1677,7 +1754,8 @@
           }
         }
       },
-      "acoustics": "hangar"
+      "acoustics": "hangar",
+      "port": true
     },
     "belt_rim": {
       "name": {"en": "Asteroid Surface", "id": "Permukaan Asteroid"},
@@ -2006,7 +2084,7 @@
       "area": "mall",
       "at": [1, 0],
       "ambience": "mall",
-      "exits": {"w": "atrium", "e": "furniture_shop", "n": "pet_shop"},
+      "exits": {"w": "atrium", "e": "furniture_shop", "n": "pet_shop", "s": "shipyard"},
       "floor": "stone",
       "desc": {
         "en": "The quieter half of the Mall Ring: a furniture shop to the east, and to the north a shop that chirps, purrs and beeps.",
@@ -2091,6 +2169,1700 @@
           }
         }
       }
+    },
+    "gate_hall": {
+      "name": {"en": "Gate Hall", "id": "Aula Gerbang"},
+      "ref": {"en": "the Gate Hall", "id": "Aula Gerbang"},
+      "in": {"en": "in the Gate Hall", "id": "di Aula Gerbang"},
+      "aliases": {
+        "en": ["gate", "gate hall", "the gate", "portal", "gateway", "teleporter"],
+        "id": ["gerbang", "aula gerbang", "portal", "gerbang simulasi"]
+      },
+      "area": "upper",
+      "at": [1, -1],
+      "ambience": "gate",
+      "exits": {"w": "lift_upper"},
+      "desc": {
+        "en": "A tall round hall beside the lifts. In its middle a ring of pale light hangs in the air: the Gate, where the simulation folds space so you can step from one world to another. A board lists the worlds and what the Gate charges to reach each, and the ring hums one low note that seems to come from every direction at once.",
+        "id": "Aula bundar yang tinggi di samping lift. Di tengahnya melayang sebuah cincin cahaya pucat: Gerbang, tempat simulasi melipat ruang agar kamu bisa melangkah dari satu dunia ke dunia lain. Sebuah papan menyebut dunia-dunia itu dan tarif Gerbang ke masing-masing, dan cincinnya bersenandung satu nada rendah yang seolah datang dari segala arah."
+      },
+      "floor": "stone",
+      "acoustics": "hall",
+      "landmark": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "Type worlds to see where the Gate goes, and gate to Karmina (or any world) to step through, for a fee.",
+          "id": "Ketik dunia untuk melihat tujuan Gerbang, dan gerbang ke Karmina (atau dunia lain) untuk melangkah masuk, dengan tarif."
+        }
+      },
+      "objects": {
+        "board": {
+          "names": {"en": ["board", "fee board", "list", "sign"], "id": ["papan", "papan tarif", "daftar"]},
+          "desc": {
+            "en": "The worlds and the Gate's fees. Type worlds to hear them.",
+            "id": "Dunia-dunia dan tarif Gerbang. Ketik dunia untuk mendengarnya."
+          },
+          "worlds": true
+        },
+        "ring": {
+          "names": {"en": ["ring", "gate ring", "light"], "id": ["cincin", "cincin cahaya", "cahaya"]},
+          "desc": {
+            "en": "The ring's light ripples like water when someone steps through, and the air smells faintly of rain.",
+            "id": "Cahaya cincin itu beriak seperti air saat seseorang melangkah masuk, dan udaranya samar berbau hujan."
+          }
+        }
+      }
+    },
+    "hangar": {
+      "name": {"en": "Hangar", "id": "Hanggar"},
+      "ref": {"en": "the Hangar", "id": "Hanggar"},
+      "in": {"en": "in the Hangar", "id": "di Hanggar"},
+      "aliases": {
+        "en": ["hangar", "ship hangar", "berths", "ship berths", "my ship's berth"],
+        "id": ["hanggar", "hangar", "tambatan kapal", "tambatan"]
+      },
+      "area": "lower",
+      "at": [-3, 0],
+      "ambience": "engine",
+      "exits": {"e": "dock"},
+      "desc": {
+        "en": "A long hangar west of the Dock, lined with numbered berths. Players' own ships rest in their docking clamps, fuel lines snaking across the floor to each one, and a tired robot sweeps up after every landing.",
+        "id": "Hanggar panjang di sebelah barat Dermaga, berderet tambatan bernomor. Kapal-kapal milik para pemain beristirahat di penjepit tambatnya, selang bahan bakar menjalar di lantai ke masing-masing kapal, dan sebuah robot yang tampak lelah menyapu setiap kali ada yang mendarat."
+      },
+      "acoustics": "hangar",
+      "port": true,
+      "hints": {
+        "all": {
+          "en": "Your own ship waits here: type embark to go aboard (buy one at the Shipyard on the Mall Ring).",
+          "id": "Kapalmu sendiri menunggu di sini: ketik naik kapal untuk masuk (beli di Galangan Kapal di Cincin Mal)."
+        }
+      },
+      "objects": {
+        "berths": {
+          "names": {"en": ["berths", "clamps", "docking clamps"], "id": ["tambatan", "penjepit"]},
+          "desc": {
+            "en": "Numbered berths with heavy clamps, most of them empty, waiting for players' ships.",
+            "id": "Tambatan bernomor dengan penjepit berat, sebagian besar kosong, menunggu kapal para pemain."
+          }
+        },
+        "robot": {
+          "names": {"en": ["robot", "sweeper", "sweeping robot"], "id": ["robot", "robot penyapu"]},
+          "desc": {
+            "en": "A tired sweeping robot. It sighs, electronically, every time a ship lands.",
+            "id": "Robot penyapu yang tampak lelah. Ia menghela napas, secara elektronik, setiap kali ada kapal mendarat."
+          }
+        }
+      }
+    },
+    "shipyard": {
+      "name": {"en": "Orbit Shipyard", "id": "Galangan Kapal Orbit"},
+      "ref": {"en": "the Orbit Shipyard", "id": "Galangan Kapal Orbit"},
+      "in": {"en": "at the Orbit Shipyard", "id": "di Galangan Kapal Orbit"},
+      "aliases": {
+        "en": ["shipyard", "ship shop", "ship showroom", "showroom", "ships"],
+        "id": ["galangan", "galangan kapal", "dealer kapal", "ruang pamer", "toko kapal"]
+      },
+      "area": "mall",
+      "at": [1, -1],
+      "ambience": "mall",
+      "exits": {"n": "mall_east"},
+      "desc": {
+        "en": "A bright showroom with a curved window onto the stars. Four ships turn slowly on pedestals, from a snub-nosed little shuttle to a long explorer with folded solar wings, and a salesman in a silver jacket insists each one is a bargain.",
+        "id": "Ruang pamer terang dengan jendela melengkung menghadap bintang-bintang. Empat kapal berputar pelan di atas panggung, dari pesawat kecil berhidung pesek sampai kapal penjelajah panjang dengan sayap surya terlipat, dan seorang penjual berjaket perak bersikeras semuanya murah."
+      },
+      "floor": "stone",
+      "acoustics": "hall",
+      "shop": "shipyard",
+      "hints": {
+        "all": {
+          "en": "Type list to see the ships, examine a ship for its cargo hold, speed and fuel tank, and buy one. Your ship waits for you in the Hangar, west of the Dock.",
+          "id": "Ketik daftar untuk melihat kapal, periksa sebuah kapal untuk tahu palka, kecepatan, dan tangki bahan bakarnya, lalu beli. Kapalmu menunggu di Hanggar, di sebelah barat Dermaga."
+        }
+      },
+      "objects": {
+        "ships": {
+          "names": {"en": ["ships", "pedestals", "models"], "id": ["kapal", "panggung", "model"]},
+          "desc": {
+            "en": "Four ships on turning pedestals. Type list to hear their prices, and examine one for its hold, speed and tank.",
+            "id": "Empat kapal di atas panggung berputar. Ketik daftar untuk mendengar harganya, dan periksa salah satunya untuk tahu palka, kecepatan, dan tangkinya."
+          }
+        },
+        "salesman": {
+          "names": {"en": ["salesman", "seller"], "id": ["penjual", "sales"]},
+          "desc": {
+            "en": "The salesman's jacket is so shiny you can hear it. He promises a fair trade-in for your old ship.",
+            "id": "Jaket si penjual begitu mengilap sampai terasa bisa didengar. Ia menjanjikan tukar tambah yang adil untuk kapal lamamu."
+          }
+        }
+      }
+    },
+    "moon_port": {
+      "name": {"en": "Tranquility Port", "id": "Bandar Tranquility"},
+      "ref": {"en": "Tranquility Port", "id": "Bandar Tranquility"},
+      "in": {"en": "at Tranquility Port", "id": "di Bandar Tranquility"},
+      "aliases": {
+        "en": ["moon", "the moon", "moon base", "tranquility", "moon port", "tranquility port"],
+        "id": ["bulan", "pangkalan bulan", "bandar bulan", "bandar tranquility"]
+      },
+      "area": "moon",
+      "at": [0, 0],
+      "ambience": "moon",
+      "exits": {"n": "moon_concourse", "e": "moon_depot"},
+      "desc": {
+        "en": "The spaceport of Moon Base Tranquility: a low grey hall pressed into the lunar soil, its landing pads outside the windows ringed with blue lights. A small copy of the station's Gate shimmers by the arrivals desk, and the ferry's berth waits beside it. You feel lighter here; every step wants to become a hop.",
+        "id": "Bandar antariksa Pangkalan Bulan Tranquility: aula kelabu yang rendah, tertanam di tanah bulan, landasannya di luar jendela dikelilingi lampu biru. Tiruan kecil Gerbang stasiun berkilau di dekat meja kedatangan, dan tambatan feri menunggu di sebelahnya. Tubuhmu terasa lebih ringan di sini; setiap langkah ingin menjadi lompatan."
+      },
+      "floor": "dust",
+      "acoustics": "hall",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "From here: the Gate home or anywhere (gate to the station), the ferry (ferry to the station), or your own ship (embark).",
+          "id": "Dari sini: Gerbang pulang atau ke mana saja (gerbang ke stasiun), feri (feri ke stasiun), atau kapalmu sendiri (naik kapal)."
+        }
+      },
+      "objects": {
+        "pads": {
+          "names": {"en": ["pads", "landing pads", "lights"], "id": ["landasan", "lampu"]},
+          "desc": {
+            "en": "Landing pads ringed with blue lights; now and then a ship settles onto one in a puff of grey dust that takes ages to fall.",
+            "id": "Landasan yang dikelilingi lampu biru; sesekali sebuah kapal mendarat di atasnya dalam kepulan debu kelabu yang lama sekali baru turun."
+          }
+        }
+      }
+    },
+    "moon_depot": {
+      "name": {"en": "Cargo Depot", "id": "Depo Kargo"},
+      "ref": {"en": "the Cargo Depot", "id": "Depo Kargo"},
+      "in": {"en": "in the Cargo Depot", "id": "di Depo Kargo"},
+      "aliases": {"en": ["depot", "cargo depot", "moon depot"], "id": ["depo", "depo kargo"]},
+      "area": "moon",
+      "at": [1, 0],
+      "ambience": "moon",
+      "exits": {"w": "moon_port"},
+      "desc": {
+        "en": "Stacks of crates from the station fill the depot: seeds, spare parts, sacks of coffee. This is where the Merpati's cargo runs end, and a forklift beeps patiently as it sorts them.",
+        "id": "Tumpukan peti dari stasiun memenuhi depo ini: bibit, suku cadang, karung kopi. Di sinilah perjalanan kargo Merpati berakhir, dan sebuah forklift berbunyi bip dengan sabar sambil menyortirnya."
+      },
+      "floor": "dust",
+      "acoustics": "hangar",
+      "objects": {
+        "forklift": {
+          "names": {"en": ["forklift", "crates"], "id": ["forklift", "peti"]},
+          "desc": {
+            "en": "The forklift beeps politely before every turn, even with nobody around.",
+            "id": "Forklift itu berbunyi bip dengan sopan sebelum setiap belokan, meski tak ada orang."
+          }
+        }
+      }
+    },
+    "moon_concourse": {
+      "name": {"en": "Concourse", "id": "Selasar"},
+      "ref": {"en": "the Moon Base concourse", "id": "selasar Pangkalan Bulan"},
+      "in": {"en": "on the Moon Base concourse", "id": "di selasar Pangkalan Bulan"},
+      "aliases": {"en": ["concourse", "moon concourse"], "id": ["selasar", "selasar bulan"]},
+      "area": "moon",
+      "at": [0, 1],
+      "ambience": "moon",
+      "exits": {"s": "moon_port", "w": "moon_exchange", "e": "moon_tunnels", "n": "moon_dome"},
+      "desc": {
+        "en": "The base's main corridor, a tube of white panels with signs in six languages. The exchange is to the west, the helium tunnels to the east, and the Earthrise Dome to the north.",
+        "id": "Lorong utama pangkalan, tabung berpanel putih dengan papan petunjuk dalam enam bahasa. Bursa ada di barat, terowongan helium di timur, dan Kubah Terbitnya Bumi di utara."
+      },
+      "floor": "stone",
+      "objects": {
+        "signs": {
+          "names": {"en": ["signs", "sign"], "id": ["papan", "papan petunjuk"]},
+          "desc": {
+            "en": "Signs in six languages. The Indonesian one has a small smiley face drawn on it.",
+            "id": "Papan petunjuk dalam enam bahasa. Yang berbahasa Indonesia digambari wajah tersenyum kecil."
+          }
+        }
+      }
+    },
+    "moon_exchange": {
+      "name": {"en": "Lunar Exchange", "id": "Bursa Bulan"},
+      "ref": {"en": "the Lunar Exchange", "id": "Bursa Bulan"},
+      "in": {"en": "at the Lunar Exchange", "id": "di Bursa Bulan"},
+      "aliases": {
+        "en": ["exchange", "lunar exchange", "moon market", "market"],
+        "id": ["bursa", "bursa bulan", "pasar bulan"]
+      },
+      "area": "moon",
+      "at": [-1, 1],
+      "ambience": "moon",
+      "exits": {"e": "moon_concourse"},
+      "desc": {
+        "en": "A trading floor under a low dome, its price boards glowing amber. Helium-3 is cheap here, straight from the tunnels; water ice and fresh food are dear, because everything else comes a long way.",
+        "id": "Lantai perdagangan di bawah kubah rendah, papan harganya menyala kuning. Helium-3 murah di sini, langsung dari terowongan; es air dan makanan segar mahal, karena semua yang lain datang dari jauh."
+      },
+      "floor": "stone",
+      "acoustics": "hall",
+      "market": {"buys": ["trade", "crop", "ore", "salvage"], "sells": ["trade", "crop", "ore", "salvage"]},
+      "hints": {
+        "all": {
+          "en": "Type prices to hear what sells cheap and dear on the Moon.",
+          "id": "Ketik harga untuk tahu apa yang murah dan mahal di Bulan."
+        }
+      },
+      "objects": {
+        "boards": {
+          "names": {"en": ["boards", "price boards"], "id": ["papan harga", "papan"]},
+          "desc": {
+            "en": "Amber numbers scroll past. Type prices to hear them.",
+            "id": "Angka-angka kuning bergulir. Ketik harga untuk mendengarnya."
+          }
+        }
+      }
+    },
+    "moon_tunnels": {
+      "name": {"en": "Helium Tunnels", "id": "Terowongan Helium"},
+      "ref": {"en": "the Helium Tunnels", "id": "Terowongan Helium"},
+      "in": {"en": "in the Helium Tunnels", "id": "di Terowongan Helium"},
+      "aliases": {
+        "en": ["tunnels", "helium tunnels", "moon mine", "helium mine"],
+        "id": ["terowongan", "terowongan helium", "tambang bulan"]
+      },
+      "area": "moon",
+      "at": [1, 1],
+      "ambience": "moon",
+      "exits": {"w": "moon_concourse"},
+      "desc": {
+        "en": "Pressurised tunnels bored through the regolith, lit by strings of bulbs. Drill rigs chew the grey soil for helium-3, the fuel the whole system runs on, and the walls glitter with glassy beads.",
+        "id": "Terowongan bertekanan yang dibor menembus regolit, diterangi untaian bohlam. Rig-rig bor mengunyah tanah kelabu untuk mencari helium-3, bahan bakar yang menggerakkan seluruh tata surya, dan dindingnya berkilau oleh butiran kaca."
+      },
+      "floor": "rock",
+      "acoustics": "cave",
+      "mine": "moon",
+      "hints": {
+        "all": {"en": "Type mine for helium-3 and lunar ore.", "id": "Ketik tambang untuk helium-3 dan bijih bulan."}
+      },
+      "objects": {
+        "rigs": {
+          "names": {"en": ["rigs", "drill rigs", "beads"], "id": ["rig", "rig bor", "butiran"]},
+          "desc": {
+            "en": "Drill rigs grind the regolith; the glassy beads are old lava, frozen into droplets long ago.",
+            "id": "Rig-rig bor menggerus regolit; butiran kaca itu lava purba yang membeku menjadi tetesan sejak lama."
+          }
+        }
+      }
+    },
+    "moon_dome": {
+      "name": {"en": "Earthrise Dome", "id": "Kubah Terbitnya Bumi"},
+      "ref": {"en": "the Earthrise Dome", "id": "Kubah Terbitnya Bumi"},
+      "in": {"en": "under the Earthrise Dome", "id": "di bawah Kubah Terbitnya Bumi"},
+      "aliases": {"en": ["dome", "earthrise dome", "earthrise"], "id": ["kubah", "kubah terbitnya bumi"]},
+      "area": "moon",
+      "at": [0, 2],
+      "ambience": "moon",
+      "exits": {"s": "moon_concourse", "n": {"to": "moon_airlock", "via": "door"}},
+      "desc": {
+        "en": "A clear dome over a small garden of lunar ferns. Above the horizon hangs the Earth, blue and white and impossibly bright, never rising and never setting, only turning slowly through its days.",
+        "id": "Kubah bening di atas taman kecil pakis bulan. Di atas cakrawala tergantung Bumi, biru dan putih dan terang luar biasa, tak pernah terbit dan tak pernah terbenam, hanya berputar pelan melewati hari-harinya."
+      },
+      "floor": "grass",
+      "acoustics": "hall",
+      "objects": {
+        "earth": {
+          "names": {"en": ["earth", "planet", "home"], "id": ["bumi", "planet", "rumah"]},
+          "desc": {
+            "en": "The whole Earth in one glance: swirls of cloud, a blue ocean, and on its night side the lights of cities strung along the coasts like beads.",
+            "id": "Seluruh Bumi dalam satu pandangan: pusaran awan, samudra biru, dan di sisi malamnya lampu-lampu kota berderet di sepanjang pantai seperti manik-manik."
+          }
+        }
+      }
+    },
+    "moon_airlock": {
+      "name": {"en": "Surface Airlock", "id": "Airlock Permukaan"},
+      "ref": {"en": "the Surface Airlock", "id": "Airlock Permukaan"},
+      "in": {"en": "in the Surface Airlock", "id": "di Airlock Permukaan"},
+      "aliases": {"en": ["moon airlock", "surface airlock"], "id": ["airlock bulan", "airlock permukaan"]},
+      "area": "moon",
+      "at": [0, 3],
+      "ambience": "moon",
+      "exits": {"s": {"to": "moon_dome", "via": "door"}, "n": {"to": "moon_sea", "via": "airlock"}},
+      "desc": {
+        "en": "A cramped airlock with suits on hooks and a scuffed sign: check your air before you step outside. The tow crew brings back anyone whose air runs out, for a fee.",
+        "id": "Airlock sempit dengan pakaian antariksa tergantung di kait dan papan lusuh: periksa udaramu sebelum melangkah keluar. Kru penarik membawa pulang siapa pun yang kehabisan udara, dengan biaya."
+      },
+      "acoustics": "small",
+      "rescue": true,
+      "objects": {
+        "suits": {
+          "names": {"en": ["suits", "hooks", "sign"], "id": ["pakaian", "kait", "papan"]},
+          "desc": {
+            "en": "Spare suits for visitors, all a little too big.",
+            "id": "Pakaian cadangan untuk tamu, semuanya sedikit kebesaran."
+          }
+        }
+      }
+    },
+    "moon_sea": {
+      "name": {"en": "Sea of Dust", "id": "Lautan Debu"},
+      "ref": {"en": "the Sea of Dust", "id": "Lautan Debu"},
+      "in": {"en": "on the Sea of Dust", "id": "di Lautan Debu"},
+      "aliases": {"en": ["sea of dust", "lunar surface", "moon surface"], "id": ["lautan debu", "permukaan bulan"]},
+      "area": "moon_surface",
+      "at": [0, 4],
+      "ambience": "space",
+      "exits": {"s": {"to": "moon_airlock", "via": "airlock"}, "e": "moon_crater"},
+      "desc": {
+        "en": "A grey plain under a black sky, footprints everywhere and none of them fading. Your suit's hiss is the only sound. A crater rim rises to the east.",
+        "id": "Dataran kelabu di bawah langit hitam, jejak kaki di mana-mana dan tak satu pun memudar. Desis pakaian antariksamu satu-satunya suara. Bibir kawah menjulang di timur."
+      },
+      "floor": "dust",
+      "acoustics": "outside",
+      "airless": true,
+      "objects": {
+        "footprints": {
+          "names": {"en": ["footprints", "prints"], "id": ["jejak", "jejak kaki"]},
+          "desc": {
+            "en": "With no wind to blow them away, every footprint here will last a million years.",
+            "id": "Tanpa angin yang menghapusnya, setiap jejak kaki di sini akan bertahan sejuta tahun."
+          }
+        }
+      }
+    },
+    "moon_crater": {
+      "name": {"en": "Crater Rim", "id": "Bibir Kawah"},
+      "ref": {"en": "the Crater Rim", "id": "Bibir Kawah"},
+      "in": {"en": "on the Crater Rim", "id": "di Bibir Kawah"},
+      "aliases": {"en": ["crater", "crater rim"], "id": ["kawah", "bibir kawah"]},
+      "area": "moon_surface",
+      "at": [1, 4],
+      "ambience": "space",
+      "exits": {"w": "moon_sea"},
+      "desc": {
+        "en": "The edge of an old crater, its floor lost in shadow far below. From here the base looks like a handful of pebbles, and the Earth hangs over it like a lantern.",
+        "id": "Tepi kawah tua, dasarnya tenggelam dalam bayangan jauh di bawah. Dari sini pangkalan tampak seperti segenggam kerikil, dan Bumi tergantung di atasnya seperti lentera."
+      },
+      "floor": "dust",
+      "acoustics": "outside",
+      "airless": true,
+      "objects": {
+        "crater": {
+          "names": {"en": ["crater", "shadow"], "id": ["kawah", "bayangan"]},
+          "desc": {
+            "en": "The crater's floor has never seen sunlight. Ice may be hiding down there.",
+            "id": "Dasar kawah itu tak pernah melihat cahaya matahari. Mungkin ada es yang bersembunyi di bawah sana."
+          }
+        }
+      }
+    },
+    "karmina_port": {
+      "name": {"en": "Karmina Spaceport", "id": "Bandar Antariksa Karmina"},
+      "ref": {"en": "Karmina Spaceport", "id": "Bandar Antariksa Karmina"},
+      "in": {"en": "at Karmina Spaceport", "id": "di Bandar Antariksa Karmina"},
+      "aliases": {
+        "en": ["karmina", "red planet", "the red planet", "karmina port", "karmina spaceport", "colony"],
+        "id": ["karmina", "planet merah", "bandar karmina", "koloni karmina", "koloni"]
+      },
+      "area": "karmina",
+      "at": [0, 0],
+      "ambience": "colony",
+      "exits": {"n": "kar_plaza"},
+      "desc": {
+        "en": "Red dust drifts across the spaceport's windows, and the light outside is the colour of weak tea. Karmina's colonists wave newcomers through with tired smiles. The Gate's ring shines by the customs desk, and the ferry berth is beside it.",
+        "id": "Debu merah melayang melintasi jendela bandar, dan cahaya di luar berwarna seperti teh encer. Para kolonis Karmina melambaikan pendatang baru dengan senyum lelah. Cincin Gerbang bersinar di dekat meja pabean, dan tambatan feri ada di sebelahnya."
+      },
+      "floor": "dust",
+      "acoustics": "hall",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "From here: the Gate, the ferry, or your own ship. Water ice sells dear on Karmina.",
+          "id": "Dari sini: Gerbang, feri, atau kapalmu sendiri. Es air laku mahal di Karmina."
+        }
+      },
+      "objects": {
+        "dust": {
+          "names": {
+            "en": ["dust", "windows", "desk", "customs desk"],
+            "id": ["debu", "jendela", "meja", "meja pabean"]
+          },
+          "desc": {
+            "en": "Customs officers in red jackets check arrivals from the Gate and the ferry; ships less often.",
+            "id": "Petugas pabean berjaket merah memeriksa kedatangan dari Gerbang dan feri; kapal lebih jarang."
+          }
+        }
+      }
+    },
+    "kar_plaza": {
+      "name": {"en": "Dome Plaza", "id": "Alun-alun Kubah"},
+      "ref": {"en": "the Dome Plaza", "id": "Alun-alun Kubah"},
+      "in": {"en": "in the Dome Plaza", "id": "di Alun-alun Kubah"},
+      "aliases": {"en": ["plaza", "dome plaza"], "id": ["alun-alun", "alun alun kubah", "plaza"]},
+      "area": "karmina",
+      "at": [0, 1],
+      "ambience": "colony",
+      "exits": {"s": "karmina_port", "w": "kar_market", "e": "kar_farms", "n": "kar_habitat"},
+      "desc": {
+        "en": "The heart of the colony under its biggest dome: a square of red tiles, a fountain that runs only at noon to save water, and children chasing a robot dog. The market is west, the farming domes east, and the habitat ring north.",
+        "id": "Jantung koloni di bawah kubah terbesarnya: alun-alun berubin merah, air mancur yang hanya menyala tengah hari untuk menghemat air, dan anak-anak mengejar anjing robot. Pasar di barat, kubah pertanian di timur, dan cincin hunian di utara."
+      },
+      "floor": "stone",
+      "acoustics": "hall",
+      "objects": {
+        "fountain": {
+          "names": {"en": ["fountain"], "id": ["air mancur"]},
+          "desc": {
+            "en": "Dry now. At noon it runs for exactly ten minutes, and everyone comes to watch.",
+            "id": "Sekarang kering. Tengah hari air mancur itu menyala tepat sepuluh menit, dan semua orang datang menonton."
+          }
+        }
+      }
+    },
+    "kar_market": {
+      "name": {"en": "Red Market", "id": "Pasar Merah"},
+      "ref": {"en": "the Red Market", "id": "Pasar Merah"},
+      "in": {"en": "at the Red Market", "id": "di Pasar Merah"},
+      "aliases": {"en": ["red market", "karmina market", "market"], "id": ["pasar merah", "pasar karmina"]},
+      "area": "karmina",
+      "at": [-1, 1],
+      "ambience": "colony",
+      "exits": {"e": "kar_plaza"},
+      "desc": {
+        "en": "Stalls under striped awnings sell dome-grown red quinoa and jars of rust salt dug from the flats. Everyone here asks the same thing: have you brought any ice?",
+        "id": "Kios-kios di bawah tenda bergaris menjual kinoa merah hasil kubah dan toples garam karat yang digali dari dataran. Semua orang di sini menanyakan hal yang sama: kamu bawa es?"
+      },
+      "floor": "stone",
+      "market": {"buys": ["trade", "crop", "ore", "salvage"], "sells": ["trade", "crop", "ore", "salvage"]},
+      "objects": {
+        "stalls": {
+          "names": {"en": ["stalls", "awnings"], "id": ["kios", "tenda"]},
+          "desc": {
+            "en": "Red quinoa, rust salt, and a stall selling ice by the cup. Type prices.",
+            "id": "Kinoa merah, garam karat, dan sebuah kios yang menjual es per cangkir. Ketik harga."
+          }
+        }
+      }
+    },
+    "kar_farms": {
+      "name": {"en": "Farming Domes", "id": "Kubah Pertanian"},
+      "ref": {"en": "the Farming Domes", "id": "Kubah Pertanian"},
+      "in": {"en": "in the Farming Domes", "id": "di Kubah Pertanian"},
+      "aliases": {
+        "en": ["farming domes", "farms", "domes", "farm domes"],
+        "id": ["kubah pertanian", "kebun kubah", "kubah tani"]
+      },
+      "area": "karmina",
+      "at": [1, 1],
+      "ambience": "garden",
+      "exits": {"w": "kar_plaza"},
+      "desc": {
+        "en": "Row after row of red quinoa and tomato vines under humming grow lights, the air thick and warm and smelling of wet soil. A sign says: pickers welcome, take a share of what you gather.",
+        "id": "Berderet-deret kinoa merah dan tanaman tomat di bawah lampu tanam yang berdengung, udaranya lembap, hangat, dan berbau tanah basah. Sebuah papan bertulisan: pemetik dipersilakan, ambil bagian dari yang kamu kumpulkan."
+      },
+      "floor": "wet",
+      "acoustics": "hall",
+      "salvage": "domes",
+      "hints": {
+        "all": {
+          "en": "Type collect to pick a share of the harvest.",
+          "id": "Ketik kumpulkan untuk memetik bagian dari panen."
+        }
+      },
+      "objects": {
+        "vines": {
+          "names": {"en": ["vines", "quinoa", "grow lights"], "id": ["tanaman", "kinoa", "lampu tanam"]},
+          "desc": {
+            "en": "Quinoa heads nod under the lamps like red feathers. Type collect to pick a share.",
+            "id": "Bulir kinoa mengangguk di bawah lampu seperti bulu merah. Ketik kumpulkan untuk memetik bagianmu."
+          }
+        }
+      }
+    },
+    "kar_habitat": {
+      "name": {"en": "Habitat Ring", "id": "Cincin Hunian"},
+      "ref": {"en": "the Habitat Ring", "id": "Cincin Hunian"},
+      "in": {"en": "on the Habitat Ring", "id": "di Cincin Hunian"},
+      "aliases": {"en": ["habitat", "habitat ring", "homes"], "id": ["cincin hunian", "hunian", "perumahan"]},
+      "area": "karmina",
+      "at": [0, 2],
+      "ambience": "colony",
+      "exits": {"s": "kar_plaza", "w": "kar_shelter", "e": "kar_garage"},
+      "desc": {
+        "en": "A circle of family homes built from red bricks pressed out of the planet's own dust, each with a window box of stubborn flowers. The storm shelter is west, the rover garage east.",
+        "id": "Lingkaran rumah keluarga dari bata merah yang dicetak dari debu planet itu sendiri, masing-masing dengan pot bunga keras kepala di jendelanya. Tempat berlindung badai di barat, garasi rover di timur."
+      },
+      "floor": "stone",
+      "objects": {
+        "flowers": {
+          "names": {"en": ["flowers", "window boxes", "homes"], "id": ["bunga", "pot bunga", "rumah"]},
+          "desc": {
+            "en": "Marigolds, mostly: tough little flowers that don't mind thin air.",
+            "id": "Kebanyakan bunga tahi kotok: bunga kecil tangguh yang tak keberatan dengan udara tipis."
+          }
+        }
+      }
+    },
+    "kar_shelter": {
+      "name": {"en": "Storm Shelter", "id": "Tempat Berlindung Badai"},
+      "ref": {"en": "the Storm Shelter", "id": "Tempat Berlindung Badai"},
+      "in": {"en": "in the Storm Shelter", "id": "di Tempat Berlindung Badai"},
+      "aliases": {
+        "en": ["shelter", "storm shelter", "bunker"],
+        "id": ["tempat berlindung", "bunker", "tempat berlindung badai"]
+      },
+      "area": "karmina",
+      "at": [-1, 2],
+      "ambience": "colony",
+      "exits": {"e": "kar_habitat"},
+      "desc": {
+        "en": "A thick-walled bunker with benches, blankets and a shelf of board games. When the dust storms come, the whole colony crowds in here and tells stories until the sky clears.",
+        "id": "Bunker berdinding tebal dengan bangku, selimut, dan rak berisi permainan papan. Saat badai debu datang, seluruh koloni berdesakan di sini dan saling bercerita sampai langit cerah."
+      },
+      "floor": "stone",
+      "acoustics": "small",
+      "objects": {
+        "games": {
+          "names": {"en": ["games", "board games", "blankets"], "id": ["permainan", "permainan papan", "selimut"]},
+          "desc": {
+            "en": "Well-worn board games; the chess set is missing a knight, replaced by a bolt.",
+            "id": "Permainan papan yang sudah usang; set caturnya kehilangan satu kuda, diganti sebuah baut."
+          }
+        }
+      }
+    },
+    "kar_garage": {
+      "name": {"en": "Rover Garage", "id": "Garasi Rover"},
+      "ref": {"en": "the Rover Garage", "id": "Garasi Rover"},
+      "in": {"en": "in the Rover Garage", "id": "di Garasi Rover"},
+      "aliases": {"en": ["garage", "rover garage", "rovers"], "id": ["garasi", "garasi rover"]},
+      "area": "karmina",
+      "at": [1, 2],
+      "ambience": "colony",
+      "exits": {"w": "kar_habitat", "n": {"to": "kar_flats", "via": "airlock"}},
+      "desc": {
+        "en": "Six-wheeled rovers sit under tarps, their tyres caked with red dust. An airlock leads out to the Rust Flats; the colonists' tow rover brings back anyone whose air runs out.",
+        "id": "Rover beroda enam duduk di bawah terpal, bannya berlapis debu merah. Sebuah airlock menuju Dataran Karat; rover penarik para kolonis membawa pulang siapa pun yang kehabisan udara."
+      },
+      "acoustics": "hangar",
+      "rescue": true,
+      "objects": {
+        "rovers": {
+          "names": {"en": ["rovers", "tarps"], "id": ["rover", "terpal"]},
+          "desc": {
+            "en": "Six-wheeled rovers. One has a name painted on its side: Lucky.",
+            "id": "Rover beroda enam. Salah satunya bertuliskan nama di sisinya: Si Mujur."
+          }
+        }
+      }
+    },
+    "kar_flats": {
+      "name": {"en": "Rust Flats", "id": "Dataran Karat"},
+      "ref": {"en": "the Rust Flats", "id": "Dataran Karat"},
+      "in": {"en": "on the Rust Flats", "id": "di Dataran Karat"},
+      "aliases": {"en": ["rust flats", "flats", "red desert"], "id": ["dataran karat", "dataran", "gurun merah"]},
+      "area": "karmina_out",
+      "at": [1, 3],
+      "ambience": "space",
+      "exits": {"s": {"to": "kar_garage", "via": "airlock"}, "n": "kar_canyon"},
+      "desc": {
+        "en": "An endless plain of red sand under a butterscotch sky. The air is far too thin to breathe. Crusts of rust-coloured salt crack under your boots, and the colonists dig it for the market.",
+        "id": "Dataran pasir merah tanpa ujung di bawah langit berwarna karamel. Udaranya jauh terlalu tipis untuk bernapas. Kerak garam berwarna karat retak di bawah sepatumu, dan para kolonis menggalinya untuk pasar."
+      },
+      "floor": "sand",
+      "acoustics": "outside",
+      "airless": true,
+      "salvage": "flats",
+      "hints": {"all": {"en": "Type collect to dig rust salt.", "id": "Ketik kumpulkan untuk menggali garam karat."}},
+      "objects": {
+        "salt": {
+          "names": {"en": ["salt", "crust", "sand"], "id": ["garam", "kerak", "pasir"]},
+          "desc": {
+            "en": "Rust-coloured salt crusts. Type collect to dig some.",
+            "id": "Kerak garam berwarna karat. Ketik kumpulkan untuk menggalinya."
+          }
+        }
+      }
+    },
+    "kar_canyon": {
+      "name": {"en": "Canyon Rim", "id": "Tepi Ngarai"},
+      "ref": {"en": "the Canyon Rim", "id": "Tepi Ngarai"},
+      "in": {"en": "on the Canyon Rim", "id": "di Tepi Ngarai"},
+      "aliases": {"en": ["canyon", "canyon rim"], "id": ["ngarai", "tepi ngarai"]},
+      "area": "karmina_out",
+      "at": [1, 4],
+      "ambience": "space",
+      "exits": {"s": "kar_flats"},
+      "desc": {
+        "en": "The flats end at a canyon so deep and wide that its far wall is blue with distance. Two small moons hurry across the sky.",
+        "id": "Dataran berakhir di sebuah ngarai yang begitu dalam dan lebar sampai dinding seberangnya membiru karena jauhnya. Dua bulan kecil bergegas melintasi langit."
+      },
+      "floor": "sand",
+      "acoustics": "outside",
+      "airless": true,
+      "objects": {
+        "moons": {
+          "names": {"en": ["moons", "canyon"], "id": ["bulan", "ngarai"]},
+          "desc": {
+            "en": "Two potato-shaped moons race each other across the sky.",
+            "id": "Dua bulan berbentuk kentang saling berkejaran melintasi langit."
+          }
+        }
+      }
+    },
+    "glasir_port": {
+      "name": {"en": "Glasir Landing", "id": "Landasan Glasir"},
+      "ref": {"en": "Glasir Landing", "id": "Landasan Glasir"},
+      "in": {"en": "at Glasir Landing", "id": "di Landasan Glasir"},
+      "aliases": {
+        "en": ["glasir", "ice moon", "the ice moon", "glasir landing"],
+        "id": ["glasir", "bulan es", "landasan glasir"]
+      },
+      "area": "glasir",
+      "at": [0, 0],
+      "ambience": "ice",
+      "exits": {"n": "glasir_station"},
+      "desc": {
+        "en": "A landing field scraped out of blue-white ice, its terminal a cluster of insulated domes. Frost flowers grow on the inside of every window. The Gate's ring hangs by the heaters, and the ferry docks beside it.",
+        "id": "Landasan yang dikeruk dari es putih kebiruan, terminalnya sekumpulan kubah berinsulasi. Bunga-bunga embun beku tumbuh di bagian dalam setiap jendela. Cincin Gerbang tergantung di dekat pemanas, dan feri bersandar di sebelahnya."
+      },
+      "floor": "snow",
+      "acoustics": "hall",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "From here: the Gate, the ferry, or your own ship. Ice is cheap on Glasir; coffee and spices are not.",
+          "id": "Dari sini: Gerbang, feri, atau kapalmu sendiri. Es murah di Glasir; kopi dan rempah tidak."
+        }
+      },
+      "objects": {
+        "frost": {
+          "names": {"en": ["frost", "frost flowers", "windows"], "id": ["embun beku", "bunga embun", "jendela"]},
+          "desc": {
+            "en": "Feathery frost flowers, each one different, grown overnight on the glass.",
+            "id": "Bunga-bunga embun beku seperti bulu, masing-masing berbeda, tumbuh semalam di kaca."
+          }
+        }
+      }
+    },
+    "glasir_station": {
+      "name": {"en": "Research Station", "id": "Stasiun Riset"},
+      "ref": {"en": "the Research Station", "id": "Stasiun Riset"},
+      "in": {"en": "in the Research Station", "id": "di Stasiun Riset"},
+      "aliases": {
+        "en": ["research station", "station glasir", "lab"],
+        "id": ["stasiun riset", "riset", "laboratorium es"]
+      },
+      "area": "glasir",
+      "at": [0, 1],
+      "ambience": "ice",
+      "exits": {"s": "glasir_port", "w": "glasir_market", "e": "glasir_lodge"},
+      "desc": {
+        "en": "Scientists in thick jumpers bend over ice cores laid out like strips of glass. Somewhere under the crust, they say, is an ocean. The traders' post is west, the thermal lodge east.",
+        "id": "Para ilmuwan berbaju hangat tebal membungkuk di atas inti es yang dijajarkan seperti lembaran kaca. Konon di bawah keraknya ada samudra. Pos pedagang di barat, pondok panas bumi di timur."
+      },
+      "floor": "metal",
+      "objects": {
+        "cores": {
+          "names": {"en": ["cores", "ice cores"], "id": ["inti es", "inti"]},
+          "desc": {
+            "en": "Ice cores with thin dark bands: each band a year of dust, they say.",
+            "id": "Inti es dengan pita-pita gelap tipis: tiap pita setahun debu, kata mereka."
+          }
+        }
+      }
+    },
+    "glasir_market": {
+      "name": {"en": "Ice Traders' Post", "id": "Pos Pedagang Es"},
+      "ref": {"en": "the Ice Traders' Post", "id": "Pos Pedagang Es"},
+      "in": {"en": "at the Ice Traders' Post", "id": "di Pos Pedagang Es"},
+      "aliases": {
+        "en": ["traders post", "ice traders", "glasir market", "market"],
+        "id": ["pos pedagang", "pos pedagang es", "pasar glasir"]
+      },
+      "area": "glasir",
+      "at": [-1, 1],
+      "ambience": "ice",
+      "exits": {"e": "glasir_station"},
+      "desc": {
+        "en": "A warm, crowded hut where blocks of ice are weighed on brass scales and sold by the tonne. A kettle never stops boiling; a cup of real coffee here costs a small fortune.",
+        "id": "Pondok hangat yang ramai tempat balok-balok es ditimbang di timbangan kuningan dan dijual per ton. Sebuah ketel tak pernah berhenti mendidih; secangkir kopi asli di sini berharga selangit."
+      },
+      "floor": "wood",
+      "acoustics": "small",
+      "market": {"buys": ["trade", "crop", "ore"], "sells": ["trade", "crop", "ore"]},
+      "objects": {
+        "scales": {
+          "names": {"en": ["scales", "kettle"], "id": ["timbangan", "ketel"]},
+          "desc": {
+            "en": "Brass scales for weighing ice. Type prices.",
+            "id": "Timbangan kuningan untuk menimbang es. Ketik harga."
+          }
+        }
+      }
+    },
+    "glasir_lodge": {
+      "name": {"en": "Thermal Lodge", "id": "Pondok Panas Bumi"},
+      "ref": {"en": "the Thermal Lodge", "id": "Pondok Panas Bumi"},
+      "in": {"en": "in the Thermal Lodge", "id": "di Pondok Panas Bumi"},
+      "aliases": {"en": ["lodge", "thermal lodge", "warm room"], "id": ["pondok", "pondok panas bumi", "pondok hangat"]},
+      "area": "glasir",
+      "at": [1, 1],
+      "ambience": "ice",
+      "exits": {"w": "glasir_station", "n": {"to": "glasir_quarry", "via": "airlock"}},
+      "desc": {
+        "en": "Pipes of water warmed deep underground run through the floor, and everyone sits with their boots off. An airlock leads out to the quarry; the lodge's tow sled brings back anyone whose air runs out.",
+        "id": "Pipa-pipa air yang dihangatkan jauh di bawah tanah mengalir di bawah lantai, dan semua orang duduk tanpa sepatu. Sebuah airlock menuju tambang es; kereta luncur penarik pondok membawa pulang siapa pun yang kehabisan udara."
+      },
+      "floor": "wood",
+      "acoustics": "small",
+      "rescue": true,
+      "objects": {
+        "pipes": {
+          "names": {"en": ["pipes", "floor"], "id": ["pipa", "lantai"]},
+          "desc": {
+            "en": "The floor is warm enough to fall asleep on, and several people have.",
+            "id": "Lantainya cukup hangat untuk tertidur di atasnya, dan beberapa orang sudah melakukannya."
+          }
+        }
+      }
+    },
+    "glasir_quarry": {
+      "name": {"en": "Ice Quarry", "id": "Tambang Es"},
+      "ref": {"en": "the Ice Quarry", "id": "Tambang Es"},
+      "in": {"en": "in the Ice Quarry", "id": "di Tambang Es"},
+      "aliases": {"en": ["quarry", "ice quarry"], "id": ["tambang es", "tambang"]},
+      "area": "glasir_out",
+      "at": [1, 2],
+      "ambience": "ice",
+      "exits": {
+        "s": {"to": "glasir_lodge", "via": "airlock"},
+        "e": "glasir_geysers",
+        "d": {"to": "glasir_crevasse", "via": "ladder"}
+      },
+      "desc": {
+        "en": "Terraces of blue ice cut into the moon's crust, so cold that it burns through gloves. Without a suit you would freeze in moments. Cutters leave blocks stacked for anyone with a sled, and deeper down a crevasse glows blue.",
+        "id": "Undakan es biru yang dipotong ke kerak bulan, begitu dingin sampai membakar menembus sarung tangan. Tanpa pakaian antariksa kamu akan membeku dalam sekejap. Para pemotong menumpuk balok-balok untuk siapa pun yang punya kereta luncur, dan lebih dalam lagi sebuah celah bersinar biru."
+      },
+      "floor": "snow",
+      "acoustics": "outside",
+      "airless": true,
+      "salvage": "quarry",
+      "hints": {
+        "all": {
+          "en": "Type collect to cut ice (and, now and then, a frost pearl).",
+          "id": "Ketik kumpulkan untuk memotong es (dan kadang-kadang sebutir mutiara beku)."
+        }
+      },
+      "objects": {
+        "blocks": {
+          "names": {"en": ["blocks", "ice", "terraces"], "id": ["balok", "es", "undakan"]},
+          "desc": {
+            "en": "Blocks of blue ice, stacked for the taking. Type collect.",
+            "id": "Balok-balok es biru, ditumpuk untuk diambil. Ketik kumpulkan."
+          }
+        }
+      }
+    },
+    "glasir_geysers": {
+      "name": {"en": "Geyser Field", "id": "Padang Geiser"},
+      "ref": {"en": "the Geyser Field", "id": "Padang Geiser"},
+      "in": {"en": "in the Geyser Field", "id": "di Padang Geiser"},
+      "aliases": {"en": ["geysers", "geyser field"], "id": ["geiser", "padang geiser"]},
+      "area": "glasir_out",
+      "at": [2, 2],
+      "ambience": "ice",
+      "exits": {"w": "glasir_quarry"},
+      "desc": {
+        "en": "Every few minutes a plume of vapour shoots from a crack in the ice, climbs higher than the station's tallest deck, and falls back as glittering snow.",
+        "id": "Setiap beberapa menit sebuah semburan uap memancar dari retakan es, naik lebih tinggi dari dek tertinggi stasiun, lalu jatuh kembali sebagai salju berkilauan."
+      },
+      "floor": "snow",
+      "acoustics": "outside",
+      "airless": true,
+      "objects": {
+        "plume": {
+          "names": {"en": ["plume", "geyser", "geysers"], "id": ["semburan", "geiser"]},
+          "desc": {
+            "en": "A plume rises, hangs glittering, and falls as snow.",
+            "id": "Sebuah semburan naik, menggantung berkilauan, lalu jatuh sebagai salju."
+          }
+        }
+      }
+    },
+    "glasir_crevasse": {
+      "name": {"en": "Blue Crevasse", "id": "Celah Biru"},
+      "ref": {"en": "the Blue Crevasse", "id": "Celah Biru"},
+      "in": {"en": "in the Blue Crevasse", "id": "di Celah Biru"},
+      "aliases": {"en": ["crevasse", "blue crevasse"], "id": ["celah", "celah biru"]},
+      "area": "glasir_out",
+      "at": [1, 2, -1],
+      "ambience": "ice",
+      "exits": {"u": {"to": "glasir_quarry", "via": "ladder"}},
+      "desc": {
+        "en": "A narrow crack deep in the ice. Where your light falls, the walls glow sapphire, and pearls of frozen water hang from ledges like berries.",
+        "id": "Retakan sempit jauh di dalam es. Di mana cahayamu jatuh, dindingnya berpendar biru safir, dan butiran mutiara air beku tergantung di tepian seperti buah beri."
+      },
+      "floor": "snow",
+      "acoustics": "cave",
+      "airless": true,
+      "dark": true,
+      "salvage": "crevasse",
+      "hints": {
+        "all": {
+          "en": "Type collect for frost pearls; you'll need light.",
+          "id": "Ketik kumpulkan untuk mutiara beku; kamu perlu penerangan."
+        }
+      },
+      "objects": {
+        "pearls": {
+          "names": {"en": ["pearls", "ledges", "walls"], "id": ["mutiara", "tepian", "dinding"]},
+          "desc": {
+            "en": "Frost pearls on the ledges. Type collect.",
+            "id": "Mutiara beku di tepian. Ketik kumpulkan."
+          }
+        }
+      }
+    },
+    "bazaar_port": {
+      "name": {"en": "Docking Ring", "id": "Cincin Tambat"},
+      "ref": {"en": "the Drift Bazaar's docking ring", "id": "cincin tambat Pasar Apung"},
+      "in": {"en": "at the Drift Bazaar's docking ring", "id": "di cincin tambat Pasar Apung"},
+      "aliases": {
+        "en": ["drift bazaar", "bazaar", "asteroid market", "outpost", "trading outpost", "docking ring"],
+        "id": ["pasar apung", "pasar asteroid", "bazar", "pos dagang", "cincin tambat"]
+      },
+      "area": "bazaar",
+      "at": [0, 0],
+      "ambience": "bazaar",
+      "exits": {"n": "bazaar_main"},
+      "desc": {
+        "en": "A ring of mismatched docking clamps welded to a hollow, tumbling asteroid: the Drift Bazaar. Hawkers shout prices before you are even out of the hatch. Nobody here checks cargo, which is exactly why people come. A patched-up copy of the Gate flickers by the ferry berth.",
+        "id": "Cincin penjepit tambat yang tak serasi, dilas ke sebuah asteroid berongga yang berputar: Pasar Apung. Para pedagang meneriakkan harga bahkan sebelum kamu keluar dari palka. Tak ada yang memeriksa muatan di sini, dan justru karena itulah orang datang. Tiruan Gerbang yang penuh tambalan berkedip di dekat tambatan feri."
+      },
+      "floor": "metal",
+      "acoustics": "hangar",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "No customs at the Drift Bazaar. Other worlds do check what you carry.",
+          "id": "Tidak ada pabean di Pasar Apung. Dunia lain memeriksa bawaanmu."
+        }
+      },
+      "objects": {
+        "hawkers": {
+          "names": {"en": ["hawkers", "clamps"], "id": ["pedagang", "penjepit"]},
+          "desc": {
+            "en": "Hawkers selling everything from spare fuses to fortune-telling robots.",
+            "id": "Para pedagang menjual segalanya, dari sekring cadangan sampai robot peramal."
+          }
+        }
+      }
+    },
+    "bazaar_main": {
+      "name": {"en": "The Great Bazaar", "id": "Pasar Besar"},
+      "ref": {"en": "the Great Bazaar", "id": "Pasar Besar"},
+      "in": {"en": "in the Great Bazaar", "id": "di Pasar Besar"},
+      "aliases": {"en": ["great bazaar", "bazaar market", "market"], "id": ["pasar besar", "pasar"]},
+      "area": "bazaar",
+      "at": [0, 1],
+      "ambience": "bazaar",
+      "exits": {"s": "bazaar_port", "w": "spice_row", "e": "bazaar_cafe", "n": "bazaar_lookout"},
+      "desc": {
+        "en": "A cavern hollowed out of the rock and packed with stalls lit by paper lanterns and old neon. You can buy almost anything here, and collectors pay well for rare ores and meteorites. Spice Row is west, a cafe east, and the lookout north.",
+        "id": "Gua yang dikeruk dari batu dan penuh sesak oleh kios-kios yang diterangi lampion kertas dan neon tua. Hampir apa pun bisa dibeli di sini, dan para kolektor membayar mahal untuk bijih langka dan meteorit. Lorong Rempah di barat, sebuah kedai di timur, dan anjungan pandang di utara."
+      },
+      "floor": "stone",
+      "acoustics": "cave",
+      "market": {"buys": ["trade", "crop", "ore", "salvage"], "sells": ["trade", "crop", "ore", "salvage"]},
+      "objects": {
+        "lanterns": {
+          "names": {"en": ["lanterns", "stalls", "neon"], "id": ["lampion", "kios", "neon"]},
+          "desc": {
+            "en": "Paper lanterns and old neon, and a thousand voices haggling. Type prices.",
+            "id": "Lampion kertas dan neon tua, dan seribu suara tawar-menawar. Ketik harga."
+          }
+        }
+      }
+    },
+    "spice_row": {
+      "name": {"en": "Spice Row", "id": "Lorong Rempah"},
+      "ref": {"en": "Spice Row", "id": "Lorong Rempah"},
+      "in": {"en": "on Spice Row", "id": "di Lorong Rempah"},
+      "aliases": {"en": ["spice row", "spice lane", "spices"], "id": ["lorong rempah", "gang rempah"]},
+      "area": "bazaar",
+      "at": [-1, 1],
+      "ambience": "bazaar",
+      "exits": {"e": "bazaar_main", "s": "back_alley"},
+      "desc": {
+        "en": "A narrow lane where the air is thick with cinnamon, clove and pepper. Sacks of spices are piled to the ceiling, cheaper here than anywhere else. A dim alley leads south, and nobody looks at it.",
+        "id": "Lorong sempit dengan udara pekat oleh kayu manis, cengkih, dan lada. Karung-karung rempah bertumpuk sampai langit-langit, lebih murah di sini daripada di mana pun. Sebuah gang remang-remang mengarah ke selatan, dan tak ada yang mau melihat ke sana."
+      },
+      "floor": "stone",
+      "acoustics": "small",
+      "objects": {
+        "sacks": {
+          "names": {"en": ["sacks", "spices"], "id": ["karung", "rempah"]},
+          "desc": {
+            "en": "Sacks of cinnamon, clove, nutmeg and pepper, cheapest here of anywhere.",
+            "id": "Karung-karung kayu manis, cengkih, pala, dan lada, paling murah di sini."
+          }
+        }
+      }
+    },
+    "back_alley": {
+      "name": {"en": "Back Alley", "id": "Gang Belakang"},
+      "ref": {"en": "the Back Alley", "id": "Gang Belakang"},
+      "in": {"en": "in the Back Alley", "id": "di Gang Belakang"},
+      "aliases": {"en": ["back alley", "alley", "black market", "fence"], "id": ["gang belakang", "gang", "pasar gelap"]},
+      "area": "bazaar",
+      "at": [-1, 0],
+      "ambience": "bazaar",
+      "exits": {"n": "spice_row"},
+      "desc": {
+        "en": "A dead end between two stalls, where a woman in a long coat sells things with no labels: star orchids that are forbidden to pick, chips that nobody registered. Neon City pays a fortune for them, if the customs officers on your way don't find them first.",
+        "id": "Gang buntu di antara dua kios, tempat seorang perempuan bermantel panjang menjual barang tanpa label: anggrek bintang yang dilarang dipetik, chip yang tak pernah didaftarkan. Kota Lumina membayar mahal untuk barang-barang ini, asal petugas pabean di jalan tidak menemukannya lebih dulu."
+      },
+      "floor": "stone",
+      "acoustics": "small",
+      "market": {"buys": ["contraband"], "sells": ["contraband"]},
+      "hints": {
+        "all": {
+          "en": "Contraband: cheap here, dear in Lumina City. Customs on the station, the Moon, Karmina, Glasir and in Lumina may take it, and fine you.",
+          "id": "Barang gelap: murah di sini, mahal di Kota Lumina. Pabean di stasiun, Bulan, Karmina, Glasir, dan Lumina bisa menyitanya, dan mendendamu."
+        }
+      },
+      "objects": {
+        "woman": {
+          "names": {"en": ["woman", "seller", "coat"], "id": ["perempuan", "penjual", "mantel"]},
+          "desc": {
+            "en": "She never says her name. Type prices to hear what she sells.",
+            "id": "Ia tak pernah menyebut namanya. Ketik harga untuk mendengar apa yang ia jual."
+          }
+        }
+      }
+    },
+    "bazaar_cafe": {
+      "name": {"en": "The Tumbling Cup", "id": "Kedai Cangkir Jungkir"},
+      "ref": {"en": "the Tumbling Cup", "id": "Kedai Cangkir Jungkir"},
+      "in": {"en": "at the Tumbling Cup", "id": "di Kedai Cangkir Jungkir"},
+      "aliases": {
+        "en": ["tumbling cup", "cafe", "bazaar cafe"],
+        "id": ["kedai", "cangkir jungkir", "kedai cangkir jungkir"]
+      },
+      "area": "bazaar",
+      "at": [1, 1],
+      "ambience": "cantina",
+      "exits": {"w": "bazaar_main"},
+      "desc": {
+        "en": "A cafe whose tables are bolted to the floor because the whole asteroid wobbles. Traders swap rumours about prices over cups of ginger tea.",
+        "id": "Kedai yang mejanya dibaut ke lantai karena seluruh asteroid bergoyang. Para pedagang bertukar kabar burung soal harga sambil minum teh jahe."
+      },
+      "floor": "wood",
+      "acoustics": "small",
+      "objects": {
+        "tea": {
+          "names": {"en": ["tea", "ginger tea", "tables"], "id": ["teh", "teh jahe", "meja"]},
+          "desc": {
+            "en": "Ginger tea in cups with weighted bottoms, so they don't wander off.",
+            "id": "Teh jahe dalam cangkir berpantat berat, supaya tidak berjalan-jalan sendiri."
+          }
+        }
+      }
+    },
+    "bazaar_lookout": {
+      "name": {"en": "Lookout", "id": "Anjungan Pandang"},
+      "ref": {"en": "the Bazaar's lookout", "id": "anjungan pandang Pasar Apung"},
+      "in": {"en": "at the Bazaar's lookout", "id": "di anjungan pandang Pasar Apung"},
+      "aliases": {"en": ["lookout", "bazaar lookout"], "id": ["anjungan pandang", "anjungan"]},
+      "area": "bazaar",
+      "at": [0, 2],
+      "ambience": "space",
+      "exits": {"s": "bazaar_main"},
+      "desc": {
+        "en": "A bubble of thick glass on the asteroid's skin. The stars wheel past as the rock tumbles, and sometimes a trader's ship slides by close enough to wave at.",
+        "id": "Gelembung kaca tebal di kulit asteroid. Bintang-bintang berputar melintas seiring batu itu jungkir balik, dan kadang kapal seorang pedagang lewat cukup dekat untuk dilambai."
+      },
+      "acoustics": "small",
+      "objects": {
+        "stars": {
+          "names": {"en": ["stars", "glass"], "id": ["bintang", "kaca"]},
+          "desc": {
+            "en": "The stars wheel round once every few minutes as the asteroid tumbles.",
+            "id": "Bintang-bintang berputar sekali setiap beberapa menit seiring asteroid berjungkir."
+          }
+        }
+      }
+    },
+    "grove_pier": {
+      "name": {"en": "Sky Pier", "id": "Dermaga Langit"},
+      "ref": {"en": "Evergrove's Sky Pier", "id": "Dermaga Langit Rimba Abadi"},
+      "in": {"en": "on Evergrove's Sky Pier", "id": "di Dermaga Langit Rimba Abadi"},
+      "aliases": {
+        "en": ["evergrove", "fantasy world", "sky pier", "the realm"],
+        "id": ["rimba abadi", "dunia fantasi", "dermaga langit", "negeri dongeng"]
+      },
+      "area": "evergrove",
+      "at": [0, 0],
+      "ambience": "forest",
+      "exits": {"n": "grove_village"},
+      "desc": {
+        "en": "A wooden pier that juts out over nothing at all, where ships of the simulation tie up beside sailing boats with cloth wings. Beyond it lies Evergrove, a world of old forests and older stories. The Gate here is a circle of standing stones humming with light.",
+        "id": "Dermaga kayu yang menjorok ke kehampaan, tempat kapal-kapal simulasi bertambat di samping perahu layar bersayap kain. Di baliknya terbentang Rimba Abadi, dunia hutan-hutan tua dan dongeng-dongeng yang lebih tua lagi. Gerbang di sini berupa lingkaran batu tegak yang bersenandung penuh cahaya."
+      },
+      "floor": "wood",
+      "acoustics": "open",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "Small creatures live in Evergrove's woods: type face and a creature's name to test your wits against it. Nobody gets hurt.",
+          "id": "Makhluk-makhluk kecil tinggal di hutan Rimba Abadi: ketik hadapi dan nama makhluknya untuk mengadu akal dengannya. Tak ada yang terluka."
+        }
+      },
+      "objects": {
+        "stones": {
+          "names": {"en": ["stones", "standing stones", "boats"], "id": ["batu", "batu tegak", "perahu"]},
+          "desc": {
+            "en": "The standing stones hum when the Gate opens; the boats' cloth wings flap lazily.",
+            "id": "Batu-batu tegak bersenandung saat Gerbang terbuka; sayap kain perahu-perahu mengepak malas."
+          }
+        }
+      }
+    },
+    "grove_village": {
+      "name": {"en": "Mossbrook Village", "id": "Desa Kali Lumut"},
+      "ref": {"en": "Mossbrook Village", "id": "Desa Kali Lumut"},
+      "in": {"en": "in Mossbrook Village", "id": "di Desa Kali Lumut"},
+      "aliases": {"en": ["mossbrook", "village", "mossbrook village"], "id": ["desa", "kali lumut", "desa kali lumut"]},
+      "area": "evergrove",
+      "at": [0, 1],
+      "ambience": "forest",
+      "exits": {"s": "grove_pier", "w": "grove_wood", "e": "grove_hollow", "n": "grove_castle"},
+      "desc": {
+        "en": "Cottages with turf roofs gather around a well, and a market cart sells moonpetals by the basket. The villagers pay good coin for spices and coffee, which they call sailors' magic. The woods are west, a mushroom hollow east, and the castle north.",
+        "id": "Pondok-pondok beratap rumput berkumpul mengelilingi sebuah sumur, dan gerobak pasar menjual kelopak rembulan per keranjang. Penduduk desa membayar mahal untuk rempah dan kopi, yang mereka sebut sihir pelaut. Hutan di barat, lembah jamur di timur, dan kastel di utara."
+      },
+      "floor": "grass",
+      "acoustics": "open",
+      "market": {"buys": ["trade", "crop", "ore"], "sells": ["trade", "crop", "ore"]},
+      "objects": {
+        "well": {
+          "names": {"en": ["well", "cart", "cottages"], "id": ["sumur", "gerobak", "pondok"]},
+          "desc": {
+            "en": "The well is wishing-well deep. The market cart sells moonpetals: type prices.",
+            "id": "Sumur itu sedalam sumur harapan. Gerobak pasar menjual kelopak rembulan: ketik harga."
+          }
+        }
+      }
+    },
+    "grove_wood": {
+      "name": {"en": "Whispering Wood", "id": "Hutan Berbisik"},
+      "ref": {"en": "the Whispering Wood", "id": "Hutan Berbisik"},
+      "in": {"en": "in the Whispering Wood", "id": "di Hutan Berbisik"},
+      "aliases": {"en": ["whispering wood", "wood", "forest"], "id": ["hutan berbisik", "hutan"]},
+      "area": "evergrove",
+      "at": [-1, 1],
+      "ambience": "forest",
+      "exits": {"e": "grove_village", "w": "grove_deep"},
+      "desc": {
+        "en": "Tall trees lean together and murmur in a wind you cannot feel. Moss sprites, no bigger than a thumb, dart between the ferns and giggle at travellers.",
+        "id": "Pohon-pohon tinggi saling bersandar dan bergumam dalam angin yang tak bisa kamu rasakan. Peri lumut, tak lebih besar dari ibu jari, melesat di antara pakis dan terkikik pada para pengembara."
+      },
+      "floor": "grass",
+      "acoustics": "open",
+      "creatures": ["moss_sprite"],
+      "objects": {
+        "sprites": {
+          "names": {"en": ["ferns", "trees"], "id": ["pakis", "pohon"]},
+          "desc": {
+            "en": "Tall murmuring trees. Moss sprites hide in the ferns: face moss sprite.",
+            "id": "Pohon-pohon tinggi yang bergumam. Peri lumut bersembunyi di pakis: hadapi peri lumut."
+          }
+        }
+      }
+    },
+    "grove_deep": {
+      "name": {"en": "Deep Wood", "id": "Hutan Dalam"},
+      "ref": {"en": "the Deep Wood", "id": "Hutan Dalam"},
+      "in": {"en": "in the Deep Wood", "id": "di Hutan Dalam"},
+      "aliases": {"en": ["deep wood", "dark wood"], "id": ["hutan dalam", "hutan gelap"]},
+      "area": "evergrove",
+      "at": [-2, 1],
+      "ambience": "forest",
+      "exits": {"e": "grove_wood"},
+      "desc": {
+        "en": "So dark under the canopy that the only light comes from beetles glowing like embers. Something large and furry snores in a thicket.",
+        "id": "Begitu gelap di bawah kanopi sampai satu-satunya cahaya datang dari kumbang yang berpendar seperti bara. Sesuatu yang besar dan berbulu mendengkur di semak belukar."
+      },
+      "floor": "grass",
+      "acoustics": "open",
+      "dark": true,
+      "creatures": ["ember_beetle", "bramble_bear"],
+      "objects": {
+        "thicket": {
+          "names": {"en": ["thicket", "canopy"], "id": ["semak", "semak belukar", "kanopi"]},
+          "desc": {
+            "en": "Something big snores in the thicket. Ember beetles glow on the branches.",
+            "id": "Sesuatu yang besar mendengkur di semak belukar. Kumbang bara berpendar di dahan-dahan."
+          }
+        }
+      }
+    },
+    "grove_hollow": {
+      "name": {"en": "Mushroom Hollow", "id": "Lembah Jamur"},
+      "ref": {"en": "the Mushroom Hollow", "id": "Lembah Jamur"},
+      "in": {"en": "in the Mushroom Hollow", "id": "di Lembah Jamur"},
+      "aliases": {"en": ["mushroom hollow", "hollow", "mushrooms"], "id": ["lembah jamur", "lembah", "jamur"]},
+      "area": "evergrove",
+      "at": [1, 1],
+      "ambience": "forest",
+      "exits": {"w": "grove_village"},
+      "desc": {
+        "en": "A dell of giant mushrooms, red with white spots, some big enough to shelter under. Puffcap imps bounce on the caps and challenge anyone who passes to a riddle.",
+        "id": "Lembah kecil penuh jamur raksasa, merah berbintik putih, sebagian cukup besar untuk berteduh. Jin topi-jamur melompat-lompat di atas tudungnya dan menantang siapa saja yang lewat dengan teka-teki."
+      },
+      "floor": "grass",
+      "acoustics": "open",
+      "creatures": ["puffcap_imp"],
+      "objects": {
+        "caps": {
+          "names": {
+            "en": ["caps", "mushroom caps", "giant mushrooms"],
+            "id": ["tudung", "tudung jamur", "jamur raksasa"]
+          },
+          "desc": {
+            "en": "Mushroom caps as big as umbrellas; the imps bounce on them like drums.",
+            "id": "Tudung jamur sebesar payung; para jin melompat di atasnya seperti genderang."
+          }
+        }
+      }
+    },
+    "grove_castle": {
+      "name": {"en": "Castle Gate", "id": "Gerbang Kastel"},
+      "ref": {"en": "the Castle Gate", "id": "Gerbang Kastel"},
+      "in": {"en": "at the Castle Gate", "id": "di Gerbang Kastel"},
+      "aliases": {"en": ["castle", "castle gate", "drawbridge"], "id": ["kastel", "gerbang kastel", "istana"]},
+      "area": "evergrove",
+      "at": [0, 2],
+      "ambience": "forest",
+      "exits": {"s": "grove_village", "n": "grove_hall"},
+      "desc": {
+        "en": "A drawbridge over a moat of lilies, guarded by a stone knight who bows to everyone. The castle's banners show a silver acorn on green.",
+        "id": "Jembatan angkat di atas parit penuh teratai, dijaga seorang ksatria batu yang membungkuk kepada semua orang. Panji-panji kastel bergambar biji ek perak di atas hijau."
+      },
+      "floor": "stone",
+      "acoustics": "open",
+      "objects": {
+        "knight": {
+          "names": {"en": ["knight", "stone knight", "banners"], "id": ["ksatria", "ksatria batu", "panji"]},
+          "desc": {
+            "en": "The stone knight bows with a grinding noise, and says good day in both languages.",
+            "id": "Ksatria batu membungkuk dengan bunyi berderit, dan mengucapkan selamat siang dalam dua bahasa."
+          }
+        }
+      }
+    },
+    "grove_hall": {
+      "name": {"en": "Great Hall", "id": "Balairung"},
+      "ref": {"en": "the castle's Great Hall", "id": "Balairung kastel"},
+      "in": {"en": "in the castle's Great Hall", "id": "di Balairung kastel"},
+      "aliases": {"en": ["great hall", "castle hall", "hall"], "id": ["balairung", "aula kastel"]},
+      "area": "evergrove",
+      "at": [0, 3],
+      "ambience": "venue",
+      "exits": {"s": "grove_castle", "u": {"to": "grove_tower", "via": "ladder"}},
+      "desc": {
+        "en": "Long tables, a fire big enough to roast a cart, and tapestries of dragons that turn out, on closer look, to be very large lizards having a nap. A spiral stair climbs to the tower.",
+        "id": "Meja-meja panjang, perapian cukup besar untuk memanggang sebuah gerobak, dan permadani bergambar naga yang, kalau dilihat lebih dekat, ternyata kadal besar yang sedang tidur siang. Tangga melingkar naik ke menara."
+      },
+      "floor": "stone",
+      "acoustics": "hall",
+      "objects": {
+        "tapestries": {
+          "names": {"en": ["tapestries", "fire", "tables"], "id": ["permadani", "perapian", "meja"]},
+          "desc": {
+            "en": "Dragons, or large napping lizards; opinions differ.",
+            "id": "Naga, atau kadal besar yang sedang tidur siang; pendapat orang berbeda-beda."
+          }
+        }
+      }
+    },
+    "grove_tower": {
+      "name": {"en": "Star Tower", "id": "Menara Bintang"},
+      "ref": {"en": "the Star Tower", "id": "Menara Bintang"},
+      "in": {"en": "at the top of the Star Tower", "id": "di puncak Menara Bintang"},
+      "aliases": {"en": ["tower", "star tower"], "id": ["menara", "menara bintang"]},
+      "area": "evergrove",
+      "at": [0, 3, 1],
+      "ambience": "forest",
+      "exits": {"d": {"to": "grove_hall", "via": "ladder"}},
+      "desc": {
+        "en": "The tower's top is open to the sky, where the simulation's stars are painted a little too bright. From here the whole of Evergrove spreads out like a quilt.",
+        "id": "Puncak menara terbuka ke langit, tempat bintang-bintang simulasi dilukis sedikit terlalu terang. Dari sini seluruh Rimba Abadi terhampar seperti selimut tambal-sulam."
+      },
+      "floor": "stone",
+      "acoustics": "open",
+      "objects": {
+        "stars": {
+          "names": {"en": ["stars", "sky"], "id": ["bintang", "langit"]},
+          "desc": {
+            "en": "Look closely and a few stars blink in a pattern, as if someone is signalling.",
+            "id": "Kalau diperhatikan, beberapa bintang berkedip berpola, seolah seseorang sedang memberi isyarat."
+          }
+        }
+      }
+    },
+    "lumina_port": {
+      "name": {"en": "Lumina Skyport", "id": "Bandar Langit Lumina"},
+      "ref": {"en": "Lumina Skyport", "id": "Bandar Langit Lumina"},
+      "in": {"en": "at Lumina Skyport", "id": "di Bandar Langit Lumina"},
+      "aliases": {
+        "en": ["lumina", "lumina city", "neon city", "skyport", "the city"],
+        "id": ["lumina", "kota lumina", "kota neon", "bandar langit"]
+      },
+      "area": "lumina",
+      "at": [0, 0],
+      "ambience": "neon",
+      "exits": {"n": "lumina_boulevard"},
+      "desc": {
+        "en": "A landing deck on top of a skyscraper, slick with rain that never stops. Below, Lumina City glows in every colour a sign can be. City police drones hover by the arrivals gate and scan the odd traveller; the Gate's ring here is pink neon.",
+        "id": "Dek pendaratan di puncak gedung pencakar langit, licin oleh hujan yang tak pernah berhenti. Di bawah, Kota Lumina menyala dalam segala warna yang bisa dimiliki papan reklame. Drone polisi kota melayang di gerbang kedatangan dan memindai sesekali pelancong; cincin Gerbang di sini berupa neon merah muda."
+      },
+      "floor": "wet",
+      "acoustics": "open",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "hints": {
+        "all": {
+          "en": "The Courier Hub hires anyone: type gig there. The Night Market pays dear for what the Drift Bazaar sells in its back alley.",
+          "id": "Pangkalan Kurir mempekerjakan siapa saja: ketik gig di sana. Pasar Malam membayar mahal untuk barang yang dijual gang belakang Pasar Apung."
+        }
+      },
+      "objects": {
+        "drones": {
+          "names": {"en": ["drones", "police drones"], "id": ["drone", "drone polisi"]},
+          "desc": {
+            "en": "City drones with polite voices and very good scanners.",
+            "id": "Drone kota dengan suara sopan dan pemindai yang sangat bagus."
+          }
+        }
+      }
+    },
+    "lumina_boulevard": {
+      "name": {"en": "Neon Boulevard", "id": "Jalan Neon"},
+      "ref": {"en": "Neon Boulevard", "id": "Jalan Neon"},
+      "in": {"en": "on Neon Boulevard", "id": "di Jalan Neon"},
+      "aliases": {"en": ["boulevard", "neon boulevard", "street"], "id": ["jalan neon", "jalan raya", "boulevard"]},
+      "area": "lumina",
+      "at": [0, 1],
+      "ambience": "neon",
+      "exits": {"s": "lumina_port", "w": "lumina_market", "e": "lumina_couriers", "n": "lumina_plaza"},
+      "desc": {
+        "en": "A wide street under a canopy of holograms: noodle stalls, hovercabs, a giant koi fish made of light swimming between the towers. The Night Market is west, the Courier Hub east, the Hologram Plaza north.",
+        "id": "Jalan lebar di bawah atap hologram: kios mi, taksi layang, seekor ikan koi raksasa dari cahaya berenang di antara menara-menara. Pasar Malam di barat, Pangkalan Kurir di timur, Plaza Hologram di utara."
+      },
+      "floor": "wet",
+      "acoustics": "open",
+      "objects": {
+        "koi": {
+          "names": {"en": ["koi", "fish", "holograms"], "id": ["koi", "ikan", "hologram"]},
+          "desc": {
+            "en": "A koi of light, as long as a ferry, swimming slowly between the towers.",
+            "id": "Seekor koi dari cahaya, sepanjang feri, berenang pelan di antara menara."
+          }
+        }
+      }
+    },
+    "lumina_market": {
+      "name": {"en": "Night Market", "id": "Pasar Malam"},
+      "ref": {"en": "the Night Market", "id": "Pasar Malam"},
+      "in": {"en": "at the Night Market", "id": "di Pasar Malam"},
+      "aliases": {"en": ["night market", "lumina market", "market"], "id": ["pasar malam", "pasar lumina"]},
+      "area": "lumina",
+      "at": [-1, 1],
+      "ambience": "neon",
+      "exits": {"e": "lumina_boulevard", "s": "lumina_alley"},
+      "desc": {
+        "en": "Stalls under tarps sell circuit boards by the kilo and chips cheaper than anywhere in the system. Some sellers lower their voices and ask whether you've come from the Drift Bazaar.",
+        "id": "Kios-kios di bawah terpal menjual papan sirkuit per kilo dan chip yang lebih murah daripada di mana pun di tata surya. Beberapa penjual merendahkan suara dan bertanya apakah kamu datang dari Pasar Apung."
+      },
+      "floor": "wet",
+      "market": {
+        "buys": ["trade", "crop", "ore", "salvage", "contraband"],
+        "sells": ["trade", "crop", "ore", "salvage"]
+      },
+      "objects": {
+        "tarps": {
+          "names": {"en": ["tarps", "stalls", "sellers"], "id": ["terpal", "kios", "penjual"]},
+          "desc": {
+            "en": "Circuit boards by the kilo, chips by the handful. Type prices.",
+            "id": "Papan sirkuit per kilo, chip per genggam. Ketik harga."
+          }
+        }
+      }
+    },
+    "lumina_alley": {
+      "name": {"en": "Rain Alley", "id": "Gang Hujan"},
+      "ref": {"en": "Rain Alley", "id": "Gang Hujan"},
+      "in": {"en": "in Rain Alley", "id": "di Gang Hujan"},
+      "aliases": {"en": ["rain alley", "alley"], "id": ["gang hujan", "gang"]},
+      "area": "lumina",
+      "at": [-1, 0],
+      "ambience": "neon",
+      "exits": {"n": "lumina_market"},
+      "desc": {
+        "en": "Water drips from a hundred air conditioners into puddles that reflect the signs upside down. A cat made of hologram static watches you from a fire escape.",
+        "id": "Air menetes dari seratus pendingin ruangan ke genangan yang memantulkan papan reklame terbalik. Seekor kucing dari bintik-bintik hologram mengawasimu dari tangga darurat."
+      },
+      "floor": "wet",
+      "acoustics": "small",
+      "objects": {
+        "cat": {
+          "names": {"en": ["cat", "hologram cat", "puddles"], "id": ["kucing", "kucing hologram", "genangan"]},
+          "desc": {
+            "en": "The hologram cat flickers, yawns, and ignores you completely.",
+            "id": "Kucing hologram itu berkedip, menguap, lalu sama sekali tak menghiraukanmu."
+          }
+        }
+      }
+    },
+    "lumina_couriers": {
+      "name": {"en": "Courier Hub", "id": "Pangkalan Kurir"},
+      "ref": {"en": "the Courier Hub", "id": "Pangkalan Kurir"},
+      "in": {"en": "at the Courier Hub", "id": "di Pangkalan Kurir"},
+      "aliases": {"en": ["courier hub", "couriers", "dispatch"], "id": ["pangkalan kurir", "kurir"]},
+      "area": "lumina",
+      "at": [1, 1],
+      "ambience": "neon",
+      "exits": {"w": "lumina_boulevard", "e": "lumina_track"},
+      "desc": {
+        "en": "A garage full of parcels and scooters, run by a dispatcher who talks to six people at once. There is always something that needs to be somewhere else in a hurry.",
+        "id": "Garasi penuh paket dan skuter, dikelola seorang pengatur yang bicara dengan enam orang sekaligus. Selalu ada sesuatu yang harus diantar ke tempat lain dengan terburu-buru."
+      },
+      "floor": "metal",
+      "acoustics": "hangar",
+      "gigs": true,
+      "hints": {
+        "all": {
+          "en": "Type gig for a delivery: carry the parcel to the room it names before the time runs out.",
+          "id": "Ketik gig untuk sebuah antaran: bawa paketnya ke ruangan yang disebut sebelum waktunya habis."
+        }
+      },
+      "objects": {
+        "parcels": {
+          "names": {"en": ["parcels", "scooters", "dispatcher"], "id": ["paket", "skuter", "pengatur"]},
+          "desc": {
+            "en": "Stacks of parcels, each with a glowing address. Type gig to take one.",
+            "id": "Tumpukan paket, masing-masing dengan alamat yang menyala. Ketik gig untuk mengambil satu."
+          }
+        }
+      }
+    },
+    "lumina_track": {
+      "name": {"en": "Racing Track", "id": "Sirkuit Balap"},
+      "ref": {"en": "the Racing Track", "id": "Sirkuit Balap"},
+      "in": {"en": "at the Racing Track", "id": "di Sirkuit Balap"},
+      "aliases": {
+        "en": ["racing track", "track", "race track", "circuit"],
+        "id": ["sirkuit", "sirkuit balap", "lintasan balap"]
+      },
+      "area": "lumina",
+      "at": [2, 1],
+      "ambience": "neon",
+      "exits": {"w": "lumina_couriers"},
+      "desc": {
+        "en": "A glowing ribbon of track loops between the towers, and hover bikes scream round it in streaks of light. The grandstand smells of rain and hot metal.",
+        "id": "Pita lintasan yang bercahaya melingkar di antara menara-menara, dan motor layang meraung mengitarinya dalam garis-garis cahaya. Tribunnya berbau hujan dan logam panas."
+      },
+      "floor": "metal",
+      "acoustics": "open",
+      "objects": {
+        "bikes": {
+          "names": {"en": ["bikes", "hover bikes", "grandstand"], "id": ["motor", "motor layang", "tribun"]},
+          "desc": {
+            "en": "Hover bikes scream past in streaks of light. The races are coming soon.",
+            "id": "Motor layang meraung lewat dalam garis-garis cahaya. Balapannya segera hadir."
+          }
+        }
+      }
+    },
+    "lumina_plaza": {
+      "name": {"en": "Hologram Plaza", "id": "Plaza Hologram"},
+      "ref": {"en": "the Hologram Plaza", "id": "Plaza Hologram"},
+      "in": {"en": "in the Hologram Plaza", "id": "di Plaza Hologram"},
+      "aliases": {"en": ["plaza", "hologram plaza"], "id": ["plaza", "plaza hologram"]},
+      "area": "lumina",
+      "at": [0, 2],
+      "ambience": "neon",
+      "exits": {"s": "lumina_boulevard", "u": {"to": "lumina_skybar", "via": "lift"}, "e": "lumina_tower"},
+      "desc": {
+        "en": "A square where giant holograms of dancers loop above the crowd. A lift climbs to the Sky Bar, and an apartment tower's lobby opens to the east.",
+        "id": "Alun-alun tempat hologram penari raksasa berulang-ulang di atas keramaian. Sebuah lift naik ke Bar Langit, dan lobi menara apartemen terbuka di timur."
+      },
+      "floor": "stone",
+      "acoustics": "open",
+      "objects": {
+        "dancers": {
+          "names": {"en": ["dancers", "holograms"], "id": ["penari", "hologram"]},
+          "desc": {
+            "en": "Giant hologram dancers, looping the same eight steps forever.",
+            "id": "Penari hologram raksasa, mengulang delapan langkah yang sama selamanya."
+          }
+        }
+      }
+    },
+    "lumina_skybar": {
+      "name": {"en": "Sky Bar", "id": "Bar Langit"},
+      "ref": {"en": "the Sky Bar", "id": "Bar Langit"},
+      "in": {"en": "at the Sky Bar", "id": "di Bar Langit"},
+      "aliases": {"en": ["sky bar", "skybar", "bar"], "id": ["bar langit", "bar"]},
+      "area": "lumina",
+      "at": [0, 2, 1],
+      "ambience": "cantina",
+      "exits": {"d": {"to": "lumina_plaza", "via": "lift"}},
+      "desc": {
+        "en": "A glass bar at the top of the tallest tower, where the rain falls past the windows instead of on you. The city spreads below like spilled jewellery.",
+        "id": "Bar kaca di puncak menara tertinggi, tempat hujan jatuh melewati jendela alih-alih menimpamu. Kota terhampar di bawah seperti perhiasan yang tumpah."
+      },
+      "floor": "carpet",
+      "acoustics": "room",
+      "objects": {
+        "view": {
+          "names": {"en": ["view", "city", "windows"], "id": ["pemandangan", "kota", "jendela"]},
+          "desc": {
+            "en": "The whole city, glittering, and the rain sliding down the glass.",
+            "id": "Seluruh kota, berkilauan, dan hujan meluncur di kaca."
+          }
+        }
+      }
+    },
+    "lumina_tower": {
+      "name": {"en": "Tower Lobby", "id": "Lobi Menara"},
+      "ref": {"en": "the apartment tower's lobby", "id": "lobi menara apartemen"},
+      "in": {"en": "in the apartment tower's lobby", "id": "di lobi menara apartemen"},
+      "aliases": {"en": ["tower lobby", "lobby", "apartment tower"], "id": ["lobi menara", "lobi", "menara apartemen"]},
+      "area": "lumina",
+      "at": [1, 2],
+      "ambience": "neon",
+      "exits": {"w": "lumina_plaza"},
+      "desc": {
+        "en": "A marble lobby with a doorman robot who remembers everyone's birthday, and a wall of letterboxes that the couriers keep busy.",
+        "id": "Lobi marmer dengan robot penjaga pintu yang ingat hari ulang tahun semua orang, dan dinding kotak surat yang terus disibukkan para kurir."
+      },
+      "floor": "stone",
+      "acoustics": "hall",
+      "objects": {
+        "doorman": {
+          "names": {"en": ["doorman", "robot", "letterboxes"], "id": ["penjaga pintu", "robot", "kotak surat"]},
+          "desc": {
+            "en": "The doorman robot wishes you a happy birthday, just in case.",
+            "id": "Robot penjaga pintu mengucapkan selamat ulang tahun padamu, siapa tahu."
+          }
+        }
+      }
+    },
+    "pixel_port": {
+      "name": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
+      "ref": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
+      "in": {"en": "on Pixel Pier", "id": "di Dermaga Piksel"},
+      "aliases": {
+        "en": ["pixel pier", "arcade world", "the arcade", "pier"],
+        "id": ["dermaga piksel", "dunia arkade", "arkade"]
+      },
+      "area": "pixel",
+      "at": [0, 0],
+      "ambience": "arcade",
+      "exits": {"n": "pixel_hall"},
+      "desc": {
+        "en": "A boardwalk made of big square pixels that chime softly when you step on them, stretching over a sea of scrolling stars. A blocky Gate ring blinks by the ferry berth.",
+        "id": "Titian dari piksel-piksel persegi besar yang berdenting pelan saat diinjak, membentang di atas lautan bintang yang bergulir. Cincin Gerbang yang kotak-kotak berkedip di dekat tambatan feri."
+      },
+      "floor": "wood",
+      "acoustics": "open",
+      "landmark": true,
+      "port": true,
+      "ferry": true,
+      "gate": true,
+      "objects": {
+        "pixels": {
+          "names": {"en": ["pixels", "boardwalk"], "id": ["piksel", "titian"]},
+          "desc": {
+            "en": "Each pixel chimes a different note; walking plays a tune.",
+            "id": "Setiap piksel berdenting nada berbeda; berjalan memainkan sebuah lagu."
+          }
+        }
+      }
+    },
+    "pixel_hall": {
+      "name": {"en": "Grand Arcade Hall", "id": "Aula Arkade Raya"},
+      "ref": {"en": "the Grand Arcade Hall", "id": "Aula Arkade Raya"},
+      "in": {"en": "in the Grand Arcade Hall", "id": "di Aula Arkade Raya"},
+      "aliases": {"en": ["arcade hall", "grand arcade hall", "hall"], "id": ["aula arkade", "aula arkade raya"]},
+      "area": "pixel",
+      "at": [0, 1],
+      "ambience": "arcade",
+      "exits": {"s": "pixel_port", "w": "pixel_cabinets", "e": "pixel_prizes", "n": "pixel_stage"},
+      "desc": {
+        "en": "A hall of flashing cabinets, carpet printed with little planets, and the endless music of a hundred games at once. Cabinet Row is west, the prize counter east, the tournament stage north.",
+        "id": "Aula penuh mesin permainan yang berkedip-kedip, karpet bermotif planet kecil, dan musik tanpa henti dari seratus permainan sekaligus. Lorong Mesin di barat, loket hadiah di timur, panggung turnamen di utara."
+      },
+      "floor": "carpet",
+      "acoustics": "hall",
+      "objects": {
+        "cabinets": {
+          "names": {"en": ["cabinets", "music", "carpet"], "id": ["mesin", "musik", "karpet"]},
+          "desc": {
+            "en": "A hundred games, all playing their music at once.",
+            "id": "Seratus permainan, semuanya memainkan musiknya sekaligus."
+          }
+        }
+      }
+    },
+    "pixel_cabinets": {
+      "name": {"en": "Cabinet Row", "id": "Lorong Mesin"},
+      "ref": {"en": "Cabinet Row", "id": "Lorong Mesin"},
+      "in": {"en": "on Cabinet Row", "id": "di Lorong Mesin"},
+      "aliases": {"en": ["cabinet row", "cabinets", "games"], "id": ["lorong mesin", "mesin"]},
+      "area": "pixel",
+      "at": [-1, 1],
+      "ambience": "arcade",
+      "exits": {"e": "pixel_hall"},
+      "desc": {
+        "en": "A long row of game cabinets under dust sheets, with a sign: new games being installed, come back soon. One cabinet has been left uncovered and plays a little tune to itself.",
+        "id": "Deretan panjang mesin permainan di bawah kain penutup, dengan papan: permainan baru sedang dipasang, datanglah lagi nanti. Satu mesin dibiarkan terbuka dan memainkan lagu kecil untuk dirinya sendiri."
+      },
+      "floor": "carpet",
+      "acoustics": "room",
+      "objects": {
+        "cabinet": {
+          "names": {"en": ["cabinet", "dust sheets", "sign"], "id": ["mesin", "kain penutup", "papan"]},
+          "desc": {
+            "en": "The uncovered cabinet hums a tune and shows the words: coming soon.",
+            "id": "Mesin yang terbuka itu menyenandungkan lagu dan menampilkan tulisan: segera hadir."
+          }
+        }
+      }
+    },
+    "pixel_prizes": {
+      "name": {"en": "Prize Counter", "id": "Loket Hadiah"},
+      "ref": {"en": "the Prize Counter", "id": "Loket Hadiah"},
+      "in": {"en": "at the Prize Counter", "id": "di Loket Hadiah"},
+      "aliases": {"en": ["prize counter", "prizes"], "id": ["loket hadiah", "hadiah"]},
+      "area": "pixel",
+      "at": [1, 1],
+      "ambience": "arcade",
+      "exits": {"w": "pixel_hall"},
+      "desc": {
+        "en": "Shelves of plush comets, glow-in-the-dark rings and a single enormous robot that nobody has ever won. The counter is closed until the new games are ready.",
+        "id": "Rak-rak berisi boneka komet, cincin berpendar dalam gelap, dan satu robot raksasa yang belum pernah dimenangkan siapa pun. Loketnya tutup sampai permainan barunya siap."
+      },
+      "floor": "carpet",
+      "acoustics": "small",
+      "objects": {
+        "robot": {
+          "names": {"en": ["robot", "prizes", "shelves"], "id": ["robot", "hadiah", "rak"]},
+          "desc": {
+            "en": "The enormous robot prize waves at you. Nobody has ever won it.",
+            "id": "Robot hadiah raksasa itu melambai padamu. Belum pernah ada yang memenangkannya."
+          }
+        }
+      }
+    },
+    "pixel_stage": {
+      "name": {"en": "Tournament Stage", "id": "Panggung Turnamen"},
+      "ref": {"en": "the Tournament Stage", "id": "Panggung Turnamen"},
+      "in": {"en": "on the Tournament Stage", "id": "di Panggung Turnamen"},
+      "aliases": {"en": ["tournament stage", "stage"], "id": ["panggung turnamen", "panggung"]},
+      "area": "pixel",
+      "at": [0, 2],
+      "ambience": "arcade",
+      "exits": {"s": "pixel_hall", "e": "pixel_scores"},
+      "desc": {
+        "en": "A stage under spotlights with two big chairs facing a giant screen, waiting for the next tournament. The high score wall glows to the east.",
+        "id": "Panggung di bawah lampu sorot dengan dua kursi besar menghadap layar raksasa, menunggu turnamen berikutnya. Dinding skor tertinggi bersinar di timur."
+      },
+      "floor": "wood",
+      "acoustics": "hall",
+      "objects": {
+        "screen": {
+          "names": {"en": ["screen", "chairs", "spotlights"], "id": ["layar", "kursi", "lampu sorot"]},
+          "desc": {
+            "en": "The giant screen shows a countdown that never seems to reach zero.",
+            "id": "Layar raksasa menampilkan hitung mundur yang tampaknya tak pernah sampai nol."
+          }
+        }
+      }
+    },
+    "pixel_scores": {
+      "name": {"en": "High Score Wall", "id": "Dinding Skor Tertinggi"},
+      "ref": {"en": "the High Score Wall", "id": "Dinding Skor Tertinggi"},
+      "in": {"en": "at the High Score Wall", "id": "di Dinding Skor Tertinggi"},
+      "aliases": {"en": ["high score wall", "high scores", "scores"], "id": ["dinding skor", "skor tertinggi"]},
+      "area": "pixel",
+      "at": [1, 2],
+      "ambience": "arcade",
+      "exits": {"w": "pixel_stage"},
+      "desc": {
+        "en": "A wall of glowing initials and numbers, every one of them a boast. The top lines are still empty.",
+        "id": "Dinding berisi inisial dan angka yang bercahaya, masing-masing sebuah kebanggaan. Baris-baris teratas masih kosong."
+      },
+      "floor": "carpet",
+      "acoustics": "room",
+      "objects": {
+        "wall": {
+          "names": {"en": ["wall", "initials", "scores"], "id": ["dinding", "inisial", "skor"]},
+          "desc": {
+            "en": "Empty lines at the top, waiting for someone's initials.",
+            "id": "Baris-baris kosong di atas, menunggu inisial seseorang."
+          }
+        }
+      }
+    },
+    "ferry": {
+      "name": {"en": "The Ferry Starling", "id": "Feri Jalak"},
+      "ref": {"en": "the ferry Starling", "id": "feri Jalak"},
+      "in": {"en": "aboard the ferry Starling", "id": "di atas feri Jalak"},
+      "aliases": {"en": [], "id": []},
+      "area": "transit",
+      "at": [0, 0],
+      "ambience": "engine",
+      "exits": {},
+      "desc": {
+        "en": "A long cabin of worn blue seats, a vending machine that only sells ginger sweets, and a window where the stars crawl past. The ferry is slow, but it gets everyone there in the end.",
+        "id": "Kabin panjang berkursi biru yang sudah usang, mesin penjual yang hanya menjual permen jahe, dan jendela tempat bintang-bintang merayap lewat. Ferinya lambat, tapi akhirnya semua orang sampai juga."
+      },
+      "acoustics": "room",
+      "hidden": true,
+      "ferry_cabin": true
+    },
+    "ship": {
+      "name": {"en": "Your ship", "id": "Kapalmu"},
+      "ref": {"en": "the ship", "id": "kapal"},
+      "in": {"en": "aboard the ship", "id": "di atas kapal"},
+      "aliases": {"en": [], "id": []},
+      "area": "transit",
+      "at": [0, 0],
+      "ambience": "engine",
+      "exits": {},
+      "desc": {
+        "en": "A snug cabin with a cockpit at its nose: two seats, a panel of dials, and a window full of stars.",
+        "id": "Kabin mungil dengan kokpit di ujung depannya: dua kursi, sebaris panel pengukur, dan jendela penuh bintang."
+      },
+      "acoustics": "small",
+      "hidden": true,
+      "private": true,
+      "ship_cabin": true
     }
   },
   "jobs": {
@@ -2312,6 +4084,76 @@
       "base": 120,
       "volatility": 0.1,
       "kind": "salvage"
+    },
+    "helium3": {
+      "one": {"en": "canister of helium-3", "id": "tabung helium-3"},
+      "many": {"en": "canisters of helium-3", "id": "tabung helium-3"},
+      "names": {
+        "en": ["helium-3", "helium 3", "helium", "he3", "canister of helium-3", "canisters of helium-3"],
+        "id": ["helium-3", "helium 3", "helium", "tabung helium", "tabung helium-3"]
+      },
+      "base": 30,
+      "volatility": 0.08,
+      "kind": "ore"
+    },
+    "red_quinoa": {
+      "one": {"en": "sack of red quinoa", "id": "karung kinoa merah"},
+      "many": {"en": "sacks of red quinoa", "id": "karung kinoa merah"},
+      "names": {"en": ["red quinoa", "quinoa", "sack of red quinoa"], "id": ["kinoa merah", "kinoa", "karung kinoa"]},
+      "base": 10,
+      "volatility": 0.06,
+      "kind": "crop"
+    },
+    "rustsalt": {
+      "one": {"en": "jar of rust salt", "id": "toples garam karat"},
+      "many": {"en": "jars of rust salt", "id": "toples garam karat"},
+      "names": {"en": ["rust salt", "salt", "jar of rust salt"], "id": ["garam karat", "garam", "toples garam"]},
+      "base": 14,
+      "volatility": 0.06,
+      "kind": "ore"
+    },
+    "frostpearl": {
+      "one": {"en": "frost pearl", "id": "mutiara beku"},
+      "many": {"en": "frost pearls", "id": "mutiara beku"},
+      "names": {"en": ["frost pearl", "frost pearls", "pearl", "pearls"], "id": ["mutiara beku", "mutiara"]},
+      "base": 60,
+      "volatility": 0.1,
+      "kind": "ore"
+    },
+    "moonpetal": {
+      "one": {"en": "basket of moonpetals", "id": "keranjang kelopak rembulan"},
+      "many": {"en": "baskets of moonpetals", "id": "keranjang kelopak rembulan"},
+      "names": {
+        "en": ["moonpetal", "moonpetals", "moon petals", "basket of moonpetals"],
+        "id": ["kelopak rembulan", "kelopak", "keranjang kelopak"]
+      },
+      "base": 20,
+      "volatility": 0.06,
+      "kind": "crop"
+    },
+    "ember_crystal": {
+      "one": {"en": "ember crystal", "id": "kristal bara"},
+      "many": {"en": "ember crystals", "id": "kristal bara"},
+      "names": {"en": ["ember crystal", "ember crystals", "ember"], "id": ["kristal bara", "bara"]},
+      "base": 70,
+      "volatility": 0.1,
+      "kind": "ore"
+    },
+    "star_orchid": {
+      "one": {"en": "star orchid", "id": "anggrek bintang"},
+      "many": {"en": "star orchids", "id": "anggrek bintang"},
+      "names": {"en": ["star orchid", "star orchids", "orchid", "orchids"], "id": ["anggrek bintang", "anggrek"]},
+      "base": 80,
+      "volatility": 0.15,
+      "kind": "contraband"
+    },
+    "ghost_chip": {
+      "one": {"en": "ghost chip", "id": "chip hantu"},
+      "many": {"en": "ghost chips", "id": "chip hantu"},
+      "names": {"en": ["ghost chip", "ghost chips", "unregistered chip"], "id": ["chip hantu", "cip hantu"]},
+      "base": 110,
+      "volatility": 0.15,
+      "kind": "contraband"
     }
   },
   "items": {
@@ -2807,5 +4649,233 @@
         "night": {"en": "darkness, and sometimes an aurora dancing", "id": "kegelapan, dan kadang aurora yang menari"}
       }
     ]
+  },
+  "worlds": {
+    "station": {
+      "name": {"en": "the station", "id": "stasiun"},
+      "ref": {"en": "the station", "id": "stasiun"},
+      "in": {"en": "on the station", "id": "di stasiun"},
+      "about": {
+        "en": "the hub where everyone comes into the simulation",
+        "id": "pusat tempat semua orang masuk ke simulasi"
+      },
+      "aliases": {
+        "en": ["station", "the station", "orbit station", "hub", "home"],
+        "id": ["stasiun", "stasiun orbit", "pusat", "rumah"]
+      },
+      "pos": 0,
+      "port": "hangar",
+      "ferry": "dock",
+      "gate": "gate_hall",
+      "customs": 1.0,
+      "fuel": 3,
+      "prices": {}
+    },
+    "belt": {
+      "name": {"en": "the Asteroid Belt", "id": "Sabuk Asteroid"},
+      "ref": {"en": "the Asteroid Belt", "id": "Sabuk Asteroid"},
+      "in": {"en": "in the Asteroid Belt", "id": "di Sabuk Asteroid"},
+      "about": {
+        "en": "mining on a tumbling rock (the Kancil flies there from the Dock)",
+        "id": "menambang di batu yang berputar (Kancil terbang ke sana dari Dermaga)"
+      },
+      "aliases": {"en": ["belt", "asteroid belt", "the belt"], "id": ["sabuk", "sabuk asteroid"]},
+      "pos": 1,
+      "port": "belt",
+      "ferry": null,
+      "gate": null,
+      "customs": 0.0,
+      "fuel": 4,
+      "prices": {}
+    },
+    "moon": {
+      "name": {"en": "the Moon", "id": "Bulan"},
+      "ref": {"en": "Moon Base Tranquility", "id": "Pangkalan Bulan Tranquility"},
+      "in": {"en": "on the Moon", "id": "di Bulan"},
+      "about": {"en": "helium-3 cheap, ice and fresh food dear", "id": "helium-3 murah, es dan makanan segar mahal"},
+      "aliases": {
+        "en": ["moon", "the moon", "luna", "moon base", "tranquility"],
+        "id": ["bulan", "pangkalan bulan", "rembulan"]
+      },
+      "pos": 2,
+      "port": "moon_port",
+      "ferry": "moon_port",
+      "gate": "moon_port",
+      "customs": 1.0,
+      "fuel": 2,
+      "prices": {
+        "helium3": 0.55,
+        "ice": 1.6,
+        "coffee": 1.35,
+        "spices": 1.2,
+        "kangkung": 1.3,
+        "chilli": 1.3,
+        "tomato": 1.3,
+        "strawberry": 1.3,
+        "red_quinoa": 1.4,
+        "moonpetal": 1.3,
+        "chips": 1.1,
+        "iron": 0.8,
+        "titanium": 0.9
+      }
+    },
+    "lumina": {
+      "name": {"en": "Lumina City", "id": "Kota Lumina"},
+      "ref": {"en": "Lumina City", "id": "Kota Lumina"},
+      "in": {"en": "in Lumina City", "id": "di Kota Lumina"},
+      "about": {
+        "en": "the neon city: chips cheap, helium-3 and rare goods dear",
+        "id": "kota neon: chip murah, helium-3 dan barang langka mahal"
+      },
+      "aliases": {"en": ["lumina", "lumina city", "neon city", "the city"], "id": ["lumina", "kota lumina", "kota neon"]},
+      "pos": 3,
+      "port": "lumina_port",
+      "ferry": "lumina_port",
+      "gate": "lumina_port",
+      "customs": 0.8,
+      "fuel": 4,
+      "prices": {
+        "chips": 0.55,
+        "circuit": 0.7,
+        "helium3": 1.8,
+        "star_orchid": 1.5,
+        "ghost_chip": 1.5,
+        "moonpetal": 1.8,
+        "ember_crystal": 1.6,
+        "frostpearl": 1.5,
+        "coffee": 1.1
+      }
+    },
+    "pixel": {
+      "name": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
+      "ref": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
+      "in": {"en": "on Pixel Pier", "id": "di Dermaga Piksel"},
+      "about": {"en": "the arcade world (its games are coming soon)", "id": "dunia arkade (permainannya segera hadir)"},
+      "aliases": {
+        "en": ["pixel pier", "pixel", "arcade world", "the arcade"],
+        "id": ["dermaga piksel", "piksel", "arkade"]
+      },
+      "pos": 4,
+      "port": "pixel_port",
+      "ferry": "pixel_port",
+      "gate": "pixel_port",
+      "customs": 0.5,
+      "fuel": 5,
+      "prices": {}
+    },
+    "evergrove": {
+      "name": {"en": "Evergrove", "id": "Rimba Abadi"},
+      "ref": {"en": "Evergrove", "id": "Rimba Abadi"},
+      "in": {"en": "in Evergrove", "id": "di Rimba Abadi"},
+      "about": {
+        "en": "the fantasy world: moonpetals cheap, spices and coffee dear",
+        "id": "dunia fantasi: kelopak rembulan murah, rempah dan kopi mahal"
+      },
+      "aliases": {"en": ["evergrove", "fantasy world", "the realm"], "id": ["rimba abadi", "dunia fantasi", "rimba"]},
+      "pos": 5,
+      "port": "grove_pier",
+      "ferry": "grove_pier",
+      "gate": "grove_pier",
+      "customs": 0.0,
+      "fuel": 6,
+      "prices": {
+        "moonpetal": 0.6,
+        "ember_crystal": 0.8,
+        "spices": 1.6,
+        "coffee": 1.6,
+        "chips": 0.5,
+        "iron": 1.4,
+        "nickel": 1.3
+      }
+    },
+    "karmina": {
+      "name": {"en": "Karmina", "id": "Karmina"},
+      "ref": {"en": "Karmina Colony", "id": "Koloni Karmina"},
+      "in": {"en": "on Karmina", "id": "di Karmina"},
+      "about": {
+        "en": "the red planet: water ice sells dear, red quinoa and rust salt cheap",
+        "id": "planet merah: es air laku mahal, kinoa merah dan garam karat murah"
+      },
+      "aliases": {
+        "en": ["karmina", "red planet", "the red planet", "karmina colony"],
+        "id": ["karmina", "planet merah", "koloni karmina"]
+      },
+      "pos": 6,
+      "port": "karmina_port",
+      "ferry": "karmina_port",
+      "gate": "karmina_port",
+      "customs": 1.0,
+      "fuel": 4,
+      "prices": {
+        "ice": 2.0,
+        "red_quinoa": 0.55,
+        "rustsalt": 0.6,
+        "helium3": 1.3,
+        "chips": 1.3,
+        "coffee": 1.2,
+        "tomato": 0.8,
+        "chilli": 0.8,
+        "frostpearl": 1.3
+      }
+    },
+    "bazaar": {
+      "name": {"en": "the Drift Bazaar", "id": "Pasar Apung"},
+      "ref": {"en": "the Drift Bazaar", "id": "Pasar Apung"},
+      "in": {"en": "at the Drift Bazaar", "id": "di Pasar Apung"},
+      "about": {
+        "en": "the asteroid market: spices cheap, rare ores dear, and no customs",
+        "id": "pasar asteroid: rempah murah, bijih langka mahal, dan tanpa pabean"
+      },
+      "aliases": {
+        "en": ["drift bazaar", "bazaar", "asteroid market", "outpost", "trading outpost"],
+        "id": ["pasar apung", "bazar", "pasar asteroid", "pos dagang"]
+      },
+      "pos": 7,
+      "port": "bazaar_port",
+      "ferry": "bazaar_port",
+      "gate": "bazaar_port",
+      "customs": 0.0,
+      "fuel": 5,
+      "prices": {
+        "spices": 0.55,
+        "meteorite": 1.4,
+        "quantum": 1.35,
+        "goldfoil": 1.35,
+        "platinum": 1.25,
+        "chips": 0.85,
+        "coffee": 0.9,
+        "star_orchid": 0.8,
+        "ghost_chip": 0.8,
+        "rustsalt": 1.3
+      }
+    },
+    "glasir": {
+      "name": {"en": "Glasir", "id": "Glasir"},
+      "ref": {"en": "Glasir Station", "id": "Stasiun Glasir"},
+      "in": {"en": "on Glasir", "id": "di Glasir"},
+      "about": {
+        "en": "the ice moon: ice and frost pearls cheap, coffee and spices dear",
+        "id": "bulan es: es dan mutiara beku murah, kopi dan rempah mahal"
+      },
+      "aliases": {"en": ["glasir", "ice moon", "the ice moon"], "id": ["glasir", "bulan es"]},
+      "pos": 8,
+      "port": "glasir_port",
+      "ferry": "glasir_port",
+      "gate": "glasir_port",
+      "customs": 0.8,
+      "fuel": 3,
+      "prices": {
+        "ice": 0.45,
+        "frostpearl": 0.65,
+        "coffee": 1.7,
+        "spices": 1.6,
+        "helium3": 1.5,
+        "red_quinoa": 1.6,
+        "tomato": 1.4,
+        "chilli": 1.4,
+        "kangkung": 1.4,
+        "strawberry": 1.4
+      }
+    }
   }
 }

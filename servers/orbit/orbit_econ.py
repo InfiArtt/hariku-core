@@ -30,6 +30,16 @@ Asteroid Surface and richest in the Crystal Cave. Salvage in the Debris Field
 outside the hull. Both need room in your bag, and both can turn up a rare
 find.
 
+Other worlds' markets (world.json "worlds": "prices") start from the same
+prices times the world's own factor for each good (ice is dear on Karmina
+and cheap on Glasir), and each world's prices wander on their own and move
+with every unit traded there (economy.json "travel": "market"), coming back
+towards the usual over the next half hour or so: buying cheap here and
+selling dear there is a trade run, and a big load moves both markets.
+Contraband sells only in the Drift Bazaar's back alley and Lumina City's
+Night Market. With your own ship docked on the same world, what doesn't fit
+in your bag goes into its hold, and selling empties the hold too.
+
 Every credit made or spent is counted by where it came from or went (the
 admins' "economy" report), in the database's meta table.
 """
@@ -44,11 +54,13 @@ PUBLIC_FEES = (0.10, 0.12)
 PRICE_IMPACT = 0.02                     # each unit bought or sold moves the price this much
 KIND_WORDS = {
     "trade": ("trade", "trade goods", "dagang", "barang dagangan", "dagangan"),
+    "contraband": ("contraband", "black market", "smuggled", "barang gelap", "selundupan", "gelap"),
     "crop": ("crop", "crops", "panen", "hasil panen", "sayur", "buah", "hasil kebun", "produce"),
     "ore": ("ore", "ores", "bijih", "tambang", "hasil tambang", "rocks", "batuan"),
     "salvage": ("salvage", "rongsok", "rongsokan", "hasil pulung", "junk"),
 }
-RARE_ORE = {"platinum", "meteorite", "quantum", "goldfoil", "satchip"}
+RARE_ORE = {"platinum", "meteorite", "quantum", "goldfoil", "satchip", "frostpearl", "ember_crystal"}
+LEGAL_KINDS = ("trade", "crop", "ore", "salvage")
 VOICE_STYLES = 10
 
 
@@ -56,12 +68,26 @@ class Market:
     """The market's prices: they drift every few minutes, back towards
     each good's usual price, and move a little with every unit traded."""
 
-    def __init__(self, goods, store, rng, clock, period):
+    def __init__(self, goods, store, rng, clock, period, worlds=None, rules=None):
         self.goods = goods
         self.store = store
         self.rng = rng
         self.clock = clock
         self.period = period
+        self.worlds = worlds or {}
+        self.rules = rules or {"impact": 0.01, "drift": 0.03, "revert": 0.15, "low": 0.6, "high": 1.6}
+        local = store.get_json("market_worlds", {}) or {}
+        self.local = {}
+        for wid in self.worlds:
+            if wid == "station":
+                continue
+            values = local.get(wid) if isinstance(local.get(wid), dict) else {}
+            self.local[wid] = {}
+            for gid in goods:
+                try:
+                    self.local[wid][gid] = self._clamp_local(float(values.get(gid, 1.0)))
+                except (TypeError, ValueError):
+                    self.local[wid][gid] = 1.0
         state = store.get_json("market", {}) or {}
         prices = state.get("prices") if isinstance(state.get("prices"), dict) else {}
         self.prices = {}
@@ -78,9 +104,21 @@ class Market:
         base = self.goods[gid]["base"]
         return max(0.4 * base, min(2.5 * base, price))
 
+    def _clamp_local(self, value):
+        return max(float(self.rules["low"]), min(float(self.rules["high"]), value))
+
     def save(self):
         self.store.set_json("market", {"prices": self.prices, "next": self.next_drift,
                                        "overrides": self.overrides})
+        self.store.set_json("market_worlds", {wid: {g: round(v, 4) for g, v in goods.items()}
+                                              for wid, goods in self.local.items()})
+
+    def local_factor(self, wid, gid):
+        """How a world's price for `gid` compares to the station's: its own factor, and where it
+        has wandered to."""
+        if not wid or wid not in self.local:
+            return 1.0
+        return float(self.worlds[wid].get("prices", {}).get(gid, 1.0)) * self.local[wid].get(gid, 1.0)
 
     def price(self, gid):
         override = self.overrides.get(gid)
@@ -101,6 +139,12 @@ class Market:
             price += 0.15 * (good["base"] - price)
             price *= math.exp(self.rng.gauss(0.0, good.get("volatility", 0.06)))
             self.prices[gid] = self._clamp(gid, price)
+        revert, drift = float(self.rules["revert"]), float(self.rules["drift"])
+        for goods in self.local.values():
+            for gid, value in goods.items():
+                value += revert * (1.0 - value)
+                value *= math.exp(self.rng.gauss(0.0, drift))
+                goods[gid] = self._clamp_local(value)
         self.next_drift = now + self.period
         self.save()
         return True
@@ -118,20 +162,29 @@ class Market:
             return max(1, int(math.ceil(price * (1 + fee) - 1e-9)))
         return max(1, int(math.floor(price * (1 - spread) + 1e-9)))
 
-    def unit_price(self, gid, job, side, fees=None, factor=1.0):
-        return self._unit(self.price(gid) * factor, fees or self.fees(job), side)
+    def unit_price(self, gid, job, side, fees=None, factor=1.0, world=None):
+        return self._unit(self.price(gid) * factor * self.local_factor(world, gid), fees or self.fees(job), side)
 
-    def quote(self, gid, job, side, n, fees=None, factor=1.0):
+    def impact(self, world):
+        return PRICE_IMPACT if world not in self.local else float(self.rules["impact"])
+
+    def quote(self, gid, job, side, n, fees=None, factor=1.0, world=None):
         """The total for `n` units, the price moving with each one."""
-        price, total = self.price(gid) * factor, 0
+        price, total = self.price(gid) * factor * self.local_factor(world, gid), 0
+        step = self.impact(world)
         for _ in range(n):
             total += self._unit(price, fees or self.fees(job), side)
-            price *= (1 + PRICE_IMPACT) if side == "buy" else (1 - PRICE_IMPACT)
+            price *= (1 + step) if side == "buy" else (1 - step)
         return total
 
-    def trade(self, gid, side, n):
-        factor = (1 + PRICE_IMPACT) if side == "buy" else (1 - PRICE_IMPACT)
-        self.prices[gid] = self._clamp(gid, self.prices[gid] * factor ** n)
+    def trade(self, gid, side, n, world=None):
+        """`n` units traded (on `world`: its own prices move; the station's move everyone's)."""
+        step = self.impact(world)
+        factor = (1 + step) if side == "buy" else (1 - step)
+        if world in self.local:
+            self.local[world][gid] = self._clamp_local(self.local[world][gid] * factor ** n)
+        else:
+            self.prices[gid] = self._clamp(gid, self.prices[gid] * factor ** n)
         self.save()
 
 
@@ -149,7 +202,8 @@ class EconomyMixin:
 
     def init_economy(self):
         self.market = Market(self.world.goods, self.store, self.rng, self.clock,
-                             self.config["market_seconds"])
+                             self.config["market_seconds"], worlds=self.world.worlds,
+                             rules=self.econ.get("travel", {}).get("market"))
         flows = self.store.get_json("economy", {}) or {}
         self.flows = {"earned": dict(flows.get("earned") or {}), "spent": dict(flows.get("spent") or {})}
         self._flows_dirty = False
@@ -184,22 +238,58 @@ class EconomyMixin:
         if not market:
             return None
         if market is True:
-            kinds = set(KIND_WORDS)
+            kinds = set(LEGAL_KINDS)
             return kinds, kinds, 1.0
         return set(market.get("buys", [])), set(market.get("sells", [])), float(market.get("factor", 1.0))
 
     def fees_for(self, char):
         return self.effects(char)["fees"] or Market.fees(char["job"])
 
-    def _market_where(self, session):
-        market = next(lid for lid, loc in self.world.locations.items() if loc.get("market") is True)
+    def _market_where(self, session, side="sells"):
+        """Where the nearest market that `side` ("sells" or "buys") is: on this world, else the
+        station's Promenade."""
+        wid = self.world_here(session.char)
+        markets = [lid for lid, loc in self.world.locations.items()
+                   if loc.get("market") and self.world.world_of(lid) == wid
+                   and (loc["market"] is True or loc["market"].get(side))] if wid else []
+        market = markets[0] if markets else next(lid for lid, loc in self.world.locations.items()
+                                                 if loc.get("market") is True)
         self._error(session, "market_where", where=self.world.locations[market]["in"])
+
+    def world_market_kinds(self, wid):
+        """The kinds of goods a world's markets deal in (buying or selling)."""
+        kinds = set()
+        for lid, loc in self.world.locations.items():
+            market = loc.get("market")
+            if not market or self.world.world_of(lid) != wid:
+                continue
+            if market is True:
+                kinds |= set(LEGAL_KINDS)
+            else:
+                kinds |= set(market.get("buys", [])) | set(market.get("sells", []))
+        return kinds
 
     def cmd_prices(self, session, message):
         char, lang = session.char, session.lang
         fees = self.fees_for(char)
-        wanted = orbit_safety.name_key(self._arg(message, "a", 40))
-        kinds = [k for k, words in KIND_WORDS.items() if wanted in words] or list(KIND_WORDS)
+        text = self._arg(message, "a", 40)
+        wanted = orbit_safety.name_key(text)
+        wid = self.world_here(char) or "station"
+        named = self.world.find_world(text) if text and not any(wanted in w for w in KIND_WORDS.values()) else None
+        if named and named != wid:
+            ship = self.ship_aboard(char)
+            if ship is None or not self.ship_spec(ship).get("scanner"):
+                self._error(session, "prices_remote", place=self.world.worlds[named]["ref"])
+                return
+            wid, wanted = named, ""
+        here = self.market_here(char) if wid == self.world_here(char) else None
+        dealt = (here[0] | here[1]) if here else self.world_market_kinds(wid)
+        if not dealt:
+            self._error(session, "prices_none_here", place=self.world.worlds[wid]["in"])
+            return
+        kinds = [k for k, words in KIND_WORDS.items() if wanted in words and k in dealt] or \
+            [k for k in KIND_WORDS if k in dealt]
+        factor = here[2] if here else 1.0
         groups = []
         for kind in kinds:
             entries = []
@@ -207,21 +297,24 @@ class EconomyMixin:
                 if good.get("kind", "trade") != kind:
                     continue
                 entries.append(self.render(lang, "price_entry", good=good["one"],
-                                           buy=self.market.unit_price(gid, char["job"], "buy", fees),
-                                           sell=self.market.unit_price(gid, char["job"], "sell", fees)))
+                                           buy=self.market.unit_price(gid, char["job"], "buy", fees, factor, wid),
+                                           sell=self.market.unit_price(gid, char["job"], "sell", fees, factor, wid)))
             if entries:
                 groups.append(self.render(lang, f"prices_{kind}", entries=", ".join(entries)))
         key = "prices_trader" if char["job"] == "trader" else "prices"
-        self._send(session, "info", key, entries="; ".join(groups))
+        text = self.render(lang, key, entries="; ".join(groups))
+        if wid != "station":
+            text = self.render(lang, "prices_world", place=self.world.worlds[wid]["in"]) + " " + text
+        self._send(session, "info", text=text)
 
-    def _good_and_count(self, session, message, allow_all=False):
+    def _good_and_count(self, session, message, allow_all=False, high=None):
         good = self.world.find_good(self._arg(message, "item", 60))
         if good is None:
             self._error(session, "no_good", what=self._arg(message, "item", 60) or "?")
             return None, None
         if allow_all and message.get("n") == "all":
             return good, session.char["inventory"].get(good, 0) or None
-        n = self._count(message, high=self.bag_size(session.char))
+        n = self._count(message, high=high or self.bag_size(session.char))
         if n is None:
             self._error(session, "bad_number")
         return good, n
@@ -259,23 +352,38 @@ class EconomyMixin:
                 return
             self._error(session, "market_doesnt_sell", thing=self.world.goods[good]["many"])
             return
-        good, n = self._good_and_count(session, message)
+        ship = self.ship_docked_here(char)
+        room = self.bag_size(char) - self._goods_count(char)
+        hold = self.hold_space(ship) if ship else 0
+        good, n = self._good_and_count(session, message, high=max(self.bag_size(char), room + hold))
         if n is None:
             return
-        lang = session.lang
-        if self._goods_count(char) + n > self.bag_size(char):
-            self._error(session, "bag_full", max=self.bag_size(char))
+        if n > room + hold:
+            if ship:
+                self._error(session, "bag_and_hold_full", n=room + hold)
+            else:
+                self._error(session, "bag_full", max=self.bag_size(char))
             return
-        total = self.market.quote(good, char["job"], "buy", n, self.fees_for(char), here[2])
+        wid = self.world_here(char)
+        total = self.market.quote(good, char["job"], "buy", n, self.fees_for(char), here[2], wid)
         if total > char["credits"]:
             self._error(session, "buy_poor", total=total, credits=char["credits"])
             return
-        self.spend(char, total, "market")
-        char["inventory"][good] = char["inventory"].get(good, 0) + n
-        self.market.trade(good, "buy", n)
-        self._save(session)
-        self._send(session, "trade", "buy_ok", things=self._count_of(good, n), total=total,
-                   credits=char["credits"])
+        to_bag = min(n, room)
+        with self.store.transaction():
+            self.spend(char, total, "market")
+            if to_bag:
+                char["inventory"][good] = char["inventory"].get(good, 0) + to_bag
+            if n > to_bag:
+                ship["cargo"][good] = int(ship["cargo"].get(good, 0)) + n - to_bag
+                self.store.save_ship(ship)
+            self.market.trade(good, "buy", n, wid)
+            self._save(session)
+        text = self.render(session.lang, "buy_ok", things=self._count_of(good, n), total=total,
+                           credits=char["credits"])
+        if n > to_bag:
+            text += " " + self.render(session.lang, "buy_into_hold", things=self._count_of(good, n - to_bag))
+        self._send(session, "trade", text=text)
 
     def cmd_sell(self, session, message):
         char, lang = session.char, session.lang
@@ -284,7 +392,7 @@ class EconomyMixin:
             return
         here = self.market_here(char)
         if here is None or not here[0]:
-            self._market_where(session)
+            self._market_where(session, "buys")
             return
         buys, _sells, factor = here
         text = orbit_safety.name_key(self._arg(message, "item", 60))
@@ -292,10 +400,15 @@ class EconomyMixin:
             kinds = [k for k, words in KIND_WORDS.items() if text in words] or list(buys)
             self._sell_all(session, [k for k in kinds if k in buys])
             return
-        good, n = self._good_and_count(session, message, allow_all=True)
+        ship = self.ship_docked_here(char)
+        good, n = self._good_and_count(session, message, allow_all=True, high=100000)
         if good is None:
             return
-        have = char["inventory"].get(good, 0)
+        in_bag = char["inventory"].get(good, 0)
+        in_hold = int(ship["cargo"].get(good, 0)) if ship else 0
+        have = in_bag + in_hold
+        if message.get("n") == "all":
+            n = have or None
         if not have:
             self._error(session, "sell_none", thing=self.world.goods[good]["many"])
             return
@@ -307,35 +420,49 @@ class EconomyMixin:
         if n > have:
             self._error(session, "not_enough", things=self._count_of(good, have))
             return
-        total = self.market.quote(good, char["job"], "sell", n, self.fees_for(char), factor)
-        self.earn(char, total, "market")
-        self._take_away(char, good, n)
-        self.market.trade(good, "sell", n)
-        self._save(session)
+        wid = self.world_here(char)
+        total = self.market.quote(good, char["job"], "sell", n, self.fees_for(char), factor, wid)
+        from_bag = min(n, in_bag)
+        with self.store.transaction():
+            self.earn(char, total, "market")
+            if from_bag:
+                self._take_away(char, good, from_bag)
+            if n > from_bag:
+                ship["cargo"][good] = in_hold - (n - from_bag)
+                self.store.save_ship(ship)
+            self.market.trade(good, "sell", n, wid)
+            self._save(session)
         self._send(session, "trade", "sell_ok", things=self._count_of(good, n), total=total,
                    credits=char["credits"])
 
     def _sell_all(self, session, kinds):
         char = session.char
         factor = self.market_here(char)[2]
+        wid = self.world_here(char)
+        ship = self.ship_docked_here(char)
+        hold = ship["cargo"] if ship else {}
         sold, total = [], 0
-        for gid in sorted(char["inventory"]):
-            good = self.world.goods.get(gid)
-            if not good or good.get("kind", "trade") not in kinds:
-                continue
-            n = char["inventory"][gid]
-            if n <= 0:
-                continue
-            price = self.market.quote(gid, char["job"], "sell", n, self.fees_for(char), factor)
-            total += price
-            sold.append(self._count_of(gid, n))
-            self._take_away(char, gid, n)
-            self.market.trade(gid, "sell", n)
-        if not sold:
-            self._error(session, "sell_all_none")
-            return
-        self.earn(char, total, "market")
-        self._save(session)
+        with self.store.transaction():
+            for gid in sorted(set(char["inventory"]) | set(hold)):
+                good = self.world.goods.get(gid)
+                if not good or good.get("kind", "trade") not in kinds:
+                    continue
+                n = int(char["inventory"].get(gid, 0)) + int(hold.get(gid, 0))
+                if n <= 0:
+                    continue
+                price = self.market.quote(gid, char["job"], "sell", n, self.fees_for(char), factor, wid)
+                total += price
+                sold.append(self._count_of(gid, n))
+                char["inventory"].pop(gid, None)
+                hold.pop(gid, None)
+                self.market.trade(gid, "sell", n, wid)
+            if not sold:
+                self._error(session, "sell_all_none")
+                return
+            self.earn(char, total, "market")
+            if ship:
+                self.store.save_ship(ship)
+            self._save(session)
         self._send(session, "trade", "sell_ok", things=sold, total=total, credits=char["credits"])
 
     # --- the farm -----------------------------------------------------------------------------
