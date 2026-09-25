@@ -547,15 +547,22 @@ def voice_lines(voices_by_provider, native_on=True, provider_names=None, user_la
 
 
 def _list_voices_for_page(done):
+    """Fill the page's voice list on a worker thread (listing voices may be
+    slow). Named like Hariku Voice's own list worker, which Hariku's window
+    checks wait for before closing."""
     native_on = _settings["native_voices"]
     names = {p["id"]: p["name"] for p in core.voice.get_providers()}
+    book = _services.voices
 
     def work():
-        return voice_lines(_services.voices.voices(), native_on, names)
+        try:
+            text = voice_lines(book.voices(), native_on, names)
+        except Exception:
+            logger.exception("[World Trip] Listing the voices failed")
+            text = ""
+        _call_after(done, text or _("voices_failed"))
 
-    def finished(text, error):
-        done(text if error is None and text else _("voices_failed"))
-    _services.run(work, finished)
+    threading.Thread(target=work, daemon=True, name="hariku-voice-list").start()
 
 
 def _create_panel(parent):

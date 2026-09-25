@@ -213,6 +213,37 @@ keyboard or mouse was last used, only while something rings or after a ring
 you missed; it never records which keys you press. Its sounds are Windows' own
 alarm sounds on your computer or tones that come with the extension.
 
+## World Trip
+
+The World Trip extension connects only when you take a trip or ask something
+during one, and it only ever sends the destination, never anything about you:
+- Finding the city you asked for sends its name, as you typed or said it, to
+  Open-Meteo's geocoding (`geocoding-api.open-meteo.com`); to say the city's
+  name in its own language and in English, the name is looked up again with
+  that language. The weather sends the destination's point, rounded to about 1
+  kilometre, to Open-Meteo (`api.open-meteo.com`). See Open-Meteo's
+  [terms and privacy](https://open-meteo.com/en/terms).
+- The radio asks the free Radio Browser directory (`*.api.radio-browser.info`)
+  for stations with the destination's country code and its point rounded to
+  about 1 kilometre, and tells it which station started playing (its station
+  id), as the directory asks its users to. The station you hear streams from
+  that station's own server, which sees your IP address like any radio player.
+  See [Radio Browser](https://www.radio-browser.info).
+- "Tell me about this city" sends the city's (or country's) name to Wikipedia
+  (`id.wikipedia.org` or `en.wikipedia.org`). See the
+  [Wikimedia privacy policy](https://foundation.wikimedia.org/wiki/Policy:Privacy_policy).
+- A greeting or phrase spoken in a native voice goes through Hariku Voice:
+  with an Edge voice, its text is sent to Microsoft's speech service (see Edge
+  Voices below); Piper and Windows voices speak on your computer.
+
+The distance and flight time from your main place are worked out on your
+computer: your places never leave it. Station lists and Wikipedia summaries are
+kept for a day and a week, keyed by the destination's rounded point, in
+`%APPDATA%\Hariku2`, with your settings and the number of trips you took. "Any
+key skips the flight" asks Windows when the keyboard or mouse was last used,
+only during a flight; it never records which keys you press. Its sounds are
+generated and come with the extension.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
