@@ -101,7 +101,8 @@ Paste this inside the `server { ... }` block of infiartt.com's site, in
 
 ```nginx
     # Orbit (Hariku's multiplayer game): WebSocket to the local server.
-    location /orbit/ {
+    # ^~ keeps aaPanel's regex locations (images, .well-known...) from taking these paths.
+    location ^~ /orbit/ {
         proxy_pass http://127.0.0.1:7340;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -126,7 +127,11 @@ put anything in `CF-Connecting-IP`; that only affects those two things.
 
 WebSockets must be on (Network, WebSockets; on by default). Cloudflare closes a
 WebSocket after 100 seconds without traffic: the Hariku client pings every 25
-seconds, and reconnects by itself when Cloudflare restarts a connection.
+seconds, and reconnects by itself when Cloudflare restarts a connection. The
+client is not a browser: if Bot Fight Mode, "I'm Under Attack" or a WAF
+challenge is on for the site, add a rule that skips them for the path
+`/orbit/`, or the client gets a challenge page instead of the game (it then
+says Orbit is offline and keeps retrying).
 
 ### Apache
 

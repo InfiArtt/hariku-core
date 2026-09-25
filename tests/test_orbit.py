@@ -128,6 +128,22 @@ def test_reading_commands_in_both_languages(text, expected):
     assert orbit_parse.parse(text) == expected
 
 
+def test_both_languages_have_the_same_words_and_placeholders():
+    import json
+    import string
+    texts = {}
+    for code in ("en", "id"):
+        with open(os.path.join(EXT_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
+            texts[code] = json.load(f)["messages"]
+    assert set(texts["en"]) == set(texts["id"])
+
+    def fields(text):
+        return {name for _l, name, _s, _c in string.Formatter().parse(text) if name}
+
+    for key, line in texts["en"].items():
+        assert fields(line) == fields(texts["id"][key]), key
+
+
 # ------------------------------------------------------------
 # main.py: Aruna, registering, settings
 # ------------------------------------------------------------
