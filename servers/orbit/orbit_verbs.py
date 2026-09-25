@@ -20,6 +20,8 @@ every client can use them:
     parse("u", "id")              -> {"c": "move", "d": "n"}      ("u" is utara)
     parse("u", "en")              -> {"c": "move", "d": "u"}      ("u" is up)
     parse("arah ke kantin")       -> {"c": "way", "a": "kantin"}
+    parse("pandu ke kantin")      -> {"c": "guide", "a": "kantin"}
+    parse("berhenti pandu")       -> {"c": "guide", "op": "stop"}
     parse("tanam 2 tomat")        -> {"c": "plant", "item": "tomat", "n": 2}
     parse("naik kancil")          -> {"c": "board"}
     parse("terbang ke Karmina")   -> {"c": "fly", "a": "Karmina"}
@@ -45,6 +47,18 @@ VERBS = [
     (("way", "to"), "way"), (("route", "to"), "way"), (("directions", "to"), "way"),
     (("path", "to"), "way"), (("how", "do", "i", "get", "to"), "way"), (("way",), "way"),
     (("arah",), "way"), (("route",), "way"),
+    (("pandu", "ke"), "guide"), (("pandu", "aku", "ke"), "guide"), (("pandu", "saya", "ke"), "guide"),
+    (("tuntun", "ke"), "guide"), (("tuntun", "aku", "ke"), "guide"), (("antar", "aku", "ke"), "guide"),
+    (("guide", "me", "to"), "guide"), (("guide", "to"), "guide"), (("guide", "me"), "guide"),
+    (("pandu", "aku"), "guide"), (("status", "pandu"), "guide"), (("guide",), "guide"),   # not "pandu" alone: a name
+    (("berhenti", "pandu"), "guide_stop"), (("hentikan", "pandu"), "guide_stop"), (("stop", "pandu"), "guide_stop"),
+    (("batal", "pandu"), "guide_stop"), (("batalkan", "pandu"), "guide_stop"), (("pandu", "berhenti"), "guide_stop"),
+    (("pandu", "stop"), "guide_stop"), (("pandu", "mati"), "guide_stop"), (("berhenti", "dipandu"), "guide_stop"),
+    (("matikan", "pandu"), "guide_stop"), (("stop", "guide"), "guide_stop"), (("stop", "guiding"), "guide_stop"),
+    (("stop", "guiding", "me"), "guide_stop"), (("stop", "guidance"), "guide_stop"),
+    (("stop", "the", "guide"), "guide_stop"), (("cancel", "guide"), "guide_stop"),
+    (("cancel", "guidance"), "guide_stop"), (("end", "guide"), "guide_stop"), (("end", "guidance"), "guide_stop"),
+    (("guide", "off"), "guide_stop"),
     (("peta",), "map"), (("map",), "map"), (("denah",), "map"), (("peta", "dek"), "map"),
     (("di", "mana", "aku"), "where"), (("dimana", "aku"), "where"), (("di", "mana", "saya"), "where"),
     (("dimana", "saya"), "where"), (("aku", "di", "mana"), "where"), (("saya", "di", "mana"), "where"),
@@ -457,6 +471,10 @@ def parse(text, lang="en", find_direction=None):
         if not rest and words[0] == "arah":
             return {"c": "compass"}
         return {"c": "way", "a": rest}
+    if meaning == "guide":
+        return {"c": "guide", "a": rest} if rest else {"c": "guide"}
+    if meaning == "guide_stop":
+        return {"c": "guide", "op": "stop"}
     if meaning in ("map", "where", "compass", "scan", "board", "daily", "rank", "harvest", "water",
                    "farm", "mine", "collect", "transfer", "friends", "status", "casino", "hit", "stand",
                    "lottery", "decline", "cancel_offer", "worlds", "disembark", "cargo", "gig", "events",

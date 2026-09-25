@@ -13,7 +13,8 @@ and play: the Preferences page (its labels and their order, Connect, the
 status line, what is read aloud, the window's closing and logging out,
 toggling without the focus moving, a transfer code, Apply), the game window
 ("Open Orbit": the Messages list and the Command field with their labels
-first, the Settings button, walking by compass, Enter sends, another
+first, the Settings button, walking by compass as the guide says each next
+step, Enter sends, another
 player's words arrive without the focus or the selection moving, Up brings
 back the last command, Escape hides it and stays connected), Aruna ("orbit
 who", "orbit say ..."), with what is said landing in Last result, and
@@ -372,11 +373,17 @@ def typed(text, expect):
 
 
 typed("go to the cantina", "To the Cantina: 2 east, south, up, north, then 2 west.")
+assert pump(lambda: any(s.startswith("To the Cantina: 2 east, south, up, north, then 2 west.") for s in spoken)), \
+    spoken[-3:]
 for step, place in (("e", "the Cargo Bay"), ("e", "the Service Corridor"), ("s", "the Lower Lift Lobby")):
     typed(step, f"to {place}.")
 typed("up", "You go up to the Main Lift Lobby.")
+assert pump(lambda: "Then north." in window.lines()), window.lines()[-3:]          # the guide, after each step
+assert pump(lambda: "Then north." in spoken), spoken[-3:]
 for step, place in (("n", "the Promenade"), ("w", "the West Promenade"), ("w", "the Cantina")):
     typed(step, f"to {place}.")
+assert pump(lambda: "You've arrived at the Cantina." in window.lines()), window.lines()[-3:]
+assert pump(lambda: "You've arrived at the Cantina." in spoken), spoken[-3:]
 assert "step_metal" in sounds and "lift_up" in sounds and ambiences[-1] == ("cantina", 40)
 if focus_ok:
     assert wx.Window.FindFocus() is window.txt_command, "sending moved the focus"

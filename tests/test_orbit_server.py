@@ -661,11 +661,14 @@ def test_no_teleporting_only_the_way(make_game):
     way = cmd(game, rafli, "go", a="kantin")
     assert way["k"] == "info" and way["text"] == (
         "Kamu berjalan di stasiun satu arah demi satu arah. Ke Kantin: "
-        "2 timur, selatan, naik, utara, lalu 2 barat.")
+        "2 timur, selatan, naik, utara, lalu 2 barat. "
+        "Aku akan memandumu langkah demi langkah; ketik berhenti pandu untuk berhenti.")
     assert game.sessions["tono"].char["location"] == "dock"
     walk(game, rafli, "promenade_west")
-    moved = cmd(game, rafli, "go", a="kantin")              # next door: that's a walk
+    arrived = cmd(game, rafli, "go", a="kantin")            # next door: that's a walk
+    moved = rafli.events("moved")[-1]
     assert moved["k"] == "moved" and moved["room"] == "cantina"
+    assert arrived["text"] == "Sampai di Kantin."                # the way asked before guided it
     assert cmd(game, rafli, "go", a="kantin")["text"] == "Kamu sudah di sini."
 
 
@@ -961,7 +964,8 @@ def test_a_plain_word_is_guessed(make_game):
     join(game, "Sari")
     assert cmd(game, rafli, "text", a="kantin")["text"].startswith("Kamu berjalan di stasiun satu arah")
     assert cmd(game, rafli, "text", a="Sari")["text"].startswith("Sari, pilot magang.")
-    assert cmd(game, rafli, "text", a="t")["room"] == "cargo"            # "t" is timur
+    assert cmd(game, rafli, "text", a="t")["text"] == "Lalu timur."        # "t" is timur: the guide goes on
+    assert rafli.events("moved")[-1]["room"] == "cargo"
     assert cmd(game, rafli, "text", a="blah blah")["text"] == ('Aku tidak paham "blah blah". '
                                                                'Ketik bantuan untuk daftar perintah.')
 

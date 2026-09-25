@@ -131,6 +131,8 @@ class Session:
         self.earned = None        # the achievements they have (read when first needed)
         self.hunt_test = False    # an admin playing the hunt without it counting
         self.arcade = None        # a game at one of Pixel Pier's cabinets
+        self.guide = None         # the way being guided, step by step: {"dest", "path"} (orbit_nav)
+        self.guide_told = False   # the guide's how-to said once this session
         self.client = (0, 0)      # the client's version ("Hariku Orbit 1.1": (1, 1))
         self.chat = orbit_safety.TokenBucket(config["chat_rate"], config["chat_burst"], clock)
         self.shout = orbit_safety.TokenBucket(1.0 / max(1, config["shout_seconds"]), 1, clock)
@@ -485,6 +487,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self._save(session)
 
     def _remove(self, session, key="leave_quit"):
+        self.guide_stop(session)
         self.leave_casino(session)
         self.arcade_finish(session, "left")
         self.forget_offers(session)

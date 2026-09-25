@@ -153,6 +153,15 @@ def test_a_map_that_breaks_the_rules_is_refused(world):
     ("ride the Kancil", "en", {"c": "board"}),
     ("arah ke kantin", "id", {"c": "way", "a": "kantin"}),
     ("way to the cantina", "en", {"c": "way", "a": "the cantina"}),
+    ("pandu ke kantin", "id", {"c": "guide", "a": "kantin"}),
+    ("pandu aku ke kantin", "id", {"c": "guide", "a": "kantin"}),
+    ("guide me to the cantina", "en", {"c": "guide", "a": "the cantina"}),
+    ("guide", "en", {"c": "guide"}),
+    ("status pandu", "id", {"c": "guide"}),
+    ("berhenti pandu", "id", {"c": "guide", "op": "stop"}),
+    ("stop guide", "en", {"c": "guide", "op": "stop"}),
+    ("stop guiding me", "en", {"c": "guide", "op": "stop"}),
+    ("pandu", "id", None),                                   # Pandu is a name too
     ("arah", "id", {"c": "compass"}),
     ("peta", "id", {"c": "map"}),
     ("di mana aku", "id", {"c": "where"}),
@@ -234,7 +243,8 @@ def test_look_lists_the_exits_short_and_the_same_every_time(make_game):
 def test_the_way_needs_a_mapper_beyond_the_landmarks(make_game):
     game = make_game()
     tono = join(game, "Tono", "scientist")
-    assert "To the Promenade: 2 east, south, up, then north." == cmd(game, tono, "way", a="promenade")["text"]
+    assert cmd(game, tono, "way", a="promenade")["text"] == (
+        "To the Promenade: 2 east, south, up, then north. I'll guide you step by step; type stop guide to stop.")
     assert cmd(game, tono, "way", a="science lab")["text"].startswith("To the Science Lab:")   # workplace
     assert cmd(game, tono, "way", a="my cabin")["text"].startswith("To your cabin:")
     unknown = cmd(game, tono, "way", a="archive")
@@ -404,7 +414,7 @@ def test_a_beacon_leads_you_back(make_game):
     placed = cmd(game, ani, "use", item="beacon", equip=True)
     assert placed["text"].startswith("You place your beacon in the Workshop") and placed["sound"] == "gadget"
     walk(game, ani, "dock")
-    assert cmd(game, ani, "way", a="suar")["text"] == "To the Workshop: 4 east."
+    assert cmd(game, ani, "way", a="suar")["text"].startswith("To the Workshop: 4 east. I'll guide you")
 
 
 def test_cabin_guests_by_invitation(make_game):

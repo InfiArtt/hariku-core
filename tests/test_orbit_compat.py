@@ -181,6 +181,10 @@ PHRASEBOOK = [
     ("lihat tiang petunjuk", "id", "look"), ("look at the signpost", "en", "look"),
     ("arah ke pasar", "id", "way"), ("way to the market", "en", "way"), ("pergi ke pasar", "id", "go"),
     ("beli 2 kopi", "id", "buy"), ("jual semua bijih", "id", "sell"), ("sell 3 ice", "en", "sell"),
+    # the guide (server 1.3)
+    ("pandu ke kantin", "id", "guide"), ("pandu aku ke dermaga", "id", "guide"),
+    ("guide me to the cantina", "en", "guide"), ("guide", "en", "guide"), ("status pandu", "id", "guide"),
+    ("berhenti pandu", "id", "guide"), ("stop guide", "en", "guide"), ("cancel guidance", "en", "guide"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

@@ -231,6 +231,7 @@ class TravelMixin:
             if until < self.now():
                 self._error(session, "ship_not_invited", name=owner["name"])
                 return
+            self.guide_stop(session)                         # aboard: travel, not a walk
             self._move_to(session, "ship", host=owner["name_key"],
                           message=self._both("embark_guest", name=owner["name"]), sound="door")
             return
@@ -244,6 +245,7 @@ class TravelMixin:
         if ship.get("dock") != char["location"]:
             self._error(session, "ship_elsewhere", where=self.world.locations[ship["dock"]]["in"])
             return
+        self.guide_stop(session)
         self._move_to(session, "ship", message=self._both("embark_own", ship=self.ship_title(ship)), sound="door")
 
     def cmd_disembark(self, session, message):
@@ -581,6 +583,7 @@ class TravelMixin:
         arrive = depart + self.ferry_seconds(here, dest)
         self.spend(char, fare, "fares")
         char["stats"]["ferry"] = {"from": here, "to": dest, "depart": depart, "arrive": arrive}
+        self.guide_stop(session)
         self._move_to(session, "ferry", message=self._both("ferry_boarded", fare=fare), sound="ferry")
         self._send(session, "info", "ferry_times", place=self.world_name(dest, "ref"),
                    wait=self._duration(lang, depart - now), time=self._duration(lang, arrive - depart))
@@ -660,6 +663,7 @@ class TravelMixin:
         if not self._slow(session):
             return
         self.spend(char, fee, "gate")
+        self.guide_stop(session)
         target = self.world.worlds[dest]["gate"]
         if not session.invisible:
             self._to_room(self.room_of(char), "leave", "gate_leave_other", exclude=(session,),

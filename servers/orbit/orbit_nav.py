@@ -20,7 +20,11 @@ the Cantina is next door, and otherwise tells you the way.
                   the Cantina, Star Supply, the markets, the lifts), their own
                   workplace, their cabin and their beacon; a mapper knows every
                   room you have been to, and a holo mapper every public room.
-                  "the way to the market": the nearest one
+                  "the way to the market": the nearest one. It also starts the
+                  guide: after each step, "Then 2 west."; off the route, the
+                  way again from there; "You've arrived at the Cantina."
+  guide me to X   the same (pandu ke X); "guide" alone repeats what's left,
+                  "stop guide" (berhenti pandu) ends it
   map             this deck in words; more with a mapper
   where am I      the room, the deck and the exits
   compass         the way you last walked, and the deck
@@ -42,6 +46,9 @@ from orbit_econ import MARKET_WORDS
 from orbit_lang import pick
 
 LONG_ROUTE = 8               # a route of this many steps (in three runs or more) also says how many
+# Arriving where the guide was taking you: the mapper's own chime. Clients from 1.1 fall back
+# to "gadget" (a cue's name loses its last part until a file has it); 1.0 plays nothing.
+GUIDE_ARRIVED_SOUND = "gadget_arrived"
 
 
 def route_groups(path):
@@ -64,7 +71,7 @@ class NavMixin:
                 "compass": NavMixin.cmd_compass, "scan": NavMixin.cmd_scan,
                 "locate": NavMixin.cmd_locate, "friends": NavMixin.cmd_friends,
                 "board": NavMixin.cmd_board, "invite": NavMixin.cmd_invite,
-                "visit": NavMixin.cmd_visit}
+                "visit": NavMixin.cmd_visit, "guide": NavMixin.cmd_guide}
 
     # --- what you can see and pass -------------------------------------------------------
 
@@ -251,6 +258,7 @@ class NavMixin:
         if sound:
             extra["sound"] = sound
         self._send(session, "moved", text=f"{line} {self.look_text(session, full=first)}", extra=extra)
+        self.guide_step(session)
         self.pet_follows(session)
         self.gig_arrived(session)
         self.arcade_left(session)
@@ -434,13 +442,95 @@ class NavMixin:
         if dest == char["location"] and not char["stats"].get("visit"):
             self._info(session, "already_here", place=place)
             return
-        start = char["location"]
         path = self.route_for(char, dest)
         if path is None:
             self._error(session, "no_way_access", place=place)
             return
         key = "way_walk" if walking_note else "way"
-        self._info(session, key, place=place, steps=self.steps_text(lang, path), n=len(path))
+        text = self.render(lang, key, place=place, steps=self.steps_text(lang, path))
+        session.guide = {"dest": dest, "path": list(path)}
+        if not session.guide_told:                       # once a session: what the lines after each step are
+            session.guide_told = True
+            text += " " + self.render(lang, "guide_hint")
+        self._info(session, text=text)
+
+    # --- guiding you there, step by step ------------------------------------------------
+    #
+    # The way to a place starts the guide: after each step you take, one short line says
+    # what comes next ("Then 2 west."); a step off the route finds the way again from where
+    # you are; arriving says so, and the guide ends. It ends too when you stop it, log out,
+    # or leave by ship, ferry or the Gate. It lives in the session, in memory: a reconnect
+    # within the link-dead minute keeps it, a restart of the server forgets it.
+
+    def cmd_guide(self, session, message):
+        """ "pandu ke kantin" / "guide me to the cantina" (the way, guided), "pandu" (where the
+        guide is taking you), "berhenti pandu" / "stop guide"."""
+        if message.get("op") == "stop":
+            guide = session.guide
+            if guide is None:
+                self._info(session, "guide_none")
+                return
+            session.guide = None
+            self._info(session, "guide_stopped", place=self.world.locations[guide["dest"]]["ref"])
+            return
+        if self._arg(message):
+            self.cmd_way(session, message)
+            return
+        guide = session.guide
+        if guide is None:
+            self._info(session, "guide_where")
+            return
+        path = self.route_for(session.char, guide["dest"]) if self.world.world_of(session.char["location"]) else None
+        if path:
+            guide["path"] = path
+            self._info(session, "guide_status", place=self.world.locations[guide["dest"]]["ref"],
+                       steps=self.steps_text(session.lang, path))
+        else:
+            self._info(session, "guide_status_away", place=self.world.locations[guide["dest"]]["ref"])
+
+    def guide_stop(self, session):
+        """Travelling by ship, ferry or the Gate, or logging out: the guide ends quietly."""
+        session.guide = None
+
+    def guide_step(self, session):
+        """After a move: the next step of the way, the way again after a detour, or arrival."""
+        guide = session.guide
+        if guide is None:
+            return
+        char, lang = session.char, session.lang
+        here, dest = char["location"], guide["dest"]
+        place = self.world.locations[dest]["ref"]
+        if self.world.world_of(here) is None:             # aboard a ship or the ferry: that's travel
+            session.guide = None
+            return
+        if here == dest and not (self.world.locations[here].get("private") and char["stats"].get("visit")):
+            session.guide = None
+            self._info(session, "guide_arrived", place=place, sound=GUIDE_ARRIVED_SOUND)
+            return
+        rooms = [room for _how, room in guide["path"]]
+        if here in rooms[:-1]:
+            guide["path"] = guide["path"][rooms.index(here) + 1:]
+            key = "guide_next"
+        else:
+            path = self.route_for(char, dest)
+            if not path:
+                session.guide = None
+                self._info(session, "guide_lost", place=place)
+                return
+            guide["path"] = path
+            key = "guide_rerouted"
+        how, n = route_groups(guide["path"])[0]
+        steps = self.group_text(lang, how, n)
+        if how in self.world.directions and self._needs_suit(char, here, how):
+            steps = self.render(lang, "guide_eva", steps=steps)
+        self._info(session, key, steps=steps)
+
+    def _needs_suit(self, char, here, d):
+        """The next step leads out into vacuum, and no EVA suit is worn."""
+        ex = self.world.exits.get(here, {}).get(d)
+        if ex is None or self._loc(char).get("airless"):
+            return False
+        return bool(self.world.locations[ex["to"]].get("airless")) and not self.effects(char)["eva"]
 
     def cmd_map(self, session, message):
         char, lang = session.char, session.lang
