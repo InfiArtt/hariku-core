@@ -78,6 +78,19 @@ ROOM_FOLLOW_DOWN = 0.2      # the room gets quieter: follow it quickly
 ROOM_FOLLOW_UP = 0.03       # louder: slowly, and only
 ROOM_RISE_LIMIT = 1.5       # for frames less than 1.5 times the room
 NOISY_PAUSE_MS = 250        # a 12-second "speech" without a pause this long was noise
+# Birdsong, a whistle or hiss sits mostly above about 2.4 kHz, so it crosses
+# zero far more often than a voice (a voice's loud frames stay under ~0.15):
+# such a frame is never counted as speech, however loud.
+CHIRP_CROSSINGS = 0.30      # zero crossings per sample
+# Once the voice is known (the 90th percentile of the loud frames in the
+# first 1.5 seconds of speech, so a noise that goes on afterwards never
+# becomes "the voice"), a frame more than 12 dB below it counts as a pause:
+# birds or a TV farther away than the speaker can't keep a recording going.
+VOICE_KEEP_SHARE = 0.25
+VOICE_END_SHARE = 0.5       # the voice itself: within 6 dB of it
+VOICE_PERCENTILE_KEEP = 0.9
+VOICE_LEARN_MS = 1500
+MIN_VOICE_FRAMES = 5
 
 
 class MicrophoneError(Exception):
@@ -140,6 +153,21 @@ def rms(samples):
     return math.sqrt(sum(s * s for s in samples) / len(samples))
 
 
+def crossing_rate(samples):
+    """Zero crossings per sample (0 to 1): about 2 * frequency / sample rate
+    for a tone, about 0.5 for hiss."""
+    if len(samples) < 2:
+        return 0.0
+    count = 0
+    positive = samples[0] >= 0
+    for sample in samples:
+        now = sample >= 0
+        if now is not positive:
+            count += 1
+            positive = now
+    return count / (len(samples) - 1)
+
+
 def level_db(value):
     """A loudness (RMS of 16-bit samples) in dB below full scale: -96 for
     silence, about -20 for speech close to the microphone."""
@@ -179,7 +207,15 @@ class VoiceActivity:
     ones slowly, and only those less than 1.5 times it: a quiet voice that
     isn't loud enough to start never becomes "the room", so the start level
     can't creep up to the voice. `noisy` tells a recording that ran into
-    `max_ms` without a single pause: that was the room, not speech."""
+    `max_ms` without a single pause: that was the room, not speech.
+
+    Two things keep birds (or a TV farther away) from holding a recording
+    open: a frame that crosses zero more than CHIRP_CROSSINGS per sample (high
+    sounds, not a voice) is never speech; and once the voice's own level is
+    known (`voice_level`, learnt from the first 1.5 seconds of speech), a
+    frame more than 12 dB below it counts as a pause.
+    `voice_end_ms` is the last frame near the voice itself, for a recording
+    that ran too long."""
 
     WAITING, SPEAKING = "waiting", "speaking"
     DONE, NO_SPEECH, TOO_LONG = "done", "no_speech", "too_long"
@@ -207,6 +243,10 @@ class VoiceActivity:
         self.speech_start_ms = None     # where speech began, and ended
         self.speech_end_ms = None
         self.longest_pause_ms = 0       # while speaking
+        self.voice_level = None         # the voice's own level, once known
+        self.voice_end_ms = None        # the last frame near that level
+        self._voice_levels = []
+        self._starting = []             # the loud frames that may start speech
         self._calibration = []
         self._run_ms = 0
         self._silent_ms = 0
@@ -231,7 +271,19 @@ class VoiceActivity:
         keeps it going."""
         noise = self.noise if self.noise is not None else 0.0
         start = max(self.min_level, noise * self.ratio)
-        return start, min(start, max(start * KEEP_SHARE, noise * KEEP_OVER_ROOM))
+        keep = min(start, max(start * KEEP_SHARE, noise * KEEP_OVER_ROOM))
+        if self.voice_level is not None:
+            keep = max(keep, self.voice_level * VOICE_KEEP_SHARE)
+        return start, keep
+
+    def _add_voice(self, level):
+        if self.speech_start_ms is not None and                 self.elapsed_ms - self.speech_start_ms > VOICE_LEARN_MS:
+            return
+        self._voice_levels.append(level)
+        if len(self._voice_levels) >= MIN_VOICE_FRAMES:
+            ordered = sorted(self._voice_levels)
+            self.voice_level = ordered[min(len(ordered) - 1,
+                                           int(len(ordered) * VOICE_PERCENTILE_KEEP))]
 
     def _follow_room(self, level):
         if level <= self.noise:
@@ -267,24 +319,34 @@ class VoiceActivity:
             self.noise = ordered[len(ordered) // 2]
             return
         start, keep = self.thresholds()
+        # Only compute the crossings of a frame loud enough to matter.
+        voiced = level < keep or crossing_rate(frame) <= CHIRP_CROSSINGS
         if self.state == self.WAITING:
-            if level >= start:
+            if level >= start and voiced:
                 self._run_ms += self.frame_ms
+                self._starting.append(level)
                 if self._run_ms >= self.min_speech_ms:
                     self.state = self.SPEAKING
                     self.speech_start_ms = self.elapsed_ms - self._run_ms
-                    self.speech_end_ms = self.elapsed_ms
+                    self.speech_end_ms = self.voice_end_ms = self.elapsed_ms
                     self._silent_ms = 0
+                    for value in self._starting:
+                        self._add_voice(value)
             else:
                 self._run_ms = 0
+                self._starting = []
                 self._follow_room(level)
                 if self.elapsed_ms >= self.start_timeout_ms:
                     self.state = self.NO_SPEECH
                     return
         elif self.state == self.SPEAKING:
-            if level >= keep:
+            if level >= keep and voiced:
                 self._silent_ms = 0
                 self.speech_end_ms = self.elapsed_ms
+                if level >= start:
+                    self._add_voice(level)
+                if self.voice_level is None or level >= self.voice_level * VOICE_END_SHARE:
+                    self.voice_end_ms = self.elapsed_ms
             else:
                 self._silent_ms += self.frame_ms
                 self.longest_pause_ms = max(self.longest_pause_ms, self._silent_ms)
@@ -294,14 +356,18 @@ class VoiceActivity:
         if self.elapsed_ms >= self.max_ms and not self.finished:
             self.state = self.TOO_LONG if self.heard_speech else self.NO_SPEECH
 
-    def speech_bytes(self, pcm, margin_ms=300):
+    def speech_bytes(self, pcm, margin_ms=300, voice_only=False):
         """The part of `pcm` with the speech, `margin_ms` around it (the whole
-        recording when no speech was heard)."""
+        recording when no speech was heard). `voice_only`: up to the last frame
+        near the voice's own level, for a recording that ran too long."""
         if not self.heard_speech:
             return bytes(pcm)
         per_ms = self.sample_rate * SAMPLE_WIDTH // 1000
+        end_ms = self.speech_end_ms
+        if voice_only and self.voice_end_ms is not None:
+            end_ms = min(end_ms, self.voice_end_ms)
         start = max(0, (self.speech_start_ms - margin_ms)) * per_ms
-        end = min(len(pcm), (self.speech_end_ms + margin_ms) * per_ms)
+        end = min(len(pcm), (end_ms + margin_ms) * per_ms)
         return bytes(pcm[start:end])
 
 

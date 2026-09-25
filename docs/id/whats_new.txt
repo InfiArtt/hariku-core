@@ -70,6 +70,12 @@ Versi 2.8.0 (Pembaruan Inti)
   seperti Aruna mungkin butuh kepekaan Tinggi. "Jeda atau lanjutkan frasa
   pemanggil" (tanpa tombol bawaan; minta saja ke Aruna) menjedanya, dan ia
   bisa berhenti sendiri selama jam tenang.
+- Voice Control tahu kapan kamu selesai bicara walaupun rumah ramai: bunyi
+  bernada tinggi seperti kicauan burung tidak pernah dianggap ucapan, dan
+  setelah suaramu terdengar, bunyi yang jauh lebih pelan darinya (12 dB)
+  dianggap hening. Dulu kicauan burung membuatnya terus mendengarkan sampai 12
+  detik lalu menyerah; sekarang, kalau pun sampai 12 detik, ucapanmu tetap
+  dikenali.
 - Pembaruan ekstensi di Toko, untuk Hariku 2.8: Cuaca 1.2, Kondisi Laut 1.2,
   Kualitas Udara 1.2, Gempa & Tsunami 1.2, Antariksa 1.1, Kokpit 1.1, Radar
   Pesawat 1.7, Piper Voices 1.1, dan Voice Control 1.1.

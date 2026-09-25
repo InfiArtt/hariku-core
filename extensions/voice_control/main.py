@@ -38,9 +38,11 @@ loud enough for the microphone sensitivity (Preferences; the microphone test
 measures the voice and the room and suggests one). It ends after about a
 second of silence once speech started (Preferences: the silence length), after
 12 seconds, when the hotkey or Enter is pressed again, or after 5 seconds with
-no speech (then Hariku says so). Twelve seconds without a single pause were
-the room, not speech: Hariku says it was too noisy instead of recognising
-them. The end tone plays, whisper-server recognises
+no speech (then Hariku says so). High sounds (birdsong) never count as speech,
+and once the voice is heard, sounds 12 dB below it count as silence. Twelve
+seconds without a single pause: the part up to the voice's last loud moment is
+recognised, and only when nothing comes of it does Hariku say it was too
+noisy. The end tone plays, whisper-server recognises
 the recording (in memory, over 127.0.0.1), and the text goes to the command
 bar. With the model set to Automatic, words that look like a reminder are
 recognised again with a more accurate model, when one is installed. The
@@ -331,13 +333,14 @@ class Session:
             self.send("error", _("err_no_speech"))
             return
         if vad.noisy:
-            # Twelve seconds without a pause: the room kept it going, not a voice.
+            # Twelve seconds without a pause: the room kept it going. What the
+            # voice itself said (up to its last loud frame) is still recognised.
             logger.info(f"[{EXT_NAME}] Too noisy to hear the end of speech "
-                        f"(room {audio.level_db(vad.noise or 0):.0f} dB).")
-            self.send("error", _("err_too_noisy", seconds=MAX_RECORD_MS // 1000))
-            return
+                        f"(room {audio.level_db(vad.noise or 0):.0f} dB, voice "
+                        f"{audio.level_db(vad.voice_level or 0):.0f} dB); recognising "
+                        f"the voice's first {(vad.voice_end_ms or 0) / 1000:.1f} s.")
         self.send("recognising")
-        wav = audio.wav_bytes(vad.speech_bytes(pcm))
+        wav = audio.wav_bytes(vad.speech_bytes(pcm, voice_only=vad.noisy))
         del pcm
         words, prompt_text = language(), prompt()
         heard, seconds = listener.engine.transcribe(model, wav, prompt=prompt_text,
@@ -354,6 +357,9 @@ class Session:
         del wav
         if self.discard:
             self.send("stopped")
+            return
+        if vad.noisy and not (heard or "").strip():
+            self.send("error", _("err_too_noisy", seconds=MAX_RECORD_MS // 1000))
             return
         self.send("text", heard)
 

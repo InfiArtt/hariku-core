@@ -109,6 +109,22 @@ def speech_clip(lead_ms=400, speech_ms=900, tail_ms=1500):
     return noise(lead_ms) + tone(speech_ms) + noise(tail_ms, seed=2)
 
 
+def chirps(ms, amplitude=6000, freq=3500.0, on_ms=150, off_ms=60):
+    """Birdsong: short high chirps with short gaps, a little louder than a hum."""
+    out = b""
+    while len(out) < 2 * RATE * ms // 1000:
+        out += tone(on_ms, amplitude, freq) + noise(off_ms, seed=len(out))
+    return out[:2 * RATE * ms // 1000]
+
+
+def hum(ms, amplitude=3000, freq=150.0):
+    """A low, steady roar (a vacuum cleaner, a fan): as low as a voice."""
+    n = RATE * ms // 1000
+    rng = random.Random(9)
+    return pcm(amplitude * math.sin(2 * math.pi * freq * i / RATE) + rng.uniform(-60, 60)
+               for i in range(n))
+
+
 # ------------------------------------------------------------
 # Voice activity
 # ------------------------------------------------------------
@@ -189,6 +205,48 @@ class TestVoiceActivity:
         assert 1.3 <= seconds <= 1.7            # 0.9 s of speech and 0.3 s either side
         empty = audio.VoiceActivity()
         assert empty.speech_bytes(b"abcd") == b"abcd"
+
+    def test_crossing_rate(self):
+        def rate(data):
+            return audio.crossing_rate(array.array("h", data))
+        assert rate(tone(300, freq=220.0)) == pytest.approx(2 * 220 / RATE, abs=0.003)
+        assert rate(tone(300, freq=3500.0)) == pytest.approx(2 * 3500 / RATE, abs=0.01)
+        assert 0.4 < rate(noise(300)) < 0.6
+        assert audio.crossing_rate(array.array("h", [5])) == 0.0
+
+    def test_birdsong_never_starts_speech(self):
+        vad = audio.VoiceActivity(start_timeout_ms=3000)
+        assert run(vad, noise(300) + chirps(4000, amplitude=12000)) == vad.NO_SPEECH
+
+    def test_birdsong_after_the_voice_is_a_pause(self):
+        # A command, then birds that never stop (at home, a headset microphone).
+        vad = audio.VoiceActivity(silence_ms=1000)
+        assert run(vad, noise(400) + tone(900) + chirps(9000)) == vad.DONE
+        assert 1250 <= vad.speech_end_ms <= 1350 and vad.elapsed_ms <= 1300 + 1000 + 90
+
+    def test_birdsong_during_the_voice_doesnt_matter(self):
+        clip = noise(400) + tone(900) + chirps(300) + tone(600) + chirps(3000)
+        vad = audio.VoiceActivity(silence_ms=1000)
+        assert run(vad, clip) == vad.DONE
+        assert 2150 <= vad.speech_end_ms <= 2250               # the second word, not a chirp
+
+    def test_a_sound_well_below_the_voice_is_a_pause(self):
+        # A low hum 17 dB under the voice: loud enough to beat the room, not the voice.
+        vad = audio.VoiceActivity(silence_ms=1000)
+        assert run(vad, noise(400) + tone(900, amplitude=6000) + hum(6000, amplitude=800))             == vad.DONE
+        assert vad.voice_level == pytest.approx(6000 / math.sqrt(2), rel=0.05)
+        assert vad.elapsed_ms <= 1300 + 1000 + 90
+
+    def test_a_recording_that_ran_too_long_keeps_the_voice(self):
+        # A hum only 9 dB under the voice keeps it going to the cap; the voice
+        # itself ended at 1300 ms, and that is the part to recognise.
+        data = noise(400) + tone(900, amplitude=6000) + hum(12000, amplitude=2200)
+        vad = audio.VoiceActivity(max_ms=12000)
+        assert run(vad, data) == vad.TOO_LONG and vad.noisy
+        assert 1250 <= vad.voice_end_ms <= 1350
+        part = vad.speech_bytes(data, margin_ms=300, voice_only=True)
+        assert 1.3 <= len(part) / (2.0 * RATE) <= 1.7
+        assert len(vad.speech_bytes(data)) > 10 * 2 * RATE     # without voice_only: everything
 
     def test_levels(self):
         assert audio.level_db(0) == -96.0
@@ -302,8 +360,11 @@ class TestSensitivity:
         # Quiet while the room is measured, then a vacuum cleaner: it starts
         # "speech" that never pauses, and only the 12-second cap ends it.
         vad = audio.VoiceActivity(max_ms=12000)
-        assert run(vad, room(150, 20) + room(13000, 3000, seed=4)) == vad.TOO_LONG
+        assert run(vad, room(150, 20) + hum(13000, 3000)) == vad.TOO_LONG
         assert vad.elapsed_ms == 12000 and vad.noisy
+        # Hiss, however loud, is never speech.
+        vad = audio.VoiceActivity(max_ms=12000)
+        assert run(vad, room(150, 20) + room(13000, 3000, seed=4)) == vad.NO_SPEECH
 
     def test_long_speech_with_pauses_is_not_noise(self):
         clip = room(300, 20) + b"".join(voice(600, 3000) + room(300, 20, seed=i)
@@ -1284,6 +1345,7 @@ class FakeEngine:
         self.answers = answers
         self.error = error
         self.calls = []
+        self.seconds = []
         self.warmed = []
 
     def warm_up(self, model):
@@ -1294,6 +1356,7 @@ class FakeEngine:
             raise self.error
         with wave.open(io.BytesIO(wav)) as w:
             assert w.getframerate() == 16000
+            self.seconds.append(w.getnframes() / 16000.0)
         self.calls.append((model, language, prompt))
         return self.answers[model], {"tiny": 1.5, "base": 4.2, "small": 15.0}[model]
 
@@ -1472,14 +1535,32 @@ class TestListening:
         assert "sensitivity" in text._("err_no_speech")
 
     def test_too_noisy_to_hear_the_end(self, vc):
+        # Twelve seconds of a roar: recognised anyway; nothing came of it, so
+        # Hariku says it was too noisy.
         install_models(["tiny"])
-        listener, log = make_listener(vc, room(150, 20) + room(14000, 3000, seed=4))
+        listener, log = make_listener(vc, room(150, 20) + hum(14000, 3000), answers={"tiny": " "})
         events = listen(listener, log)
         message = text._("err_too_noisy", seconds=12)
-        assert events == [("listening", None), ("error", message)]
+        assert events == [("listening", None), ("recognising", None), ("error", message)]
         assert message.startswith("It was too noisy to hear when you stopped speaking")
         assert "12 seconds" in message and "Enter" in message
-        assert log.engine.calls == [] and log.played[-1] == "listen_end.wav"
+        assert len(log.engine.calls) == 1 and log.played[-1] == "listen_end.wav"
+
+    def test_a_command_in_a_noisy_room_is_still_recognised(self, vc):
+        # The voice, then a hum close behind it to the cap: only the voice goes to whisper.
+        install_models(["tiny"])
+        clip = room(420, 20) + voice(900, 3000) + hum(13000, 900)
+        listener, log = make_listener(vc, clip)
+        assert listen(listener, log)[-1] == ("text", "Gempa terbaru.")
+        assert log.engine.seconds and log.engine.seconds[0] < 2.0
+
+    def test_birds_after_a_command_end_the_recording(self, vc):
+        install_models(["tiny"])
+        clip = room(420, 20) + voice(900, 3000) + chirps(10000, amplitude=4000)
+        listener, log = make_listener(vc, clip)
+        assert listen(listener, log) == [("listening", None), ("recognising", None),
+                                         ("text", "Gempa terbaru.")]
+        assert log.engine.seconds[0] < 2.0
 
     def test_twelve_seconds_of_speech_with_pauses_is_still_recognised(self, vc):
         install_models(["tiny"])
