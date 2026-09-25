@@ -37,6 +37,7 @@ for folder in (SERVER_DIR, EXT_DIR):
     if folder not in sys.path:
         sys.path.insert(0, folder)
 
+import orbit_mix  # noqa: E402
 import orbit_net  # noqa: E402
 import orbit_play  # noqa: E402
 import orbit_server  # noqa: E402
@@ -126,7 +127,10 @@ class Services:
         self.loop = loop
         self.lang = language
         self.values = {"server": url, "name": name, "job": job, "speak": True, "voices": True,
-                       "ambience": True, "ambience_volume": 25, "sounds": True}
+                       "ambience": True, "ambience_volume": 25, "sounds": True, "effects_volume": 100,
+                       "other_sounds": True, "background": "important", "close_action": "stay",
+                       "auto_logout": 30, "ignored": [], "close_hints": 0}
+        self.mixer = orbit_mix.Mixer(lambda: [os.path.join(EXT_DIR, "sounds")], "")
         self.accounts = {}
         self.spoken = []            # (who, text): "narrator" or a voice id
         self.sounds = []
@@ -135,6 +139,15 @@ class Services:
 
     def settings(self):
         return dict(self.values)
+
+    def set_setting(self, key, value):
+        self.values[key] = value
+
+    def open_settings(self):
+        pass
+
+    def open_key(self):
+        return ""
 
     def language(self):
         return self.lang
@@ -169,14 +182,17 @@ class Services:
     def voice_busy(self):
         return False
 
-    def voice_for(self, name):
-        return orbit_speech.pick_voice(name, orbit_speech.voices_of({"edge": VOICES}, self.lang))
+    def voice_for(self, name, number=None):
+        return orbit_speech.pick_voice(name, orbit_speech.voices_of({"edge": VOICES}, self.lang), number=number)
 
     def show_answer(self, text):
         self.shown.append(text)
 
-    def play(self, name):
+    def play(self, name, pan=0.0, acoustics=None):
+        if not self.mixer.variants(name):
+            return False
         self.sounds.append(name)
+        return True
 
     def ambience(self, name, volume):
         self.ambiences.append(name)
@@ -240,7 +256,7 @@ def test_two_players_on_the_station(server, indonesian):
 
     # Walking by compass: both rooms are told which way.
     rafli.do("t", "Kamu berjalan ke timur, ke Gudang Kargo.")
-    assert rafli.services.ambiences[-1] == "vent"
+    assert rafli.services.ambiences[-1] == "vent" and rafli.services.sounds[-1] == "step_metal"
     sari.wait_for("Rafli pergi ke timur, ke Gudang Kargo.")
     sari.do("timur", "Kamu berjalan ke timur, ke Gudang Kargo.")
     rafli.wait_for("Sari datang dari arah barat, dari Dermaga.")
@@ -253,7 +269,7 @@ def test_two_players_on_the_station(server, indonesian):
     assert loop.run_until(lambda: sari.voice_of("Rafli bilang: halo Sari"))
     assert sari.voice_of("Rafli bilang: halo Sari") == [rafli_voice["id"]]
     assert rafli.heard("Terkirim.") and not rafli.heard("Kamu bilang: halo Sari")
-    assert "sent" in rafli.services.sounds and "chat" in sari.services.sounds
+    assert "sent" in rafli.services.sounds and "say" in sari.services.sounds
 
     sari.do("bisik Rafli ketemu di dek observasi ya", "Kamu berbisik ke Rafli: ketemu di dek")
     rafli.wait_for("Sari berbisik padamu: ketemu di dek observasi ya")
@@ -300,6 +316,7 @@ def test_two_players_on_the_station(server, indonesian):
     server.call(lambda: _connection_of(server, "Rafli").writer.transport.abort())
     assert loop.run_until(lambda: rafli.heard("Orbit sedang offline. Aku coba terus, ya."))
     assert loop.run_until(lambda: rafli.client.online() and rafli.said("Tersambung lagi."))
+    assert loop.run_until(lambda: rafli.heard("Tersambung lagi."))
     assert rafli.services.accounts[url]["secret"] == secret
     rafli.do("tas", f"Kreditmu {credits}.")
     assert not any("Rafli" in line for line in sari.client.messages[sari_lines:])
@@ -309,9 +326,11 @@ def test_two_players_on_the_station(server, indonesian):
     rafli.client.submit("orbit lihat sekitar", "aruna")
     assert loop.run_until(lambda: rafli.heard("Dermaga. Cincin dermaga"))
 
-    # Disconnecting.
-    rafli.client.disconnect()
+    # Leaving: goodbye to the server, and Sari hears it at once (no minute's wait).
+    sari_lines = len(sari.client.messages)
+    rafli.client.submit("keluar")
     assert rafli.client.status == "Belum tersambung." and rafli.services.ambiences[-1] is None
+    sari.wait_for("Rafli keluar dari Orbit.", since=sari_lines)
     sari.client.shutdown()
 
 

@@ -8,13 +8,22 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
-Orbit's sounds: which sound an event plays, and the ambience.
+Orbit's sounds: which cue an event plays and from where, and the ambience.
+
+cues_for(message) turns a server event into cues: [(name, pan, acoustics)].
+A step you take is heard on the side you walk to (west on the left, east on
+the right, north and south in the middle) on the floor you walk on, with the
+room's echo; someone arriving from the west is heard on the left; the lift
+hums up or down, a ladder clanks, an airlock hisses. An event's "sound"
+field names a more specific cue (a level up, a harvest, the temple bell);
+the event's kind is the fallback. orbit_mix finds and shapes the files.
 
 The ambience is a quiet loop for the kind of place you're in: the vents'
 hum in corridors, the Cantina's murmur, the reactor's thrum in Engineering,
-water and fans in Hydroponics, the hush of the Observation Deck. It plays
-through an MCI "mpegvideo" device of its own (every command for such a
-device must come from the thread that opened it, so the player has a
+water and fans in Hydroponics, the hush of the Observation Deck, your own
+breathing in a suit outside, the Belt's machinery, the soft air of a venue.
+It plays through an MCI "mpegvideo" device of its own (every command for
+such a device must come from the thread that opened it, so the player has a
 thread), looping, at the volume the user set. It fades out and in between
 places, and goes quiet while Hariku speaks: while Hariku Voice is busy, and
 for about as long as the screen reader needs for a line (hush()).
@@ -30,16 +39,25 @@ import time
 
 logger = logging.getLogger(__name__)
 
-SOUND_FOR_KIND = {
+# The cue for each kind of event (when the event names no cue of its own).
+KIND_CUES = {
     "moved": "door", "arrive": "arrive", "leave": "leave", "whisper": "whisper",
-    "say": "chat", "shout": "chat", "emote": "chat",
+    "say": "say", "shout": "shout", "emote": "emote",
     "said": "sent", "whispered": "sent", "shouted": "sent",
     "announce": "announce", "system": "announce",
     "paid": "success", "received": "coins", "gave": "coins", "trade": "coins",
-    "failed": "fail", "error": "error", "mission": "mission",
+    "failed": "fail", "error": "error", "mission": "mission", "task": "task", "offer": "offer",
 }
-EXTRA_SOUNDS = {"launch": "launch", "landing": "landing"}
-AMBIENCES = ("vent", "cantina", "engine", "garden", "deck")
+# Kept for older callers: the kind's cue.
+SOUND_FOR_KIND = KIND_CUES
+DIR_PAN = {"n": 0.0, "s": 0.0, "e": 0.75, "w": -0.75, "ne": 0.5, "se": 0.5, "nw": -0.5, "sw": -0.5,
+           "u": 0.0, "d": 0.0}
+VIA_CUES = {"lift": ("lift_up", "lift_down"), "ladder": ("ladder", "ladder"),
+            "slide": ("slide", "slide"), "airlock": ("airlock", "airlock")}
+FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet")
+AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue")
+# Other players' sounds (the "Other players' sounds" setting): what they do near you.
+OTHERS_KINDS = ("say", "shout", "emote", "arrive", "leave")
 TONE_GAP_SECONDS = 0.45
 
 POLL_SECONDS = 0.05
@@ -47,15 +65,46 @@ FADE_PER_SECOND = 900.0       # MCI volume units (0-1000) a second
 MODE_CHECK_SECONDS = 1.0
 
 
-def sound_for(message):
-    """The sound (a file name without .wav) for a server message, or None."""
-    extra = message.get("sound")
-    if extra in EXTRA_SOUNDS:
-        return EXTRA_SOUNDS[extra]
+def _step(floor):
+    return f"step_{floor}" if floor in FLOORS else "step_metal"
+
+
+def cues_for(message, acoustics=None):
+    """The sounds for a server event: [(cue, pan, acoustics, fallback)], all
+    played together; `fallback` is the cue to play when `cue` has no file."""
     kind = message.get("k")
-    if kind == "emote" and not message.get("actor"):
-        return "sent"                     # your own gesture
-    return SOUND_FOR_KIND.get(kind)
+    room = message.get("acoustics") or acoustics
+    d = message.get("dir")
+    pan = DIR_PAN.get(d, 0.0)
+    sound = message.get("sound")
+    kind_cue = KIND_CUES.get(kind)
+    if kind == "moved":
+        if sound:
+            return [(sound, 0.0, None, "door")]
+        via = message.get("via")
+        if via in VIA_CUES:
+            return [(VIA_CUES[via][1 if d == "d" else 0], pan, room, "door")]
+        if not d:
+            return [("door", 0.0, room, None)]
+        cues = [(_step(message.get("floor")), pan, room, "door")]
+        if via == "door":
+            cues.insert(0, ("door", pan, room, None))
+        return cues
+    if kind in ("arrive", "leave") and d:
+        return [(kind, pan, room, None)]
+    if kind == "emote":
+        eid = message.get("emote")
+        cue = f"emote_{eid}" if isinstance(eid, str) and eid.isalpha() else "emote"
+        return [(sound or cue, 0.0, room, "emote")]
+    if sound:
+        return [(sound, 0.0, None, kind_cue)]
+    return [(kind_cue, 0.0, None, None)] if kind_cue else []
+
+
+def sound_for(message):
+    """The first cue for a server message (a name, no .wav), or None."""
+    cues = cues_for(message)
+    return cues[0][0] if cues else None
 
 
 def tone_names(codes):

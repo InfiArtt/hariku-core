@@ -35,7 +35,7 @@ def test_orbit_windows(tmp_path):
     )
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK load", "OK fakes", "OK page", "OK window",
-                  "OK other_player", "OK aruna", "OK escape", "OK teardown", "OK no_errors",
+                  "OK other_player", "OK aruna", "OK escape", "OK leave", "OK teardown", "OK no_errors",
                   "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output

@@ -60,15 +60,29 @@ def voices_of(voices_by_provider, language):
     return sorted(found, key=lambda v: (str(v["provider"]), str(v["id"])))
 
 
-def pick_voice(name, voices, exclude=None):
-    """The voice for player `name` among `voices` (from voices_of), or None
-    when there are fewer than two to choose from. `exclude` is (provider,
-    voice id) of the narrator's voice, left out when two others remain."""
+def _pool(voices, exclude):
     pool = list(voices or [])
     if exclude and len(pool) > 2:
         pool = [v for v in pool if (v["provider"], v["id"]) != tuple(exclude)] or pool
+    return pool
+
+
+def pick_voice(name, voices, exclude=None, number=None):
+    """The voice for player `name` among `voices` (from voices_of), or None
+    when there are fewer than two to choose from. `exclude` is (provider,
+    voice id) of the narrator's voice, left out when two others remain.
+    `number` is the voice the player chose ("my voice 3", 1 to 10): the
+    same number is always the same voice here, counting round the voices
+    this computer has; without one, the name picks."""
+    pool = _pool(voices, exclude)
     if len(pool) < 2:
         return None
+    try:
+        number = int(number or 0)
+    except (TypeError, ValueError):
+        number = 0
+    if number > 0:
+        return pool[(number - 1) % len(pool)]
     digest = hashlib.sha256(str(name or "").casefold().encode("utf-8")).digest()
     return pool[int.from_bytes(digest[:8], "big") % len(pool)]
 

@@ -17,10 +17,19 @@ What a player typed or said, in Indonesian or English, as an Orbit command.
     parse("beri Sari 50 kredit")      -> {"c": "give", "to": "Sari", "n": 50, "item": "kredit"}
     parse("3 1 4 2")                  -> {"c": "answer", "a": "3 1 4 2"}
     parse("bantuan")                  -> {"local": "help"}
+    parse("bantuan kasino")           -> {"local": "help", "topic": "kasino"}
+    parse("suara pemain mati")        -> {"local": "set", "key": "voices", "value": False}
+    parse("abaikan Budi")             -> {"local": "ignore", "name": "Budi"}
+    parse("keluar")                   -> {"local": "disconnect"}
     parse("kantin")                   -> {"c": "text", "a": "kantin"}   (the server guesses)
+    parse("s")                        -> {"c": "text", "a": "s"}        (a direction: the server
+                                         knows them, and that "u" is utara in Indonesian)
 
 Only the command word is read here; the server finds the place, the player
-or the thing (it knows the station), so a new place needs no new client.
+or the thing (it knows the station), and reads the commands this reader
+doesn't know itself (directions, the farm, the shops...), so a new place or
+command needs no new client. Settings, the ignore list, the help and
+leaving are the client's own ("local").
 Words are compared in lower case without the punctuation around them; what
 is said keeps its capitals and punctuation. "orbit" (and "tolong",
 "please"...) in front is skipped, so Aruna's "orbit pergi ke kantin" works
@@ -60,7 +69,22 @@ _VERBS = [
     (("connect",), "connect"), (("reconnect",), "connect"), (("sambungkan",), "connect"),
     (("sambung",), "connect"), (("hubungkan",), "connect"),
     (("disconnect",), "disconnect"), (("quit",), "disconnect"), (("logout",), "disconnect"),
-    (("putuskan",), "disconnect"), (("putus",), "disconnect"),
+    (("putuskan",), "disconnect"), (("putus",), "disconnect"), (("keluar",), "disconnect"),
+    (("keluar", "dari", "orbit"), "disconnect"), (("log", "out"), "disconnect"),
+    (("leave", "orbit"), "disconnect"), (("exit",), "disconnect"),
+    (("status",), "status"), (("status", "orbit"), "status"), (("connection", "status"), "status"),
+    (("pengaturan",), "settings"), (("settings",), "settings"), (("preferences",), "settings"),
+    (("setelan",), "settings"), (("options",), "settings"),
+    (("abaikan",), "ignore"), (("ignore",), "ignore"), (("daftar", "abaikan"), "ignored"),
+    (("ignored",), "ignored"), (("ignore", "list"), "ignored"),
+    (("dengar", "lagi"), "unignore"), (("unignore",), "unignore"), (("jangan", "abaikan"), "unignore"),
+    (("berhenti", "abaikan"), "unignore"), (("stop", "ignoring"), "unignore"),
+    # the server reads these itself: words this reader would take for something else
+    (("beri", "kredit"), "raw"), (("ambil", "kredit"), "raw"), (("beri", "item"), "raw"),
+    (("take", "off"), "raw"), (("take", "credits"), "raw"), (("board", "the", "kancil"), "raw"),
+    (("board", "kancil"), "raw"), (("board", "the", "shuttle"), "raw"), (("board", "shuttle"), "raw"),
+    (("transfer", "code"), "raw"), (("lihat", "papan", "skor"), "raw"), (("give", "item"), "raw"),
+    (("lihat", "peta"), "raw"), (("cek", "lahan"), "raw"),
     (("repeat",), "repeat"), (("again",), "repeat"), (("ulangi",), "repeat"), (("ulang",), "repeat"),
     (("apa", "tadi"), "repeat"),
     # missions, before "look" and "take"
@@ -160,6 +184,27 @@ _EMOTE_PHRASES = sorted(((tuple(p.split()), eid) for eid, phrases in EMOTES.item
                          for p in phrases), key=lambda e: -len(e[0]))
 
 _ALL_WORDS = {"all", "semua", "semuanya", "everything"}
+_ON_WORDS = {"on", "nyala", "hidup", "aktif", "nyalakan", "hidupkan", "aktifkan", "enable", "yes", "ya"}
+_OFF_WORDS = {"off", "mati", "matikan", "nonaktif", "nonaktifkan", "disable", "no", "tidak"}
+# What the quick settings are called: (words, setting).
+_SETTINGS = sorted([
+    (("suara", "pemain"), "voices"), (("suara", "orang"), "voices"), (("voices",), "voices"),
+    (("player", "voices"), "voices"), (("players", "voices"), "voices"),
+    (("bacakan", "pesan"), "speak"), (("baca", "pesan"), "speak"), (("speech",), "speak"),
+    (("speak", "messages"), "speak"), (("read", "aloud"), "speak"),
+    (("ambience",), "ambience"), (("ambiance",), "ambience"), (("suasana",), "ambience"),
+    (("suasana", "latar"), "ambience"),
+    (("suara", "efek"), "sounds"), (("efek", "suara"), "sounds"), (("bunyi",), "sounds"),
+    (("sounds",), "sounds"), (("sound", "effects"), "sounds"), (("effects",), "sounds"),
+    (("suara", "orang", "lain"), "other_sounds"), (("other", "sounds"), "other_sounds"),
+    (("other", "players", "sounds"), "other_sounds"), (("others", "sounds"), "other_sounds"),
+], key=lambda e: -len(e[0]))
+_VOLUMES = sorted([
+    (("volume", "efek"), "effects_volume"), (("effects", "volume"), "effects_volume"),
+    (("volume", "suara", "efek"), "effects_volume"), (("volume", "bunyi"), "effects_volume"),
+    (("volume", "suasana"), "ambience_volume"), (("ambience", "volume"), "ambience_volume"),
+    (("volume", "ambience"), "ambience_volume"),
+], key=lambda e: -len(e[0]))
 _CREDIT_WORDS = {"credit", "credits", "kredit", "cr", "uang", "duit"}
 
 
@@ -279,6 +324,29 @@ def _goods(text, tokens, index, command):
     return message
 
 
+def _setting(tokens):
+    """A quick setting ("suara pemain mati", "matikan ambience", "effects volume 40"), or None."""
+    words = [t[2] for t in tokens]
+    for phrase, key in _VOLUMES:
+        n = len(phrase)
+        if tuple(words[:n]) == phrase and len(words) == n + 1 and _number(words[n]) is not None:
+            return {"local": "set", "key": key, "value": max(0, min(100, _number(words[n])))}
+    value = None
+    if words and words[0] in _ON_WORDS | _OFF_WORDS | {"turn"}:
+        if words[0] == "turn" and len(words) > 1 and words[1] in ("on", "off"):
+            value, words = words[1] == "on", words[2:]
+        elif words[0] != "turn":
+            value, words = words[0] in _ON_WORDS, words[1:]
+    elif words and words[-1] in _ON_WORDS | _OFF_WORDS:
+        value, words = words[-1] in _ON_WORDS, words[:-1]
+    if value is None:
+        return None
+    for phrase, key in _SETTINGS:
+        if tuple(words) == phrase:
+            return {"local": "set", "key": key, "value": value}
+    return None
+
+
 def parse(text):
     """The command in `text` (see the module notes), or None for nothing."""
     text = strip_prefix(" ".join(str(text or "").split()))
@@ -291,6 +359,9 @@ def parse(text):
     tokens = _tokens(text)
     if not tokens:
         return None
+    setting = _setting(tokens)
+    if setting is not None:
+        return setting
 
     meaning, used = _match(tokens, _VERBS)
     rest = _rest(text, tokens, used)
@@ -299,15 +370,23 @@ def parse(text):
         return emote                        # "angkat bahu" is a shrug, not "take"
 
     if meaning == "help":
-        return {"local": "help"}
-    if meaning in ("connect", "disconnect", "repeat") and not rest:
+        return {"local": "help", "topic": rest.lower()} if rest else {"local": "help"}
+    if meaning in ("connect", "disconnect", "repeat", "status", "settings", "ignored") and not rest:
         return {"local": meaning}
+    if meaning == "raw":
+        return {"c": "text", "a": text}
+    if meaning in ("ignore", "unignore"):
+        if not rest:
+            return {"local": "ignored"}
+        return {"local": meaning, "name": text[tokens[used][0]:tokens[used][1]].strip(_EDGE)}
     if meaning is None:
         return {"c": "text", "a": text}
     if meaning == "inventory" and rest and used == 1 and len(tokens[0][2]) == 1:
         return {"c": "text", "a": text}     # "i" alone is the inventory; "i think..." isn't
     if meaning == "missions" and _number(rest) is not None:
         return {"c": "accept", "n": _number(rest)}      # "misi 2"
+    if meaning == "prices":
+        return {"c": "prices", "a": rest} if rest else {"c": "prices"}
     if meaning == "look_around":
         return {"c": "look"}
     if meaning == "look":
@@ -352,6 +431,6 @@ def parse(text):
         if numbers:
             message["n"] = numbers[0]
         return message
-    if meaning in ("help", "connect", "disconnect", "repeat"):
+    if meaning in ("help", "connect", "disconnect", "repeat", "status", "settings", "ignored"):
         return {"c": "text", "a": text}
     return {"c": meaning}

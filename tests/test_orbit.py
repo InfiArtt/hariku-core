@@ -8,17 +8,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Tests for the Orbit extension (extensions/orbit), all on fakes: reading
-# commands in Indonesian and English, Aruna's "orbit ..." commands, playing
-# (what is shown, played and said, and by whom), each player's own voice, the
-# speaking queue, the ambience player (a fake MCI), the connection thread (a
-# fake socket), the settings, registering, and the generated sounds. Nothing
-# is sent, played, spoken or shown. tests/test_orbit_e2e.py plays against the
-# real server on this computer.
+# commands in Indonesian and English (and the client's own: quick settings,
+# the ignore list, leaving, the status), Aruna's "orbit ..." commands,
+# playing (what is shown, played and said, and by whom; what the settings
+# leave unread; what is heard with the window closed; players you ignore),
+# each player's own voice and the voice they chose, the speaking queue,
+# closing the window, leaving, being away and logged out by itself, the
+# status, moving a character to another computer, the ambience player (a
+# fake MCI), the connection thread (a fake socket), the settings,
+# registering, the cues and where they come from, the mixer that finds and
+# places them, and the generated sounds. Nothing is sent, played, spoken or
+# shown. tests/test_orbit_e2e.py plays against the real server on this computer.
 
 import importlib.util
 import io
 import math
 import os
+import random
 import sys
 import threading
 import time
@@ -122,6 +128,37 @@ def lang(monkeypatch):
     ("tolong orbit siapa online", {"c": "who"}),
     ("mute Budi 5", {"c": "admin", "op": "mute", "to": "Budi", "n": 5}),
     ("umumkan server restart jam 9", {"c": "admin", "op": "announce", "a": "server restart jam 9"}),
+    ("suara pemain mati", {"local": "set", "key": "voices", "value": False}),
+    ("nyalakan suara pemain", {"local": "set", "key": "voices", "value": True}),
+    ("voices off", {"local": "set", "key": "voices", "value": False}),
+    ("bacakan pesan mati", {"local": "set", "key": "speak", "value": False}),
+    ("speech on", {"local": "set", "key": "speak", "value": True}),
+    ("ambience mati", {"local": "set", "key": "ambience", "value": False}),
+    ("suasana nyala", {"local": "set", "key": "ambience", "value": True}),
+    ("suara efek mati", {"local": "set", "key": "sounds", "value": False}),
+    ("turn off sounds", {"local": "set", "key": "sounds", "value": False}),
+    ("other sounds off", {"local": "set", "key": "other_sounds", "value": False}),
+    ("volume efek 40", {"local": "set", "key": "effects_volume", "value": 40}),
+    ("ambience volume 250", {"local": "set", "key": "ambience_volume", "value": 100}),
+    ("pengaturan", {"local": "settings"}), ("settings", {"local": "settings"}),
+    ("abaikan Budi", {"local": "ignore", "name": "Budi"}),
+    ("ignore Budi", {"local": "ignore", "name": "Budi"}),
+    ("dengar lagi Budi", {"local": "unignore", "name": "Budi"}),
+    ("unignore Budi", {"local": "unignore", "name": "Budi"}),
+    ("daftar abaikan", {"local": "ignored"}),
+    ("keluar", {"local": "disconnect"}), ("orbit keluar", {"local": "disconnect"}),
+    ("quit", {"local": "disconnect"}),
+    ("status", {"local": "status"}), ("status orbit", {"local": "status"}),
+    ("bantuan kasino", {"local": "help", "topic": "kasino"}),
+    ("help settings", {"local": "help", "topic": "settings"}),
+    ("harga panen", {"c": "prices", "a": "panen"}),
+    ("s", {"c": "text", "a": "s"}), ("u", {"c": "text", "a": "u"}), ("barat daya", {"c": "text", "a": "barat daya"}),
+    ("beri kredit Budi 50", {"c": "text", "a": "beri kredit Budi 50"}),
+    ("ambil kredit Budi 50", {"c": "text", "a": "ambil kredit Budi 50"}),
+    ("take off headlamp", {"c": "text", "a": "take off headlamp"}),
+    ("board the Kancil", {"c": "text", "a": "board the Kancil"}),
+    ("transfer code", {"c": "text", "a": "transfer code"}),
+    ("nyalakan lentera", {"c": "text", "a": "nyalakan lentera"}),
     ("", None), ("   ", None),
 ])
 def test_reading_commands_in_both_languages(text, expected):
@@ -253,13 +290,16 @@ def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
     monkeypatch.setattr(core.commands, "_intents", {})
     monkeypatch.setattr(core.commands, "_answer_actions", set())
     omain.register(fresh_event_bus)
-    assert {args[1] for args, _kw in actions} == {"open", "look", "who", "credits", "connect"}
+    assert {args[1] for args, _kw in actions} == {"open", "look", "who", "credits", "connect", "status",
+                                                  "leave", "daily", "harvest", "profile"}
     for args, kwargs in actions:
         assert args[0] == "Orbit" and args[3] is None and kwargs == {}        # no default keys
     assert core.commands.is_answer_action("Orbit.look") and core.commands.is_answer_action("Orbit.who")
     assert not core.commands.is_answer_action("Orbit.open")                # it opens a window
     assert [i.id for i in core.commands.intents()] == ["Orbit.play"]
     assert "buka orbit" in core.commands.aliases_for("Orbit.open")
+    assert "orbit keluar" in core.commands.aliases_for("Orbit.leave")
+    assert "orbit status" in core.commands.aliases_for("Orbit.status")
     assert panels[0][0] == "Orbit"
     assert omain._on_before_speak in fresh_event_bus._listeners["on_before_speak"]
     omain.teardown()
@@ -270,10 +310,16 @@ def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
 def test_settings_are_checked(omain):
     s = omain.normalize_settings({"server": "  wss://example.org/orbit/ws ", "name": " Rafli ",
                                   "job": "wizard", "speak": "yes", "ambience_volume": 250,
-                                  "voices": False})
+                                  "voices": False, "read_shout": False, "background": "loud",
+                                  "close_action": "leave", "auto_logout": 45, "effects_volume": -5,
+                                  "ignored": ["Budi", " budi ", "", 7, "Sari"]})
     assert s == {"server": "wss://example.org/orbit/ws", "name": "Rafli", "job": "pilot",
                  "speak": True, "voices": False, "ambience": True, "ambience_volume": 100,
-                 "sounds": True}
+                 "sounds": True, "effects_volume": 0, "other_sounds": True,
+                 "read_say": True, "read_whisper": True, "read_shout": False, "read_moves": True,
+                 "read_money": True, "read_announce": True, "background": "important",
+                 "close_action": "leave", "auto_logout": 30, "autoconnect": False,
+                 "ignored": ["Budi", "Sari"], "close_hints": 0}
     assert omain.normalize_settings("broken") == omain.DEFAULT_SETTINGS
     assert omain.DEFAULT_SETTINGS["server"] == "wss://infiartt.com/orbit/ws"
 
@@ -335,25 +381,45 @@ class FakeServices:
                        {"id": "id-ID-GadisNeural", "name": "Gadis", "language": "id-ID"}],
               "windows": [{"id": "andika", "name": "Andika", "language": "id-ID"},
                           {"id": "zira", "name": "Zira", "language": "en-US"}]}
+    # The cues these fakes can play (step_grass has no file: it falls back).
+    FILES = {"door", "arrive", "leave", "say", "whisper", "shout", "emote", "emote_wave", "sent",
+             "announce", "success", "coins", "fail", "error", "mission", "task", "offer",
+             "step_metal", "lift_up", "lift_down", "levelup", "tone1", "tone2", "tone3", "tone4"}
 
     def __init__(self, **settings):
         self.values = {"server": "wss://infiartt.com/orbit/ws", "name": "Rafli", "job": "pilot",
                        "speak": True, "voices": True, "ambience": True, "ambience_volume": 25,
-                       "sounds": True}
+                       "sounds": True, "effects_volume": 100, "other_sounds": True,
+                       "read_say": True, "read_whisper": True, "read_shout": True,
+                       "read_moves": True, "read_money": True, "read_announce": True,
+                       "background": "important", "close_action": "stay", "auto_logout": 30,
+                       "autoconnect": False, "ignored": [], "close_hints": 0}
         self.values.update(settings)
         self.accounts = {}
         self.connections = []
         self.spoken = []
         self.sounds = []
+        self.placed = []
         self.ambiences = []
         self.shown = []
         self.timers = []
         self.window = True
         self.voices_on = True
         self.secrets = 0
+        self.settings_opened = 0
+        self.key = "Ctrl + Shift + O"
 
     def settings(self):
         return dict(self.values)
+
+    def set_setting(self, key, value):
+        self.values[key] = value
+
+    def open_settings(self):
+        self.settings_opened += 1
+
+    def open_key(self):
+        return self.key
 
     def language(self):
         return "id"
@@ -401,16 +467,20 @@ class FakeServices:
     def voice_busy(self):
         return False
 
-    def voice_for(self, name):
+    def voice_for(self, name, number=None):
         if not self.voices_on:
             return None
-        return orbit_speech.pick_voice(name, orbit_speech.voices_of(self.VOICES, "id"))
+        return orbit_speech.pick_voice(name, orbit_speech.voices_of(self.VOICES, "id"), number=number)
 
     def show_answer(self, text):
         self.shown.append(text)
 
-    def play(self, name):
+    def play(self, name, pan=0.0, acoustics=None):
+        if name not in self.FILES:
+            return False
         self.sounds.append(name)
+        self.placed.append((name, pan, acoustics))
+        return True
 
     def ambience(self, name, volume):
         self.ambiences.append((name, volume))
@@ -438,7 +508,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.0", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.1", "lang": "id",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -496,13 +566,13 @@ def test_what_the_connection_says(play):
     conn.on_state("offline", {"reason": "lost", "retry_in": 4.2})
     conn.on_state("connecting", {"attempt": 1})
     conn.on_state("offline", {"reason": "lost", "retry_in": 8.1})
-    assert client.status == "Orbit sedang offline. Coba lagi dalam 8 detik."
+    assert client.status == "Terputus, menyambung lagi dalam 8 detik..." and client.title_state == "Terputus"
     assert [t for _w, t in s.spoken].count("Orbit sedang offline. Aku coba terus, ya.") == 1
     assert s.ambiences[-1] == (None, None)
     conn.on_state("online", {})
     conn.on_message({"t": "welcome", "name": "Rafli", "job": "pilot", "resumed": True,
                      "room": "cantina", "amb": "cantina"})
-    assert s.spoken[-1] == ("narrator", "Tersambung ke Orbit.") and s.ambiences[-1] == ("cantina", 25)
+    assert s.spoken[-1] == ("narrator", "Tersambung lagi.") and s.ambiences[-1] == ("cantina", 25)
     conn.on_state("failed", {"code": "kicked"})
     assert client.status == "Admin mengeluarkanmu dari stasiun. Sambungkan lagi nanti."
     assert client.conn is None
@@ -529,7 +599,7 @@ def test_events_are_shown_played_and_said(play):
     assert s.sounds[-1] == "sent"
     conn.event("say", "Sari bilang: halo Rafli!", actor="Sari")
     sari = orbit_speech.pick_voice("Sari", orbit_speech.voices_of(FakeServices.VOICES, "id"))
-    assert s.spoken[-1] == (sari["id"], "Sari bilang: halo Rafli!") and s.sounds[-1] == "chat"
+    assert s.spoken[-1] == (sari["id"], "Sari bilang: halo Rafli!") and s.sounds[-1] == "say"
     conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
     assert s.sounds[-1] == "whisper" and s.spoken[-1][0] != "narrator"
     conn.event("emote", "Sari tersenyum padamu.", actor="Sari")
@@ -563,7 +633,7 @@ def test_quiet_unless_aruna_asked(play):
     count = len(s.spoken)
     conn.event("say", "Sari bilang: halo", actor="Sari")
     assert len(s.spoken) == count and client.messages[-1] == "Sari bilang: halo"
-    assert s.sounds[-1] == "chat"
+    assert s.sounds[-1] == "say"
     client.submit("orbit siapa online", "aruna")
     assert conn.sent[-1] == {"t": "cmd", "c": "who"}
     conn.event("who", "2 orang online: Rafli si pilot, di Dermaga; Sari si pilot, di Dermaga.")
@@ -582,7 +652,8 @@ def test_the_reactor_tones_play_before_the_line_is_read(play):
     conn = _online(play)
     s.spoken.clear()
     conn.event("tones", "Dengarkan 3 nada penstabil: 2, 4, 1.", codes=[2, 4, 1])
-    assert s.spoken == [] and len(s.timers) == 4
+    assert s.spoken == [] and len([t for t in s.timers if t.fn != play.client._tick]) == 4
+    s.timers = [t for t in s.timers if t.fn != play.client._tick]
     s.run_timers()
     assert [x for x in s.sounds if x.startswith("tone")] == ["tone2", "tone4", "tone1"]
     assert s.spoken == [("narrator", "Dengarkan 3 nada penstabil: 2, 4, 1.")]
@@ -613,7 +684,7 @@ def test_the_ambience_follows_the_room_the_window_and_the_settings(play):
     assert s.ambiences[-1] == (None, None)
     s.values["ambience"] = True
     client.disconnect()
-    assert s.ambiences[-1] == (None, None) and s.spoken[-1] == ("narrator", "Sambungan ke Orbit diputus.")
+    assert s.ambiences[-1] == (None, None) and s.spoken[-1] == ("narrator", "Kamu keluar dari Orbit.")
 
 
 def test_commands_are_sent_or_wait_for_the_connection(play):
@@ -632,7 +703,7 @@ def test_orbits_own_commands(play):
     assert client.submit("ulangi") == "local"
     assert s.spoken[-1] == ("narrator", "Belum ada pesan.")
     client.submit("bantuan")
-    assert client.messages[-1].startswith("Perintah Orbit.") and s.spoken[-1][1].startswith("Perintah Orbit.")
+    assert client.messages[-1].startswith("Bantuan Orbit.") and s.spoken[-1][1].startswith("Bantuan Orbit.")
     client.submit("sambungkan")
     assert s.connections and s.connections[-1].started
     s.connections[-1].welcome()
@@ -802,13 +873,25 @@ def test_a_busy_room_drops_the_oldest_waiting_lines():
 # Sounds and the ambience
 # ------------------------------------------------------------
 
-def test_which_sound_an_event_plays():
-    assert orbit_audio.sound_for({"k": "moved"}) == "door"
-    assert orbit_audio.sound_for({"k": "whisper", "actor": "Sari"}) == "whisper"
-    assert orbit_audio.sound_for({"k": "emote", "actor": "Sari"}) == "chat"
-    assert orbit_audio.sound_for({"k": "emote"}) == "sent"
+def test_which_cues_an_event_plays_and_from_where():
+    cues = orbit_audio.cues_for
+    assert cues({"k": "moved", "dir": "w", "floor": "grass", "acoustics": "open"}) == [
+        ("step_grass", -0.75, "open", "door")]
+    assert cues({"k": "moved", "dir": "e"}) == [("step_metal", 0.75, None, "door")]
+    assert cues({"k": "moved", "dir": "u", "via": "lift"}) == [("lift_up", 0.0, None, "door")]
+    assert cues({"k": "moved", "dir": "d", "via": "lift"})[0][0] == "lift_down"
+    assert cues({"k": "moved", "dir": "s", "via": "door", "acoustics": "small"}) == [
+        ("door", 0.0, "small", None), ("step_metal", 0.0, "small", "door")]
+    assert cues({"k": "moved"}) == [("door", 0.0, None, None)]                    # an old server
+    assert cues({"k": "moved", "sound": "landing", "dir": "e"}) == [("landing", 0.0, None, "door")]
+    assert cues({"k": "arrive", "dir": "nw", "acoustics": "hall"}) == [("arrive", -0.5, "hall", None)]
+    assert cues({"k": "leave", "dir": "e"}) == [("leave", 0.75, None, None)]
+    assert cues({"k": "emote", "emote": "clap", "actor": "Sari"}) == [("emote_clap", 0.0, None, "emote")]
+    assert cues({"k": "emote"}) == [("emote", 0.0, None, "emote")]
+    assert cues({"k": "paid", "sound": "levelup"}) == [("levelup", 0.0, None, "success")]
+    assert cues({"k": "whisper", "actor": "Sari"}) == [("whisper", 0.0, None, None)]
+    assert cues({"k": "room"}) == []
     assert orbit_audio.sound_for({"k": "flight", "sound": "launch"}) == "launch"
-    assert orbit_audio.sound_for({"k": "room"}) is None
     assert orbit_audio.tone_names([1, "4", 9, "x", 2]) == ["tone1", "tone4", "tone2"]
 
 
@@ -1060,6 +1143,339 @@ def test_old_commands_are_not_sent_late(monkeypatch):
 
 
 # ------------------------------------------------------------
+# Settings from the game, what is read, and who is heard
+# ------------------------------------------------------------
+
+def test_quick_settings_from_the_game(play):
+    s, client = play.services, play.client
+    conn = _online(play)
+    assert conn.sent == []
+    assert client.submit("suara pemain mati") == "local"
+    assert s.values["voices"] is False and s.spoken[-1] == ("narrator", "Suara pemain mati: semua dibacakan suaramu yang biasa.")
+    client.submit("bacakan pesan mati")
+    assert s.values["speak"] is False
+    assert s.spoken[-1] == ("narrator", "Pesan tidak dibacakan sekarang; tetap masuk daftar Pesan.")   # said anyway
+    client.submit("volume efek 40")
+    assert s.values["effects_volume"] == 40 and client.messages[-1] == "Volume efek 40 persen."
+    client.submit("ambience mati")
+    assert s.values["ambience"] is False and s.ambiences[-1] == (None, None)
+    client.submit("pengaturan")
+    assert s.settings_opened == 1
+    assert conn.sent == []                                   # none of it went to the server
+
+
+def test_what_is_read_can_be_narrowed(play):
+    s, client = play.services, play.client
+    s.values.update(read_say=False, read_moves=False, read_money=False)
+    conn = _online(play)
+    count = len(s.spoken)
+    conn.event("say", "Sari bilang: halo", actor="Sari")
+    conn.event("emote", "Sari tersenyum.", actor="Sari", emote="smile")
+    conn.event("arrive", "Budi datang dari arah barat, dari Dermaga.", actor="Budi", dir="w")
+    conn.event("paid", "Kamu dibayar 40 kredit.")
+    assert len(s.spoken) == count                           # not read...
+    assert client.messages[-4:] == ["Sari bilang: halo", "Sari tersenyum.",
+                                    "Budi datang dari arah barat, dari Dermaga.", "Kamu dibayar 40 kredit."]
+    assert s.sounds[-4:] == ["say", "emote", "arrive", "success"]               # ...but heard
+    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
+    conn.event("emote", "Kamu tersenyum.", emote="smile")   # your own gesture: always
+    assert s.spoken[-1] == ("narrator", "Kamu tersenyum.") and s.spoken[-2][1] == "Budi berbisik padamu: psst"
+    client.submit("orbit siapa online", "aruna")
+    conn.event("say", "Sari bilang: aku di sini", actor="Sari")
+    assert s.spoken[-1][1] == "Sari bilang: aku di sini"   # Aruna asked: everything is read
+
+
+def test_with_the_window_closed_only_what_matters_is_heard(play):
+    s, client = play.services, play.client
+    conn = _online(play, name="Rafli")
+    s.window = False
+    s.spoken.clear()
+    s.sounds.clear()
+    conn.event("say", "Sari bilang: halo semua", actor="Sari")
+    conn.event("arrive", "Budi datang.", actor="Budi", dir="n")
+    assert s.spoken == [] and s.sounds == []                # quiet, and shown
+    assert client.messages[-1] == "Budi datang."
+    conn.event("say", "Sari bilang: Rafli, ke kantin yuk", actor="Sari")
+    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
+    conn.event("announce", "Pengumuman dari Anjungan: server restart jam 9")
+    assert [line for _who, line in s.spoken] == ["Sari bilang: Rafli, ke kantin yuk",
+                                                  "Budi berbisik padamu: psst",
+                                                  "Pengumuman dari Anjungan: server restart jam 9"]
+    assert s.sounds == ["say", "whisper", "announce"]
+    s.values["background"] = "none"
+    conn.event("whisper", "Budi berbisik padamu: halo?", actor="Budi")
+    assert len(s.spoken) == 3 and len(s.sounds) == 3
+    s.values["background"] = "all"
+    conn.event("say", "Sari bilang: dadah", actor="Sari")
+    assert s.spoken[-1][1] == "Sari bilang: dadah"
+
+
+def test_ignored_players_are_neither_shown_nor_heard(play):
+    s, client = play.services, play.client
+    conn = _online(play)
+    client.submit("abaikan Budi")
+    assert s.values["ignored"] == ["Budi"] and client.messages[-1].startswith("Mengabaikan Budi")
+    lines = len(client.messages)
+    conn.event("say", "Budi bilang: hoi", actor="Budi")
+    conn.event("shout", "Budi berteriak: HOI", actor="Budi")
+    conn.event("emote", "Budi melambai padamu.", actor="budi", emote="wave")
+    conn.event("offer", "Budi mengundangmu ke kabinnya.", actor="Budi", ask=True)
+    assert len(client.messages) == lines
+    conn.event("arrive", "Budi datang.", actor="Budi")      # where they are still shows
+    assert client.messages[-1] == "Budi datang."
+    client.submit("dengar lagi budi")
+    assert s.values["ignored"] == []
+    conn.event("say", "Budi bilang: maaf", actor="Budi")
+    assert client.messages[-1] == "Budi bilang: maaf"
+
+
+def test_other_players_sounds_can_be_turned_off(play):
+    s = play.services
+    s.values["other_sounds"] = False
+    conn = _online(play)
+    s.sounds.clear()
+    conn.event("say", "Sari bilang: halo", actor="Sari")
+    conn.event("arrive", "Budi datang.", actor="Budi", dir="w")
+    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
+    conn.event("paid", "Kamu dibayar.")
+    assert s.sounds == ["whisper", "success"]
+
+
+def test_cues_come_from_their_side_with_a_fallback(play):
+    s = play.services
+    conn = _online(play)
+    s.placed.clear()
+    conn.event("moved", "Kamu berjalan ke barat.", dir="w", floor="metal", acoustics="hall", room="x", amb="vent")
+    conn.event("moved", "Kamu berjalan ke timur.", dir="e", floor="grass", room="y", amb="garden")
+    conn.event("arrive", "Budi datang dari arah timur.", actor="Budi", dir="e")
+    conn.event("paid", "Naik level!", sound="levelup")
+    conn.event("paid", "Kamu memanen.", sound="harvest")
+    assert s.placed == [("step_metal", -0.75, "hall"), ("door", 0.75, "hall"), ("arrive", 0.75, "hall"),
+                        ("levelup", 0.0, None), ("success", 0.0, None)]
+
+
+def test_a_chosen_voice_and_its_preview(play):
+    s = play.services
+    conn = _online(play, name="Rafli")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    conn.event("say", "Sari bilang: halo", actor="Sari", voice=2)
+    assert s.spoken[-1] == (voices[1]["id"], "Sari bilang: halo")
+    conn.event("say", "Budi bilang: halo", actor="Budi", voice=5)
+    assert s.spoken[-1] == (voices[(5 - 1) % 3]["id"], "Budi bilang: halo")
+    conn.event("info", "Beres: orang lain sekarang mendengarmu dengan suara 3.", voice=3, preview=True)
+    assert s.spoken[-1] == (voices[2]["id"], "Beres: orang lain sekarang mendengarmu dengan suara 3.")
+
+
+def test_numbered_voices_are_the_same_on_every_turn():
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    assert [orbit_speech.pick_voice("anyone", voices, number=n)["id"] for n in (1, 2, 3, 4)] == \
+        ["id-ID-ArdiNeural", "id-ID-GadisNeural", "andika", "id-ID-ArdiNeural"]
+    assert orbit_speech.pick_voice("Sari", voices, number=0) == orbit_speech.pick_voice("Sari", voices)
+    assert orbit_speech.pick_voice("Sari", voices[:1], number=2) is None
+    narrator = ("edge", "id-ID-ArdiNeural")
+    assert orbit_speech.pick_voice("x", voices, exclude=narrator, number=1)["id"] == "id-ID-GadisNeural"
+
+
+# ------------------------------------------------------------
+# Closing, leaving, being away, the status
+# ------------------------------------------------------------
+
+def test_closing_the_window_stays_connected_and_says_how_to_come_back(play):
+    s, client = play.services, play.client
+    conn = _online(play)
+    for _i in range(3):
+        assert client.window_closing() is False
+        assert s.spoken[-1] == ("narrator", "Orbit tetap tersambung. Buka lagi dengan Ctrl + Shift + O, "
+                                            "atau bilang ke Aruna: buka orbit. Untuk keluar, ketik keluar.")
+    client.window_closing()
+    assert s.spoken[-1] == ("narrator", "Orbit di latar belakang.") and s.values["close_hints"] == 3
+    assert not conn.stopped and client.online()
+    s.values.update(close_hints=0)
+    s.key = ""
+    client.window_closing()
+    assert "bilang ke Aruna: buka orbit" in s.spoken[-1][1] and "dengan ," not in s.spoken[-1][1]
+
+
+def test_closing_the_window_can_leave_orbit(play):
+    s, client = play.services, play.client
+    s.values["close_action"] = "leave"
+    conn = _online(play)
+    assert client.window_closing() is True
+    assert conn.sent[-1] == {"t": "cmd", "c": "bye"} and conn.stopped
+    assert client.status == "Belum tersambung." and client.title_state == "Keluar"
+
+
+def test_leaving_says_goodbye_to_the_server(play):
+    s, client = play.services, play.client
+    conn = _online(play)
+    client.submit("keluar")
+    assert conn.sent == [{"t": "cmd", "c": "bye"}] and conn.stopped
+    assert s.spoken[-1] == ("narrator", "Kamu keluar dari Orbit.")
+    conn = _online(play)
+    client.shutdown()                                         # Hariku is closing
+    assert conn.sent[-1] == {"t": "cmd", "c": "bye"} and conn.stopped
+    client.connect()
+    offline = s.connections[-1]
+    client.disconnect()                                       # never online: nothing to say goodbye to
+    assert offline.sent == []
+
+
+def test_away_then_logged_out_when_idle_with_the_window_closed(play):
+    s = play.services
+    now = [1000.0]
+    client = orbit_play.OrbitClient(s, clock=lambda: now[0])
+    client.connect()
+    conn = s.connections[-1]
+    conn.welcome()
+    assert any(t.fn == client._tick for t in s.timers)
+    now[0] += 400
+    client.check_idle()
+    assert client.away is False                               # the window is open
+    s.window = False
+    client.check_idle()
+    assert client.away is True and conn.sent[-1] == {"t": "cmd", "c": "away", "on": True}
+    client.check_idle()
+    assert conn.sent.count({"t": "cmd", "c": "away", "on": True}) == 1
+    client.submit("lihat")
+    assert client.away is False and conn.sent[-1] == {"t": "cmd", "c": "look"}
+    now[0] += 30 * 60
+    client.check_idle()
+    assert "Kamu otomatis keluar dari Orbit karena lama tidak aktif." in [t for _w, t in s.spoken]
+    assert conn.sent[-1] == {"t": "cmd", "c": "bye"} and client.conn is None
+    s.values["auto_logout"] = 0                               # never
+    client.connect()
+    s.connections[-1].welcome()
+    now[0] += 10 * 3600
+    client.check_idle()
+    assert client.online()
+
+
+def test_the_status_everywhere(play):
+    s, client = play.services, play.client
+    assert client.submit("status") == "local"
+    assert s.spoken[-1] == ("narrator", "Belum tersambung.")
+    conn = _online(play)
+    client.submit("orbit status", "aruna")
+    assert conn.sent[-1] == {"t": "cmd", "c": "status"}
+    assert client.title_state == "Tersambung"
+    conn.on_state("offline", {"reason": "lost", "retry_in": 8})
+    assert client.title_state == "Terputus"
+    client.submit("status")
+    assert s.spoken[-1] == ("narrator", "Terputus, menyambung lagi dalam 8 detik...")
+
+
+# ------------------------------------------------------------
+# Moving a character to another computer
+# ------------------------------------------------------------
+
+def test_a_transfer_code_is_asked_for_shown_and_used(play):
+    s, client = play.services, play.client
+    notes = []
+    client.add_listener(lambda event, value: notes.append((event, value)))
+    assert client.request_transfer_code() is False            # not connected
+    conn = _online(play)
+    assert client.request_transfer_code() is True and conn.sent[-1] == {"t": "cmd", "c": "transfer"}
+    conn.event("info", "Kode pindahmu: A B C D, ...", transfer_code="ABCD-EFGH-JKLM-NPQR", expires=600)
+    assert client.transfer_code == "ABCD-EFGH-JKLM-NPQR" and ("transfer", "ABCD-EFGH-JKLM-NPQR") in notes
+    # The other computer.
+    other = FakeServices()
+    elsewhere = orbit_play.OrbitClient(other)
+    assert elsewhere.redeem_transfer("abcd efgh jklm npq") is False     # 15 letters
+    assert other.connections == []
+    assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
+    hello = other.connections[-1].hello()
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.1", "lang": "id",
+                     "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
+    other.connections[-1].welcome(name="Rafli")
+    account = other.accounts["wss://infiartt.com/orbit/ws"]
+    assert account == {"secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot", "joined": True}
+    assert "transfer" not in other.connections[-1].hello()    # reconnecting uses the new secret
+
+
+def test_a_refused_transfer_keeps_the_old_character(play):
+    s, client = play.services, play.client
+    _online(play)
+    old = dict(s.accounts[s.values["server"]])
+    client.redeem_transfer("ABCD-EFGH-JKLM-NPQR")
+    s.connections[-1].on_state("failed", {"t": "err", "code": "transfer_bad",
+                                          "text": "Kode pindah itu tidak berlaku."})
+    assert s.accounts[s.values["server"]] == old
+    assert client.status == "Kode pindah itu tidak berlaku."
+
+
+# ------------------------------------------------------------
+# The mixer: finding cues, and placing them
+# ------------------------------------------------------------
+
+import orbit_mix  # noqa: E402
+
+
+def _tone_wav(path, seconds=0.2, rate=8000, channels=1, amp=12000):
+    import struct as _struct
+    n = int(seconds * rate)
+    frames = []
+    for i in range(n):
+        v = int(amp * math.sin(2 * math.pi * 440 * i / rate))
+        frames.extend([v] * channels)
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(channels)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(_struct.pack("<%dh" % len(frames), *frames))
+
+
+def test_the_mixer_finds_cues_in_order_with_variants_and_fallbacks(tmp_path):
+    mine, theme, builtin = tmp_path / "mine", tmp_path / "theme", tmp_path / "builtin"
+    for folder in (mine, theme, builtin):
+        folder.mkdir()
+    for name in ("step_metal_1.wav", "step_metal_2.wav", "emote.wav", "bell.wav"):
+        _tone_wav(builtin / name)
+    _tone_wav(theme / "bell.wav")
+    _tone_wav(mine / "step_metal.wav")
+    mixer = orbit_mix.Mixer(lambda: [str(mine), str(theme), str(builtin)], str(tmp_path / "cache"),
+                            rng=random.Random(3))
+    assert mixer.variants("step_metal") == [str(mine / "step_metal.wav")]     # yours come first
+    assert mixer.variants("bell") == [str(theme / "bell.wav")]                # then the theme's
+    assert mixer.variants("emote_clap") == [str(builtin / "emote.wav")]       # a shorter name
+    (mine / "step_metal.wav").unlink()
+    assert mixer.variants("step_metal") == [str(builtin / "step_metal_1.wav"), str(builtin / "step_metal_2.wav")]
+    picked = {mixer.render("step_metal") for _ in range(20)}
+    assert picked == set(mixer.variants("step_metal"))                        # variants, at random
+    assert mixer.variants("nothing") == [] and mixer.render("nothing") is None
+    assert mixer.variants("../secret") == [] and mixer.variants("Bell") == []
+
+
+def test_the_mixer_places_sounds_left_and_right_and_in_rooms(tmp_path):
+    _tone_wav(tmp_path / "tick.wav")
+    mixer = orbit_mix.Mixer(lambda: [str(tmp_path)], str(tmp_path / "cache"), rng=random.Random(1))
+    source = str(tmp_path / "tick.wav")
+    assert mixer.render("tick") == source                                     # nothing to change
+    left = mixer.render("tick", pan=-0.75)
+    right = mixer.render("tick", pan=0.75)
+
+    def loudness(path):
+        channels, _rate, samples = orbit_mix.read_wav(path)
+        assert channels == 2
+        l = math.sqrt(sum(v * v for v in samples[0::2]) / (len(samples) / 2))
+        r = math.sqrt(sum(v * v for v in samples[1::2]) / (len(samples) / 2))
+        return l, r
+
+    l, r = loudness(left)
+    assert l > 2 * r
+    l, r = loudness(right)
+    assert r > 2 * l
+    quiet = loudness(mixer.render("tick", volume=0.3))
+    assert 0.25 * 12000 / math.sqrt(2) < quiet[0] < 0.35 * 12000 / math.sqrt(2)
+    hall = mixer.render("tick", acoustics="hall")
+    with wave.open(hall) as w, wave.open(source) as dry:
+        assert w.getnframes() > dry.getnframes() * 1.5                        # the echo rings on
+    assert mixer.render("tick", pan=-0.75) == left                            # made once, kept
+    first = open(left, "rb").read()
+    other = orbit_mix.Mixer(lambda: [str(tmp_path)], str(tmp_path / "cache2"), rng=random.Random(9))
+    assert open(other.render("tick", pan=-0.75), "rb").read() == first        # the same every time
+
+
+# ------------------------------------------------------------
 # The sounds
 # ------------------------------------------------------------
 
@@ -1070,28 +1486,73 @@ def _read(name):
                 memoryview(frames).cast("h"))
 
 
-def test_every_sound_played_is_there():
+def _server_cues():
+    """Every cue the server names in an event's "sound", and the gestures it knows."""
+    import json
+    import re
+    server = os.path.join(ROOT, "servers", "orbit")
+    found = set()
+    for name in os.listdir(server):
+        if name.endswith(".py"):
+            with open(os.path.join(server, name), encoding="utf-8") as f:
+                text = f.read()
+            for m in re.finditer(r'sound(?:"\s*:\s*|=)"([a-z_]+)"(?:\s+if\s+.*?\s+else\s+"([a-z_]+)")?', text):
+                found.update(w for w in m.groups() if w and not w.endswith("_"))
+    found.update({"pet_robot", "pet_cat"})
+    with open(os.path.join(server, "world.json"), encoding="utf-8") as f:
+        world = json.load(f)
+    found.update(f"emote_{e}" for e in world["emotes"])
+    found.update(f"step_{loc.get('floor', 'metal')}" for loc in world["locations"].values())
+    return found
+
+
+def test_every_cue_has_a_sound():
     import orbit_sounds
-    names = {name for name, _make in orbit_sounds.SOUNDS}
-    needed = set(orbit_audio.SOUND_FOR_KIND.values()) | set(orbit_audio.EXTRA_SOUNDS.values())
+    files = {name for name, _make in orbit_sounds.SOUNDS}
+    assert sorted(os.listdir(SOUNDS_DIR)) == sorted(files)
+    mixer = orbit_mix.Mixer(lambda: [SOUNDS_DIR], SOUNDS_DIR)
+    needed = set(orbit_audio.KIND_CUES.values()) | {"arrive", "leave", "door", "emote"}
+    needed |= {f"step_{floor}" for floor in orbit_audio.FLOORS}
+    needed |= {cue for pair in orbit_audio.VIA_CUES.values() for cue in pair}
     needed |= {f"tone{i}" for i in range(1, 5)} | {f"amb_{a}" for a in orbit_audio.AMBIENCES}
-    assert {f"{n}.wav" for n in needed} == names
-    assert sorted(os.listdir(SOUNDS_DIR)) == sorted(names)
+    needed |= _server_cues()
+    assert {"levelup", "harvest", "mine", "rare", "bump", "locked", "air", "rescue", "bell",
+            "lantern", "gulp", "crunch", "emote_clap", "step_grass"} <= needed      # the list is real
+    missing = sorted(cue for cue in needed if not mixer.variants(cue))
+    assert not missing, missing
+    assert not sorted(needed - set(orbit_sounds.CUES))        # each its own file, not a fallback
 
 
-def test_the_sounds_are_stereo_and_polite():
+def test_the_sounds_are_polite_and_positional_ones_are_mono():
     import orbit_sounds
     for name, _make in orbit_sounds.SOUNDS:
         channels, width, rate, frames, samples = _read(name)
-        assert channels == 2 and width == 2, name
+        assert channels in (1, 2) and width == 2, name
         seconds = frames / rate
         loudest = max(abs(v) for v in samples)
         assert 0.15 * 32767 < loudest < 0.6 * 32767, name
         if name.startswith("amb_"):
-            assert rate == orbit_sounds.LOOP_RATE and seconds == orbit_sounds.LOOP_SECONDS, name
+            assert channels == 2 and rate == orbit_sounds.LOOP_RATE and seconds == orbit_sounds.LOOP_SECONDS, name
         else:
-            assert 0.1 <= seconds <= 3.1 and rate == orbit_sounds.RATE, name
-            assert abs(samples[0]) < 300 and abs(samples[-1]) < 300, name          # no clicks
+            assert 0.1 <= seconds <= 3.3 and rate == orbit_sounds.RATE, name
+            step = channels
+            assert abs(samples[0]) < 300 and abs(samples[-1]) < 300, name            # no clicks
+            assert abs(samples[step - 1]) < 300, name
+    for cue in ("step_metal_1", "arrive", "leave", "emote_clap_1", "door_1", "bump_1", "ladder_1"):
+        assert _read(cue + ".wav")[0] == 1, cue          # placed by the mixer at play time
+
+
+def test_variants_really_differ():
+    import orbit_sounds
+    groups = {}
+    for name, _make in orbit_sounds.SOUNDS:
+        stem = name[:-4]
+        if stem.split("_")[-1].isdigit():
+            groups.setdefault(stem.rpartition("_")[0], []).append(name)
+    assert {"step_metal", "step_grass", "coins", "emote_clap", "mine"} <= set(groups)
+    for cue, names in groups.items():
+        datas = [open(os.path.join(SOUNDS_DIR, n), "rb").read() for n in names]
+        assert len(set(datas)) == len(datas), cue
 
 
 def test_the_ambience_loops_have_no_seam():
@@ -1112,22 +1573,28 @@ def _loudness(samples, start, end):
             math.sqrt(sum(v * v for v in right) / len(right)))
 
 
-def test_the_sounds_move_left_to_right():
+def test_the_stereo_sounds_move_where_they_should():
     for number, louder in ((1, "left"), (2, "left"), (3, "right"), (4, "right")):
         _c, _w, _r, frames, samples = _read(f"tone{number}.wav")
         left, right = _loudness(samples, 0, frames)
         assert (left > right) == (louder == "left"), number
-    _c, _w, rate, frames, samples = _read("door.wav")
-    early = _loudness(samples, int(0.05 * rate), int(0.2 * rate))
-    late = _loudness(samples, int(0.42 * rate), int(0.57 * rate))
-    assert early[0] > early[1] and late[1] > late[0]
     _c, _w, rate, frames, samples = _read("whisper.wav")
     left, right = _loudness(samples, 0, frames)
     assert right > 2 * left                          # close to your right ear
+    _c, _w, rate, frames, samples = _read("bell.wav")
+    first = _loudness(samples, int(0.02 * rate), int(0.3 * rate))
+    last = _loudness(samples, int(0.92 * rate), int(1.2 * rate))
+    assert first[0] > first[1] and last[1] > last[0]  # the bell's tones drift left to right
 
 
-@pytest.mark.parametrize("name", ["tone1.wav", "tone4.wav", "chat.wav", "error.wav", "sent.wav",
-                                  "mission.wav", "arrive.wav"])
+def test_the_sound_set_stays_small():
+    total = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in os.listdir(SOUNDS_DIR))
+    assert total < 8 * 1024 * 1024, total
+
+
+@pytest.mark.parametrize("name", ["tone1.wav", "tone4.wav", "emote.wav", "error.wav", "sent.wav",
+                                  "mission.wav", "step_metal_2.wav", "bump_1.wav", "equip_2.wav",
+                                  "gadget.wav"])
 def test_the_sounds_are_what_the_generator_makes(name):
     import orbit_sounds
     make = dict(orbit_sounds.SOUNDS)[name]

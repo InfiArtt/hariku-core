@@ -9,32 +9,36 @@
 
 """
 Orbit — Hariku V2 extension: a small multiplayer text game (a MUD) on a
-space station orbiting the Earth. Hang out in the Cantina, look down at
-Indonesia from the Observation Deck, whisper to friends, repair the reactor,
-fly cargo to the Moon, trade on the Promenade, take small missions.
+space station orbiting the Earth, the entry hub of a shared simulation.
+Walk the decks by compass, hang out in the Cantina, look down at Indonesia
+from the Observation Deck, work your job, farm, mine the Asteroid Belt,
+trade and take small missions.
 
 Play it in its window ("Open Orbit", no key by default; "orbit" or "buka
 orbit" to Aruna) or straight from Aruna, typed or spoken, with "orbit" in
-front: "orbit pergi ke kantin", "orbit bilang halo", "orbit bisik Sari
-ketemu di dek", "orbit siapa online".
+front: "orbit utara", "orbit bilang halo", "orbit harian", "orbit panen",
+"orbit status", "orbit keluar".
 
   orbit_ws.py      the WebSocket protocol (a copy of servers/orbit/orbit_ws.py)
   orbit_net.py     the connection: its own thread, pings, reconnecting
   orbit_parse.py   what was typed or said -> a command (Indonesian, English)
   orbit_play.py    playing: messages, speech, sounds, ambience (no wx)
   orbit_speech.py  who speaks: the narrator, or each player's own voice
-  orbit_audio.py   which sound an event plays; the ambience loop (MCI)
+  orbit_audio.py   which cue an event plays and from where; the ambience loop
+  orbit_mix.py     finds a cue's file (yours, a sound theme's, the generated one) and places it
   orbit_text.py    Orbit's own words
   orbit_ui.py      the game window and the Preferences page
   orbit_sounds.py  makes the sounds in sounds/
 
 The game itself runs on the server (servers/orbit in Hariku's source), which
-decides everything; this extension only asks and shows. Orbit connects only
-when you open it, press Connect or give it a command.
+decides everything; this extension only asks, shows and speaks. Orbit
+connects only when you open it, press Connect or give it a command (or when
+Hariku starts, if you ask it to).
 """
 
 import logging
 import os
+import threading
 
 import wx
 
@@ -47,6 +51,7 @@ import core.voice
 from core.commands import Reply
 
 import orbit_audio
+import orbit_mix
 import orbit_net
 import orbit_parse
 import orbit_play
@@ -62,21 +67,39 @@ DATA_KEY = "Orbit"
 ACCOUNTS_KEY = "OrbitAccounts"
 EXT_DIR = os.path.dirname(os.path.abspath(__file__))
 SOUNDS_DIR = os.path.join(EXT_DIR, "sounds")
+USER_SOUNDS = "orbit_sounds"         # %APPDATA%\Hariku2\orbit_sounds: your own recordings
+SOUND_CACHE = "orbit_sound_cache"
 DEFAULT_SERVER = "wss://infiartt.com/orbit/ws"
 PLAY_INTENT = f"{EXT_NAME}.play"
 PLAY_PATTERNS = ("orbit {text}",)
 OPEN_WORDS = {"buka", "open", "main", "play", "jendela", "window", "tampilkan", "show"}
 MAX_COMMAND = 300
 CONNECT_HOLD_SECONDS = 15
+AUTOCONNECT_SECONDS = 5
 
+READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce")
+BOOL_SETTINGS = ("speak", "voices", "ambience", "sounds", "other_sounds", "autoconnect") + READ_SETTINGS
 DEFAULT_SETTINGS = {"server": DEFAULT_SERVER, "name": "", "job": "pilot", "speak": True,
-                    "voices": True, "ambience": True, "ambience_volume": 25, "sounds": True}
+                    "voices": True, "ambience": True, "ambience_volume": 25, "sounds": True,
+                    "effects_volume": 100, "other_sounds": True,
+                    "read_say": True, "read_whisper": True, "read_shout": True, "read_moves": True,
+                    "read_money": True, "read_announce": True,
+                    "background": "important", "close_action": "stay", "auto_logout": 30,
+                    "autoconnect": False, "ignored": [], "close_hints": 0}
+
+
+def _number(value, default, low=0, high=100):
+    try:
+        return max(low, min(high, int(value)))
+    except (TypeError, ValueError):
+        return default
 
 
 def normalize_settings(raw):
     raw = raw if isinstance(raw, dict) else {}
     settings = dict(DEFAULT_SETTINGS)
-    for key in ("speak", "voices", "ambience", "sounds"):
+    settings["ignored"] = []
+    for key in BOOL_SETTINGS:
         if isinstance(raw.get(key), bool):
             settings[key] = raw[key]
     server = raw.get("server")
@@ -87,11 +110,23 @@ def normalize_settings(raw):
         settings["name"] = name.strip()[:20]
     if raw.get("job") in orbit_play.JOBS:
         settings["job"] = raw["job"]
-    try:
-        settings["ambience_volume"] = max(0, min(100, int(raw.get("ambience_volume",
-                                                                 DEFAULT_SETTINGS["ambience_volume"]))))
-    except (TypeError, ValueError):
-        pass
+    settings["ambience_volume"] = _number(raw.get("ambience_volume"), DEFAULT_SETTINGS["ambience_volume"])
+    settings["effects_volume"] = _number(raw.get("effects_volume"), DEFAULT_SETTINGS["effects_volume"])
+    if raw.get("background") in orbit_play.BACKGROUND_MODES:
+        settings["background"] = raw["background"]
+    if raw.get("close_action") in orbit_play.CLOSE_ACTIONS:
+        settings["close_action"] = raw["close_action"]
+    if raw.get("auto_logout") in orbit_play.AUTO_LOGOUT:
+        settings["auto_logout"] = raw["auto_logout"]
+    settings["close_hints"] = _number(raw.get("close_hints"), 0, 0, 99)
+    ignored = raw.get("ignored")
+    if isinstance(ignored, list):
+        seen = set()
+        for name in ignored:
+            if isinstance(name, str) and name.strip() and name.strip().casefold() not in seen:
+                seen.add(name.strip().casefold())
+                settings["ignored"].append(name.strip()[:20])
+        settings["ignored"] = settings["ignored"][:100]
     return settings
 
 
@@ -134,6 +169,17 @@ class _Timer:
             pass
 
 
+def _sound_folders():
+    """Where cues are looked for, in order: your own files, the sound theme's
+    Orbit folder, the generated ones."""
+    folders = [os.path.join(core.api.USER_DATA_DIR, USER_SOUNDS)]
+    theme = core.sounds.get_theme_dir() if hasattr(core.sounds, "get_theme_dir") else None
+    if theme:
+        folders.append(os.path.join(theme, "orbit"))
+    folders.append(SOUNDS_DIR)
+    return folders
+
+
 # ------------------------------------------------------------
 # What playing uses from Hariku (orbit_play's services)
 # ------------------------------------------------------------
@@ -144,11 +190,29 @@ class Services:
             lambda: [p["id"] for p in core.voice.get_providers()],
             core.voice.is_provider_available, core.voice.list_voices)
         self.ambience_player = orbit_audio.AmbiencePlayer(is_speaking=core.voice.is_speaking)
+        self.mixer = orbit_mix.Mixer(_sound_folders, os.path.join(core.api.USER_DATA_DIR, SOUND_CACHE))
 
     # --- settings and accounts -------------------------------------------------------
 
     def settings(self):
         return dict(_settings)
+
+    def set_setting(self, key, value):
+        """A setting changed from the game ("suara pemain mati") or the client."""
+        if key not in DEFAULT_SETTINGS:
+            return
+        voices_before = _settings["voices"]
+        _settings.update(normalize_settings(dict(_settings, **{key: value})))
+        _save_settings()
+        if _settings["voices"] != voices_before:
+            self.voices.forget()
+            if _settings["voices"]:
+                self.voices.refresh_in_background()
+        if _panel:
+            try:
+                _panel.follow_settings(dict(_settings))
+            except RuntimeError:
+                pass
 
     def language(self):
         return orbit_text.user_language()
@@ -166,6 +230,20 @@ class Services:
 
     def new_secret(self):
         return os.urandom(32).hex()
+
+    def open_settings(self):
+        core.api.open_preferences(_("ext_name"))
+
+    def open_key(self):
+        """The key that opens the Orbit window, or Aruna's words for it."""
+        try:
+            bindings = core.hotkeys.get_current_bindings(action_id("open"))
+        except Exception:
+            bindings = []
+        if bindings:
+            kc, ctrl, shift, alt, win, _is_global = bindings[0]
+            return core.hotkeys.format_key_name(kc, ctrl, shift, alt, win)
+        return ""
 
     # --- the connection, timers, threads ---------------------------------------------------
 
@@ -192,7 +270,7 @@ class Services:
     def voice_busy(self):
         return core.voice.is_speaking()
 
-    def voice_for(self, name):
+    def voice_for(self, name, number=None):
         cached = self.voices.cached()
         if cached is None:
             self.voices.refresh_in_background()
@@ -200,7 +278,7 @@ class Services:
         voices = orbit_speech.voices_of(cached, self.language())
         settings = core.voice.get_settings()
         narrator = (settings["provider"], settings["voice"]) if settings.get("voice") else None
-        return orbit_speech.pick_voice(name, voices, exclude=narrator)
+        return orbit_speech.pick_voice(name, voices, exclude=narrator, number=number)
 
     def show_answer(self, text):
         if hasattr(core.commands, "show_answer"):
@@ -208,14 +286,24 @@ class Services:
 
     # --- sounds -----------------------------------------------------------------------
 
-    def play(self, name):
-        path = os.path.join(SOUNDS_DIR, f"{name}.wav")
-        if os.path.isfile(path):
-            core.sounds.play_sound(path)
+    def play(self, name, pan=0.0, acoustics=None):
+        """Play a cue (orbit_mix finds and places it). Returns False when there's no file."""
+        if not self.mixer.variants(name):
+            return False
+        volume = _settings.get("effects_volume", 100) / 100.0
+
+        def render():
+            path = self.mixer.render(name, pan, volume, acoustics)
+            if path:
+                _call_after(core.sounds.play_sound, path)
+
+        threading.Thread(target=render, daemon=True, name="orbit-sound").start()
+        return True
 
     def ambience(self, name, volume):
         if name in orbit_audio.AMBIENCES:
-            self.ambience_player.play(os.path.join(SOUNDS_DIR, f"amb_{name}.wav"), volume)
+            path = self.mixer.render(f"amb_{name}") or os.path.join(SOUNDS_DIR, f"amb_{name}.wav")
+            self.ambience_player.play(path, volume)
         else:
             self.ambience_player.play(None)
 
@@ -240,7 +328,8 @@ def open_window():
     if _client is None:
         return
     if _frame is None or not orbit_ui._alive(_frame):
-        _frame = orbit_ui.OrbitFrame(_client, on_visibility=_client.update_ambience)
+        _frame = orbit_ui.OrbitFrame(_client, on_visibility=_client.update_ambience,
+                                     on_settings=_services.open_settings if _services else None)
     _frame.show_and_focus()
     if not _client.online() and not _client.connecting():
         _client.connect()
@@ -279,7 +368,8 @@ def _on_play_intent(request):
         return None
     if text.lower().strip(" .!?") in OPEN_WORDS:
         return Reply(then=open_window)
-    if not _client.online() and hasattr(core.commands, "hold_answer"):
+    parsed = orbit_parse.parse(text)
+    if not _client.online() and "local" not in parsed and hasattr(core.commands, "hold_answer"):
         # Connecting first takes a moment: keep Last result open for the answer.
         core.commands.hold_answer(CONNECT_HOLD_SECONDS)
     _defer(_client.submit, text, "aruna")
@@ -303,6 +393,12 @@ def _toggle_connection():
         _client.connect()
 
 
+def _leave():
+    if _client is not None:
+        _client.aruna_until = _client.clock() + orbit_play.ARUNA_SECONDS
+        _client.submit("keluar", "aruna")
+
+
 ACTIONS = (
     ("open", "action_open", "title_open", open_window,
      ("orbit", "buka orbit", "open orbit", "main orbit", "play orbit", "ke orbit"), False),
@@ -314,6 +410,16 @@ ACTIONS = (
      ("orbit cek kredit", "orbit kredit", "orbit check credits", "orbit inventory", "orbit tas"), True),
     ("connect", "action_connect", "title_connect", _toggle_connection,
      ("orbit sambungkan", "orbit putuskan", "orbit connect", "orbit disconnect"), True),
+    ("status", "action_status", "title_status", _ask("status"),
+     ("orbit status", "status orbit", "orbit connection status"), True),
+    ("leave", "action_leave", "title_leave", _leave,
+     ("orbit keluar", "keluar dari orbit", "orbit logout", "orbit log out", "leave orbit"), True),
+    ("daily", "action_daily", "title_daily", _ask("harian"),
+     ("orbit harian", "orbit bonus harian", "orbit daily", "orbit daily bonus"), True),
+    ("harvest", "action_harvest", "title_harvest", _ask("panen"),
+     ("orbit panen", "orbit harvest"), True),
+    ("profile", "action_profile", "title_profile", _ask("profil"),
+     ("orbit profil", "orbit profile"), True),
 )
 
 
@@ -343,12 +449,28 @@ class _PageActions:
         return _client is not None and (_client.online() or _client.connecting())
 
     @staticmethod
+    def online():
+        return _client is not None and _client.online()
+
+    @staticmethod
     def status():
         return _client.status if _client is not None else _("status_idle")
 
     @staticmethod
     def character(server):
         return _services.account(server) if _services is not None else None
+
+    @staticmethod
+    def request_transfer_code():
+        return _client is not None and _client.request_transfer_code()
+
+    @staticmethod
+    def redeem_transfer(code, server):
+        return _client is not None and _client.redeem_transfer(code, server)
+
+    @staticmethod
+    def transfer_code():
+        return _client.transfer_code if _client is not None else ""
 
     @staticmethod
     def add_listener(fn):
@@ -388,11 +510,17 @@ def _apply_panel():
 # ------------------------------------------------------------
 
 def _on_unload(*_args, **_kwargs):
-    """Hariku is closing: say goodbye to the server, stop the ambience."""
+    """Hariku is closing: goodbye to the server, stop the ambience."""
     if _client is not None:
         _client.shutdown()
     if _services is not None:
         _services.ambience_player.shutdown(wait=1.0)
+
+
+def _autoconnect():
+    if _active and _client is not None and _settings.get("autoconnect") \
+            and not _client.online() and not _client.connecting():
+        _client.connect()
 
 
 def register(bus):
@@ -414,6 +542,11 @@ def register(bus):
     core.commands.add_answer_actions([action_id(name) for name, *_rest, answers in ACTIONS
                                       if answers])
     core.preferences.register_panel(_("ext_name"), "", _create_panel, _apply_panel)
+    if _settings.get("autoconnect"):
+        try:
+            wx.CallLater(AUTOCONNECT_SECONDS * 1000, _autoconnect)
+        except Exception:
+            pass
     logger.info("Orbit extension loaded.")
 
 
