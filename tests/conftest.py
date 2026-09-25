@@ -187,11 +187,23 @@ def sample_locale_dir(tmp_path):
 # only when HARIKU_UI_TESTS=1 is set, as the GitHub Actions workflows do.
 # Every tests/test_*_ui.py module counts, plus tests marked @pytest.mark.window.
 
+def pytest_make_parametrize_id(config, val, argname):
+    """A stable name for a bytes parameter. Its bytes may be random (a masked
+    WebSocket frame gets a fresh mask each time), and parallel test workers
+    must all collect the same names (pytest -n, pytest-xdist)."""
+    if isinstance(val, (bytes, bytearray)):
+        return f"{argname}{len(val)}b"
+    return None
+
+
 def pytest_collection_modifyitems(config, items):
-    if os.environ.get("HARIKU_UI_TESTS") == "1":
-        return
+    # Every window check gets the "window" mark, so CI can run them on their
+    # own, one at a time (-m window), and the rest in parallel (-m "not window").
+    ui = os.environ.get("HARIKU_UI_TESTS") == "1"
     skip = pytest.mark.skip(reason="opens real windows; set HARIKU_UI_TESTS=1 to run (CI does)")
     for item in items:
         module = os.path.basename(str(item.fspath))
-        if "window" in item.keywords or (module.startswith("test_") and module.endswith("_ui.py")):
+        if module.startswith("test_") and module.endswith("_ui.py"):
+            item.add_marker(pytest.mark.window)
+        if "window" in item.keywords and not ui:
             item.add_marker(skip)

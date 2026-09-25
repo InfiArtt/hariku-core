@@ -407,11 +407,21 @@ def get_storage_dir(ext_id):
     if not safe_id:
         raise ValueError(f"[Security] Invalid extension ID for storage: {ext_id!r}")
     storage_dir = os.path.join(DATA_DIR, "extensions", safe_id)
-    # Paranoia check: verify realpath stays inside DATA_DIR
-    if not os.path.realpath(storage_dir).startswith(os.path.realpath(DATA_DIR)):
+    # Paranoia check: verify realpath stays inside DATA_DIR (a junction or
+    # link inside it could point elsewhere). The parent folders are made
+    # first: realpath() only expands what exists, so comparing a path that
+    # exists with one that doesn't (another process creating it meanwhile)
+    # could compare a short 8.3 name ("RUNNER~1") with the long one.
+    os.makedirs(os.path.join(DATA_DIR, "extensions"), exist_ok=True)
+    base = os.path.realpath(DATA_DIR)
+    real = os.path.realpath(storage_dir)
+    try:
+        inside = os.path.normcase(os.path.commonpath([base, real])) == os.path.normcase(base)
+    except ValueError:      # different drives
+        inside = False
+    if not inside:
         raise ValueError(f"[Security] Path traversal detected in get_storage_dir: {ext_id!r}")
-    if not os.path.exists(storage_dir):
-        os.makedirs(storage_dir)
+    os.makedirs(storage_dir, exist_ok=True)
     return storage_dir
 
 def run_thread(background_func, callback=None):

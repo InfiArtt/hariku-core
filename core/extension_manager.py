@@ -80,6 +80,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "world_trip",
     "orbit",
     "dropbox",
+    "calculator",
 ])
 
 
