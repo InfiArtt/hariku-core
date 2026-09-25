@@ -431,6 +431,11 @@ def parse_duration(text, packs=None):
         return None
     total, start, end, toks = found
     used = [start <= i < end for i in range(len(toks))]
+    # Whisper hears "for 5 minutes" as "4-5 minutes" ("to" as "2-"): a lone
+    # number glued to the duration by a hyphen is that, not a label.
+    if start >= 2 and toks[start - 1].norm == "-" and toks[start - 1].glued \
+            and toks[start - 2].norm.isdigit():
+        used[start - 1] = used[start - 2] = True
     seconds = int(round(total))
     return Duration(seconds, label_from(text, toks, used), start, end)
 
