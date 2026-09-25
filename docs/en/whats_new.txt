@@ -1,3 +1,44 @@
+Version 2.10.0 (Core Update)
+================================================================================
+- A new welcome. The first time Hariku starts, it gets to know you: "Hi! I'm
+  Hariku. Shall we get to know each other?" Choose your language (it
+  switches at once), say your name and what Hariku should call you, and from
+  then on everything it says uses that name: "Nice to meet you, Rafli!",
+  "Where do you live, Rafli?". Find your city and hear the time there and,
+  when you're online, the weather: "In Batam it's 14:20 now, mostly clear,
+  31 degrees." Your city becomes your main place, Home. Tell Hariku your
+  birthday if you like, and it wishes you a happy birthday on the day.
+- The welcome introduces Aruna (Ctrl+Alt+Backspace, or the key you gave it):
+  type "what time is it" or "jam berapa" right there, and Aruna answers.
+- It suggests a few extensions from the store, with a line about each:
+  Weather, Morning Briefing, Timer & Alarm, Voice Control, World Trip,
+  Earthquakes & Tsunami and more; only those this Hariku can run that you
+  don't have yet. Nothing is downloaded until you press Finish. Then they
+  install one by one, each one announced, and one that fails doesn't stop
+  the others. The old "preset" that installed almost every extension is
+  gone.
+- Last, choose whether Hariku starts with Windows and greets you when it
+  starts (each as you had it; starting with Windows is off on a new
+  installation), and hear a summary: "All set, Rafli! ... Welcome to
+  Hariku!"
+- Everything is saved where the rest of Hariku keeps it: your name, what to
+  call you and your birthday in Preferences, Profile; your city in
+  Preferences, Places, where your other places stay. Cancel (Escape) saves
+  nothing, and asks first when you have typed something. On the very first
+  start, Hariku then starts as usual instead of closing, and the welcome
+  doesn't come back. Open it again any time from Help, Welcome Dialog: it
+  shows what you have now and changes only what you change.
+- Made for screen readers: each page's question is read with the field it
+  belongs to, the rest follows a moment later, Enter goes on and Escape
+  stops.
+- Screen readers now hear the current text of a label that changes (such as
+  the number of cities found in Preferences, Places), not the text it had
+  when the window opened.
+- For extension developers: core.i18n.use_language() switches the language
+  at once, and core.i18n.translations() gives a text in every language. See
+  DEVELOPERS.md.
+
+
 Version 2.9.0 (Core Update - September 25, 2026)
 ================================================================================
 - For extension developers: commands with content. An extension can now teach
