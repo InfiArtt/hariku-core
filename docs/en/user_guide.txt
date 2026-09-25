@@ -767,6 +767,64 @@ reconnects by itself if the connection drops. "sambungkan" or "putuskan"
 ("connect", "disconnect") connects or disconnects. See PRIVACY.md for what the
 server keeps.
 
+DROPBOX (EXTENSION)
+--------------------
+With the Dropbox extension (from the Extension Store; it needs Hariku 2.9),
+Hariku tells you what Dropbox is doing and copies links for you, in English
+or Indonesian.
+
+  1. Open Preferences, Dropbox, and press "Connect Dropbox". Your browser
+     opens Dropbox's sign-in page; sign in and choose Allow. The browser comes
+     back to Hariku by itself (the page says you can close the tab), and the
+     Dropbox account field shows your name and email. If another program is
+     using the port Hariku listens on, Dropbox shows a code instead: copy it
+     into the "Code from Dropbox" field that appears on the page and press
+     "Use the code". "Disconnect Dropbox" signs Hariku out again.
+  2. The news about your own files needs the Dropbox desktop app on this
+     computer. The page shows its folder ("Dropbox folder on this computer");
+     if the app isn't installed, or its folder belongs to another Dropbox
+     account, that news is off and the rest still works.
+
+Your files. When you save or add a file in the Dropbox folder, Hariku waits a
+moment and asks Dropbox whether it has that version yet: "Syncing
+laporan.pdf to Dropbox..." while it uploads, "laporan.pdf is synced." when it
+is done, or "Syncing 3 files to Dropbox..." and later "Your Dropbox is up to
+date." for several. Files the desktop app downloads, Office's temporary files,
+desktop.ini and online-only files are left alone. A file that still hasn't
+synced a few minutes after you saved it is mentioned once: "laporan.pdf
+hasn't synced yet; check the Dropbox app."
+
+Other people. "Budi added catatan.txt to the Kelas folder." when someone
+changes a file in a folder you share, and "Budi shared tugas.docx with you."
+when someone shares a file or folder with you (checked every few minutes;
+what was already shared when you connected isn't announced). These two stay
+silent during quiet hours. A soft sound plays with "synced" and with news
+from other people.
+
+Links. In File Explorer, on a file in your Dropbox folder, open Aruna and say
+or type "salin link" or "copy link" (also "salin link ini", "bagikan link
+ini", "copy this link"). Aruna closes, goes back to File Explorer, copies the
+file's shared link to the clipboard and says "Link to laporan.pdf copied." It
+uses the file you're on (the focused one if it is selected, otherwise the
+first selected one); with nothing selected, the folder you're in. A file
+that already has a shared link keeps it; otherwise a new link is made with
+your account's usual link settings. Outside the Dropbox folder Hariku says
+"This file isn't in your Dropbox folder." You can also give "Copy the Dropbox
+link of the file selected in File Explorer" a key in Input Gestures (it has
+none by default); make it global so it works while File Explorer has the
+focus.
+
+To copy the link of a file you're not on, say its name: "salin link
+laporan" or "copy link to the budget". Dropbox looks it up by name; one clear
+match is copied at once, a likely one is asked about first ("Do you mean
+laporan final.pdf in the Kelas folder? Copy its link?"), and when several
+fit, Aruna reads them so you can say the full name. "Dropbox status" (or
+"status dropbox", or just "dropbox") says whether everything has synced.
+
+In Preferences, Dropbox, you can turn off each kind of news (files syncing
+and synced, "up to date", other people's changes, what's shared with you)
+and the sounds. See PRIVACY.md for what is sent to Dropbox.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on
