@@ -340,6 +340,27 @@ the [Dropbox privacy policy](https://www.dropbox.com/privacy).
 - "Disconnect Dropbox" asks Dropbox to revoke the sign-in and deletes it and
   `DropboxShared` from this computer.
 
+## Calculator & Converter
+
+The Calculator & Converter extension works out sums, units, coin flips, dice,
+random numbers, split bills and discounts on your computer, with rules built
+into Hariku (no AI and no online service). What you type or say is not stored;
+only the last result is kept in memory for five minutes, so "tambah 5" and
+"copy the result" can use it. It is copied to the clipboard only when you ask,
+or after every answer if you turn that on.
+
+Only currency conversions go online. The first time you convert money in a
+while, Hariku downloads the day's reference exchange rates of all currencies
+at once from Frankfurter (`api.frankfurter.dev`), a free service without an
+API key or account that publishes central banks' daily rates. The request is
+the same for everybody: it carries no currency, no amount and nothing about
+you, only what every web request carries, such as your IP address and a Hariku
+user agent. See [Frankfurter](https://frankfurter.dev). The rates are kept for
+a few hours, and saved in `%APPDATA%\Hariku2` (`CalculatorRates`) with the
+time they were fetched, so they can still answer for up to a week when you are
+offline. Your settings (home currency, decimals, data sizes, copying) are
+saved there too (`Calculator`).
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
