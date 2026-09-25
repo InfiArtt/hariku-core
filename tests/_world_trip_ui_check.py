@@ -426,7 +426,8 @@ stops = services.radio.stops
 ask(bar, "go home", "Right, heading home to Batam.")
 assert services.radio.stops == stops + 1
 assert pump(lambda: "Thank you for flying Hariku Air." in result(bar), timeout=10.0), result(bar)
-assert main._manager.trip is None
+# The trip ends once that last line has been said (it shows as it starts).
+assert pump(lambda: main._manager.trip is None, timeout=10.0), main._manager.trip
 ask(bar, "where am I", "You're home, in Batam.")
 ask(bar, "take me to Atlantis", "I couldn't find a place called Atlantis.")
 press_escape(bar)
