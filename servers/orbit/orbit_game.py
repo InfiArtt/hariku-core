@@ -587,6 +587,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 if hint:
                     parts.append(pick(hint, lang))
             parts.extend(self.cabin_lines(session))
+            parts.extend(self.crew_hangar_lines(session))
         others = self._in_room(self.room_of(char), exclude=(session,), visible=True)
         residents = self.residents_text(session)
         if others:

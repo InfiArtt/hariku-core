@@ -20,7 +20,8 @@ flight lands or the lottery is drawn. What you had already done before
 1.1 counts too, quietly, the next time you come in.
 
 The leaderboards rank everyone (admins aside) by credits, level, ore mined,
-crops harvested, the daily streak and what they won or lost at the casino.
+crops harvested, the daily streak, what they won or lost at the casino, and
+duels won.
 """
 
 import logging
@@ -38,6 +39,8 @@ BOARDS = {
                              "kebun", "tani")),
     "streak": ("streak", ("streak", "daily", "harian", "rajin", "beruntun")),
     "casino": ("casino_net", ("casino", "luck", "lucky", "gambler", "kasino", "hoki", "beruntung", "judi")),
+    "duels": ("duels_won", ("duels", "duel", "duelist", "duelists", "duellist", "duellists", "dueling", "duelling",
+                            "tanding", "jagoan duel")),
 }
 BOARD_SIZE = 5
 SHIFT_STATS = ("repairs", "flights", "analyses", "patrols")

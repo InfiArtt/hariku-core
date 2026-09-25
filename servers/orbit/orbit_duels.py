@@ -302,6 +302,8 @@ class DuelsMixin:
                       losses=duel["wins"][duel["b"] if winner.key == duel["a"] else duel["a"]])
         self._to_room(duel["room"], "announce", key, extra={"sound": "win"}, **params)
         self._tell_away(duel, players, key, **params)
+        if why == "won":
+            self.tournament_win(winner, duel["room"])
         self.check_achievements(winner)
 
     def _tell_away(self, duel, players, key, **params):

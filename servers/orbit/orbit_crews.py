@@ -70,6 +70,22 @@ class CrewsMixin:
         found = self.store.crew_of(char["id"])
         return found if found else (None, None)
 
+    def crew_hangar_lines(self, session):
+        """The crew board, in the Crew Hangar."""
+        if not self._loc(session.char).get("crew_room"):
+            return []
+        lang = session.lang
+        crew, _role = self.crew_of(session.char)
+        if crew is None:
+            return [self.render(lang, "crew_hangar_no_crew")]
+        board = self.store.top_crews(1000)
+        place = next((i + 1 for i, row in enumerate(board) if row["name"] == crew["name"]), len(board))
+        lines = [self.render(lang, "crew_hangar_board", crew=crew["name"], points=int(crew["points"]), n=place,
+                             total=len(board))]
+        if crew["motto"]:
+            lines.append(self.render(lang, "crew_motto_is", motto=crew["motto"]))
+        return lines
+
     def crew_line(self, lang, char):
         crew, role = self.crew_of(char)
         if crew is None:

@@ -171,6 +171,9 @@ PHRASEBOOK = [
     ("vow I promise", "en", "wedding"), ("satukan cahaya", "id", "wedding"), ("join the lights", "en", "wedding"),
     ("ya", "id", "wedding"), ("yes", "en", "wedding"), ("tidak", "id", "wedding"), ("tanda tangan", "id", "wedding"),
     ("sign", "en", "wedding"), ("baca kenangan", "id", "wedding"), ("read memory", "en", "wedding"),
+    # the duels' board, the tournament (1.2)
+    ("papan skor duel", "id", "leaderboard"), ("leaderboard duels", "en", "leaderboard"),
+    ("mulai acara turnamen", "id", "admin"), ("start event tournament", "en", "admin"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

@@ -2228,6 +2228,45 @@
         }
       }
     },
+    "crew_hangar": {
+      "name": {"en": "Crew Hangar", "id": "Hanggar Kru"},
+      "ref": {"en": "the Crew Hangar", "id": "Hanggar Kru"},
+      "in": {"en": "in the Crew Hangar", "id": "di Hanggar Kru"},
+      "aliases": {"en": ["crew hangar", "crew room", "crew bay", "crew hall"], "id": ["hanggar kru", "ruang kru", "markas kru"]},
+      "area": "lower",
+      "at": [-3, 1],
+      "ambience": "engine",
+      "acoustics": "hangar",
+      "private": true,
+      "crew_room": true,
+      "exits": {"s": "hangar"},
+      "desc": {
+        "en": "A hangar bay of your crew's own, behind a door that opens only for its members. Folding chairs circle a scuffed table, a crew board glows on the wall, and a shelf waits for trophies.",
+        "id": "Ruang hanggar milik krumu sendiri, di balik pintu yang hanya terbuka untuk anggotanya. Kursi lipat mengelilingi meja yang lecet, papan kru berpendar di dinding, dan sebuah rak menunggu piala."
+      },
+      "hints": {
+        "all": {
+          "en": "Only your crew comes in here. Type crew for the crew, and crew say to talk to all of them, wherever they are.",
+          "id": "Hanya krumu yang masuk ke sini. Ketik kru untuk info kru, dan kru bilang untuk bicara ke semuanya, di mana pun mereka berada."
+        }
+      },
+      "objects": {
+        "board": {
+          "names": {"en": ["board", "crew board"], "id": ["papan", "papan kru"]},
+          "desc": {
+            "en": "The crew board: your crew's points and place among the crews. Type crew for more, and crews for the whole board.",
+            "id": "Papan kru: poin krumu dan peringkatnya di antara kru-kru. Ketik kru untuk selengkapnya, dan papan kru untuk seluruh papan."
+          }
+        },
+        "shelf": {
+          "names": {"en": ["shelf", "trophies", "trophy shelf", "table", "chairs"], "id": ["rak", "piala", "rak piala", "meja", "kursi"]},
+          "desc": {
+            "en": "Room for trophies, and a table with a ring from somebody's iced coffee that nobody will admit to.",
+            "id": "Tempat untuk piala, dan meja dengan bekas lingkaran es kopi yang tak ada yang mau mengaku."
+          }
+        }
+      }
+    },
     "gate_hall": {
       "name": {"en": "Gate Hall", "id": "Aula Gerbang"},
       "ref": {"en": "the Gate Hall", "id": "Aula Gerbang"},
@@ -2283,7 +2322,7 @@
       "area": "lower",
       "at": [-3, 0],
       "ambience": "engine",
-      "exits": {"e": "dock"},
+      "exits": {"e": "dock", "n": "crew_hangar"},
       "desc": {
         "en": "A long hangar west of the Dock, lined with numbered berths. Players' own ships rest in their docking clamps, fuel lines snaking across the floor to each one, and a tired robot sweeps up after every landing.",
         "id": "Hanggar panjang di sebelah barat Dermaga, berderet tambatan bernomor. Kapal-kapal milik para pemain beristirahat di penjepit tambatnya, selang bahan bakar menjalar di lantai ke masing-masing kapal, dan sebuah robot yang tampak lelah menyapu setiap kali ada yang mendarat."
@@ -5388,6 +5427,28 @@
       "duration": 7200,
       "effect": {"gig_pay": 2.0},
       "sound": "event_party"
+    },
+    "tournament": {
+      "kind": "weekly",
+      "name": {"en": "The Pixel Pier duel tournament", "id": "Turnamen duel Dermaga Piksel"},
+      "about": {
+        "en": "win duels on the Tournament Stage: the most wins take the prizes",
+        "id": "menangkan duel di Panggung Turnamen: kemenangan terbanyak membawa hadiah"
+      },
+      "start": {
+        "en": "The duel tournament has begun on Pixel Pier's Tournament Stage! For two hours, every duel won there counts; the most wins take 500, 200 and 100 credits, and the champion a title.",
+        "id": "Turnamen duel dimulai di Panggung Turnamen Dermaga Piksel! Selama dua jam, setiap duel yang dimenangkan di sana dihitung; kemenangan terbanyak membawa 500, 200, dan 100 kredit, dan sang juara sebuah gelar."
+      },
+      "end": {
+        "en": "The duel tournament is over.",
+        "id": "Turnamen duel telah usai."
+      },
+      "duration": 7200,
+      "effect": {"tournament": true},
+      "rooms": ["pixel_stage"],
+      "prizes": [500, 200, 100],
+      "prize_thing": "title_champion",
+      "sound": "duel_start"
     },
     "station_birthday": {
       "kind": "seasonal",

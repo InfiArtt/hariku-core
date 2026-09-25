@@ -1445,6 +1445,20 @@
         }
       }
     },
+    "title_champion": {
+      "type": "title",
+      "one": {"en": "title 'Tournament Champion'", "id": "gelar 'Juara Turnamen'"},
+      "many": {"en": "titles 'Tournament Champion'", "id": "gelar 'Juara Turnamen'"},
+      "names": {"en": ["tournament champion", "title tournament champion", "champion"], "id": ["juara turnamen", "gelar juara turnamen", "juara"]},
+      "desc": {
+        "en": "A title held by those who won the most duels in a Pixel Pier tournament. Wear it to show it.",
+        "id": "Gelar milik mereka yang paling banyak menang duel dalam turnamen Dermaga Piksel. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Tournament Champion", "id": "Juara Turnamen"}}
+    },
     "lantern_charm": {
       "type": "furniture",
       "one": {"en": "festival lantern charm", "id": "jimat lentera festival"},

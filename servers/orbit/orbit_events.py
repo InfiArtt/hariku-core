@@ -65,6 +65,7 @@ EVENT_DEFAULTS = {
         {"event": "trading_fair", "weekday": 5, "hour": 14, "minute": 0},
         {"event": "jackpot_night", "weekday": 4, "hour": 13, "minute": 0},
         {"event": "night_rush", "weekday": 2, "hour": 13, "minute": 0},
+        {"event": "tournament", "weekday": 6, "hour": 15, "minute": 0},
     ],
 }
 DATE_FORMATS = ("%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", "%Y/%m/%d %H:%M")
@@ -151,6 +152,67 @@ class EventsMixin:
             if lantern:
                 return lantern
         return None
+
+    # --- the duel tournament on the Tournament Stage ----------------------------------------------
+
+    def tournament_win(self, session, room):
+        """A duel won during the tournament, on its stage, counts for the prize."""
+        row = self.active_of("tournament")
+        if row is None or room not in (self.events_def["tournament"].get("rooms") or []):
+            return
+        self.store.add_event_points(row["id"], session.char["id"], 1, self.now())
+        n = self.store.event_points(row["id"], session.char["id"])
+        self._to_room(room, "announce", "tournament_point", extra={"sound": "duel_start", "event": "tournament"},
+                      name=session.name, n=n)
+
+    def tournament_status(self):
+        """(case, params) for the arcade host: on (who leads), on_empty, next, or nothing."""
+        row = self.active_of("tournament")
+        now = self.now()
+        if row is not None:
+            left = {lang: self._duration(lang, float(row["ends"]) - now) for lang in ("en", "id")}
+            players = self.store.event_players(row["id"])
+            if not players:
+                return "on_empty", {"time": left}
+            leader = self.store.by_id(players[0][0])
+            return "on", {"time": left, "leader": leader["name"] if leader else "?", "points": players[0][1]}
+        for entry in self.config.get("events_weekly") or []:
+            if entry.get("event") == "tournament":
+                start = self.weekly_start(entry, now)
+                when = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)
+                return "next", {"day": {lang: self.render(lang, f"weekday_{when.weekday()}") for lang in ("en", "id")},
+                                "hour": when.strftime("%H:%M")}
+        return None, {}
+
+    def _tournament_results(self, row):
+        """The tournament is over: the most duels won take the prizes (ties: who got there first)."""
+        definition = self.events_def[row["event"]]
+        prizes = [int(p) for p in definition.get("prizes") or []]
+        players = [(cid, pts) for cid, pts in self.store.event_players(row["id"]) if pts > 0]
+        if not players:
+            for other in list(self.sessions.values()):
+                self._send(other, "announce", "tournament_nobody", extra={"sound": "event_end", "event": "tournament"})
+            return
+        winners = []
+        for place, (char_id, points) in enumerate(players[:len(prizes)]):
+            stored = self.store.by_id(char_id)
+            if stored is None:
+                continue
+            session = self.sessions.get(stored["name_key"])
+            char = session.char if session else stored
+            self.earn(char, prizes[place], "events")
+            thing = definition.get("prize_thing")
+            if place == 0 and thing in self.world.things and not self.owns(char, thing):
+                self.give_thing(char, thing)
+            char["stats"]["tournaments_won"] = int(char["stats"].get("tournaments_won") or 0) + (1 if place == 0 else 0)
+            self.store.save(char)
+            winners.append((char["name"], points, prizes[place]))
+        logger.info("the tournament ended: %s", winners)
+        for other in list(self.sessions.values()):
+            entries = [self.render(other.lang, "tournament_place", n=i + 1, name=name, points=points, prize=prize)
+                       for i, (name, points, prize) in enumerate(winners)]
+            self._send(other, "announce", "tournament_results", entries="; ".join(entries),
+                       extra={"sound": "achievement", "event": "tournament"})
 
     # --- the Lantern Festival's goal -------------------------------------------------------
 
@@ -289,6 +351,8 @@ class EventsMixin:
         logger.info("event %s ended (%s)", eid, outcome)
         if outcome == "done" and definition.get("end"):
             self.announce_event(row, "end")
+        if outcome == "done" and (definition.get("effect") or {}).get("tournament"):
+            self._tournament_results(row)
 
     def tick_events(self, now):
         for row in list(self.active.values()):

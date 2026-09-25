@@ -173,13 +173,20 @@ class NavMixin:
             return
         dest = ex["to"]
         dest_loc = self.world.locations[dest]
+        host = None
+        if dest_loc.get("crew_room"):
+            crew, _role = self.crew_of(char)
+            if crew is None:
+                self._error(session, "crew_hangar_none", sound="locked")
+                return
+            host = f"crew{crew['id']}"                        # the crew's own room, all its members'
         here_airless = bool(self._loc(char).get("airless"))
         if dest_loc.get("airless") and not here_airless:
             if not self.effects(char)["eva"]:
                 self._error(session, "need_eva", sound="locked")
                 return
             self._start_air(char, here)
-        self._move_to(session, dest, d, message=ex.get("msg"), via=ex.get("via"))
+        self._move_to(session, dest, d, message=ex.get("msg"), via=ex.get("via"), host=host)
         if here_airless and not dest_loc.get("airless"):
             char["stats"].pop("eva", None)
             self._save(session)
@@ -194,7 +201,7 @@ class NavMixin:
         old_loc = self._loc(char)
         came_from = old_loc
         char["location"] = dest
-        if dest in ("cabin", "ship") and host:
+        if (dest in ("cabin", "ship") or self.world.locations[dest].get("crew_room")) and host:
             char["stats"]["visit"] = host
         else:
             char["stats"].pop("visit", None)
