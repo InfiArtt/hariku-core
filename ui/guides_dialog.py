@@ -95,6 +95,12 @@ class GuidesDialog(wx.Dialog):
             pass
         self.CentreOnParent()
         self.list.SetFocus()
+        # Again once shown, so the list, not the default button, has the focus.
+        wx.CallAfter(self._focus_list)
+
+    def _focus_list(self):
+        if self and self.IsShown():
+            self.list.SetFocus()
 
     def selected(self):
         """(id, name) of the selected guide, or None."""

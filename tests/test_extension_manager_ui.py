@@ -31,7 +31,7 @@ def test_extension_manager_window(tmp_path):
         timeout=200, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK tabs", "OK loading", "OK store", "OK toggle", "OK search",
+    for stage in ("OK tabs", "OK loading", "OK store", "OK toggle", "OK guide", "OK search",
                   "OK needs_core", "OK install", "OK update_all", "OK incompatible",
                   "OK refresh", "OK open_on_updates", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
