@@ -47,9 +47,11 @@ UTC = datetime.timezone.utc
 # ------------------------------------------------------------
 
 def test_the_extension_carries_the_same_websocket_module():
+    # Line endings aside: the server's files are checked out with LF everywhere.
     with open(os.path.join(SERVER_DIR, "orbit_ws.py"), "rb") as a, \
             open(os.path.join(EXT_DIR, "orbit_ws.py"), "rb") as b:
-        assert a.read() == b.read(), "copy servers/orbit/orbit_ws.py to extensions/orbit/"
+        assert a.read().replace(b"\r\n", b"\n") == b.read().replace(b"\r\n", b"\n"), \
+            "copy servers/orbit/orbit_ws.py to extensions/orbit/"
 
 
 def test_accept_key_is_the_rfc_example():
