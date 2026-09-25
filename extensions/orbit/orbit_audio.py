@@ -18,6 +18,11 @@ hums up or down, a ladder clanks, an airlock hisses. An event's "sound"
 field names a more specific cue (a level up, a harvest, the temple bell);
 the event's kind is the fallback. orbit_mix finds and shapes the files.
 
+Some cues come a moment later (timed_cues): the three reels of a slot
+machine stopping one by one, left, middle, right, and then whether you won;
+the dice landing; the dealer turning the cards. The words wait for them, so
+the result isn't read before the dice have stopped rolling.
+
 The ambience is a quiet loop for the kind of place you're in: the vents'
 hum in corridors, the Cantina's murmur, the reactor's thrum in Engineering,
 water and fans in Hydroponics, the hush of the Observation Deck, your own
@@ -54,11 +59,15 @@ DIR_PAN = {"n": 0.0, "s": 0.0, "e": 0.75, "w": -0.75, "ne": 0.5, "se": 0.5, "nw"
            "u": 0.0, "d": 0.0}
 VIA_CUES = {"lift": ("lift_up", "lift_down"), "ladder": ("ladder", "ladder"),
             "slide": ("slide", "slide"), "airlock": ("airlock", "airlock")}
-FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet")
-AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue")
+FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet", "wood", "snow", "sand", "dust")
+AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino")
 # Other players' sounds (the "Other players' sounds" setting): what they do near you.
 OTHERS_KINDS = ("say", "shout", "emote", "arrive", "leave")
 TONE_GAP_SECONDS = 0.45
+# The casino: when the reels stop (and where), and when the outcome of each game is heard.
+REEL_STOPS = ((0.9, -0.75), (1.3, 0.0), (1.7, 0.75))
+OUTCOME_AT = {"reels": 2.0, "dice": 1.2, "coinflip": 0.9, "cards": 0.35, "deal": 0.35}
+OUTCOME_CUES = {"win": "win", "lose": "lose", "push": "push", "jackpot": "jackpot"}
 
 POLL_SECONDS = 0.05
 FADE_PER_SECOND = 900.0       # MCI volume units (0-1000) a second
@@ -92,6 +101,8 @@ def cues_for(message, acoustics=None):
         return cues
     if kind in ("arrive", "leave") and d:
         return [(kind, pan, room, None)]
+    if message.get("reels"):
+        return [("reel_spin", 0.0, None, None)]
     if kind == "emote":
         eid = message.get("emote")
         cue = f"emote_{eid}" if isinstance(eid, str) and eid.isalpha() else "emote"
@@ -99,6 +110,19 @@ def cues_for(message, acoustics=None):
     if sound:
         return [(sound, 0.0, None, kind_cue)]
     return [(kind_cue, 0.0, None, None)] if kind_cue else []
+
+
+def timed_cues(message):
+    """Cues that come a moment after the event's own: ([(seconds, cue, pan)], and how
+    many seconds the words should wait for them)."""
+    cues = []
+    if isinstance(message.get("reels"), list):
+        cues.extend((at, "reel_stop", pan) for at, pan in REEL_STOPS)
+    outcome = OUTCOME_CUES.get(message.get("outcome"))
+    if outcome:
+        at = OUTCOME_AT["reels"] if cues else OUTCOME_AT.get(message.get("sound"), 0.3)
+        cues.append((at, outcome, 0.0))
+    return cues, (max(at for at, _cue, _pan in cues) if cues else 0.0)
 
 
 def sound_for(message):

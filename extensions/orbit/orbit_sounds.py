@@ -7,35 +7,55 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Makes Orbit's sounds in sounds/, from nothing but arithmetic: layered and
+Makes Orbit's sounds in sounds/: recorded ones where a recording beats
+arithmetic, synthesized ones for the rest.
+
+Recorded (RECORDED below): footsteps on each kind of floor, doors, the
+airlock's latch, cloth for waves and hugs, coins, the pick on rock, cutting
+a crop, the shuttle's engines and thrusters, the interface's little sounds,
+and the whole casino (dice, cards, chips). They come from five sound packs
+by Kenney (www.kenney.nl): Casino Audio, Impact Sounds, RPG Audio, Sci-fi
+Sounds and Interface Sounds, released under CC0 1.0 (public domain; see
+sounds/LICENSE-kenney.txt). tools/orbit_convert_kenney.py turned the packs
+into trimmed, level-matched mono 22.05 kHz WAVs once; each recipe here mixes
+one or more of those (a pair of steps, a latch then a door), and scales the
+result to a peak that fits beside the other cues.
+
+Synthesized (SOUNDS below), from nothing but arithmetic: layered and
 filtered noise, damped resonators for metal, wood and glass, envelopes
-shaped like real ones, a small room reverb, and a few variants of the
-sounds you hear often (footsteps, claps, coins), each a little different.
+shaped like real ones, a small room reverb. Human sounds (laughs, claps, a
+cheer, a sigh), the reactor's tones, the temple bell, the ambience loops
+and the little stings (a level up, an achievement) are made this way; a few
+recipes mix a synthesized part with recorded ones ("synth:airlock").
 
 Every file is a cue orbit_mix looks up by name ("step_metal_2.wav" is a
 variant of "step_metal"). Cues heard from a direction (steps, someone
 arriving, a gesture) are mono: Orbit pans them to the side they come from
-and adds the room's echo when it plays them. The rest are stereo designs.
-The cue names, what they are, and how to replace them with recordings are in
-README.md (servers/orbit), and CUES below.
+and adds the room's echo when it plays them; every recorded cue is mono.
+The cue names, what they are, and how to replace them with your own
+recordings are in README.md (servers/orbit), and CUES below.
 
-    python extensions/orbit/orbit_sounds.py
+    python extensions/orbit/orbit_sounds.py                    the synthesized cues
+    python extensions/orbit/orbit_sounds.py --kenney <folder>  and the recorded ones
 
-The files are committed; run this again only to change them. Everything is
-computed from sine waves and seeded noise (the same bytes every time), not
-recorded or sampled from anything, so there is no copyright question; the
-sounds are part of Hariku under its licence. 16-bit, peaks well below full
-scale, short fades so nothing clicks. The ambience files loop without a
-seam: each is made a little longer than it plays and its end is crossfaded
-into its start, and its steady tones fit a whole number of cycles into the
-loop. Standard library only.
+The files are committed; run this again only to change them (the recorded
+ones need the converted packs, see tools/orbit_convert_kenney.py). The
+synthesized sounds are computed from sine waves and seeded noise (the same
+bytes every time), not sampled from anything, and are part of Hariku under
+its licence. 16-bit, peaks well below full scale, short fades so nothing
+clicks. The ambience files loop without a seam: each is made a little
+longer than it plays and its end is crossfaded into its start, and its
+steady tones fit a whole number of cycles into the loop. Standard library
+only.
 """
 
+import array
 import io
 import math
 import os
 import random
 import struct
+import sys
 import wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -950,6 +970,17 @@ def levelup():
     return wav_bytes(*_fade(left, right, RATE, fade_out=0.1), RATE, 0.42)
 
 
+def achievement():
+    """An achievement: a bright rising arpeggio that lands on a shimmering chord."""
+    left, right = _blank(1.8)
+    for i, note in enumerate((G5 / 2, C5, E5, G5, C6)):
+        _add(left, right, i * 0.07, _soft_square(note, 0.35, 7.0), -0.5 + 0.25 * i, 0.45)
+    for k, (note, position) in enumerate(((C6, -0.4), (E5 * 2, 0.0), (G5 * 2, 0.4))):
+        _add(left, right, 0.38 + 0.02 * k, _bell(note, 1.3, 2.6), position, 0.35)
+    _echo(left, right, RATE, ((0.09, 0.28, 1), (0.17, 0.2, -1), (0.26, 0.12, 1)))
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.42)
+
+
 def daily():
     """The daily bonus: a little shower of coins from left to right."""
     rng = random.Random(SEED + 380)
@@ -1388,6 +1419,299 @@ def amb_venue():
     return wav_bytes(*_seamless(left, right, equal_power=False), LOOP_RATE, 0.36)
 
 
+def amb_mall():
+    """The Mall Ring: a bright, airy hall, soft music far off, footsteps and a fountain."""
+    rng = random.Random(SEED + 18)
+    left, right = _loop_blank()
+    n = len(left)
+    # Soft music from the ceiling: a slow major seventh chord, whole cycles in 4 s.
+    notes = (220.0, 277.5, 330.0, 415.0)
+    for i in range(n):
+        t = i / LOOP_RATE
+        swell = 0.75 + 0.25 * math.sin(TAU * 0.25 * t)
+        left[i] = sum(math.sin(TAU * f * t) / (k + 1.5) for k, f in enumerate(notes)) * 0.06 * swell
+        right[i] = sum(math.sin(TAU * (f + 0.5) * t) / (k + 1.5) for k, f in enumerate(notes)) * 0.06 * swell
+    # The fountain's drops, left of centre, and the hall's airy hush.
+    drops = _SVF(1.5)
+    hush_l, hush_r = _SVF(0.6), _SVF(0.6)
+    for i in range(n):
+        noise = rng.uniform(-1, 1)
+        v = drops.band_pass(noise, 2500, LOOP_RATE) * (0.5 + 0.5 * math.sin(TAU * 1.5 * i / LOOP_RATE)) * 0.05
+        left[i] += v * 0.9 + hush_l.band_pass(rng.uniform(-1, 1), 700, LOOP_RATE) * 0.12
+        right[i] += v * 0.4 + hush_r.band_pass(rng.uniform(-1, 1), 740, LOOP_RATE) * 0.12
+    # Shoppers' footsteps crossing the hall, and a far-off voice or two.
+    for _k in range(10):
+        start = rng.uniform(0.1, LOOP_SECONDS - 0.2)
+        step = [v * math.exp(-i / (0.02 * LOOP_RATE)) for i, v in
+                enumerate(rng.uniform(-1, 1) for _ in range(int(0.06 * LOOP_RATE)))]
+        _add(left, right, start, step, rng.uniform(-0.9, 0.9), 0.05, rate=LOOP_RATE)
+    return wav_bytes(*_seamless(left, right), LOOP_RATE, 0.36)
+
+
+def amb_casino():
+    """The Casino Corner: a low murmur, carpet-soft, and the machines' little chimes."""
+    rng = random.Random(SEED + 19)
+    left, right = _loop_blank()
+    n = len(left)
+    for voice in range(4):
+        position = -0.8 + 1.6 * voice / 3
+        centre = rng.uniform(350, 800)
+        filt = _SVF(3.0)
+        gl, gr = _pan(position)
+        syllable, target, next_change = 0.0, 0.0, 0
+        for i in range(n):
+            if i >= next_change:
+                target = rng.uniform(0.2, 0.8) if rng.random() < 0.6 else 0.0
+                next_change = i + int(rng.uniform(0.1, 0.3) * LOOP_RATE)
+            syllable += 0.004 * (target - syllable)
+            v = filt.band_pass(rng.uniform(-1, 1), centre, LOOP_RATE) * syllable * 0.7
+            left[i] += v * gl
+            right[i] += v * gr
+    # The slot machines along the wall: little arpeggios and a soft ring now and then.
+    for start, root_note, position in ((0.4, C5, -0.7), (1.7, E5, 0.6), (2.9, G5, -0.3)):
+        for k, ratio in enumerate((1.0, 1.25, 1.5, 2.0)):
+            _add(left, right, start + 0.06 * k, _bell(root_note * ratio, 0.25, 12.0, rate=LOOP_RATE),
+                 position, 0.05, rate=LOOP_RATE)
+    # Chips clicking on a table.
+    for _k in range(6):
+        start = rng.uniform(0.1, LOOP_SECONDS - 0.2)
+        for j in range(rng.randint(2, 4)):
+            click = _bell(rng.uniform(3000, 4200), 0.05, 60.0, rate=LOOP_RATE, partials=((1, 1.0), (1.9, 0.5)))
+            _add(left, right, start + 0.03 * j, click, rng.uniform(-0.6, 0.6), 0.04, rate=LOOP_RATE)
+    low = 0.0
+    a = _lowpass_coeff(140, LOOP_RATE)
+    for i in range(n):
+        low += a * (rng.uniform(-1, 1) - low)
+        left[i] += low * 1.3
+        right[i] += low * 1.3
+    return wav_bytes(*_seamless(left, right), LOOP_RATE, 0.42)
+
+
+# ------------------------------------------------------------
+# Recorded cues (Kenney's CC0 packs)
+# ------------------------------------------------------------
+
+RECORDED_RATE = 22050
+MIN_SECONDS = 0.12
+
+
+def _pair(pack, name, i, second=0.3, gains=(1.0, 0.85)):
+    """Two steps (a move): sources name_00i and the next one."""
+    return [(f"{pack}/{name}_{i % 5:03d}.wav", 0.0, gains[0]),
+            (f"{pack}/{name}_{(i + 1) % 5:03d}.wav", second, gains[1])]
+
+
+def _steps(name, parts_for, count=4, peak=-11.0):
+    return {f"{name}_{i + 1}.wav": (peak, parts_for(i)) for i in range(count)}
+
+
+def _metal_steps(i):
+    # Boots on deck plating: a hard step with a faint ring of the plate under it.
+    return _pair("impact-sounds", "footstep_concrete", i) + [
+        (f"impact-sounds/impactMetal_light_{i % 5:03d}.wav", 0.004, 0.16),
+        (f"impact-sounds/impactMetal_light_{(i + 2) % 5:03d}.wav", 0.304, 0.13)]
+
+
+def _dust_steps(i):
+    # Fine dust on hard ground: grit over a step.
+    return [(f"impact-sounds/footstep_concrete_{i % 5:03d}.wav", 0.0, 0.7),
+            (f"impact-sounds/footstep_grass_{i % 5:03d}.wav", 0.0, 0.5),
+            (f"impact-sounds/footstep_concrete_{(i + 1) % 5:03d}.wav", 0.3, 0.6),
+            (f"impact-sounds/footstep_grass_{(i + 1) % 5:03d}.wav", 0.3, 0.45)]
+
+
+def _sand_steps(i):
+    return [(f"impact-sounds/footstep_snow_{i % 5:03d}.wav", 0.0, 0.7),
+            (f"impact-sounds/footstep_grass_{(i + 2) % 5:03d}.wav", 0.0, 0.4),
+            (f"impact-sounds/footstep_snow_{(i + 1) % 5:03d}.wav", 0.32, 0.6),
+            (f"impact-sounds/footstep_grass_{(i + 3) % 5:03d}.wav", 0.32, 0.35)]
+
+
+def _approach(files, gains, gap=0.28):
+    return [(f, k * gap, g) for k, (f, g) in enumerate(zip(files, gains))]
+
+
+_CONCRETE = [f"impact-sounds/footstep_concrete_{k:03d}.wav" for k in range(5)]
+
+# file -> (peak in dBFS, [(source, start in seconds, gain[, {"len": s, "fade_in": s, "fade_out": s}])]).
+# A source is "pack/file.wav" from the converted packs, or "synth:<maker>" (a sound made above).
+RECORDED = {}
+RECORDED.update(_steps("step_metal", _metal_steps))
+RECORDED.update(_steps("step_stone", lambda i: _pair("impact-sounds", "footstep_concrete", i)))
+RECORDED.update(_steps("step_carpet", lambda i: _pair("impact-sounds", "footstep_carpet", i), peak=-13.0))
+RECORDED.update(_steps("step_grass", lambda i: _pair("impact-sounds", "footstep_grass", i), peak=-12.0))
+RECORDED.update(_steps("step_wood", lambda i: _pair("impact-sounds", "footstep_wood", i)))
+RECORDED.update(_steps("step_snow", lambda i: _pair("impact-sounds", "footstep_snow", i), peak=-12.0))
+RECORDED.update(_steps("step_dust", _dust_steps, count=3, peak=-12.0))
+RECORDED.update(_steps("step_sand", _sand_steps, count=3, peak=-12.0))
+RECORDED.update({
+    # moving about
+    "door_1.wav": (-8.0, [("sci-fi-sounds/doorOpen_000.wav", 0.0, 1.0)]),
+    "door_2.wav": (-8.0, [("sci-fi-sounds/doorOpen_001.wav", 0.0, 1.0)]),
+    "door_3.wav": (-8.0, [("sci-fi-sounds/doorOpen_002.wav", 0.0, 1.0)]),
+    "airlock.wav": (-7.0, [("rpg-audio/metalLatch.wav", 0.0, 0.9), ("synth:airlock", 0.12, 1.0),
+                           ("sci-fi-sounds/doorClose_000.wav", 1.45, 0.7)]),
+    "locked.wav": (-4.5, [("rpg-audio/metalClick.wav", 0.0, 1.0), ("rpg-audio/metalLatch.wav", 0.2, 0.8),
+                           ("interface-sounds/error_004.wav", 0.42, 0.45)]),
+    "bump_1.wav": (-10.0, [("impact-sounds/impactSoft_heavy_000.wav", 0.0, 1.0)]),
+    "bump_2.wav": (-10.0, [("impact-sounds/impactSoft_heavy_001.wav", 0.0, 1.0)]),
+    "bump_3.wav": (-10.0, [("impact-sounds/impactSoft_heavy_003.wav", 0.0, 1.0)]),
+    "ladder_1.wav": (-9.5, _approach([f"impact-sounds/impactMetal_light_{k:03d}.wav" for k in (0, 2, 4)],
+                                     (1.0, 0.8, 0.65), gap=0.26)),
+    "ladder_2.wav": (-9.5, _approach([f"impact-sounds/impactMetal_light_{k:03d}.wav" for k in (1, 3, 0)],
+                                     (1.0, 0.8, 0.65), gap=0.26)),
+    "arrive.wav": (-11.0, _approach(_CONCRETE[:4], (0.35, 0.5, 0.7, 0.9))),
+    "leave.wav": (-11.0, _approach(_CONCRETE[1:], (0.9, 0.7, 0.5, 0.35))),
+    # talking and the interface
+    "say_1.wav": (-6.0, [("interface-sounds/pluck_001.wav", 0.0, 1.0)]),
+    "say_2.wav": (-6.0, [("interface-sounds/pluck_002.wav", 0.0, 1.0)]),
+    "sent.wav": (-10.0, [("interface-sounds/select_003.wav", 0.0, 1.0)]),
+    "offer.wav": (-10.0, [("interface-sounds/question_001.wav", 0.0, 1.0)]),
+    "task.wav": (-10.0, [("interface-sounds/question_002.wav", 0.0, 1.0)]),
+    "error.wav": (-7.0, [("interface-sounds/error_006.wav", 0.0, 1.0)]),
+    "fail.wav": (-5.0, [("interface-sounds/error_003.wav", 0.0, 1.0)]),
+    "success.wav": (-9.0, [("interface-sounds/confirmation_001.wav", 0.0, 1.0)]),
+    "mission.wav": (-9.0, [("interface-sounds/confirmation_002.wav", 0.0, 1.0)]),
+    "gadget.wav": (-4.5, [("interface-sounds/switch_002.wav", 0.0, 1.0),
+                           ("interface-sounds/maximize_003.wav", 0.07, 0.6)]),
+    "daily.wav": (-9.0, [("interface-sounds/confirmation_003.wav", 0.0, 1.0),
+                         ("rpg-audio/handleCoins2.wav", 0.25, 0.8)]),
+    # gestures (cloth, feet)
+    "emote_wave_1.wav": (-7.0, [("rpg-audio/cloth1.wav", 0.0, 1.0)]),
+    "emote_wave_2.wav": (-7.0, [("rpg-audio/cloth2.wav", 0.0, 1.0)]),
+    "emote_hug.wav": (-7.0, [("rpg-audio/cloth3.wav", 0.0, 1.0), ("rpg-audio/cloth4.wav", 0.22, 0.8)]),
+    "emote_bow.wav": (-8.0, [("rpg-audio/clothBelt2.wav", 0.0, 1.0)]),
+    "emote_shrug.wav": (-8.0, [("rpg-audio/cloth4.wav", 0.0, 1.0)]),
+    "emote_dance_1.wav": (-12.0, _approach([f"impact-sounds/footstep_wood_{k:03d}.wav" for k in (0, 2, 1, 3, 4)],
+                                           (1.0, 0.7, 0.9, 0.7, 1.0), gap=0.2)),
+    "emote_dance_2.wav": (-12.0, _approach([f"impact-sounds/footstep_wood_{k:03d}.wav" for k in (3, 1, 4, 0)],
+                                           (0.9, 1.0, 0.7, 1.0), gap=0.24)),
+    # things, work and money
+    "equip_1.wav": (-4.5, [("rpg-audio/beltHandle1.wav", 0.0, 1.0)]),
+    "equip_2.wav": (-4.5, [("rpg-audio/beltHandle2.wav", 0.0, 1.0)]),
+    "equip_3.wav": (-4.5, [("rpg-audio/clothBelt.wav", 0.0, 1.0)]),
+    "coins_1.wav": (-4.5, [("rpg-audio/handleCoins.wav", 0.0, 1.0)]),
+    "coins_2.wav": (-4.5, [("rpg-audio/handleCoins2.wav", 0.0, 1.0)]),
+    "trade.wav": (-7.0, [("rpg-audio/cloth2.wav", 0.0, 0.5), ("rpg-audio/handleCoins2.wav", 0.12, 1.0),
+                         ("interface-sounds/confirmation_001.wav", 0.3, 0.55)]),
+    "mine_1.wav": (-8.0, [("impact-sounds/impactMining_000.wav", 0.0, 1.0)]),
+    "mine_2.wav": (-8.0, [("impact-sounds/impactMining_001.wav", 0.0, 1.0)]),
+    "mine_3.wav": (-8.0, [("impact-sounds/impactMining_002.wav", 0.0, 1.0)]),
+    "mine_4.wav": (-8.0, [("impact-sounds/impactMining_003.wav", 0.0, 1.0)]),
+    "harvest_1.wav": (-11.0, [("rpg-audio/knifeSlice.wav", 0.0, 1.0)]),
+    "harvest_2.wav": (-11.0, [("rpg-audio/knifeSlice2.wav", 0.0, 1.0)]),
+    "harvest_3.wav": (-11.0, [("rpg-audio/chop.wav", 0.0, 1.0)]),
+    "plant.wav": (-16.0, [("impact-sounds/impactSoft_medium_001.wav", 0.0, 1.0),
+                          ("impact-sounds/impactSoft_medium_003.wav", 0.22, 0.75)]),
+    "rescue.wav": (-8.0, [("sci-fi-sounds/thrusterFire_000.wav", 0.0, 0.8, {"len": 1.4, "fade_in": 0.3,
+                                                                          "fade_out": 0.5}),
+                          ("sci-fi-sounds/impactMetal_002.wav", 1.3, 1.0),
+                          ("sci-fi-sounds/doorOpen_000.wav", 1.6, 0.8)]),
+    "launch.wav": (-6.0, [("sci-fi-sounds/doorClose_001.wav", 0.0, 0.8),
+                          ("sci-fi-sounds/thrusterFire_001.wav", 0.3, 1.0, {"len": 2.4, "fade_in": 0.6,
+                                                                            "fade_out": 1.0}),
+                          ("sci-fi-sounds/spaceEngineSmall_000.wav", 0.3, 0.6, {"len": 2.4, "fade_in": 0.8,
+                                                                                "fade_out": 1.0})]),
+    "landing.wav": (-6.0, [("sci-fi-sounds/spaceEngineSmall_001.wav", 0.0, 0.7, {"len": 1.4, "fade_in": 0.2,
+                                                                                 "fade_out": 0.8}),
+                           ("sci-fi-sounds/impactMetal_000.wav", 1.2, 1.0),
+                           ("rpg-audio/metalLatch.wav", 1.5, 0.8),
+                           ("sci-fi-sounds/doorOpen_002.wav", 1.8, 0.9)]),
+    # the casino
+    "dice_1.wav": (-4.5, [("casino-audio/dice-shake-1.wav", 0.0, 0.8, {"len": 0.8, "fade_out": 0.1}),
+                          ("casino-audio/dice-throw-1.wav", 0.75, 1.0)]),
+    "dice_2.wav": (-4.5, [("casino-audio/dice-shake-2.wav", 0.0, 0.8, {"len": 0.8, "fade_out": 0.1}),
+                          ("casino-audio/dice-throw-2.wav", 0.75, 1.0)]),
+    "dice_3.wav": (-4.5, [("casino-audio/dice-shake-3.wav", 0.0, 0.8, {"len": 0.8, "fade_out": 0.1}),
+                          ("casino-audio/dice-throw-3.wav", 0.75, 1.0)]),
+    "reel_spin_1.wav": (-5.0, [("interface-sounds/scroll_001.wav", 0.0, 1.0),
+                                ("interface-sounds/scroll_002.wav", 0.9, 0.8, {"fade_out": 0.3})]),
+    "reel_spin_2.wav": (-5.0, [("interface-sounds/scroll_003.wav", 0.0, 1.0),
+                                ("interface-sounds/scroll_004.wav", 0.9, 0.8, {"fade_out": 0.3})]),
+    "reel_stop_1.wav": (-9.0, [("impact-sounds/impactMetal_medium_001.wav", 0.0, 1.0)]),
+    "reel_stop_2.wav": (-9.0, [("impact-sounds/impactMetal_medium_002.wav", 0.0, 1.0)]),
+    "reel_stop_3.wav": (-9.0, [("impact-sounds/impactMetal_medium_004.wav", 0.0, 1.0)]),
+    "cards_1.wav": (-5.0, [("casino-audio/card-place-1.wav", 0.0, 1.0)]),
+    "cards_2.wav": (-5.0, [("casino-audio/card-place-2.wav", 0.0, 1.0)]),
+    "cards_3.wav": (-5.0, [("casino-audio/card-place-3.wav", 0.0, 1.0)]),
+    "cards_4.wav": (-5.0, [("casino-audio/card-place-4.wav", 0.0, 1.0)]),
+    "deal_1.wav": (-5.0, _approach([f"casino-audio/card-slide-{k}.wav" for k in (1, 5, 6, 7)],
+                                    (1.0, 0.9, 1.0, 0.9), gap=0.24)),
+    "deal_2.wav": (-5.0, _approach([f"casino-audio/card-slide-{k}.wav" for k in (2, 3, 4, 8)],
+                                    (1.0, 0.9, 1.0, 0.9), gap=0.24)),
+    "win_1.wav": (-5.0, [("casino-audio/chips-handle-1.wav", 0.0, 1.0),
+                         ("interface-sounds/confirmation_001.wav", 0.05, 0.5)]),
+    "win_2.wav": (-5.0, [("casino-audio/chips-handle-5.wav", 0.0, 1.0),
+                         ("interface-sounds/confirmation_003.wav", 0.05, 0.5)]),
+    "push.wav": (-4.5, [("casino-audio/chip-lay-2.wav", 0.0, 1.0), ("casino-audio/chip-lay-3.wav", 0.12, 0.8)]),
+    "lose.wav": (-12.0, [("interface-sounds/minimize_006.wav", 0.0, 1.0)]),
+    "jackpot.wav": (-4.5, [("synth:achievement", 0.0, 0.8)] + [
+        (f"casino-audio/chips-stack-{k}.wav", 0.35 + 0.11 * j, 0.9)
+        for j, k in enumerate((1, 3, 2, 5, 4, 6, 1, 3))] + [
+        ("casino-audio/chips-handle-5.wav", 1.2, 1.0)]),
+    "coinflip.wav": (-6.0, [("impact-sounds/impactTin_medium_000.wav", 0.0, 1.0),
+                            ("impact-sounds/impactMetal_light_002.wav", 0.75, 0.7),
+                            ("impact-sounds/impactTin_medium_003.wav", 0.83, 0.45)]),
+    "lottery.wav": (-4.5, [("rpg-audio/bookFlip3.wav", 0.0, 1.0), ("rpg-audio/handleCoins2.wav", 0.18, 0.6)]),
+    "lottery_draw.wav": (-6.0, [("interface-sounds/bong_001.wav", 0.0, 1.0),
+                                ("interface-sounds/bong_001.wav", 0.28, 0.8),
+                                ("casino-audio/chips-handle-5.wav", 0.55, 0.8)]),
+})
+
+
+def _read_mono(path):
+    """A 16-bit WAV as floats (-1..1) at RECORDED_RATE, stereo mixed down."""
+    with wave.open(path, "rb") as w:
+        channels, rate, width = w.getnchannels(), w.getframerate(), w.getsampwidth()
+        data = w.readframes(w.getnframes())
+    if width != 2:
+        raise ValueError(f"{path}: 16-bit WAV files only")
+    ints = array.array("h")
+    ints.frombytes(data)
+    if sys.byteorder == "big":
+        ints.byteswap()
+    if channels == 2:
+        values = [(ints[i] + ints[i + 1]) / 65536.0 for i in range(0, len(ints) - 1, 2)]
+    else:
+        values = [v / 32768.0 for v in ints]
+    if rate != RECORDED_RATE:
+        ratio = rate / RECORDED_RATE
+        values = [values[min(len(values) - 1, int(i * ratio))] for i in range(int(len(values) / ratio))]
+    return values
+
+
+def _source(name, library):
+    if name.startswith("synth:"):
+        return _read_mono(io.BytesIO(globals()[name[6:]]()))
+    return _read_mono(os.path.join(library, *name.split("/")))
+
+
+def recorded_bytes(name, library):
+    """The mono WAV for RECORDED[name], mixed from the converted packs in `library`."""
+    peak_db, parts = RECORDED[name]
+    pieces = []
+    for part in parts:
+        source, start, gain = part[:3]
+        options = part[3] if len(part) > 3 else {}
+        values = _source(source, library)
+        if options.get("len"):
+            values = values[:int(options["len"] * RECORDED_RATE)]
+        _fade_list(values, RECORDED_RATE, options.get("fade_in", 0.0), options.get("fade_out", 0.0))
+        pieces.append((int(start * RECORDED_RATE), values, gain))
+    shortest = int(MIN_SECONDS * RECORDED_RATE)          # a click gets a moment of quiet after it
+    out = [0.0] * max([shortest] + [first + len(values) for first, values, _gain in pieces])
+    for first, values, gain in pieces:
+        for i, v in enumerate(values):
+            out[first + i] += v * gain
+    return mono_bytes(out, RECORDED_RATE, 10 ** (peak_db / 20.0), fade_in=0.002, fade_out=0.01)
+
+
+def recorded_sources():
+    """Every pack file the recorded cues use ("pack/file.wav")."""
+    return sorted({part[0] for _peak, parts in RECORDED.values() for part in parts
+                   if not part[0].startswith("synth:")})
+
+
 # ------------------------------------------------------------
 # The cues
 # ------------------------------------------------------------
@@ -1396,61 +1720,74 @@ def _variants(name, make, count):
     return [(f"{name}_{i}.wav", (lambda i=i: make(i))) for i in range(1, count + 1)]
 
 
-# (file, maker). A cue with variants has files name_1.wav, name_2.wav...
+# (file, maker): the synthesized files. A cue with variants has files name_1.wav, name_2.wav...
 SOUNDS = (
-    [("door_1.wav", lambda: door(1)), ("door_2.wav", lambda: door(2)),
-     ("airlock.wav", airlock), ("lift_up.wav", lift_up), ("lift_down.wav", lift_down),
-     ("slide.wav", slide), ("locked.wav", locked), ("arrive.wav", arrive), ("leave.wav", leave)]
-    + _variants("ladder", ladder, 2) + _variants("bump", bump, 2)
-    + _variants("step_metal", step_metal, 3) + _variants("step_carpet", step_carpet, 3)
-    + _variants("step_grass", step_grass, 3) + _variants("step_stone", step_stone, 3)
+    [("lift_up.wav", lift_up), ("lift_down.wav", lift_down), ("slide.wav", slide)]
     + _variants("step_rock", step_rock, 3) + _variants("step_suit", step_suit, 3)
     + _variants("step_wet", step_wet, 3)
-    + _variants("say", say, 2) + _variants("shout", shout, 2)
-    + [("whisper.wav", whisper), ("sent.wav", sent), ("announce.wav", announce), ("offer.wav", offer),
+    + _variants("shout", shout, 2)
+    + [("whisper.wav", whisper), ("announce.wav", announce),
        ("emote.wav", emote), ("emote_smile.wav", emote_smile), ("emote_nod.wav", emote_nod),
-       ("emote_shrug.wav", emote_shrug), ("emote_cheer.wav", emote_cheer), ("emote_sigh.wav", emote_sigh),
-       ("emote_bow.wav", emote_bow), ("emote_hug.wav", emote_hug)]
-    + _variants("emote_wave", emote_wave, 2) + _variants("emote_laugh", emote_laugh, 2)
-    + _variants("emote_clap", emote_clap, 2) + _variants("emote_dance", emote_dance, 2)
-    + _variants("coins", coins, 2)
-    + [("register.wav", register), ("success.wav", success), ("fail.wav", fail), ("error.wav", error),
-       ("mission.wav", mission), ("task.wav", task), ("rare.wav", rare), ("plant.wav", plant),
-       ("water.wav", water), ("ripe.wav", ripe), ("levelup.wav", levelup), ("daily.wav", daily)]
-    + _variants("mine", mine, 3) + _variants("harvest", harvest, 2)
-    + _variants("equip", equip, 2) + _variants("crunch", crunch, 2)
-    + [("gadget.wav", gadget), ("scan.wav", scan), ("air.wav", air), ("rescue.wav", rescue),
-       ("gulp.wav", gulp), ("pet_robot.wav", pet_robot), ("pet_cat.wav", pet_cat),
-       ("bell.wav", bell), ("lantern.wav", lantern),
-       ("launch.wav", launch), ("landing.wav", landing),
+       ("emote_cheer.wav", emote_cheer), ("emote_sigh.wav", emote_sigh)]
+    + _variants("emote_laugh", emote_laugh, 2) + _variants("emote_clap", emote_clap, 2)
+    + [("register.wav", register), ("rare.wav", rare), ("water.wav", water), ("ripe.wav", ripe),
+       ("levelup.wav", levelup), ("achievement.wav", achievement)]
+    + _variants("crunch", crunch, 2)
+    + [("scan.wav", scan), ("air.wav", air), ("gulp.wav", gulp), ("pet_robot.wav", pet_robot),
+       ("pet_cat.wav", pet_cat), ("bell.wav", bell), ("lantern.wav", lantern),
        ("tone1.wav", lambda: tone(1)), ("tone2.wav", lambda: tone(2)),
        ("tone3.wav", lambda: tone(3)), ("tone4.wav", lambda: tone(4)),
        ("amb_vent.wav", amb_vent), ("amb_cantina.wav", amb_cantina),
        ("amb_engine.wav", amb_engine), ("amb_garden.wav", amb_garden), ("amb_deck.wav", amb_deck),
-       ("amb_space.wav", amb_space), ("amb_belt.wav", amb_belt), ("amb_venue.wav", amb_venue)]
+       ("amb_space.wav", amb_space), ("amb_belt.wav", amb_belt), ("amb_venue.wav", amb_venue),
+       ("amb_mall.wav", amb_mall), ("amb_casino.wav", amb_casino)]
 )
 
+
+def _cue_of(name):
+    stem = name[:-4]
+    return stem.rstrip("0123456789").rstrip("_") if stem.split("_")[-1].isdigit() else stem
+
+
 # The cue each file belongs to ("step_metal_2.wav" -> "step_metal").
-CUES = sorted({name[:-4].rstrip("0123456789").rstrip("_") if name[:-4].split("_")[-1].isdigit()
-               else name[:-4] for name, _make in SOUNDS})
+CUES = sorted({_cue_of(name) for name, _make in SOUNDS} | {_cue_of(name) for name in RECORDED})
+FILES = sorted({name for name, _make in SOUNDS} | set(RECORDED))
 
 
-def write_all(folder=SOUNDS_DIR):
+def write_all(folder=SOUNDS_DIR, library=None):
+    """Writes the synthesized files (and, given the converted packs in `library`,
+    the recorded ones), and removes files that are no cue any more."""
     os.makedirs(folder, exist_ok=True)
-    keep = {name for name, _make in SOUNDS}
+    keep = set(FILES)
     for entry in os.listdir(folder):
         if entry.endswith(".wav") and entry not in keep:
             os.remove(os.path.join(folder, entry))
+    made = [(name, make) for name, make in SOUNDS]
+    if library:
+        missing = [src for src in recorded_sources() if not os.path.isfile(os.path.join(library, *src.split("/")))]
+        if missing:
+            raise SystemExit(f"Not in {library}: {', '.join(missing)}")
+        made += [(name, (lambda name=name: recorded_bytes(name, library))) for name in sorted(RECORDED)]
     total = 0
-    for name, make in SOUNDS:
+    for name, make in made:
         data = make()
         with open(os.path.join(folder, name), "wb") as f:
             f.write(data)
         total += len(data)
         with wave.open(io.BytesIO(data)) as w:
             print(f"{name}: {w.getnframes() / w.getframerate():.2f} s, {w.getnchannels()} ch, {len(data)} bytes")
-    print(f"{len(SOUNDS)} files, {total / 1024 / 1024:.2f} MB")
+    print(f"{len(made)} files, {total / 1024 / 1024:.2f} MB")
+
+
+def main(argv=None):
+    args = list(sys.argv[1:] if argv is None else argv)
+    library = None
+    if args[:1] == ["--kenney"] and len(args) == 2:
+        library = args[1]
+    elif args:
+        raise SystemExit("usage: orbit_sounds.py [--kenney <folder of the converted packs>]")
+    write_all(library=library)
 
 
 if __name__ == "__main__":
-    write_all()
+    main()

@@ -659,6 +659,43 @@ def test_the_reactor_tones_play_before_the_line_is_read(play):
     assert s.spoken == [("narrator", "Dengarkan 3 nada penstabil: 2, 4, 1.")]
 
 
+def test_the_slot_reels_stop_left_middle_right_before_the_result_is_read(play):
+    s = play.services
+    s.FILES = FakeServices.FILES | {"reel_spin", "reel_stop", "push", "dice", "win", "cards", "deal"}
+    conn = _online(play)
+    s.spoken.clear()
+    s.placed.clear()
+    s.timers = []
+    conn.event("failed", "bintang, bulan, bintang. Sepasang: taruhanmu kembali.", sound="reel_spin",
+               reels=["star", "moon", "star"], outcome="push")
+    assert s.placed == [("reel_spin", 0.0, None)] and s.spoken == []
+    assert sorted(round(t.seconds, 2) for t in s.timers) == [0.9, 1.3, 1.7, 2.0, 2.0]
+    s.run_timers()
+    assert [p[:2] for p in s.placed[1:]] == [("reel_stop", -0.75), ("reel_stop", 0.0), ("reel_stop", 0.75),
+                                             ("push", 0.0)]
+    assert s.spoken == [("narrator", "bintang, bulan, bintang. Sepasang: taruhanmu kembali.")]
+    # the dice land, then you hear whether you won, then the words
+    s.placed.clear()
+    conn.event("paid", "Dadu keluar 5 dan 6: 11. Kamu menang 230 kredit!", sound="dice", outcome="win")
+    assert s.placed[0][0] == "dice" and [round(t.seconds, 2) for t in s.timers] == [1.2, 1.2]
+    s.run_timers()
+    assert s.placed[-1][0] == "win" and s.spoken[-1][1].startswith("Dadu keluar 5 dan 6")
+    # with the sounds off, nothing waits
+    s.values["sounds"] = False
+    conn.event("task", "Blackjack dengan taruhan 50 kredit.", sound="deal")
+    assert not s.timers and s.spoken[-1][1] == "Blackjack dengan taruhan 50 kredit."
+
+
+def test_new_floors_and_places_have_their_sounds():
+    assert orbit_audio.cues_for({"k": "moved", "dir": "e", "floor": "wood"})[0][:2] == ("step_wood", 0.75)
+    assert orbit_audio.cues_for({"k": "moved", "dir": "w", "floor": "snow"})[0][:2] == ("step_snow", -0.75)
+    assert orbit_audio.cues_for({"k": "moved", "dir": "n", "floor": "lava"})[0][0] == "step_metal"
+    assert {"mall", "casino"} <= set(orbit_audio.AMBIENCES)
+    assert orbit_audio.timed_cues({"k": "paid", "sound": "coinflip", "outcome": "win"}) == \
+        ([(0.9, "win", 0.0)], 0.9)
+    assert orbit_audio.timed_cues({"k": "paid", "text": "x"}) == ([], 0.0)
+
+
 def test_sounds_can_be_turned_off(play):
     s = play.services
     s.values["sounds"] = False
@@ -1506,10 +1543,14 @@ def _server_cues():
     return found
 
 
+def _wavs():
+    return sorted(n for n in os.listdir(SOUNDS_DIR) if n.endswith(".wav"))
+
+
 def test_every_cue_has_a_sound():
     import orbit_sounds
-    files = {name for name, _make in orbit_sounds.SOUNDS}
-    assert sorted(os.listdir(SOUNDS_DIR)) == sorted(files)
+    assert _wavs() == orbit_sounds.FILES
+    assert not {name for name, _make in orbit_sounds.SOUNDS} & set(orbit_sounds.RECORDED)
     mixer = orbit_mix.Mixer(lambda: [SOUNDS_DIR], SOUNDS_DIR)
     needed = set(orbit_audio.KIND_CUES.values()) | {"arrive", "leave", "door", "emote"}
     needed |= {f"step_{floor}" for floor in orbit_audio.FLOORS}
@@ -1525,7 +1566,7 @@ def test_every_cue_has_a_sound():
 
 def test_the_sounds_are_polite_and_positional_ones_are_mono():
     import orbit_sounds
-    for name, _make in orbit_sounds.SOUNDS:
+    for name in orbit_sounds.FILES:
         channels, width, rate, frames, samples = _read(name)
         assert channels in (1, 2) and width == 2, name
         seconds = frames / rate
@@ -1542,14 +1583,42 @@ def test_the_sounds_are_polite_and_positional_ones_are_mono():
         assert _read(cue + ".wav")[0] == 1, cue          # placed by the mixer at play time
 
 
+def test_the_recorded_sounds_are_mono_22khz_16_bit_and_credited():
+    import orbit_sounds
+    assert len(orbit_sounds.RECORDED) >= 60
+    for name in orbit_sounds.RECORDED:
+        with wave.open(os.path.join(SOUNDS_DIR, name), "rb") as w:
+            assert (w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getcomptype()) == \
+                (1, 2, 22050, "NONE"), name
+            assert w.getnframes() >= 0.1 * 22050, name
+    with open(os.path.join(SOUNDS_DIR, "LICENSE-kenney.txt"), encoding="utf-8") as f:
+        licence = f.read()
+    for words in ("Kenney", "www.kenney.nl", "CC0", "creativecommons.org/publicdomain/zero/1.0",
+                  "Casino Audio", "Impact Sounds", "RPG Audio", "Sci-fi Sounds", "Interface Sounds"):
+        assert words in licence, words
+    with open(os.path.join(ROOT, "servers", "orbit", "README.md"), encoding="utf-8") as f:
+        readme = f.read()
+    assert "Kenney" in readme and "CC0" in readme
+    packs = {src.split("/")[0] for src in orbit_sounds.recorded_sources()}
+    assert packs == {"casino-audio", "impact-sounds", "rpg-audio", "sci-fi-sounds", "interface-sounds"}
+
+
+@pytest.mark.skipif(not os.environ.get("ORBIT_KENNEY_WAV"), reason="needs the converted Kenney packs")
+def test_the_recorded_sounds_are_what_the_recipes_make():
+    import orbit_sounds
+    for name in orbit_sounds.RECORDED:
+        with open(os.path.join(SOUNDS_DIR, name), "rb") as f:
+            assert f.read() == orbit_sounds.recorded_bytes(name, os.environ["ORBIT_KENNEY_WAV"]), name
+
+
 def test_variants_really_differ():
     import orbit_sounds
     groups = {}
-    for name, _make in orbit_sounds.SOUNDS:
+    for name in orbit_sounds.FILES:
         stem = name[:-4]
         if stem.split("_")[-1].isdigit():
             groups.setdefault(stem.rpartition("_")[0], []).append(name)
-    assert {"step_metal", "step_grass", "coins", "emote_clap", "mine"} <= set(groups)
+    assert {"step_metal", "step_grass", "step_wood", "coins", "emote_clap", "mine", "dice", "cards"} <= set(groups)
     for cue, names in groups.items():
         datas = [open(os.path.join(SOUNDS_DIR, n), "rb").read() for n in names]
         assert len(set(datas)) == len(datas), cue
@@ -1588,13 +1657,16 @@ def test_the_stereo_sounds_move_where_they_should():
 
 
 def test_the_sound_set_stays_small():
+    import orbit_sounds
     total = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in os.listdir(SOUNDS_DIR))
     assert total < 8 * 1024 * 1024, total
+    recorded = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in orbit_sounds.RECORDED)
+    assert recorded <= 3 * 1024 * 1024, recorded          # the recordings' budget
 
 
-@pytest.mark.parametrize("name", ["tone1.wav", "tone4.wav", "emote.wav", "error.wav", "sent.wav",
-                                  "mission.wav", "step_metal_2.wav", "bump_1.wav", "equip_2.wav",
-                                  "gadget.wav"])
+@pytest.mark.parametrize("name", ["tone1.wav", "tone4.wav", "emote.wav", "whisper.wav", "shout_1.wav",
+                                  "levelup.wav", "achievement.wav", "step_rock_2.wav", "crunch_1.wav",
+                                  "announce.wav"])
 def test_the_sounds_are_what_the_generator_makes(name):
     import orbit_sounds
     make = dict(orbit_sounds.SOUNDS)[name]

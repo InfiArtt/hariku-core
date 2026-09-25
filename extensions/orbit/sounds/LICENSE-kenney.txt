@@ -1,0 +1,28 @@
+Recorded sounds in this folder
+==============================
+
+Many of Orbit's sounds (footsteps, doors, cloth, coins, mining, the shuttle's
+engines, the interface cues and the whole casino) are made from recordings by
+Kenney (www.kenney.nl), from these five packs:
+
+  - Casino Audio
+  - Impact Sounds
+  - RPG Audio
+  - Sci-fi Sounds
+  - Interface Sounds
+
+Kenney released them under Creative Commons Zero, CC0 1.0 Universal:
+http://creativecommons.org/publicdomain/zero/1.0/
+
+CC0 puts them in the public domain, so they may be used, changed and shared
+for any purpose without asking or giving credit. We credit Kenney anyway,
+with thanks.
+
+For Orbit the recordings were trimmed, level-matched, mixed down to mono,
+resampled to 22.05 kHz and, for some cues, layered (a pair of footsteps, a
+latch followed by a door). Which cue uses which recording is listed in
+RECORDED in extensions/orbit/orbit_sounds.py.
+
+The other sounds in this folder are synthesized by orbit_sounds.py and are
+part of Hariku, under its licence (GPL-3.0-or-later with the Hariku
+Extension Exception).

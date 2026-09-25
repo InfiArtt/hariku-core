@@ -28,6 +28,9 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_items.py` | things: shops, using, wearing, examining, food, pets, the temple |
 | `orbit_work.py` | jobs and their mini-games, XP and levels, missions, the daily bonus |
 | `orbit_econ.py` | the markets, the farm, mining and salvage, profiles, the economy's totals |
+| `orbit_casino.py` | the Casino Corner: dice, slots, blackjack, coin flips, the weekly lottery |
+| `orbit_trade.py` | trading between players (offer, accept), and the pawn shop |
+| `orbit_progress.py` | achievements and the leaderboards |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
 | `orbit_verbs.py` | the commands the server reads from plain text (both languages) |
 | `orbit_world.py`, `world.json` | the map: rooms, compass exits, objects, goods, missions, gestures |
@@ -96,23 +99,27 @@ while running).
 
 1. Copy every file of this folder to `~/orbit/` (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
+   `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
    keys: every new setting has a default (below).
 2. `systemctl --user restart orbit`.
-3. On its first start, the server sees an Orbit 1.0 database (schema version
-   0), saves a copy of it as `orbit.db.before-v1.bak` next to it, and
-   migrates it in one transaction: new columns (voice, XP, the daily streak,
-   what a character mined and harvested) and new tables (companions,
-   transfer codes, old secrets, transfers, the admins' log) are added;
-   nothing is dropped or changed, and work done before 1.1 counts as XP
-   (10 a repair, 20 a cargo run, 25 a mission). The log says "the database
-   was migrated from version 0 to 1". If the migration fails, nothing is
-   changed and the server stops with the error in the log; the copy is there.
+3. On its first start, the server sees an older database (Orbit 1.0's is
+   schema version 0), saves a copy of it as `orbit.db.before-v2.bak` next to
+   it, and migrates it to version 2 in one transaction: new columns (voice,
+   XP, the daily streak, what a character mined and harvested, what it won
+   or lost at the casino) and new tables (companions, achievements, lottery
+   tickets, transfer codes, old secrets, transfers, the admins' log) are
+   added; nothing is dropped or changed, and work done before 1.1 counts as
+   XP (10 a repair, 20 a cargo run, 25 a mission). The log says "the
+   database was migrated from version 0 to 2". If the migration fails,
+   nothing is changed and the server stops with the error in the log; the
+   copy is there.
 4. Every room of 1.0 still exists, so characters wake up where they were.
    Returning players are told once what's new, and get a compass (and the
-   keycards their XP already earned).
+   keycards their XP already earned, and quietly the achievements their
+   past work already reached).
 
 ### Backups
 
@@ -283,17 +290,58 @@ What 1.1 ships with:
   furniture 60 to 1,500, clothes 150 to 2,500, titles 200 to 5,000, pets
   600 and 900), seeds, food (3 to 20), plots, the Kancil's fare (5 from the
   Dock; pilots ride free), the tow when your air runs out (20), lanterns
-  in the temple (3), and the market's fees (10% on buying and 12% on selling;
-  traders 2% and 4%, less with their tools), which also make every sale move
-  the price down 2%.
+  in the temple (3), the casino's edge, the lottery's cut, and the market's
+  fees (10% on buying and 12% on selling; traders 2% and 4%, less with their
+  tools), which also make every sale move the price down 2%.
+- **The shops** are Star Supply on the East Promenade (the basics) and the
+  Mall Ring, up the lift from the Upper Lift Lobby: Gearworks (devices,
+  keycards, the suit, drills, job tools), Orbit Outfitters (clothes, titles),
+  Cosy Corner (furniture), Whiskers & Widgets (pets), the Food Court, and
+  Second Orbit, the pawn shop. Prices move up to 10% either way each day
+  (`prices.wobble`), the same for everyone that day, and one thing in each
+  shop is today's special, 20% cheaper still (`prices.special`); the bar,
+  the seed rack and the lottery booth keep fixed prices, and so do plots.
+  Second Orbit pays 40% of a thing's list price (`pawn.rate`) for anything
+  but goods, pets, services and what can't be sold (the compass, keycards,
+  earned titles).
+- **Trading:** `offer Budi 3 iron for 200 credits`; the other player (online,
+  anywhere) has 2 minutes (`trading.seconds`) to accept. Goods, mission
+  cargo, seeds, food, furniture and clothes (without a level) can be traded
+  and given; devices, keycards and titles can't. Both sides move in one
+  database transaction or not at all.
+- **The casino** (`casino` in economy.json), in the Casino Corner west of
+  the Cantina: bets of 5 to 500 credits, at most 5,000 an hour, 3 seconds
+  apart; a win of 1,000 or more is news for the whole station. Every game
+  keeps an edge for the house, checked by the tests from these numbers:
+  dice high (8-12) or low (2-6) pay 2.3 times the bet (a 4.2% edge), seven
+  5.5 times (8.3%); the slots' three reels (weights star 8, moon 6, comet
+  4, planet 3, rocket 2, Orbit 1; three of a kind pay 3, 7, 14, 25, 50 and
+  200 times, two Orbits 6, two rockets 2, any other pair the bet back) return
+  about 92%; blackjack (the dealer peeks and stands on 17, a win pays 2 to 1
+  back, a natural 2.5) returns 97.6% even played perfectly; a coin flip
+  between two players costs each 5% (`coinflip.fee`); the weekly lottery
+  (10 credits a ticket, up to 50 a week, drawn on Sunday at 12:00 UTC) pays
+  80% of the tickets sold to one ticket drawn at random, and a week without
+  tickets carries the pot over. What each player won or lost is kept
+  (`casino_net`) for the casino leaderboard. Credits have no real-money
+  value; the menu and the help say so.
+- **Achievements** (`achievements`): 24, each for reaching a number (rooms
+  walked, shifts worked, missions, level, crops, ore, a golden chilli, a
+  quantum crystal, the daily streak, furniture, credits held, the time
+  capsule, a natural, a jackpot, the lottery, a trade), paying 0 to 2,000
+  credits and sometimes a title; the big ones (`station`) are news for
+  everyone, and the first to earn one is named as the first on the station.
+- **Leaderboards:** richest, level, miners, farmers, daily streak and casino,
+  the top 5 and your own place; admins are left out.
 - **The EVA suit** holds 3 minutes of air, an oxygen tank 3 more; warnings at
   60 and 20 seconds.
 
 The admins' **economy** report shows the credits in circulation (all
 characters), the richest, and every credit earned by source (work,
-missions, daily, market, finds, admin) and spent by sink (shops, market,
-fares, rescues, lanterns, admin), so you can see whether money grows too
-fast and adjust these numbers.
+missions, daily, market, finds, pawn, casino wins, lottery prizes,
+achievements, admin) and spent by sink (shops, market, fares, rescues,
+lanterns, casino bets, lottery, admin), so you can see whether money grows
+too fast and adjust these numbers.
 
 ## Admin commands
 
@@ -346,11 +394,17 @@ place, the short description its player wrote, XP, the daily streak, the
 voice number others hear it in, what it mined and harvested, a JSON "stats"
 field with the rest of its play state (cooldowns, missions, farm plots and
 their timers, worn things, the rooms it knows, its beacon, friends, air left
-outside, a shuttle ride in progress), when it was made and last seen, and
-whether it is banned or muted; its companions (a pet: kind, name, and its
-own stats); transfer codes (a hash, for 10 minutes); secrets that no longer
-work (a hash); the transfers log; the admins' log; and, in `meta`, the
-market's prices, the economy's totals and today's temple lanterns. Accounts
+outside, a shuttle ride in progress, its casino bets of the last hour a
+minute at a time, how many trades, jackpots and naturals), what it won or
+lost at the casino, when it was made and last seen, and whether it is
+banned or muted; its companions (a pet: kind, name, and its own stats); its
+achievements (which, and when); its lottery tickets (how many, for which
+week's draw); transfer codes (a hash, for 10 minutes); secrets that no
+longer work (a hash); the transfers log; the admins' log; and, in `meta`,
+the market's prices, the economy's totals, today's temple lanterns and the
+lottery's next draw and carried-over pot. Trade offers, coin-flip
+challenges and a blackjack hand in progress live only in memory (a hand is
+played out, standing, if its player leaves or the server stops). Accounts
 have no password or email: the client makes a random 256-bit secret the
 first time it joins this server and keeps it on the player's computer; the
 server keeps only a PBKDF2-SHA256 hash of it (with a salt made once for this
@@ -413,13 +467,16 @@ commands need no new client:
 | `give` | `to`, `n`, `item` (`credits` or a thing) | in the same room |
 | `describe` | `a`: a short description (nothing: show it) | |
 | `answer` | `a`: the reactor's numbers, a reading, a traveller | |
-| `accept` | `n`: a mission's number | |
+| `accept` | `n`: a mission's number (none: the newest trade offer or coin flip waiting for you) | |
 | `take` | `item`, `n` | a mission's things |
 | `buy`, `sell` | `item`, `n` (`"all"` to sell everything, or all of a kind) | market goods, and the shop you're in |
 | `list`, `use`, `unequip`, `open` | `a` / `item` (`equip`: true to wear) | shops and things |
 | `plant` (`item`, `n`), `water`, `harvest`, `farm`, `mine`, `collect` | | the farm, mining, salvage |
 | `daily`, `profile` (`to`), `rank`, `voice` (`a`: 1-10 or auto), `transfer` | | |
 | `friends` (`op`, `to`), `invite` (`op`, `to`), `visit` (`to`), `pet` (`op`, `a`), `ring`, `lantern` | | |
+| `casino`, `dice` (`a`: high, low or seven; `n`: the bet), `slots` (`n`), `blackjack` (`n`), `hit`, `stand`, `challenge` (`to`, `n`), `lottery` | | the casino (tickets: `buy` there) |
+| `offer` (`to`, `a`: "3 iron for 200 credits"), `decline`, `cancel_offer` | | trading |
+| `achievements` (`to`), `leaderboard` (`a`: richest, level, miners, farmers, streak, casino) | | |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
@@ -433,12 +490,16 @@ client which sound fits and whose voice reads it: `room`, `moved`, `arrive`,
 `gave`, `mission`, `trade`, `flight`, `offer`, `announce`, `system`. Optional
 fields: `actor` (who did it), `brief` (a short line to say for your own
 action), `room`, `amb` (`vent`, `cantina`, `engine`, `garden`, `deck`,
-`space`, `belt`, `venue`), `floor` and `acoustics` (where you are now),
+`space`, `belt`, `venue`, `mall`, `casino`), `floor` and `acoustics` (where you are now),
 `dir` (the way you walked, or the side someone came from or left by), `via`
 (`lift`, `ladder`, `slide`, `airlock`, `door`), `codes` (the reactor's
 tones, 1 to 4), `sound` (a cue more specific than the kind's), `emote`
 (which gesture), `voice` (the voice number a speaker chose), `preview` (read
-this line in `voice`), `ask` (an invitation), `transfer_code` and `expires`.
+this line in `voice`), `ask` (an invitation, an offer, a challenge: answer
+with accept or decline), `transfer_code` and `expires`, `reels` (a slot
+machine's three symbols, left to right) and `outcome` (`win`, `lose`,
+`push`, `jackpot`: the client plays it after the dice land, the cards turn
+or the reels stop).
 
 **Closing codes**: 1001 the server is restarting (reconnect), 1008 a broken
 rule (too many messages, no hello), 4000 kicked, 4001 connected from
@@ -457,7 +518,7 @@ the first with any file for the cue wins:
 
 1. `%APPDATA%\Hariku2\orbit_sounds\` (your own recordings)
 2. `orbit\` inside the Sound Themes theme in use (`%APPDATA%\Hariku2\sound_themes\<theme>\orbit\`)
-3. the extension's `sounds\` folder (generated by `extensions/orbit/orbit_sounds.py`)
+3. the extension's `sounds\` folder (made by `extensions/orbit/orbit_sounds.py`)
 
 So a pack of recordings (CC0 or your own) is just files named like the cues.
 A name with parts falls back to a shorter one when no folder has it
@@ -469,21 +530,41 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 
 | Cue | When |
 |---|---|
-| `step_metal`, `step_carpet`, `step_grass`, `step_stone`, `step_rock`, `step_suit`, `step_wet` | your steps, by the floor you walk on |
+| `step_metal`, `step_carpet`, `step_grass`, `step_stone`, `step_wood`, `step_rock`, `step_suit`, `step_wet`, `step_snow`, `step_sand`, `step_dust` | your steps, by the floor you walk on |
 | `door`, `airlock`, `lift_up`, `lift_down`, `ladder`, `slide`, `bump`, `locked` | doors, airlocks, lifts, ladders, the slide, walls, a locked door |
 | `arrive`, `leave` | someone comes in or goes, from their side |
 | `say`, `whisper`, `shout`, `sent`, `announce`, `offer` | talking; your own words going out; the Bridge; an invitation |
 | `emote`, `emote_smile`, `emote_wave`, `emote_laugh`, `emote_nod`, `emote_shrug`, `emote_clap`, `emote_cheer`, `emote_sigh`, `emote_bow`, `emote_dance`, `emote_hug` | gestures |
 | `success`, `fail`, `error`, `mission`, `task`, `tone1` to `tone4` | work, a mission, a task starting, the reactor's tones |
-| `coins`, `register` | money changing hands; a shop's till |
+| `coins`, `register`, `trade` | money changing hands; a shop's till; a trade done |
 | `mine`, `rare`, `plant`, `water`, `harvest`, `ripe` | mining, a rare find, the farm |
-| `levelup`, `daily` | a new level; the daily bonus |
+| `levelup`, `daily`, `achievement` | a new level; the daily bonus; an achievement |
 | `equip`, `gadget`, `scan`, `air`, `rescue`, `gulp`, `crunch`, `pet_robot`, `pet_cat` | things: wearing, devices, the scanner, the air warning, the tow, food, pets |
 | `bell`, `lantern` | the temple's star bell; lighting a lantern |
 | `launch`, `landing` | shuttles |
-| `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue` | the ambience loops (4 seconds, seamless) |
+| `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
+| `win`, `lose`, `push`, `jackpot` | how a game came out |
+| `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino` | the ambience loops (4 seconds, seamless) |
 
-The generated set: 104 files, about 6.3 MB (4.7 MB zipped).
+The set: 153 files, about 7.6 MB (the extension zips to about 5.8 MB): 99
+recorded (2.7 MB) and 54 synthesized (4.8 MB).
+
+### Credits: recorded sounds
+
+Many cues are made from recordings by **Kenney** (www.kenney.nl): the packs
+Casino Audio, Impact Sounds, RPG Audio, Sci-fi Sounds and Interface Sounds,
+released under **CC0 1.0** (public domain,
+http://creativecommons.org/publicdomain/zero/1.0/). Attribution isn't
+required; we credit Kenney anyway, with thanks. They were trimmed,
+level-matched and mixed down to mono 22.05 kHz with
+`tools/orbit_convert_kenney.py` (a one-off developer tool; it needs `pip
+install soundfile`, which Hariku itself doesn't use), and `orbit_sounds.py
+--kenney <folder>` mixes each recorded cue from them (the recipes, which
+file each cue uses, are `RECORDED` there). The footsteps, doors, cloth,
+coins, mining, cutting crops, the shuttle's engines, the interface's small
+sounds and the casino are recorded; laughs, claps, cheers, the reactor's
+tones, the temple bell, the ambience loops and the stings are synthesized.
+`extensions/orbit/sounds/LICENSE-kenney.txt` says the same next to the files.
 
 ## Tests
 
@@ -491,14 +572,26 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
+
+`test_orbit_casino.py` computes each game's return exactly from
+economy.json (blackjack with perfect hit-or-stand play), so a change that
+would give players the edge fails there.
 
 `tests/orbit_parse_1_0.py` is a frozen copy of the 1.0 client's command
 reader: `test_orbit_compat.py` checks that every command added later still
 reaches the server from it.
 
 ## Later (not in 1.1)
+
+- **Characters who aren't players (1.2):** people to talk to about topics,
+  and residents who walk the compass map on daily schedules and remember
+  players; always marked as such, never listed as online players. The room
+  code already sends looking, who's here, arrivals, departures, their
+  positional sounds and chat through the same few paths (`_in_room`,
+  `_to_room`, the `actor` and `dir` fields), so an entity that isn't a
+  connection can later be placed in a room and speak through them.
 
 - **Companions:** a pet is already a general `companions` record (its kind,
   name, JSON stats and state, when it came, and its owners in

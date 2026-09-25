@@ -399,6 +399,11 @@ class OrbitClient:
                 self.s.call_later(0.3 + i * orbit_audio.TONE_GAP_SECONDS,
                                   lambda n=name: self.s.play(n))
             delay = 0.3 + len(tones) * orbit_audio.TONE_GAP_SECONDS + 0.2
+        timed, wait = orbit_audio.timed_cues(message)
+        if timed and sounds_on:
+            for at, cue, pan in timed:
+                self.s.call_later(at, lambda c=cue, p=pan: self.s.play(c, p, self.acoustics))
+            delay = max(delay, wait)
         if not heard or not (settings.get("speak", True) or aruna):
             return
         setting = READ_KINDS.get(kind)

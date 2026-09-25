@@ -84,7 +84,7 @@
         "ignored_list": "Diabaikan: {names}.",
         "ignored_none": "Kamu tidak sedang mengabaikan siapa pun.",
 
-        "help": "Bantuan Orbit. Berjalan dengan u, s, t, b, tl, bl, tg, bd, naik, dan turun; lihat menyebut jalan keluar, dan arah ke kantin memberi langkahnya. Bantuan dari stasiun: bantuan bergerak, bantuan ngobrol, bantuan kerja, bantuan uang, bantuan toko. Orbit sendiri: bantuan pengaturan, sambungkan, keluar (keluar dari Orbit), status, ulangi (pesan terakhir sekali lagi). Lewat Aruna, awali dengan orbit: orbit utara, orbit bilang halo.",
+        "help": "Bantuan Orbit. Berjalan dengan u, s, t, b, tl, bl, tg, bd, naik, dan turun; lihat menyebut jalan keluar, dan arah ke kantin memberi langkahnya. Bantuan dari stasiun: bantuan bergerak, bantuan ngobrol, bantuan kerja, bantuan uang, bantuan toko, bantuan kasino, bantuan kemajuan. Orbit sendiri: bantuan pengaturan, sambungkan, keluar (keluar dari Orbit), status, ulangi (pesan terakhir sekali lagi). Lewat Aruna, awali dengan orbit: orbit utara, orbit bilang halo.",
         "help_settings": "Pengaturan Orbit, diketik di dalam game: suara pemain mati atau nyala (suara masing-masing pemain), bacakan pesan mati atau nyala, suasana mati atau nyala, volume suasana 30, suara efek mati atau nyala, volume efek 60, suara orang lain mati, abaikan Budi, dengar lagi Budi, daftar abaikan, suaraku 1 sampai 10 atau suaraku acak (suara yang orang lain dengar untukmu), pengaturan (halaman Pengaturan). Menutup jendela membuatmu tetap tersambung di latar belakang; keluar untuk keluar dari Orbit.",
 
         "window_title": "Orbit",

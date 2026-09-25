@@ -83,6 +83,15 @@ each component.
   sentencepiece itself is not used. Neither sherpa-onnx, ONNX Runtime nor the
   model is included in Hariku or its installer.
 
+## Bundled media
+
+- **Kenney sound packs** (www.kenney.nl): Casino Audio, Impact Sounds, RPG
+  Audio, Sci-fi Sounds and Interface Sounds. License: CC0 1.0 Universal
+  (public domain, http://creativecommons.org/publicdomain/zero/1.0/).
+  Trimmed, level-matched and mixed into the Orbit extension's recorded sound
+  cues (`extensions/orbit/sounds/`, see `LICENSE-kenney.txt` there).
+  Attribution isn't required; we credit Kenney anyway.
+
 ## Native components
 
 - **nvdaControllerClient64.dll**: the NVDA Controller Client from NV Access,
