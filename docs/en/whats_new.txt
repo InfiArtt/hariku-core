@@ -64,6 +64,11 @@ Version 2.8.0 (Core Update)
   work best, and a name like Aruna may need High. "Pause or resume the wake
   phrase" (no key by default; ask Aruna for it) pauses it, and it can pause
   itself during quiet hours.
+- Voice Control hears when you've finished speaking in a noisy home: high
+  sounds such as birdsong never count as speech, and once it has heard your
+  voice, sounds well below it (12 dB) count as silence. Before, singing birds
+  kept it listening for the full 12 seconds and then it gave up; now, if it
+  ever does reach 12 seconds, it still recognises what you said.
 - Extension updates in the Store, for Hariku 2.8: Weather 1.2, Sea Conditions
   1.2, Air Quality 1.2, Earthquakes & Tsunami 1.2, Space 1.1, Cockpit 1.1,
   Flight Radar 1.7, Piper Voices 1.1 and Voice Control 1.1.
