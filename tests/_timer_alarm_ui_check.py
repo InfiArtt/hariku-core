@@ -482,6 +482,8 @@ assert not network_attempts, f"network access attempted: {network_attempts}"
 assert not problems, "\n".join(problems)
 print("OK no_errors")
 
+# The tray icon goes before the frame, or wx can crash while tearing down.
+frame.tb_icon.RemoveIcon()
 frame.tb_icon.Destroy()
 frame.Destroy()
 wx.CallLater(300, app.ExitMainLoop)
