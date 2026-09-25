@@ -1,4 +1,4 @@
-Versi 2.8.0 (Pembaruan Inti)
+Versi 2.8.0 (Pembaruan Inti - 25 September 2026)
 ================================================================================
 - Tempat: di Pengaturan ada halaman baru, Tempat, tepat setelah Profil. Beri
   nama tempat-tempat yang kamu pakai, misalnya Rumah, Kantor, atau Rumah Mama,
