@@ -1295,11 +1295,11 @@ class TestExtension:
         heard = []
         spotter = FakeSpotter()
         result = vc.test_wake("Hey Aruna", "normal", heard.append, threading.Event(),
-                              listener=listener, seconds=0.6, spotter=spotter)
-        assert heard == [1, 2] and result == {"count": 2, "seconds": 0.6, "stopped": False}
+                              listener=listener, seconds=2.0, spotter=spotter)
+        assert heard == [1, 2] and result == {"count": 2, "seconds": 2.0, "stopped": False}
         assert log.played == ["listen.wav", "listen_end.wav"] and spotter.closed
         assert text.wake_test_message(result, None) == \
-            "Heard the wake phrase 2 times in 0.6 seconds."
+            "Heard the wake phrase 2 times in 2.0 seconds."
 
     def test_the_page_test_hears_after_a_long_answer_was_cut_off(self, vc, monkeypatch):
         # What CI's window check did: the microphone test's long result was
@@ -1324,7 +1324,7 @@ class TestExtension:
             .record(on_chunk, stop=stop, max_seconds=max_seconds, keep=keep))
         heard = []
         result = vc.test_wake("Hey Aruna", "normal", heard.append, threading.Event(),
-                              listener=listener, seconds=0.6, spotter=FakeSpotter())
+                              listener=listener, seconds=2.0, spotter=FakeSpotter())
         assert heard == [1, 2] and result["count"] == 2
 
     def test_the_page_test_can_be_stopped_and_explains_problems(self, vc):
