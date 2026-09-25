@@ -230,6 +230,19 @@ def test_a_ship_ends_the_guide(make_game):
     assert step(game, ani, "e") is None
 
 
+def test_the_guide_arrives_in_a_room_of_ones_own(make_game, clock):
+    from tests.test_orbit_crews import found
+    game = make_game()
+    ani = found(game, clock)                             # a crew's captain: the Crew Hangar is theirs
+    give(game, "ani", "holomapper")
+    assert cmd(game, ani, "way", a="crew hangar")["text"].startswith("To the Crew Hangar: west, then north.")
+    step(game, ani, "w")
+    assert step(game, ani, "n")["text"] == "You've arrived at the Crew Hangar."
+    walk(game, ani, "cabins_hall")
+    cmd(game, ani, "way", a="my cabin")
+    assert step(game, ani, "s")["text"] == "You've arrived at your cabin."
+
+
 def test_a_teleport_to_another_world_loses_the_way(make_game):
     game = make_game()
     rafli = join(game, "Rafli")                          # an admin

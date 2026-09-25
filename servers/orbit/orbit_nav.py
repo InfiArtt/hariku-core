@@ -503,7 +503,8 @@ class NavMixin:
         if self.world.world_of(here) is None:             # aboard a ship or the ferry: that's travel
             session.guide = None
             return
-        if here == dest and not (self.world.locations[here].get("private") and char["stats"].get("visit")):
+        visiting = here == "cabin" and char["stats"].get("visit") not in (None, session.key)   # someone else's
+        if here == dest and not visiting:
             session.guide = None
             self._info(session, "guide_arrived", place=place, sound=GUIDE_ARRIVED_SOUND)
             return
@@ -513,9 +514,12 @@ class NavMixin:
             key = "guide_next"
         else:
             path = self.route_for(char, dest)
-            if not path:
+            if path is None:
                 session.guide = None
                 self._info(session, "guide_lost", place=place)
+                return
+            if not path:                                     # a cabin of the same name: nothing to guide
+                session.guide = None
                 return
             guide["path"] = path
             key = "guide_rerouted"
