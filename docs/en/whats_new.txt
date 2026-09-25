@@ -1,4 +1,4 @@
-Version 2.9.0 (Core Update)
+Version 2.9.0 (Core Update - September 25, 2026)
 ================================================================================
 - For extension developers: commands with content. An extension can now teach
   Aruna commands that carry words of their own, such as "catat beli gula",
