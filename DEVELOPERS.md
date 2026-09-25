@@ -7,11 +7,13 @@ Welcome to the Hariku V2 extension development guide. This document covers every
 - [Quick Start](#quick-start)
 - [Extension Structure](#extension-structure)
 - [Manifest Reference](#manifest-reference)
+- [Your Extension's Guide](#your-extensions-guide)
 - [API Reference](#api-reference)
   - [Speech](#speech)
   - [Data Storage](#data-storage)
   - [UI Dialogs](#ui-dialogs)
   - [Document Viewer](#document-viewer)
+  - [Guides](#guides)
   - [Web View](#web-view)
   - [Calendar](#calendar)
   - [Clipboard](#clipboard)
@@ -76,6 +78,9 @@ my_extension/
 ├── locales/            # Optional — Translation files
 │   ├── en.json
 │   └── id.json
+├── docs/               # Optional — Your guide, one folder per language (core 2.11)
+│   ├── en/guide.md
+│   └── id/guide.md
 └── lib/                # Optional — Bundled third-party libraries
     └── some_library/
         └── __init__.py
@@ -127,6 +132,100 @@ doesn't load it and lists it on the Extension Manager's Incompatible tab, as NVD
 When a core release does break older extensions, it raises that version; set `last_tested_core_version`
 after testing with a new core so your extension keeps running. `tools/publish_extensions.py` copies both
 fields into the store's registry (core 2.8+ reads them).
+
+---
+
+## Your Extension's Guide
+
+*(Core 2.11.)* Every extension can ship its own guide. Users open it from Help, Extension
+guides..., from the Extension Manager's **Guide** button (Installed tab), or by asking Aruna
+("panduan orbit", "cara pakai dropbox", "guide for orbit", "how to use dropbox"). Hariku's own
+User Guide doesn't describe extensions; yours is where people learn how to use it.
+
+### Where it goes
+
+```
+my_extension/
+└── docs/
+    ├── en/guide.md     # English: always ship this one
+    └── id/guide.md     # Indonesian, and any other language code Hariku has
+```
+
+- The file is always `guide.md`, in a folder named after the language code (`en`, `id`, `de`,
+  `pt-BR`...).
+- Hariku opens the guide in the language Hariku speaks, else the English one, so always write
+  `docs/en/guide.md`.
+- `docs/` is packed into your `.hrk` like every other file (`tools/packager.py` keeps it).
+- A guide must be text of at most 512 KB, and it must really be inside your extension's folder
+  (a link or junction that leads elsewhere is ignored).
+
+### What Hariku shows
+
+Hariku turns the guide into a plain web page and opens it in the user's web browser. With NVDA,
+browse mode is on there: **H** and **Shift+H** jump from heading to heading, **1**, **2** and
+**3** by level, and **NVDA+F7** lists every heading. So your headings are how people find their
+way: give every task they'd look for a heading of its own. (When no browser can be opened, the
+guide shows as text in a window.)
+
+Hariku's converter knows a small part of Markdown, and shows everything else as plain text
+(nothing in a guide can become HTML or a script):
+
+| Write | For |
+|---|---|
+| `# Title` | The guide's title. **The first `#` heading is the title**: the page's title, the name in Help, Extension guides..., and a name Aruna knows your extension by. Use your extension's name in that language ("# Timer & Alarm", "# Kalkulator & Konversi"), once, on the first line. |
+| `## Section`, `### Subsection` | The sections. Don't skip a level (no `###` straight under `#`). |
+| A paragraph | Lines separated by a blank line; lines inside one are joined. |
+| `- item`, `1. item` | Lists. An item may go on over lines indented by two spaces or more. No nested lists. |
+| `` `code` `` | Short technical things: a file name, a folder, a value. |
+| `**bold**` | Sparingly. |
+| ```` ``` ```` fenced blocks | Code or output, kept as it is. |
+
+Not supported: links, images, tables, HTML, block quotes and italics.
+
+### How to write it
+
+- **Short and task-first.** One or two sentences on what the extension does, then one section
+  per task: "## Getting started", "## Setting an alarm", "## Settings", "## Keys and commands".
+  Start each section with what the user wants to do, then how. Small extensions need only a
+  few short sections.
+- **Say it the way it is on screen.** Quote labels exactly as your window and Preferences page
+  show them, in that language. Give the default keys, and say that commands without a key can
+  get one in Preferences, Input Gestures. List the sentences Aruna understands for you.
+- **Commands in double quotes**, as Hariku's own guides write them: type "bantuan" or "help".
+  Keep `code` for file names and values.
+- **Privacy**: when your extension sends something over the network, say what, and to whom.
+- **Indonesian**: Hariku speaks to its users as "kamu", not "Anda".
+- **Keep it true.** Update the guide when you change what it describes.
+
+A complete guide:
+
+```markdown
+# Tide Times
+
+Tide Times tells you when the sea is high and low at your main place.
+
+## Getting started
+
+Press Shift+O, or tell Aruna "tides today". It needs a place near the sea in
+Preferences, Places.
+
+## Settings
+
+In Preferences, Tide Times:
+
+- "Warn me before high tide" says so an hour before.
+- "Units" chooses metres or feet.
+
+## Keys and commands
+
+- Shift+O: "Say today's tides"
+
+Give it another key in Preferences, Input Gestures.
+```
+
+### Opening guides from your code
+
+See [Guides](#guides) in the API Reference.
 
 ---
 
@@ -221,8 +320,11 @@ from ui.document_viewer import show_document
 | Function | Description |
 |---|---|
 | `show_document(parent, title, filename)` | Show a read-only text document in a dialog window. The viewer looks for the file in `docs/{current_language}/` first, then falls back to `docs/en/`. |
+| `show_text(parent, title, text)` | *(core 2.11)* Show a text you already have, read-only. |
 
-This is useful if your extension ships with documentation or help files.
+This is useful if your extension ships with documentation or help files. For your
+extension's guide, use `docs/<lang>/guide.md` instead (see [Your Extension's Guide](#your-extensions-guide)):
+Hariku finds it, and users get headings to jump between.
 
 **Example:**
 ```python
@@ -233,6 +335,36 @@ from ui.document_viewer import show_document
 parent = core.api.main_window_instance
 show_document(parent, "My Extension Help", "my_extension_help.txt")
 ```
+
+### Guides
+
+*(Core 2.11.)* Every installed extension's guide (see [Your Extension's Guide](#your-extensions-guide)),
+and Hariku's own User Guide. No wx in this module.
+
+```python
+import core.guides
+```
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.guides.find_guide(ext_id, lang=None)` | `str` or `None` | The path of an installed extension's guide in `lang` (default: the language Hariku speaks), else the English one. A guide inside a `.hrk` is given as the archive's path followed by the member, as zipimport writes it: read it with `read_guide()`. `core.guides.CORE_ID` is Hariku's User Guide. |
+| `core.guides.has_guide(ext_id)` | `bool` | Whether it has a guide. |
+| `core.guides.list_guides()` | `list` | `(id, name)` of every installed extension that has a guide, by name (its title in Hariku's language). |
+| `core.guides.read_guide(path)` | `str` or `None` | A guide's text (at most `MAX_GUIDE_BYTES`, 512 KB). |
+| `core.guides.open_guide(ext_id)` | `bool` | Opens the guide in the web browser; `False` when there's none or it couldn't be opened. |
+| `core.guides.markdown_to_html(text, lang="en")` | `str` | A guide as a whole, plain HTML page (every character escaped, no scripts). |
+
+```python
+import core.guides
+import core.speech
+
+def on_help():
+    if not core.guides.open_guide("my_extension"):
+        core.speech.speak("The guide couldn't be opened.")
+```
+
+To show a guide in a window when the browser can't open, as Hariku does, use
+`ui.guides_dialog.show_guide(parent, ext_id)`.
 
 ---
 
