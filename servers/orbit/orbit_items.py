@@ -516,7 +516,7 @@ class ItemsMixin:
         index = self.rng.randrange(len(reactions["en"]))
         for other in self._in_room(self.room_of(session.char)):
             line = reactions[other.lang][index].format(pet=comp["name"], owner=session.name)
-            self._send(other, "emote", text=line, extra={"sound": "pet"})
+            self._send(other, "emote", text=line, extra={"sound": "pet_" + comp["kind"].split("_")[0]})
 
     def pet_follows(self, session):
         """A pet walks in with its owner, now and then."""

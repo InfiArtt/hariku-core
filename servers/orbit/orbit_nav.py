@@ -176,13 +176,14 @@ class NavMixin:
                 self._error(session, "need_eva", sound="locked")
                 return
             self._start_air(char, here)
-        self._move_to(session, dest, d, message=ex.get("msg"))
+        self._move_to(session, dest, d, message=ex.get("msg"), via=ex.get("via"))
         if here_airless and not dest_loc.get("airless"):
             char["stats"].pop("eva", None)
             self._save(session)
             self._info(session, "air_refilled", sound="air")
 
-    def _move_to(self, session, dest, d=None, message=None, sound=None, quiet=False, host=None):
+    def _move_to(self, session, dest, d=None, message=None, sound=None, quiet=False, host=None,
+                 via=None):
         """Put the player in `dest` (came `d`), telling both rooms; `host`:
         the cabin's owner when visiting one."""
         char, lang = session.char, session.lang
@@ -218,6 +219,8 @@ class NavMixin:
         extra = dict(self._where(session))
         if d in self.world.directions:
             extra["dir"] = d
+        if via and via != "walk":
+            extra["via"] = via
         if sound:
             extra["sound"] = sound
         self._send(session, "moved", text=f"{line} {self.look_text(session, full=first)}", extra=extra)
@@ -242,6 +245,7 @@ class NavMixin:
             self._to_room(old_room, "leave", "leave_to", exclude=(session,), extra=extra, actor=name,
                           place=new_loc["ref"])
             return
+        extra = dict(extra, dir=d)
         for other in self._in_room(old_room, exclude=(session,)):
             key = {"u": "leave_up", "d": "leave_down"}.get(d, "leave_dir")
             self._send(other, "leave", key, extra=extra, actor=name,
@@ -261,6 +265,7 @@ class NavMixin:
             self._to_room(new_room, "arrive", "arrive_from", exclude=(session,), extra=extra,
                           actor=name, place=came_from["ref"])
             return
+        extra = dict(extra, dir=back)
         for other in self._in_room(new_room, exclude=(session,)):
             # They came from `back` as seen from this room: up from below is "u".
             key = {"u": "arrive_down", "d": "arrive_up"}.get(back, "arrive_dir")

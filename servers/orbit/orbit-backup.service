@@ -1,0 +1,15 @@
+# A daily copy of Orbit's database, as a systemd *user* service (no sudo).
+# Run by orbit-backup.timer; see README.md, "Backups":
+#   cp ~/orbit/orbit-backup.service ~/orbit/orbit-backup.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now orbit-backup.timer
+#   systemctl --user list-timers orbit-backup.timer
+
+[Unit]
+Description=Back up Orbit's database (keeps the last 7 copies)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/orbit
+ExecStart=/usr/bin/python3 %h/orbit/orbit_backup.py --db %h/orbit/orbit.db --dir %h/orbit/backups --keep 7
+NoNewPrivileges=yes

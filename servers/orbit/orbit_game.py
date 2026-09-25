@@ -202,9 +202,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         return self.world.locations[lid]
 
     def _where(self, session):
-        """What is sent with an event that moves you: the room and its ambience."""
+        """What is sent with an event that moves you: the room, its ambience,
+        and (for the client's footsteps and echo) its floor and acoustics."""
         lid = session.char["location"]
-        return {"room": lid, "amb": self.world.locations[lid]["ambience"]}
+        loc = self.world.locations[lid]
+        return {"room": lid, "amb": loc["ambience"], "floor": loc.get("floor", "metal"),
+                "acoustics": loc.get("acoustics", "room")}
 
     def _find_session(self, name):
         return self.sessions.get(orbit_safety.name_key(name))
@@ -446,7 +449,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         if handler is None:
             self._error(session, "unknown_command")
             return
-        if session.away and command not in ("away", "bye"):
+        if session.away and command not in ("away", "bye", "status"):
             session.away = False              # any command: back from being away
         try:
             handler(self, session, message)
@@ -656,14 +659,16 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
             return
         actor = session.name
         room = self.room_of(session.char)
-        extra = {"actor": actor}
+        eid = self._arg(message, "e", 20)
+        extra = {"actor": actor, "emote": eid}
         if target is None:
-            self._send(session, "emote", text=emote[session.lang]["you"])
+            self._send(session, "emote", text=emote[session.lang]["you"], extra={"emote": eid})
             for other in self._in_room(room, exclude=(session,)):
                 self._send(other, "emote", text=emote[other.lang]["they"].format(actor=actor),
                            extra=extra)
             return
-        self._send(session, "emote", text=emote[session.lang]["you_at"].format(target=target.name))
+        self._send(session, "emote", text=emote[session.lang]["you_at"].format(target=target.name),
+                   extra={"emote": eid})
         self._send(target, "emote", text=emote[target.lang]["at_you"].format(actor=actor), extra=extra)
         for other in self._in_room(room, exclude=(session, target)):
             self._send(other, "emote", text=emote[other.lang]["they_at"].format(actor=actor,
@@ -837,7 +842,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         if char["location"] == "cabin" and not char["stats"].get("visit"):
             place = self.render(lang, "who_cabin")
         online = sum(1 for s in self.sessions.values() if s.conn is not None and not s.invisible)
-        self._info(session, "status", name=session.name, place=place, deck=area.get("in", ""), n=online)
+        text = self.render(lang, "status", name=session.name, place=place, deck=area.get("in", ""), n=online)
+        if session.away:
+            text += " " + self.render(lang, "status_away")
+        self._info(session, text=text)
 
     # --- reading plain text ------------------------------------------------------------
 

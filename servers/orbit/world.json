@@ -1,5 +1,5 @@
 {
-  "_note": "Orbit's station. Rooms have compass exits (n, ne, e, se, s, sw, w, nw, u, d); an exit may be {\"to\": room, \"lock\": crew|tech|officer|brass, \"oneway\": true}. Flags: dark (a headlamp shows it), airless (an EVA suit only), private, landmark (anyone can ask the way there), secret, market, shop, farm, mine, salvage, rescue (where the air rescue drops you), venue (a place for ceremonies), temple. See README.md.",
+  "_note": "Orbit's station. Rooms have compass exits (n, ne, e, se, s, sw, w, nw, u, d); an exit may be {\"to\": room, \"lock\": crew|tech|officer|brass, \"oneway\": true, \"via\": lift|ladder|slide|airlock|door, \"msg\": {en, id}}. Flags: dark (a headlamp shows it), airless (an EVA suit only), private, landmark (anyone can ask the way there), secret, market, shop, farm, mine, salvage, rescue (where the air rescue drops you), venue (a place for ceremonies), temple. A room's floor (metal unless said: carpet, grass, stone, rock, suit, wet) and acoustics (room unless said: small, hall, hangar, outside, cave, open) tell the client which footsteps and echo to play. See README.md.",
   "start": "dock",
   "directions": {
     "n": {
@@ -179,7 +179,8 @@
           }
         }
       },
-      "landmark": true
+      "landmark": true,
+      "acoustics": "hangar"
     },
     "cargo": {
       "name": {"en": "Cargo Bay", "id": "Gudang Kargo"},
@@ -219,7 +220,8 @@
           "en": "Security: type work to patrol for smugglers.",
           "id": "Petugas keamanan: ketik kerja untuk berpatroli mencari penyelundup."
         }
-      }
+      },
+      "acoustics": "hangar"
     },
     "service": {
       "name": {"en": "Service Corridor", "id": "Koridor Servis"},
@@ -229,7 +231,12 @@
       "area": "lower",
       "at": [0, 0],
       "ambience": "vent",
-      "exits": {"s": "lift_lower", "e": "engineering", "w": "cargo", "sw": {"to": "maint_1", "lock": "crew"}},
+      "exits": {
+        "s": "lift_lower",
+        "e": "engineering",
+        "w": "cargo",
+        "sw": {"to": "maint_1", "lock": "crew", "via": "door"}
+      },
       "desc": {
         "en": "A wide corridor of bare metal lit by caged lamps. Cable trays run along the ceiling, and a maintenance door with a keycard reader stands in the southwest corner.",
         "id": "Koridor lebar dari logam telanjang, diterangi lampu berkurung. Baki kabel membentang di langit-langit, dan pintu perawatan dengan pembaca kartu berdiri di pojok barat daya."
@@ -262,7 +269,7 @@
       "area": "lower",
       "at": [0, -1],
       "ambience": "vent",
-      "exits": {"n": "service", "u": "lift_main"},
+      "exits": {"n": "service", "u": {"to": "lift_main", "via": "lift"}},
       "landmark": true,
       "desc": {
         "en": "A plain steel lobby with scuffed floors. Yellow hazard stripes frame the lift doors, and the air smells of machine oil.",
@@ -306,7 +313,7 @@
       "area": "lower",
       "at": [1, 0],
       "ambience": "engine",
-      "exits": {"w": "service", "e": "workshop", "s": {"to": "reactor_core", "lock": "tech"}},
+      "exits": {"w": "service", "e": "workshop", "s": {"to": "reactor_core", "lock": "tech", "via": "door"}},
       "job": "engineer",
       "desc": {
         "en": "Hot and loud. The fusion reactor thrums behind a blast window, pipes sing as coolant rushes through, and a repair console blinks amber.",
@@ -340,7 +347,8 @@
             "id": "Pipanya hangat kalau disentuh dan berdengung rendah, seperti kucing mendengkur."
           }
         }
-      }
+      },
+      "acoustics": "hangar"
     },
     "reactor_core": {
       "name": {"en": "Reactor Core", "id": "Inti Reaktor"},
@@ -350,7 +358,7 @@
       "area": "lower",
       "at": [1, -1],
       "ambience": "engine",
-      "exits": {"n": "engineering"},
+      "exits": {"n": {"to": "engineering", "via": "door"}},
       "job": "engineer",
       "hints": {
         "engineer": {
@@ -373,7 +381,8 @@
             "id": "Jangan ditatap. Pelindungnya bagus, tapi matamu tetap akan berkunang-kunang sebentar."
           }
         }
-      }
+      },
+      "acoustics": "hall"
     },
     "workshop": {
       "name": {"en": "Workshop", "id": "Bengkel"},
@@ -403,7 +412,8 @@
             "id": "Setiap perkakas punya garis bentuknya di belakang. Garis bentuk palunya kosong."
           }
         }
-      }
+      },
+      "acoustics": "hangar"
     },
     "airlock": {
       "name": {"en": "Airlock", "id": "Airlock"},
@@ -413,7 +423,7 @@
       "area": "lower",
       "at": [-2, -1],
       "ambience": "vent",
-      "exits": {"n": "dock", "s": "hull_walk"},
+      "exits": {"n": "dock", "s": {"to": "hull_walk", "via": "airlock"}},
       "rescue": true,
       "desc": {
         "en": "A narrow chamber between two heavy doors, with hooks for spacesuits. A lamp over the outer door glows green: outside, you'll need an EVA suit on.",
@@ -427,7 +437,8 @@
             "id": "Hijau artinya pintu luar boleh dibuka. Merah artinya masih ada orang di luar. Berkedip artinya ada yang menekannya iseng."
           }
         }
-      }
+      },
+      "acoustics": "small"
     },
     "maint_1": {
       "name": {"en": "Maintenance Junction", "id": "Simpang Perawatan"},
@@ -440,7 +451,11 @@
       "area": "lower",
       "at": [-1, -1],
       "ambience": "vent",
-      "exits": {"ne": "service", "u": {"to": "cabins_hall", "lock": "crew"}, "s": "maint_2"},
+      "exits": {
+        "ne": {"to": "service", "via": "door"},
+        "u": {"to": "cabins_hall", "lock": "crew", "via": "ladder"},
+        "s": "maint_2"
+      },
       "dark": true,
       "desc": {
         "en": "Pipes crowd the low ceiling and drip into puddles. The arrows painted on the walls have faded past reading, and a ladder climbs to a hatch above.",
@@ -454,7 +469,9 @@
             "id": "Air hangat, agak berkarat. Tetesannya berirama: tik, tik, tuk."
           }
         }
-      }
+      },
+      "floor": "wet",
+      "acoustics": "cave"
     },
     "maint_2": {
       "name": {"en": "Maintenance Tunnel", "id": "Terowongan Perawatan"},
@@ -478,7 +495,9 @@
             "id": "Dia bersembunyi di balik pipa dan pura-pura jadi pipa."
           }
         }
-      }
+      },
+      "floor": "wet",
+      "acoustics": "small"
     },
     "maint_3": {
       "name": {"en": "Old Pump Room", "id": "Ruang Pompa Tua"},
@@ -488,7 +507,7 @@
       "area": "lower",
       "at": [0, -2],
       "ambience": "vent",
-      "exits": {"w": "maint_2", "s": {"to": "secret", "lock": "brass"}},
+      "exits": {"w": "maint_2", "s": {"to": "secret", "lock": "brass", "via": "door"}},
       "dark": true,
       "desc": {
         "en": "Huge old pumps stand silent, retired long ago. In the south wall there's a small round door with a brass keyhole.",
@@ -502,7 +521,9 @@
             "id": "Lubang kuncinya kuno: pembaca kartu mana pun tidak akan bisa membuka pintu ini, hanya kunci kuningan sungguhan."
           }
         }
-      }
+      },
+      "floor": "wet",
+      "acoustics": "cave"
     },
     "secret": {
       "name": {"en": "Time Capsule Room", "id": "Ruang Kapsul Waktu"},
@@ -515,7 +536,7 @@
       "area": "lower",
       "at": [0, -3],
       "ambience": "deck",
-      "exits": {"n": "maint_3"},
+      "exits": {"n": {"to": "maint_3", "via": "door"}},
       "secret": true,
       "hints": {"all": {"en": "Type open capsule.", "id": "Ketik buka kapsul."}},
       "desc": {
@@ -538,7 +559,9 @@
           },
           "capsule": true
         }
-      }
+      },
+      "floor": "stone",
+      "acoustics": "small"
     },
     "lift_main": {
       "name": {"en": "Main Lift Lobby", "id": "Lobi Lift Utama"},
@@ -551,7 +574,7 @@
       "area": "main",
       "at": [0, -1],
       "ambience": "vent",
-      "exits": {"n": "promenade", "u": "lift_upper", "d": "lift_lower"},
+      "exits": {"n": "promenade", "u": {"to": "lift_upper", "via": "lift"}, "d": {"to": "lift_lower", "via": "lift"}},
       "landmark": true,
       "desc": {
         "en": "The busiest lift on the station. Travellers with bags wait by the glass doors while a busker plays a soft kroncong tune on a ukulele.",
@@ -582,7 +605,8 @@
             "id": "Dia mengangguk padamu tanpa melewatkan satu nada pun. Topinya berisi tiga kredit dan sebutir kancing."
           }
         }
-      }
+      },
+      "acoustics": "hall"
     },
     "promenade": {
       "name": {"en": "Promenade", "id": "Promenade"},
@@ -633,7 +657,8 @@
           }
         }
       },
-      "landmark": true
+      "landmark": true,
+      "acoustics": "hall"
     },
     "park": {
       "name": {"en": "Sky Park", "id": "Taman Langit"},
@@ -653,7 +678,8 @@
           "msg": {
             "en": "Wheee! You spin down the spiral slide and tumble out into {place}.",
             "id": "Wiii! Kamu meluncur berputar-putar di perosotan spiral dan terguling keluar di {place}."
-          }
+          },
+          "via": "slide"
         }
       },
       "desc": {
@@ -682,7 +708,9 @@
             "id": "Hangat kena lampu tanam. Tempat enak untuk duduk ngobrol."
           }
         }
-      }
+      },
+      "floor": "grass",
+      "acoustics": "open"
     },
     "promenade_west": {
       "name": {"en": "West Promenade", "id": "Promenade Barat"},
@@ -810,7 +838,9 @@
           "en": "Type plots to see your plots, plant tomato to plant, harvest when it's ripe, and list for seeds.",
           "id": "Ketik lahan untuk melihat petakmu, tanam tomat untuk menanam, panen kalau sudah matang, dan daftar untuk bibit."
         }
-      }
+      },
+      "floor": "grass",
+      "acoustics": "open"
     },
     "pavilion": {
       "name": {"en": "Jasmine Pavilion", "id": "Paviliun Melati"},
@@ -847,7 +877,9 @@
             "id": "Air tenang dengan beberapa kelopak mengapung. Kalau kamu diam, kamu bisa mendengarnya berkecipak di bebatuan."
           }
         }
-      }
+      },
+      "floor": "grass",
+      "acoustics": "open"
     },
     "promenade_east": {
       "name": {"en": "East Promenade", "id": "Promenade Timur"},
@@ -918,7 +950,8 @@
             "id": "Semua yang dibutuhkan penjelajah angkasa, dan beberapa yang tidak dibutuhkan siapa pun, seperti bola salju berisi Bulan."
           }
         }
-      }
+      },
+      "floor": "carpet"
     },
     "medbay": {
       "name": {"en": "Medbay", "id": "Klinik"},
@@ -984,7 +1017,8 @@
             "id": "Di sini beratnya nol, dan entah kenapa malah lebih susah."
           }
         }
-      }
+      },
+      "acoustics": "open"
     },
     "cabins_hall": {
       "name": {"en": "Crew Quarters", "id": "Lorong Kabin Kru"},
@@ -997,7 +1031,11 @@
       "area": "main",
       "at": [-1, -1],
       "ambience": "vent",
-      "exits": {"n": "promenade_west", "s": "cabin", "d": {"to": "maint_1", "lock": "crew"}},
+      "exits": {
+        "n": "promenade_west",
+        "s": {"to": "cabin", "via": "door"},
+        "d": {"to": "maint_1", "lock": "crew", "via": "ladder"}
+      },
       "desc": {
         "en": "A long carpeted hallway lined with numbered doors. Someone has strung fairy lights along the ceiling, and a maintenance hatch is set into the floor.",
         "id": "Lorong panjang berkarpet dengan pintu-pintu bernomor. Ada yang memasang lampu hias di sepanjang langit-langit, dan pintu palka perawatan tertanam di lantai."
@@ -1024,7 +1062,8 @@
             "id": "Setiap lampu ketiga warnanya beda. Meriah, seperti ada kondangan di sebelah."
           }
         }
-      }
+      },
+      "floor": "carpet"
     },
     "cabin": {
       "name": {"en": "Your cabin", "id": "Kabinmu"},
@@ -1037,7 +1076,7 @@
       "area": "main",
       "at": [-1, -2],
       "ambience": "vent",
-      "exits": {"n": "cabins_hall"},
+      "exits": {"n": {"to": "cabins_hall", "via": "door"}},
       "private": true,
       "desc": {
         "en": "Your own small cabin: a bunk with a blanket from home, a round window full of stars, and a shelf for your things. It's quiet here, and nobody comes in unless you invite them.",
@@ -1065,7 +1104,9 @@
             "id": "Rak dengan jaring di depannya, supaya barang-barangmu tidak ke mana-mana."
           }
         }
-      }
+      },
+      "floor": "carpet",
+      "acoustics": "small"
     },
     "lift_upper": {
       "name": {"en": "Upper Lift Lobby", "id": "Lobi Lift Atas"},
@@ -1078,7 +1119,7 @@
       "area": "upper",
       "at": [0, -1],
       "ambience": "vent",
-      "exits": {"n": "command", "w": "archive", "d": "lift_main"},
+      "exits": {"n": "command", "w": "archive", "d": {"to": "lift_main", "via": "lift"}},
       "landmark": true,
       "desc": {
         "en": "A round lobby with a glass lift in the middle and a thick blue carpet. A brass plaque by the lift lists the decks.",
@@ -1125,7 +1166,8 @@
             "id": "Sebelas kapten, dari seorang wanita tegas bermonokel sampai pemuda yang nyengir sambil memegang durian."
           }
         }
-      }
+      },
+      "floor": "carpet"
     },
     "bridge": {
       "name": {"en": "Bridge", "id": "Anjungan"},
@@ -1138,7 +1180,7 @@
       "area": "upper",
       "at": [0, 1],
       "ambience": "vent",
-      "exits": {"s": "command", "w": "comms", "e": {"to": "captain", "lock": "officer"}},
+      "exits": {"s": "command", "w": "comms", "e": {"to": "captain", "lock": "officer", "via": "door"}},
       "desc": {
         "en": "The captain's chair faces a wall of displays: the station's orbit, shuttle traffic and the health of every system. Officers talk in low voices over their consoles.",
         "id": "Kursi kapten menghadap dinding layar: orbit stasiun, lalu lintas pesawat, dan kondisi semua sistem. Para perwira bicara pelan di depan konsol masing-masing."
@@ -1171,7 +1213,7 @@
       "area": "upper",
       "at": [1, 1],
       "ambience": "vent",
-      "exits": {"w": "bridge"},
+      "exits": {"w": {"to": "bridge", "via": "door"}},
       "desc": {
         "en": "Wood panels, a smell of cloves, and a model of the station hanging from the ceiling. An old guitar leans against a sea chest with a padlock.",
         "id": "Dinding panel kayu, aroma cengkih, dan maket stasiun yang tergantung di langit-langit. Gitar tua bersandar di peti laut bergembok."
@@ -1191,7 +1233,9 @@
             "id": "Tinggal tiga senar. Ada stiker: mainkan aku hanya saat fajar."
           }
         }
-      }
+      },
+      "floor": "carpet",
+      "acoustics": "small"
     },
     "comms": {
       "name": {"en": "Communications Room", "id": "Ruang Komunikasi"},
@@ -1224,7 +1268,9 @@
             "id": "Setiap kenop menunjuk ke satu satelit. Satu diberi label spidol: jangan disentuh, serius."
           }
         }
-      }
+      },
+      "floor": "carpet",
+      "acoustics": "small"
     },
     "observation": {
       "name": {"en": "Observation Deck", "id": "Dek Observasi"},
@@ -1259,7 +1305,8 @@
             "id": "Teleskop kuningan tua, dibaut ke pagar. Ada yang mengarahkannya ke Bulan dan menempel catatan: \"halo mama\"."
           }
         }
-      }
+      },
+      "acoustics": "hall"
     },
     "archive": {
       "name": {"en": "Station Archive", "id": "Arsip Stasiun"},
@@ -1292,7 +1339,9 @@
             "id": "Robot itu berbisik 'ssst' kepadamu, lalu kepada dirinya sendiri."
           }
         }
-      }
+      },
+      "floor": "carpet",
+      "acoustics": "hall"
     },
     "science_lab": {
       "name": {"en": "Science Lab", "id": "Laboratorium Sains"},
@@ -1404,7 +1453,9 @@
             "id": "Kacanya begitu bening sampai kamu lupa ia ada. Bima Sakti melengkung di atas seperti sungai cahaya."
           }
         }
-      }
+      },
+      "floor": "stone",
+      "acoustics": "hall"
     },
     "hull_walk": {
       "name": {"en": "Hull Walkway", "id": "Jalur Lambung"},
@@ -1417,7 +1468,7 @@
       "area": "outside",
       "at": [0, 0],
       "ambience": "space",
-      "exits": {"n": "airlock", "e": "solar_array", "w": "antenna", "s": "debris_field"},
+      "exits": {"n": {"to": "airlock", "via": "airlock"}, "e": "solar_array", "w": "antenna", "s": "debris_field"},
       "airless": true,
       "earth_view": true,
       "desc": {
@@ -1437,7 +1488,9 @@
             "id": "Lecet oleh ribuan sarung tangan. Ada yang menggores gambar hati di situ."
           }
         }
-      }
+      },
+      "floor": "suit",
+      "acoustics": "outside"
     },
     "solar_array": {
       "name": {"en": "Solar Array", "id": "Panel Surya"},
@@ -1461,7 +1514,9 @@
             "id": "Stiker kecil berbentuk burung menempel di satu panel. Pasti dipasang oleh orang yang sangat tinggi dan sangat berani."
           }
         }
-      }
+      },
+      "floor": "suit",
+      "acoustics": "outside"
     },
     "antenna": {
       "name": {"en": "Antenna Mast", "id": "Tiang Antena"},
@@ -1485,7 +1540,9 @@
             "id": "Semuanya mengarah ke Bumi kecuali satu, yang tidak mengarah ke apa-apa."
           }
         }
-      }
+      },
+      "floor": "suit",
+      "acoustics": "outside"
     },
     "debris_field": {
       "name": {"en": "Debris Field", "id": "Ladang Puing"},
@@ -1511,7 +1568,9 @@
             "id": "Cukup kuat untuk menangkap bus. Selama bertahun-tahun jaring ini sudah menangkap sepatu bot, kunci pas, dan bebek karet."
           }
         }
-      }
+      },
+      "floor": "suit",
+      "acoustics": "outside"
     },
     "belt": {
       "name": {"en": "Belt Platform", "id": "Platform Sabuk"},
@@ -1524,7 +1583,7 @@
       "area": "belt",
       "at": [0, 0],
       "ambience": "belt",
-      "exits": {"s": "belt_rim"},
+      "exits": {"s": {"to": "belt_rim", "via": "airlock"}},
       "mine": "platform",
       "market": {"buys": ["ore"], "factor": 0.75},
       "rescue": true,
@@ -1557,7 +1616,8 @@
             "id": "Kancil menunggu di dekat pintu kubah, mesinnya berdetik mendingin."
           }
         }
-      }
+      },
+      "acoustics": "hangar"
     },
     "belt_rim": {
       "name": {"en": "Asteroid Surface", "id": "Permukaan Asteroid"},
@@ -1567,7 +1627,7 @@
       "area": "belt",
       "at": [0, -1],
       "ambience": "space",
-      "exits": {"n": "belt", "d": "belt_cave"},
+      "exits": {"n": {"to": "belt", "via": "airlock"}, "d": {"to": "belt_cave", "via": "ladder"}},
       "airless": true,
       "mine": "rim",
       "desc": {
@@ -1582,7 +1642,9 @@
             "id": "Lebih kaya daripada di dalam kubah. Para penambang keluar ke sini untuk hasil yang bagus, sambil menjaga udara mereka."
           }
         }
-      }
+      },
+      "floor": "rock",
+      "acoustics": "outside"
     },
     "belt_cave": {
       "name": {"en": "Crystal Cave", "id": "Gua Kristal"},
@@ -1592,7 +1654,7 @@
       "area": "belt",
       "at": [0, -1, -1],
       "ambience": "space",
-      "exits": {"u": "belt_rim"},
+      "exits": {"u": {"to": "belt_rim", "via": "ladder"}},
       "airless": true,
       "dark": true,
       "mine": "cave",
@@ -1608,7 +1670,9 @@
             "id": "Beberapa berdengung waktu diketuk, nadanya begitu rendah sampai terasa di gigi."
           }
         }
-      }
+      },
+      "floor": "rock",
+      "acoustics": "cave"
     },
     "shuttle": {
       "name": {"en": "Cockpit of the Merpati", "id": "Kokpit Merpati"},
@@ -1625,7 +1689,8 @@
         "en": "The cockpit of the cargo shuttle Merpati. The autopilot hums, and the Moon grows slowly in the window.",
         "id": "Kokpit pesawat kargo Merpati. Autopilot berdengung, dan Bulan perlahan membesar di jendela."
       },
-      "objects": {}
+      "objects": {},
+      "acoustics": "small"
     },
     "kancil": {
       "name": {"en": "Aboard the Kancil", "id": "Di dalam Kancil"},
@@ -1642,7 +1707,8 @@
         "en": "The little mining shuttle Kancil hums through the dark, its windows full of tumbling rocks.",
         "id": "Pesawat tambang mungil Kancil berdengung menembus gelap, jendelanya penuh batu yang berputar."
       },
-      "objects": {}
+      "objects": {},
+      "acoustics": "small"
     }
   },
   "jobs": {

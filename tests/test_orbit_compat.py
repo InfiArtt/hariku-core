@@ -113,5 +113,5 @@ def test_the_old_client_ignores_what_it_doesnt_know(make_game):
         game.receive(conn, dict(command, t="cmd"))
     for message in conn.sent[1:]:
         assert message["t"] == "ev" and isinstance(message["k"], str) and isinstance(message["text"], str)
-        assert set(message) <= {"t", "k", "text", "brief", "actor", "room", "amb", "codes", "sound",
+        assert set(message) <= {"t", "k", "text", "brief", "actor", "room", "amb", "codes", "sound", "floor", "acoustics", "via",
                                 "dir", "voice", "preview", "ask", "transfer_code", "expires"}

@@ -43,6 +43,9 @@ LANGS = ("en", "id")
 AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue")
 DIRECTIONS = ("n", "ne", "e", "se", "s", "sw", "w", "nw", "u", "d")
 LOCKS = ("crew", "tech", "officer", "brass")
+FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet", "sand", "snow", "wood", "dust")
+ACOUSTICS = ("room", "small", "hall", "hangar", "outside", "cave", "open")
+VIAS = ("walk", "lift", "ladder", "slide", "airlock", "door", "gate")
 THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture", "outfit",
                "title", "pet", "service")
 _ARTICLES = {"the", "a", "an", "to", "ke", "di", "my", "ku"}
@@ -68,11 +71,11 @@ class WorldError(ValueError):
 
 
 def _exit(value):
-    """An exit as {"to", "lock", "oneway", "msg"}, from "room" or {"to": "room", ...}."""
+    """An exit as {"to", "lock", "oneway", "msg", "via"}, from "room" or {"to": "room", ...}."""
     if isinstance(value, str):
-        return {"to": value, "lock": None, "oneway": False, "msg": None}
+        return {"to": value, "lock": None, "oneway": False, "msg": None, "via": "walk"}
     return {"to": value.get("to"), "lock": value.get("lock"), "oneway": bool(value.get("oneway")),
-            "msg": value.get("msg")}
+            "msg": value.get("msg"), "via": value.get("via") or "walk"}
 
 
 class World:
@@ -158,6 +161,10 @@ class World:
                 problems.append(f"{lid}: unknown ambience {loc.get('ambience')!r}")
             if loc.get("area") not in self.areas:
                 problems.append(f"{lid}: unknown area {loc.get('area')!r}")
+            if loc.get("floor", "metal") not in FLOORS:
+                problems.append(f"{lid}: unknown floor {loc.get('floor')!r}")
+            if loc.get("acoustics", "room") not in ACOUSTICS:
+                problems.append(f"{lid}: unknown acoustics {loc.get('acoustics')!r}")
             for d, ex in self.exits[lid].items():
                 if d not in self.directions:
                     problems.append(f"{lid}: unknown direction {d!r}")
@@ -167,6 +174,8 @@ class World:
                     continue
                 if ex["lock"] is not None and ex["lock"] not in LOCKS:
                     problems.append(f"{lid}: exit {d} has an unknown lock {ex['lock']!r}")
+                if ex["via"] not in VIAS:
+                    problems.append(f"{lid}: exit {d} has an unknown way {ex['via']!r}")
                 back = self.exits[ex["to"]].get(self.directions[d]["back"])
                 if not ex["oneway"] and (back is None or back["to"] != lid):
                     problems.append(f"{lid} -> {d} -> {ex['to']} has no way back")

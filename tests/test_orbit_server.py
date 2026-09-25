@@ -636,7 +636,7 @@ def test_walking_tells_both_rooms_which_way(make_game):
     moved = cmd(game, rafli, "move", d="e")
     assert moved["k"] == "moved" and moved["room"] == "cargo" and moved["dir"] == "e"
     assert moved["text"].startswith("Kamu berjalan ke timur, ke Gudang Kargo. Gudang Kargo. Ruang besar")
-    assert sari.events("leave") == [{"t": "ev", "k": "leave", "actor": "Rafli",
+    assert sari.events("leave") == [{"t": "ev", "k": "leave", "actor": "Rafli", "dir": "e",
                                      "text": "Rafli heads east, to the Cargo Bay."}]
     assert budi.texts("arrive") == ["Rafli comes in from the west, from the Dock."]
     cmd(game, rafli, "move", d="w")

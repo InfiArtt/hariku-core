@@ -611,3 +611,29 @@ def test_a_trade_between_two_characters_is_all_or_nothing(make_game, monkeypatch
     monkeypatch.setattr(game.store, "save", real_save)
     stored = {name: game.store.by_name(name)["credits"] for name in ("ani", "budi")}
     assert stored == {"ani": 100, "budi": 100}                    # neither saved: the transaction rolled back
+
+
+# ------------------------------------------------------------
+# Backups
+# ------------------------------------------------------------
+
+def test_a_backup_while_the_server_writes_keeps_the_newest_copies(tmp_path, make_game):
+    import orbit_backup
+    path = str(tmp_path / "orbit.db")
+    game = make_game(path)
+    ani = join(game, "Ani")
+    char_of(game, "ani")["credits"] = 4321
+    game._save(game.sessions["ani"])
+    folder = str(tmp_path / "backups")
+    made = []
+    for day in range(1, 10):
+        when = datetime.datetime(2026, 9, day, 4, 30)
+        made.append(orbit_backup.backup(path, folder, keep=7, now=when))
+        cmd(game, ani, "say", a="still playing")                # the server keeps going
+    kept = sorted(os.listdir(folder))
+    assert kept == [os.path.basename(p) for p in made[-7:]]
+    copy = sqlite3.connect(made[-1])
+    assert copy.execute("SELECT credits FROM characters WHERE name_key = 'ani'").fetchone()[0] == 4321
+    assert copy.execute("PRAGMA user_version").fetchone()[0] == orbit_store.SCHEMA_VERSION
+    copy.close()
+    assert orbit_backup.main(["--db", str(tmp_path / "missing.db"), "--dir", folder]) == 1

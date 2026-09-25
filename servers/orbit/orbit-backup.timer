@@ -1,0 +1,13 @@
+# Runs orbit-backup.service once a day (and soon after boot if a day was
+# missed while the machine was off). See README.md, "Backups".
+
+[Unit]
+Description=Back up Orbit's database once a day
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
