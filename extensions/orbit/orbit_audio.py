@@ -60,7 +60,8 @@ DIR_PAN = {"n": 0.0, "s": 0.0, "e": 0.75, "w": -0.75, "ne": 0.5, "se": 0.5, "nw"
 VIA_CUES = {"lift": ("lift_up", "lift_down"), "ladder": ("ladder", "ladder"),
             "slide": ("slide", "slide"), "airlock": ("airlock", "airlock")}
 FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet", "wood", "snow", "sand", "dust")
-AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino")
+AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino",
+             "gate", "moon", "colony", "ice", "bazaar", "forest", "neon", "arcade")
 # Other players' sounds (the "Other players' sounds" setting): what they do near you.
 OTHERS_KINDS = ("say", "shout", "emote", "arrive", "leave")
 TONE_GAP_SECONDS = 0.45

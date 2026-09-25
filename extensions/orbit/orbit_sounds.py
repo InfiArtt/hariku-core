@@ -1487,6 +1487,231 @@ def amb_casino():
     return wav_bytes(*_seamless(left, right), LOOP_RATE, 0.42)
 
 
+# The other worlds' ambience: at a lower rate (their sounds are low and soft), so the set stays small.
+SMALL_LOOP_RATE = 11025
+
+
+def _small_blank():
+    return _loop_blank(SMALL_LOOP_RATE)
+
+
+def _small_wav(left, right, peak, equal_power=True):
+    return wav_bytes(*_seamless(left, right, rate=SMALL_LOOP_RATE, equal_power=equal_power), SMALL_LOOP_RATE, peak)
+
+
+def _air_bed(rng, left, right, cutoff, gain, rate=SMALL_LOOP_RATE):
+    """Soft, wide moving air (a hall, a dome, the wind)."""
+    a = _lowpass_coeff(cutoff, rate)
+    low_l = low_r = 0.0
+    for i in range(len(left)):
+        low_l += a * (rng.uniform(-1, 1) - low_l)
+        low_r += a * (rng.uniform(-1, 1) - low_r)
+        left[i] += low_l * gain
+        right[i] += low_r * gain
+
+
+def amb_gate():
+    """The Gate: a shimmering hum that beats slowly, and now and then a sparkle."""
+    rng = random.Random(SEED + 30)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    for i in range(len(left)):
+        t = i / rate
+        swell = 0.7 + 0.3 * math.sin(TAU * 0.5 * t)
+        left[i] = (math.sin(TAU * 110 * t) + 0.6 * math.sin(TAU * 220.5 * t) + 0.3 * math.sin(TAU * 330 * t)) \
+            * 0.18 * swell
+        right[i] = (math.sin(TAU * 110.5 * t) + 0.6 * math.sin(TAU * 220 * t) + 0.3 * math.sin(TAU * 330.5 * t)) \
+            * 0.18 * swell
+    for _k in range(6):
+        start = rng.uniform(0.1, LOOP_SECONDS - 0.4)
+        _add(left, right, start, _bell(rng.uniform(1200, 1800), 0.4, 8.0, rate=rate), rng.uniform(-0.8, 0.8),
+             0.05, rate=rate)
+    return _small_wav(left, right, 0.36, equal_power=False)
+
+
+def amb_moon():
+    """Moon Base: air handlers under a low dome, a far-off clank now and then."""
+    rng = random.Random(SEED + 31)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    _air_bed(rng, left, right, 220, 2.2)
+    for i in range(len(left)):
+        t = i / rate
+        hum = 0.04 * math.sin(TAU * 50 * t) + 0.02 * math.sin(TAU * 100 * t)
+        left[i] += hum
+        right[i] += hum
+    for start, position in ((0.8, -0.6), (2.9, 0.5)):
+        _add(left, right, start, _resonator((180, 410), (18, 26), (1.0, 0.4), 0.5, rate=rate), position, 0.12,
+             rate=rate)
+    return _small_wav(left, right, 0.4)
+
+
+def amb_colony():
+    """Karmina: dust-laden wind against the domes, and the colony's fans."""
+    rng = random.Random(SEED + 32)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    wind_l, wind_r = _SVF(2.0), _SVF(2.0)
+    for i in range(len(left)):
+        t = i / rate
+        gust = 0.6 + 0.4 * math.sin(TAU * 0.25 * t + 1.0)
+        centre = 500 + 250 * math.sin(TAU * 0.5 * t)
+        left[i] = wind_l.band_pass(rng.uniform(-1, 1), centre, rate) * 0.5 * gust
+        right[i] = wind_r.band_pass(rng.uniform(-1, 1), centre * 1.1, rate) * 0.5 * (1.2 - gust * 0.5)
+    _air_bed(rng, left, right, 160, 1.2)
+    # grit ticking on the glass
+    for _k in range(40):
+        start = rng.uniform(0.0, LOOP_SECONDS)
+        _add(left, right, start, [rng.uniform(-1, 1) * math.exp(-j / 20.0) for j in range(60)],
+             rng.uniform(-0.9, 0.9), 0.05, rate=rate)
+    return _small_wav(left, right, 0.4)
+
+
+def amb_ice():
+    """Glasir: a thin, howling wind, and the ice creaking."""
+    rng = random.Random(SEED + 33)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    howl_l, howl_r = _SVF(6.0), _SVF(6.0)
+    for i in range(len(left)):
+        t = i / rate
+        centre = 700 + 300 * math.sin(TAU * 0.25 * t)
+        left[i] = howl_l.band_pass(rng.uniform(-1, 1), centre, rate) * 0.35
+        right[i] = howl_r.band_pass(rng.uniform(-1, 1), centre * 1.15, rate) * 0.35
+    _air_bed(rng, left, right, 300, 0.8)
+    for start, position in ((1.1, -0.4), (3.2, 0.6)):
+        creak = [math.sin(TAU * (90 + 40 * j / 2000.0) * j / rate) * math.sin(math.pi * j / 2000.0)
+                 for j in range(2000)]
+        _add(left, right, start, creak, position, 0.25, rate=rate)
+    return _small_wav(left, right, 0.4)
+
+
+def amb_bazaar():
+    """The Drift Bazaar: a crowd haggling in a cave of stalls, bells and a plucked string."""
+    rng = random.Random(SEED + 34)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    for voice in range(6):
+        position = -0.9 + 1.8 * voice / 5
+        centre = rng.uniform(350, 950)
+        filt = _SVF(3.0)
+        gl, gr = _pan(position)
+        syllable, target, next_change = 0.0, 0.0, 0
+        for i in range(len(left)):
+            if i >= next_change:
+                target = rng.uniform(0.3, 1.0) if rng.random() < 0.75 else 0.0
+                next_change = i + int(rng.uniform(0.07, 0.2) * rate)
+            syllable += 0.006 * (target - syllable)
+            v = filt.band_pass(rng.uniform(-1, 1), centre, rate) * syllable * 0.6
+            left[i] += v * gl
+            right[i] += v * gr
+    for start, note, position in ((0.5, 587.33, -0.5), (1.9, 783.99, 0.6), (3.1, 659.25, -0.2)):
+        _add(left, right, start, _bell(note, 0.6, 6.0, rate=rate, partials=((1, 1.0), (2.01, 0.3))), position,
+             0.06, rate=rate)
+    _air_bed(rng, left, right, 120, 1.2)
+    return _small_wav(left, right, 0.42)
+
+
+def amb_forest():
+    """Evergrove: leaves in the wind, birdsong, a stream."""
+    rng = random.Random(SEED + 35)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    leaves_l, leaves_r = _SVF(0.8), _SVF(0.8)
+    for i in range(len(left)):
+        t = i / rate
+        sway = 0.5 + 0.5 * math.sin(TAU * 0.25 * t)
+        left[i] = leaves_l.band_pass(rng.uniform(-1, 1), 1600, rate) * 0.12 * sway
+        right[i] = leaves_r.band_pass(rng.uniform(-1, 1), 1700, rate) * 0.12 * (1 - sway * 0.5)
+    # birds: little falling-and-rising whistles
+    for _k in range(7):
+        start = rng.uniform(0.1, LOOP_SECONDS - 0.5)
+        f0 = rng.uniform(2000, 2600)
+        chirp = []
+        phase = 0.0
+        length = int(rng.uniform(0.08, 0.16) * rate)
+        for j in range(length):
+            x = j / length
+            phase += TAU * f0 * (1 - 0.3 * math.sin(math.pi * x)) / rate
+            chirp.append(math.sin(phase) * math.sin(math.pi * x))
+        for repeat in range(rng.randint(1, 3)):
+            _add(left, right, start + repeat * 0.18, chirp, rng.uniform(-0.8, 0.8), 0.08, rate=rate)
+    # a stream, low and to the left
+    water = _SVF(1.5)
+    for i in range(len(left)):
+        v = water.band_pass(rng.uniform(-1, 1), 900, rate) * 0.08
+        left[i] += v
+        right[i] += v * 0.4
+    return _small_wav(left, right, 0.4)
+
+
+def amb_neon():
+    """Lumina City: rain, the traffic's hum far below, a sign buzzing."""
+    rng = random.Random(SEED + 36)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    for i in range(len(left)):
+        t = i / rate
+        buzz = 0.02 * (math.sin(TAU * 120 * t) + 0.5 * math.sin(TAU * 240 * t))
+        left[i] = rng.uniform(-1, 1) * 0.05 + buzz
+        right[i] = rng.uniform(-1, 1) * 0.05 + buzz * 0.6
+    _air_bed(rng, left, right, 150, 2.0)
+    for _k in range(120):                                         # raindrops
+        start = rng.uniform(0.0, LOOP_SECONDS)
+        _add(left, right, start, [rng.uniform(-1, 1) * math.exp(-j / 8.0) for j in range(30)],
+             rng.uniform(-1, 1), 0.08, rate=rate)
+    for start, position in ((0.6, -0.9), (2.4, 0.9)):             # a hovercab going by
+        swoosh = [rng.uniform(-1, 1) * math.sin(math.pi * j / 6000.0) for j in range(6000)]
+        filt = _SVF(1.0)
+        swoosh = [filt.band_pass(v, 400, rate) for v in swoosh]
+        _add(left, right, start, swoosh, position, 0.35, rate=rate)
+    return _small_wav(left, right, 0.42)
+
+
+def amb_arcade():
+    """Pixel Pier: cabinets bleeping little tunes, a crowd, carpet."""
+    rng = random.Random(SEED + 37)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    tunes = ((523.25, 659.25, 783.99, 1046.5), (392.0, 493.88, 587.33, 783.99), (440.0, 554.37, 659.25, 880.0))
+    for tune_i, notes in enumerate(tunes):
+        position = (-0.7, 0.0, 0.7)[tune_i]
+        start = 0.3 + tune_i * 1.2
+        for k, note in enumerate(notes * 2):
+            tone = [(1.0 if math.sin(TAU * note * j / rate) > 0 else -1.0) * math.exp(-j / 800.0)
+                    for j in range(int(0.09 * rate))]
+            _add(left, right, start + k * 0.1, tone, position, 0.04, rate=rate)
+    _air_bed(rng, left, right, 180, 1.4)
+    for voice in range(3):
+        filt = _SVF(3.0)
+        gl, gr = _pan(-0.6 + 0.6 * voice)
+        syllable, target, next_change = 0.0, 0.0, 0
+        for i in range(len(left)):
+            if i >= next_change:
+                target = rng.uniform(0.2, 0.7) if rng.random() < 0.6 else 0.0
+                next_change = i + int(rng.uniform(0.1, 0.3) * rate)
+            syllable += 0.005 * (target - syllable)
+            v = filt.band_pass(rng.uniform(-1, 1), 600 + 150 * voice, rate) * syllable * 0.5
+            left[i] += v * gl
+            right[i] += v * gr
+    return _small_wav(left, right, 0.4)
+
+
+def creature():
+    """One of Evergrove's creatures: a trill and a little puff of air."""
+    rng = random.Random(SEED + 38)
+    samples = _zeros(0.7)
+    phase = 0.0
+    for i in range(int(0.45 * RATE)):
+        t = i / RATE
+        f = 1400 + 500 * math.sin(TAU * 11 * t) + 400 * t
+        phase += TAU * f / RATE
+        samples[i] += math.sin(phase) * math.sin(math.pi * t / 0.45) * 0.6
+    puff = _burst(rng, 0.2, 1200, 1.0, 0.01, 0.12)
+    _put(samples, 0.45, puff, 0.5)
+    return mono_bytes(samples, RATE, 0.28)
+
+
 # ------------------------------------------------------------
 # Recorded cues (Kenney's CC0 packs)
 # ------------------------------------------------------------
@@ -1653,6 +1878,17 @@ RECORDED.update({
                             ("impact-sounds/impactMetal_light_002.wav", 0.75, 0.7),
                             ("impact-sounds/impactTin_medium_003.wav", 0.83, 0.45)]),
     "lottery.wav": (-4.5, [("rpg-audio/bookFlip3.wav", 0.0, 1.0), ("rpg-audio/handleCoins2.wav", 0.18, 0.6)]),
+    # travel between worlds
+    "gate.wav": (-6.0, [("sci-fi-sounds/forceField_000.wav", 0.0, 1.0), ("sci-fi-sounds/forceField_002.wav", 0.35, 0.7),
+                        ("interface-sounds/maximize_006.wav", 0.1, 0.5)]),
+    "ferry.wav": (-7.0, [("interface-sounds/bong_001.wav", 0.0, 1.0), ("interface-sounds/bong_001.wav", 0.3, 0.7),
+                         ("sci-fi-sounds/doorClose_002.wav", 0.6, 0.8)]),
+    "refuel.wav": (-4.5, [("rpg-audio/metalClick.wav", 0.0, 0.8), ("sci-fi-sounds/slime_000.wav", 0.15, 1.0),
+                          ("rpg-audio/metalLatch.wav", 0.75, 0.7)]),
+    "customs.wav": (-8.0, [("interface-sounds/select_004.wav", 0.0, 1.0), ("interface-sounds/select_005.wav", 0.12, 1.0),
+                           ("interface-sounds/question_003.wav", 0.3, 0.8)]),
+    "cargo.wav": (-6.0, [("impact-sounds/impactWood_heavy_000.wav", 0.0, 1.0),
+                         ("impact-sounds/impactPlank_medium_001.wav", 0.25, 0.8)]),
     "lottery_draw.wav": (-6.0, [("interface-sounds/bong_001.wav", 0.0, 1.0),
                                 ("interface-sounds/bong_001.wav", 0.28, 0.8),
                                 ("casino-audio/chips-handle-5.wav", 0.55, 0.8)]),
@@ -1740,7 +1976,10 @@ SOUNDS = (
        ("amb_vent.wav", amb_vent), ("amb_cantina.wav", amb_cantina),
        ("amb_engine.wav", amb_engine), ("amb_garden.wav", amb_garden), ("amb_deck.wav", amb_deck),
        ("amb_space.wav", amb_space), ("amb_belt.wav", amb_belt), ("amb_venue.wav", amb_venue),
-       ("amb_mall.wav", amb_mall), ("amb_casino.wav", amb_casino)]
+       ("amb_mall.wav", amb_mall), ("amb_casino.wav", amb_casino),
+       ("amb_gate.wav", amb_gate), ("amb_moon.wav", amb_moon), ("amb_colony.wav", amb_colony),
+       ("amb_ice.wav", amb_ice), ("amb_bazaar.wav", amb_bazaar), ("amb_forest.wav", amb_forest),
+       ("amb_neon.wav", amb_neon), ("amb_arcade.wav", amb_arcade), ("creature.wav", creature)]
 )
 
 

@@ -1681,7 +1681,8 @@ def test_the_sounds_are_polite_and_positional_ones_are_mono():
         loudest = max(abs(v) for v in samples)
         assert 0.15 * 32767 < loudest < 0.6 * 32767, name
         if name.startswith("amb_"):
-            assert channels == 2 and rate == orbit_sounds.LOOP_RATE and seconds == orbit_sounds.LOOP_SECONDS, name
+            assert channels == 2 and rate in (orbit_sounds.LOOP_RATE, orbit_sounds.SMALL_LOOP_RATE), name
+            assert seconds == orbit_sounds.LOOP_SECONDS, name
         else:
             assert 0.1 <= seconds <= 3.3 and rate == orbit_sounds.RATE, name
             step = channels
@@ -1767,7 +1768,7 @@ def test_the_stereo_sounds_move_where_they_should():
 def test_the_sound_set_stays_small():
     import orbit_sounds
     total = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in os.listdir(SOUNDS_DIR))
-    assert total < 8 * 1024 * 1024, total
+    assert total < 10 * 1024 * 1024, total
     recorded = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in orbit_sounds.RECORDED)
     assert recorded <= 3 * 1024 * 1024, recorded          # the recordings' budget
 
