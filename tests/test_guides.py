@@ -556,6 +556,14 @@ def _official_in_repo():
                   if os.path.isfile(os.path.join(EXT_ROOT, ext_id, "manifest.json")))
 
 
+def test_the_template_extension_shows_how():
+    import core.guides
+    path = os.path.join(ROOT, "template_extension", "docs", "en", "guide.md")
+    with open(path, encoding="utf-8") as f:
+        body, title = core.guides.markdown_body(f.read())
+    assert title == "Hello World" and "<h2>" in body
+
+
 def test_most_official_extensions_are_in_this_repo():
     assert len(_official_in_repo()) >= 30
 
