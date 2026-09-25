@@ -21,6 +21,7 @@ import datetime
 import importlib.util
 import io
 import json
+import math
 import os
 import random
 import sys
@@ -1884,7 +1885,7 @@ def test_the_sounds_ship_and_are_what_the_generator_makes(m):
     for name, low, high in (("chime.wav", 1.0, 1.6), ("engine.wav", 5.0, 8.0)):
         path = os.path.join(EXT_DIR, "sounds", name)
         channels, width, rate, frames = _wav(path)
-        assert channels == 1 and width == 2 and low <= frames / rate <= high, name
+        assert channels == 2 and width == 2 and low <= frames / rate <= high, name
         with open(path, "rb") as f:
             data = f.read()
         samples = memoryview(data[44:]).cast("h")
@@ -1895,3 +1896,16 @@ def test_the_sounds_ship_and_are_what_the_generator_makes(m):
         assert f.read() == sounds.chime()
     with open(os.path.join(EXT_DIR, "sounds", "engine.wav"), "rb") as f:
         assert f.read() == sounds.engine()
+
+
+def test_the_engines_are_heard_left_and_right():
+    """Stereo, and really: the two engines differ (a correlation well below
+    1), while the rumble keeps them from sounding like two separate noises."""
+    import array
+    with wave.open(os.path.join(EXT_DIR, "sounds", "engine.wav")) as w:
+        samples = array.array("h", w.readframes(w.getnframes()))
+    left, right = samples[0::2], samples[1::2]
+    mean_l, mean_r = sum(left) / len(left), sum(right) / len(right)
+    cov = sum((a - mean_l) * (b - mean_r) for a, b in zip(left, right))
+    spread = math.sqrt(sum((a - mean_l) ** 2 for a in left) * sum((b - mean_r) ** 2 for b in right))
+    assert 0.3 < cov / spread < 0.8
