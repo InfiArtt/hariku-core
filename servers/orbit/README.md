@@ -38,6 +38,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
 | `orbit_arcade.py` | Pixel Pier's arcade: four cabinet games, tokens, prize tickets, high scores |
 | `orbit_crews.py` | crews: founding, invitations, crew chat, the captain, points and the board |
+| `orbit_duels.py` | duels: quick-draw contests between two players in the contest zones |
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
@@ -110,7 +111,8 @@ while running).
    hunt's seasons: see below) (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
    `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`, `orbit_travel.py`, `orbit_local.py`,
-   `orbit_events.py`, `orbit_arcade.py`, `orbit_crews.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
+   `orbit_events.py`, `orbit_arcade.py`, `orbit_crews.py`, `orbit_duels.py`,
+   `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
@@ -460,6 +462,24 @@ Others see a player's crew when they look at them or at their profile.
 Admins can disband a crew (`bubarkan kru Bintang` / `disband crew Bintang`).
 The numbers are `crews` in economy.json.
 
+## Duels
+
+Two players settle it with a quick draw, only in the contest zones (rooms
+marked `arena` in world.json: the Zero-G Gym on the station and the
+Tournament Stage on Pixel Pier). `duel Budi` (also `tantang duel Budi`), or
+`duel Budi 20` for a stake of up to 100 credits each: Budi answers `accept`
+or `decline` within a minute, like an offer; both pay the stake when it
+starts, and the room hears it begin. Best of three rounds: "ready", then
+"draw!" 2 to 5 seconds later, and the first number typed wins the round (a
+number before it loses the round; a round nobody answers in 3 seconds is
+played again, at most five in all). The winner takes both stakes less 5%; a
+draw gives them back; walking out, leaving the game or losing the
+connection forfeits. Both then rest a minute; a player who was declined
+waits five minutes before challenging the same person again; `duels off`
+refuses every challenge (`duels` shows the record); muted players can't
+challenge; admins can stop a duel (`hentikan duel Budi` / `stop duel Budi`,
+the stakes go back). The numbers are `duels` in economy.json.
+
 ## The arcade (Pixel Pier)
 
 Cabinet Row, west of Pixel Pier's Grand Arcade Hall, has four cabinets and a
@@ -594,6 +614,7 @@ Typed in the game by a character in `game.admins` (Indonesian first):
 | `status perburuan` / `hunt status` | the hunt: everyone's riddle, tries and waits |
 | `musim baru` / `new season` | read the hunt's season file again (a new season begins when its number changed) |
 | `umumkan petunjuk 2` / `release hint 2` | the next hint of the hunt's riddle 2, to everyone |
+| `hentikan duel Budi` / `stop duel Budi` | stop a duel (the stakes go back) |
 | `bubarkan kru Bintang` / `disband crew Bintang` | end a crew (its members are told) |
 | `uji perburuan` / `hunt test` | play the hunt from the start without counting (again: back) |
 | `bantuan admin` / `help admin` | this list, in the game (players don't see it) |
@@ -645,14 +666,15 @@ pacing (when the next random one may come, when each last came, which weekly
 and seasonal ones have run) and the hunt's season (the rival's progress, the
 hints released, how many have finished). Every event that runs or is
 scheduled is a row in `events`, with its state and how it ended. Trade
-offers, coin-flip challenges and a blackjack hand in progress live only in
-memory (a hand is played out, standing, if its player leaves or the server
-stops). Accounts have no password or email: the client makes a random
-256-bit secret the first time it joins this server and keeps it on the
-player's computer; the server keeps only a PBKDF2-SHA256 hash of it (with a
-salt made once for this server). Chat (say, whisper, shout) is passed on to
-whoever hears it and never written anywhere. A banned connection's address
-is kept only as a salted hash, for 7 days.
+offers, coin-flip challenges, crew invitations, duel challenges, a duel and
+a blackjack hand in progress live only in memory (a hand is played out,
+standing, if its player leaves or the server stops). Accounts have no
+password or email: the client makes a random 256-bit secret the first time
+it joins this server and keeps it on the player's computer; the server keeps
+only a PBKDF2-SHA256 hash of it (with a salt made once for this server).
+Chat (say, whisper, shout) is passed on to whoever hears it and never
+written anywhere. A banned connection's address is kept only as a salted
+hash, for 7 days.
 
 The log says when the server starts and stops, when characters are created,
 join, resume, log out and leave (by name), transfers, and what admins did. It
@@ -724,12 +746,13 @@ commands need no new client:
 | `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
 | `hunt`, `investigate`, `solve` (`a`: the answer), `hunt_board` | | the hunt |
 | `crew`, `crew_create` (`a`: the name), `crew_invite` (`to`), `crew_say` (`a`), `crew_leave`, `crew_kick` (`to`), `crew_captain` (`to`), `crew_motto` (`a`), `crews` | | crews (an invitation is answered with `accept` or `decline`) |
+| `duel` (`to`, `n`: the stake), `duels` (`op`: on, off) | | duels (answered with `accept` or `decline`) |
 | `arcade`, `play` (`a`: a game), `stop_game`, `high_scores` (`a`: a game) | | the arcade; a game's input is `answer` (numbers alone: both clients send them so) |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
 | `text` | `a`: plain words | the server reads them (see above) |
-| `admin` | `op`: mute, unmute, kick, ban, unban, announce, grant, take_credits, give_item, economy, set_price, reset_streak, goto, invisible, transfers, revoke, transfer_for, admin_log, event_start, event_stop, event_schedule, hunt_status, new_season, release_hint, hunt_test, crew_disband; `to`, `n`, `a`, `item` | admins only |
+| `admin` | `op`: mute, unmute, kick, ban, unban, announce, grant, take_credits, give_item, economy, set_price, reset_streak, goto, invisible, transfers, revoke, transfer_for, admin_log, event_start, event_stop, event_schedule, hunt_status, new_season, release_hint, hunt_test, crew_disband, duel_stop; `to`, `n`, `a`, `item` | admins only |
 
 **Events** (`{"t": "ev", "k": kind, "text": "...", ...}`). `k` tells the
 client which sound fits and whose voice reads it: `room`, `moved`, `arrive`,
@@ -810,6 +833,7 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
 | `creature` | one of Evergrove's creatures |
 | `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
+| `duel_start` | a duel: challenged, and beginning |
 | `crew_chat`, `crew_join` | a line on your crew's chat; someone joins (or you found) a crew |
 | `arcade_start`, `arcade_ready`, `arcade_go`, `arcade_hit`, `arcade_beat`, `arcade_meteor`, `arcade_whoosh`, `arcade_crash`, `arcade_ticket`, `arcade_over` | the arcade: a coin in, ready and go, a point, a beat, a meteor (placed on its side), dodged, hit, tickets out, game over |
 | `hunt_clue`, `hunt_found`, `hunt_rival` | the hunt: a clue (and others' progress, a hint), a note found, the rival ahead |
@@ -817,7 +841,7 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
 | `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 190 files, about 10 MB: 104 recorded (2.9 MB) and 86 synthesized;
+The set: 191 files, about 10.1 MB: 104 recorded (2.9 MB) and 87 synthesized;
 the ambience loops are at 11 kHz.
 
 ### Credits: recorded sounds
@@ -843,7 +867,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from
