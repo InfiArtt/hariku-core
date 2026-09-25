@@ -349,6 +349,9 @@ def test_vocabulary_holds_names_and_aliases():
     ("tidak", "no"), ("Tidak.", "no"), ("batal", "no"), ("no", "no"), ("Cancel!", "no"),
     ("bukan", "no"), ("nggak", "no"), ("tidak jadi", "no"), ("jangan", "no"),
     ("ya tidak", "no"),                  # "no" wins
+    ("pasang", "yes"), ("Set it.", "yes"), ("pasang aja", "yes"),   # "..., Pasang?" (alarms)
+    ("ya, pasang", "yes"), ("jangan pasang", "no"),
+    ("pasang alarm jam 6", None), ("set alarm 6", None),            # a new command
     ("gempa terbaru", None), ("", None),
     ("ya tolong ingatkan aku minum obat besok", None),   # a new command
 ])
