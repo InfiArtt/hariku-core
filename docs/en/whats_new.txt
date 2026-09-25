@@ -1,4 +1,4 @@
-Version 2.10.0 (Core Update)
+Version 2.10.0 (Core Update - September 25, 2026)
 ================================================================================
 - A new welcome. The first time Hariku starts, it introduces itself as your
   slightly nosy new friend and gets to know you. Choose your language (it
