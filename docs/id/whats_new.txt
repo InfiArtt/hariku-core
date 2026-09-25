@@ -26,6 +26,13 @@ Versi 2.9.0 (Pembaruan Inti)
   di Pengaturan, Timer & Alarm. Semuanya tetap di komputermu.
 - Aruna: kalau Aruna bertanya "..., Pasang?" atau "..., Set it?", jawaban
   "pasang" dan "set it" juga berarti ya.
+- Voice Control 1.2: pilih apa yang dilakukan frasa pemanggil, di Pengaturan,
+  Voice Control, "Saat kamu mengucapkan frasa pemanggil": "Buka Aruna", seperti
+  dulu, atau "Dengarkan tanpa membuka jendela". Dengan pilihan kedua, jendela
+  yang sedang kamu pakai tetap memegang fokus dan screen reader-mu tetap di
+  sana: kamu bicara, Aruna menjawab dengan suara (dan bertanya serta mendengar
+  "ya" atau "tidak" lewat suara), lalu menutup sendiri setelah selesai. Butuh
+  Hariku 2.9; di 2.8 Aruna tetap terbuka seperti biasa.
 
 
 Versi 2.8.0 (Pembaruan Inti - 25 September 2026)

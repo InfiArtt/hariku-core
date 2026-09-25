@@ -50,7 +50,9 @@ Voice Control.
 
 Every label is created right before its control (see core.core_panels.
 _labeled). Focus moves only when the bar opens (to the field) and when it
-closes (back to the previous window). The bar has no owner window
+closes (back to the previous window). Opened in the background (the wake
+phrase, core 2.9) it takes no focus at all, is used by voice, and closes by
+itself once it has answered and waits for nothing more. The bar has no owner window
 (DIALOG_NO_PARENT), so it opens on the virtual desktop the user is on and
 never brings Hariku's hidden main window along. Global hotkeys use RegisterHotKey
 (core.hotkeys); no keyboard hook is ever installed. The only key state read
@@ -92,6 +94,9 @@ ANSWER_WAIT_MS = 20000         # an answer may take a download; after that, stop
 ANSWER_GATHER_MS = 1500        # more speech this soon after is part of the same answer
 WINDOW_CHECKS_MS = (150, 500, 1200, 2500)  # did the action open a window after all?
 REPLY_AFTER_SEND_MS = 150      # the answer's sound waits for the send sound to end
+BACKGROUND_CLOSE_MS = 1500     # in the background, Aruna closes this long after it's done
+# open_command_bar(background=True) exists (core 2.9): extensions check this.
+CAN_OPEN_IN_BACKGROUND = True
 
 
 # ------------------------------------------------------------
@@ -259,6 +264,7 @@ class CommandBar(wx.Dialog):
         self._responding = False         # a message was sent and not answered yet
         self._saying = False             # the bar is saying its own words
         self._sent_at = 0.0
+        self._background = False         # opened without the focus (the wake phrase)
         bus.subscribe("on_before_speak", self._on_speech)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -291,6 +297,7 @@ class CommandBar(wx.Dialog):
         self.btn_close.Bind(wx.EVT_BUTTON, lambda event: self.close())
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
         self.Bind(wx.EVT_CLOSE, lambda event: self.close())
+        self.Bind(wx.EVT_ACTIVATE, self._on_activate)
 
         apply_rtl_layout(self)
         core.ui_scale.apply_appearance(self)
@@ -363,6 +370,29 @@ class CommandBar(wx.Dialog):
             wx.CallLater(wait, self._play, core.commands.REPLY_SOUND)
         else:
             self._play(core.commands.REPLY_SOUND)
+        self._finish_background_soon()
+
+    # --- in the background (core 2.9) ------------------------------------------------
+
+    def _on_activate(self, event):
+        # The user switched to the bar (Alt+Tab, the hotkey): it's theirs now.
+        if event.GetActive():
+            self._background = False
+        event.Skip()
+
+    def _idle(self):
+        return (self._pending is None and not self._listening and self._awaiting is None
+                and not self._busy and self._follow_up is None)
+
+    def _finish_background_soon(self):
+        """Opened in the background, Aruna closes by itself once it has
+        answered and waits for nothing more (a question, an answer to come)."""
+        if self._background and self._alive():
+            wx.CallLater(BACKGROUND_CLOSE_MS, self._finish_background)
+
+    def _finish_background(self):
+        if self._background and self._alive() and self._idle():
+            self.close(restore=False)
 
     # --- input -----------------------------------------------------------------------
 
@@ -697,6 +727,7 @@ class CommandBar(wx.Dialog):
                 timer.Stop()
             except Exception:
                 pass
+        self._finish_background_soon()
 
     def _after_keys_released(self, then, waited=0):
         """Call then() once the key that confirmed (Enter) is let go, so its
@@ -788,9 +819,11 @@ class CommandBar(wx.Dialog):
             self._listening = False
             self._listening_ended()
             self.say(str(value or _("cmd_voice_failed")))
+            self._finish_background_soon()
         elif kind == "stopped":
             self._listening = False
             self._listening_ended()
+            self._finish_background_soon()
 
     def _auto_listen(self):
         """Listening as the bar opens (Voice Control's setting)."""
@@ -834,6 +867,9 @@ class CommandBar(wx.Dialog):
         `restore` is False), then then() runs."""
         if self._closed:
             return
+        if self._background:
+            restore = False                     # the focus never left the user's window
+        self._background = False
         self._cancel_follow_up()
         self._end_answer()
         bus.unsubscribe("on_before_speak", self._on_speech)
@@ -903,25 +939,36 @@ def to_foreground(hwnd):
 
 
 def bring_to_front(bar):
+    bar._background = False
     bar.Show()
     bar.Raise()
     to_foreground(bar.GetHandle())
     bar.txt_input.SetFocus()
 
 
-def open_command_bar(listen=None, previous=None, **kwargs):
+def open_command_bar(listen=None, previous=None, background=False, **kwargs):
     """Open the command bar (or bring the open one to the front). `listen`:
     start listening at once; None follows the speech recogniser's "listen as
-    soon as the bar opens"."""
+    soon as the bar opens". `background` (core 2.9, for the wake phrase):
+    show it without taking the focus from the user's window, listen at once,
+    and close by itself when the exchange is over; an open bar isn't brought
+    to the front."""
     global _bar
     bar = current_bar()
     if bar is not None:
-        bring_to_front(bar)
+        if not background:
+            bring_to_front(bar)
         return bar
     if previous is None:
         previous = foreground_window()
     bar = CommandBar(None, previous, **kwargs)
     _bar = bar
+    if background:
+        bar._background = True
+        bar.ShowWithoutActivating()
+        if listen is None or listen:
+            wx.CallAfter(bar._auto_listen)     # no screen reader announcement to wait for
+        return bar
     bring_to_front(bar)
     listener = core.commands.get_listener()
     if listen is None:

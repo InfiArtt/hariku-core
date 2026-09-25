@@ -25,6 +25,12 @@ Version 2.9.0 (Core Update)
   Alarm. Everything stays on your computer.
 - Aruna: when it asks "..., Set it?" or "..., Pasang?", "set it" and "pasang"
   are yes too.
+- Voice Control 1.2: choose what the wake phrase does, in Preferences, Voice
+  Control, "When you say the wake phrase": "Open Aruna", as before, or
+  "Listen without opening a window". Then the window you're in keeps the
+  focus and your screen reader stays there: you speak, Aruna answers aloud
+  (and asks and hears "yes" or "no" by voice), and it closes by itself when
+  it's done. Needs Hariku 2.9; on 2.8 Aruna opens as before.
 
 
 Version 2.8.0 (Core Update - September 25, 2026)
