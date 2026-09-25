@@ -24,6 +24,8 @@ hariku.novarealm.cloud/
 .env
 *.env
 settings/*.local.json
+# Orbit's hunt: the real seasons (riddles, clue places, answers) stay on the server only.
+servers/orbit/private/
 
 # ── Misc build artifacts ────────────────────────────────
 Hariku_V2_Developer_SDK.zip
