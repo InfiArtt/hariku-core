@@ -245,6 +245,40 @@ key skips the flight" asks Windows when the keyboard or mouse was last used,
 only during a flight; it never records which keys you press. Its sounds are
 generated and come with the extension.
 
+## Orbit
+
+The Orbit extension is a multiplayer game, so it talks to a game server: the
+address in Preferences, Orbit, by default `infiartt.com` (Hariku's developer
+runs it). It connects only when you open Orbit, press Connect or give it a
+command, always over an encrypted connection (`wss://`; an unencrypted
+`ws://` address is refused unless it is this computer). `infiartt.com` is
+served through Cloudflare, which, like any web host, sees your IP address; see
+the [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/).
+
+- What is sent: the first time you join, your character's name and job; every
+  time, a random secret made on your computer when you first joined that
+  server (it stands for a password; the server keeps only a salted hash of it
+  and cannot read it back), Hariku's language, and what you type or say in
+  Orbit. Nothing else about you: not your profile, places or reminders.
+- What the server keeps: your character's name, job, the description you
+  write, credits, items, where it is, cooldowns and missions, when it was made
+  and last seen, and whether an admin muted or banned it. There is no
+  password and no email. If an admin bans you, a salted hash of your IP
+  address is kept for 7 days.
+- Chat is not stored. What you say is passed on to the players in the same
+  place, a whisper to one player, a shout to everyone online, and then it is
+  gone: the server writes no chat, secrets or IP addresses to its log (only
+  names, and who joined, left or was muted). Other players see your
+  character's name, job, where it is, what you say and do, and its
+  description.
+- On your computer, in `%APPDATA%\Hariku2`: your Orbit settings and, for each
+  server you joined, its secret and your character's name (`OrbitAccounts`).
+  Anyone who copies that secret can play as your character on that server.
+- Other players' words may be read with Hariku Voice: with an Edge voice,
+  that text is sent to Microsoft's speech service (see Edge Voices below);
+  Piper and Windows voices speak on your computer. Orbit's sounds are
+  generated and come with the extension.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
