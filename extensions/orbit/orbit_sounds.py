@@ -1714,6 +1714,16 @@ def crew_chat():
     return mono_bytes(out, RATE, 0.32)
 
 
+def duel_start():
+    """A duel: a low brass stab, twice, like two sides squaring up."""
+    out = _zeros(0.7)
+    for start, note in ((0.0, G5 / 4), (0.22, C5 / 2)):
+        stab = _soft_square(note, 0.35, 6.0)
+        _put(out, start, stab, 0.6)
+        _put(out, start, _soft_square(note * 1.5, 0.35, 7.0), 0.3)
+    return mono_bytes(_low(out, 2500), RATE, 0.42)
+
+
 def crew_join():
     """Someone joins the crew: a warm three-note welcome."""
     out = _zeros(0.8)
@@ -2224,7 +2234,7 @@ SOUNDS = (
        ("arcade_hit.wav", arcade_hit), ("arcade_beat.wav", arcade_beat), ("arcade_meteor.wav", arcade_meteor),
        ("arcade_whoosh.wav", arcade_whoosh), ("arcade_crash.wav", arcade_crash),
        ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over),
-       ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join)]
+       ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join), ("duel_start.wav", duel_start)]
 )
 
 
