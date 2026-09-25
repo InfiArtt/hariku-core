@@ -725,8 +725,9 @@ own.
      server; the name and job boxes are only used for that first visit.
   2. Open the Orbit window with "Open Orbit" (no key by default; give it one
      in Input Gestures) or by telling Aruna "orbit" or "buka orbit". It has
-     the Messages list (newest last; read it with the arrow keys; a new
-     message never moves your focus), the Command field (Enter sends; Up and
+     the Messages box (read-only text, newest line last; read it with the
+     arrow keys like any text; a new line never moves your focus, nor your
+     reading place while you're in it), the Command field (Enter sends; Up and
      Down bring back earlier commands), Connect or Leave Orbit, Help,
      Settings (this Preferences page) and the status. The title says whether
      you're connected.
@@ -1005,9 +1006,15 @@ From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
 siapa online", "orbit harian", "orbit panen", "orbit profil", "orbit status",
 "orbit keluar". The answer shows in Aruna's Last result.
 
-What you hear. What happens is read aloud as it comes, in your language,
-by Hariku Voice's usual voice (the screen reader only reads it when Hariku
-Voice can't speak). What players say comes in two voices: the name first,
+What you hear. What happens is read aloud as it comes, in your language.
+"Read with" (Preferences, Orbit, or typed: "pembaca campuran", "pembaca
+nvda", "pembaca suara" / "reader mixed", "reader nvda", "reader
+voices") chooses who reads it. Mixed, the default: what people say, whisper
+and shout, crew chat and announcements in Hariku Voice, everything else
+(rooms, exits, what your commands do) by your screen reader at once, at
+its own speed, like any MUD client. NVDA only: the screen reader reads
+everything, the fastest way to play. Hariku Voice for everything: all of it
+in Hariku Voice. When Hariku Voice reads, what players say comes in two voices: the name first,
 briefly, in the usual voice ("Budi:", "Budi berbisik:"), then the words in
 Budi's own voice. Each player has a voice of their own when Hariku Voice has
 at least two voices of your language (Edge Voices or Piper Voices, from the
@@ -1017,7 +1024,7 @@ one picked from their name. The residents have voices of their own too.
 Your own words are spoken in your own voice too
 (a whisper says who it's to first: "Ke Sari:"), and your gestures in the
 usual voice ("Kamu tersenyum."). With fewer than two voices, Orbit says so
-once and reads everyone in the usual voice. The Messages list keeps every
+once and reads everyone in the usual voice. The Messages box keeps every
 whole line. Your own words are only turned into speech on your computer:
 nothing you say leaves it as sound, only as the text you typed. Sounds come from
 where things happen: your steps (metal, carpet, grass, stone, wood, rock...)
@@ -1038,7 +1045,7 @@ the sounds ("suara efek mati", "volume efek 60") and other players' sounds
 ("suara orang lain mati"). Preferences also chooses what is read aloud
 (chat and gestures, whispers, shouts, arrivals and departures, work and
 money, announcements, special events; what isn't read still goes to the
-Messages list),
+Messages box),
 what is read while the window is closed (everything; only whispers, your
 name and station news; or nothing), what closing the window does, when you
 are logged out while away, and whether Orbit connects when Hariku starts.
