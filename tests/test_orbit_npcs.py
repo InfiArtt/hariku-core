@@ -445,6 +445,21 @@ def test_a_resident_who_knows_you_says_hello_when_you_walk_in(make_game, clock):
     assert not said_by(tono, "Bang Jali")                  # not again so soon
 
 
+@pytest.mark.parametrize("topic, lang, start", [
+    ("people", "en", "People: the simulation has residents"), ("penduduk", "id", "Orang: simulasi ini punya penduduk"),
+    ("pets", "en", "Pets: Whiskers & Widgets"), ("hewan", "id", "Peliharaan: Kumis & Kabel"),
+    ("family", "en", "Family: partner with Budi"), ("keluarga", "id", "Keluarga: ajak berpasangan Budi"),
+    ("weddings", "en", "Weddings: buy a ring"), ("pernikahan", "id", "Pernikahan: beli cincin"),
+])
+def test_help_comes_in_groups(make_game, topic, lang, start):
+    game = make_game()
+    conn = join(game, "Ani", lang=lang)
+    assert cmd(game, conn, "help", a=topic)["text"].startswith(start)
+    assert {"en": "Life: help pets, help family, help weddings.",
+            "id": "Kehidupan: bantuan hewan, bantuan keluarga, bantuan pernikahan."}[lang] in \
+        cmd(game, conn, "help")["text"]
+
+
 def test_returning_players_hear_what_is_new_once(make_game):
     game = make_game()
     ani = join(game, "Ani")
