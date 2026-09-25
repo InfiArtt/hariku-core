@@ -372,13 +372,14 @@ def test_profile_messages_exist_in_both_languages():
 def test_onboarding_mentions_where_to_change_the_name():
     for code, words in (("en", "Preferences, Profile"), ("id", "Pengaturan, Profil")):
         with open(os.path.join(ROOT, "locales", f"{code}.json"), encoding="utf-8") as f:
-            assert words in json.load(f)["messages"]["onb_p3_msg_name"]
+            assert words in json.load(f)["messages"]["onb_name_intro"]
 
 
 def test_onboarding_no_longer_saves_user_for_a_blank_name():
-    with open(os.path.join(ROOT, "ui", "onboarding_dialog.py"), encoding="utf-8") as f:
-        source = f.read()
-    assert 'or "User"' not in source
+    for rel in (("ui", "onboarding_dialog.py"), ("core", "onboarding.py")):
+        with open(os.path.join(ROOT, *rel), encoding="utf-8") as f:
+            source = f.read()
+        assert 'or "User"' not in source, rel
 
 
 def test_core_always_imports_personal():

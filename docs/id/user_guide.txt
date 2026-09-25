@@ -1,3 +1,6 @@
 Panduan Pengguna Hariku V2
 
 Selamat datang di Hariku! Gunakan tombol panah untuk menavigasi kalender. Tekan Enter untuk mengelola pengingat. Tekan P untuk membuka Pengaturan.
+
+Pertama kali menyala
+Saat pertama kali menyala, sebelum jendela utama, Hariku mengajak kenalan lewat delapan halaman: bahasamu, namamu dan mau dipanggil apa, kotamu (lalu jam dan cuaca di sana), ulang tahunmu, berkenalan dengan Aruna (coba ketik "jam berapa"), ekstensi yang disarankan dari Toko, menyala bersama Windows dan sapaan saat Hariku menyala, lalu ringkasannya. Pertanyaan tiap halaman dibacakan bersama kolom pertamanya. Enter untuk lanjut, Alt+K untuk kembali, Escape untuk berhenti. Semua halaman boleh dilewati dengan menekan Lanjut. Ekstensi yang kamu centang baru diunduh setelah kamu menekan Selesai. Batal tidak menyimpan apa pun; pada saat pertama kali, Hariku tetap menyala seperti biasa dan sambutan tidak muncul lagi. Buka lagi kapan saja lewat Bantuan, Dialog Selamat Datang.
