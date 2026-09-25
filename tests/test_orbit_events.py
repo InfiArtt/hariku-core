@@ -325,6 +325,10 @@ def test_the_stations_birthday_is_a_day_long_and_gives_a_gift(events_game, clock
     game.tick()                                                          # the 25th of September
     row = game.active_of("station_birthday")
     assert row and row["ends"] == datetime.datetime(2026, 9, 26, tzinfo=UTC).timestamp()
+    # On now, so not "coming": what's listed as coming all starts later.
+    listed = cmd(game, ani, "events")
+    assert not any(e["event"] == "station_birthday" for e in listed["schedule"]), listed["schedule"]
+    assert all(e["at"] > clock.now for e in listed["schedule"]), listed["schedule"]
     before = char_of(game, "Ani")["credits"]
     gift = cmd(game, ani, "join")
     assert gift["text"] == "You open your birthday gift: 100 credits and an iced coffee!"

@@ -689,8 +689,12 @@ class EventsMixin:
             coming.append((float(row["starts"]), row["message"] or pick(self.events_def["custom"]["name"], lang),
                            "custom"))
         for eid, definition in self.events_def.items():
-            if definition.get("kind") == "seasonal":
+            if definition.get("kind") == "seasonal" and not self.active_of(eid):
                 start = self.next_seasonal(definition, now)
+                if start is not None and start <= now:
+                    # Its day has begun (next_seasonal gives today's start, for
+                    # the tick that starts it): what's coming is next year's.
+                    start = self.next_seasonal(definition, start + 86400)
                 if start is not None and start - now < 40 * 86400:
                     coming.append((start, pick(definition["name"], lang), eid))
         coming.sort()
