@@ -278,14 +278,17 @@ page = main._panel
 assert page is not None and page.IsShown(), "the page was not created"
 kinds = check_labels(page, "Preferences")
 assert kinds == (["StaticText", "TextCtrl", "StaticText", "TextCtrl", "StaticText", "Choice",
-                  "StaticText", "Button", "StaticText", "TextCtrl", "CheckBox", "CheckBox", "CheckBox",
-                  "CheckBox", "StaticText"]
+                  "StaticText", "Button", "StaticText", "TextCtrl", "StaticText", "Choice",
+                  "CheckBox", "CheckBox", "CheckBox", "CheckBox", "StaticText"]
                  + ["CheckBox"] * 7
                  + ["StaticText", "Choice", "StaticText", "Choice", "StaticText", "Choice", "CheckBox",
                     "CheckBox", "StaticText", "Slider", "CheckBox", "StaticText", "Slider", "CheckBox",
                     "StaticText", "TextCtrl", "StaticText", "Button", "StaticText", "TextCtrl",
                     "StaticText", "TextCtrl", "Button", "StaticText", "StaticText", "StaticText"]), kinds
 assert page.ch_background.GetName() == "While the Orbit window is closed, read"
+assert page.ch_reader.GetName() == "Read with"
+assert page.ch_reader.GetStringSelection() == \
+    "Mixed: talk and announcements in Hariku Voice, the rest by NVDA"
 assert page.ch_close.GetStringSelection() == "Stay connected in the background"
 assert page.txt_transfer.GetName() == "Transfer code" and not page.txt_transfer.IsEditable()
 assert not page.btn_transfer.IsEnabled()                   # only while connected
@@ -353,19 +356,19 @@ assert window.btn_remind.GetLabel() == "&Remind me of the next event"
 fire(window.btn_remind, wx.EVT_BUTTON)                   # asks the server what's coming, then sets one
 assert pump(lambda: reminders, 10), main._client.messages[-3:]
 assert reminders[0][0].startswith("Orbit: ")
-assert window.lst_messages.GetName() == "Messages" and window.txt_command.GetName() == "Command"
-assert window.lst_messages.GetCount() == len(main._client.messages) > 0
+assert window.txt_messages.GetName() == "Messages" and window.txt_command.GetName() == "Command"
+assert window.txt_messages.IsEditable() is False and window.txt_messages.IsMultiLine()
+assert len(window.lines()) == len(main._client.messages) > 0
 focus_ok = pump(lambda: wx.Window.FindFocus() is window.txt_command, timeout=1.0)
 assert pump(lambda: ambiences and ambiences[-1] == ("vent", 40)), ambiences[-3:]
 
 def typed(text, expect):
-    count = window.lst_messages.GetCount()
+    count = len(window.lines())
     window.txt_command.SetValue(text)
     fire(window.txt_command, wx.EVT_TEXT_ENTER)
     assert window.txt_command.GetValue() == ""
-    assert pump(lambda: any(expect in window.lst_messages.GetString(i)
-                            for i in range(count, window.lst_messages.GetCount()))), \
-        (text, [window.lst_messages.GetString(i) for i in range(window.lst_messages.GetCount())][-3:])
+    assert pump(lambda: any(expect in line for line in window.lines()[count:])), \
+        (text, window.lines()[-3:])
 
 
 typed("go to the cantina", "The way to the Cantina: east, east, south, up, north, west, west.")
@@ -385,19 +388,21 @@ print(f"OK window ({focus_note(focus_ok)})")
 # --------------------------------------------------------------------------- #
 # Another player: their words arrive without the focus or the selection moving
 # --------------------------------------------------------------------------- #
-window.lst_messages.SetSelection(0)
+# Reading the Messages box: a new line keeps the reading place and the focus.
+window.txt_messages.SetFocus()
+reading = pump(lambda: wx.Window.FindFocus() is window.txt_messages, timeout=1.0)
+window.txt_messages.SetSelection(0, 0)
 sari = orbit_ws.WebSocketClient.connect(URL)
 sari.send_json({"t": "hello", "v": 1, "lang": "en", "name": "Sari", "job": "engineer",
                 "secret": "5a" * 32})
 for step in ("e", "e", "s", "u", "n", "w", "w"):
     sari.send_json({"t": "cmd", "c": "move", "d": step})
 sari.send_json({"t": "cmd", "c": "say", "a": "hello Rafli!"})
-assert pump(lambda: window.lst_messages.GetString(window.lst_messages.GetCount() - 1)
-            == "Sari says: hello Rafli!", 10), \
-    [window.lst_messages.GetString(i) for i in range(window.lst_messages.GetCount())][-3:]
-assert window.lst_messages.GetSelection() == 0, "a message moved the selection"
-if focus_ok:
-    assert wx.Window.FindFocus() is window.txt_command, "a message moved the focus"
+assert pump(lambda: window.lines()[-1] == "Sari says: hello Rafli!", 10), window.lines()[-3:]
+if reading:
+    assert window.txt_messages.GetSelection() == (0, 0), "a message moved the reading place"
+    assert wx.Window.FindFocus() is window.txt_messages, "a message moved the focus"
+window.txt_command.SetFocus()
 assert pump(lambda: voiced and voiced[-1][1] == "hello Rafli!", 15), voiced[-3:]    # the words alone
 assert voiced[-1][0] == voice_module.pick_voice("Sari", VOICES)["id"]
 assert "say" in sounds and "arrive" in sounds

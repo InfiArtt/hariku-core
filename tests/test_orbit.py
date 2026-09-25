@@ -319,9 +319,9 @@ def test_settings_are_checked(omain):
                                   "job": "wizard", "speak": "yes", "ambience_volume": 250,
                                   "voices": False, "read_shout": False, "background": "loud",
                                   "close_action": "leave", "auto_logout": 45, "effects_volume": -5,
-                                  "ignored": ["Budi", " budi ", "", 7, "Sari"]})
+                                  "ignored": ["Budi", " budi ", "", 7, "Sari"], "reader": "loud"})
     assert s == {"server": "wss://example.org/orbit/ws", "name": "Rafli", "job": "pilot",
-                 "speak": True, "voices": False, "speak_own": True, "speak_names": True,
+                 "reader": "mixed", "speak": True, "voices": False, "speak_own": True, "speak_names": True,
                  "ambience": True, "ambience_volume": 100,
                  "sounds": True, "effects_volume": 0, "other_sounds": True,
                  "read_say": True, "read_whisper": True, "read_shout": False, "read_moves": True,
@@ -402,7 +402,8 @@ class FakeServices:
                        "read_say": True, "read_whisper": True, "read_shout": True,
                        "read_moves": True, "read_money": True, "read_announce": True, "read_events": True,
                        "background": "important", "close_action": "stay", "auto_logout": 30,
-                       "autoconnect": False, "ignored": [], "close_hints": 0}
+                       "autoconnect": False, "ignored": [], "close_hints": 0,
+                       "reader": "voices"}      # tests of other readers set it
         self.values.update(settings)
         self.accounts = {}
         self.connections = []
@@ -470,6 +471,9 @@ class FakeServices:
         self.spoken.append(("narrator", text))
         return True
 
+    def read(self, text):
+        self.spoken.append(("reader", text))    # the screen reader, straight away
+
     def speak_voice(self, text, voice, on_done):
         self.spoken.append((voice["id"], text))
         on_done(None)
@@ -531,7 +535,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.2", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.3", "lang": "id",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -1278,7 +1282,7 @@ def test_quick_settings_from_the_game(play):
     assert s.values["voices"] is False and s.spoken[-1] == ("narrator", "Suara pemain mati: semua dibacakan suaramu yang biasa.")
     client.submit("bacakan pesan mati")
     assert s.values["speak"] is False
-    assert s.spoken[-1] == ("narrator", "Pesan tidak dibacakan sekarang; tetap masuk daftar Pesan.")   # said anyway
+    assert s.spoken[-1] == ("narrator", "Pesan tidak dibacakan sekarang; tetap masuk kotak Pesan.")   # said anyway
     client.submit("volume efek 40")
     assert s.values["effects_volume"] == 40 and client.messages[-1] == "Volume efek 40 persen."
     client.submit("ambience mati")
@@ -1634,7 +1638,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert other.connections == []
     assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
     hello = other.connections[-1].hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.2", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.3", "lang": "id",
                      "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
     other.connections[-1].welcome(name="Rafli")
     account = other.accounts["wss://infiartt.com/orbit/ws"]
@@ -1892,3 +1896,46 @@ def test_the_sounds_are_what_the_generator_makes(name):
     make = dict(orbit_sounds.SOUNDS)[name]
     with open(os.path.join(SOUNDS_DIR, name), "rb") as f:
         assert f.read() == make()
+
+
+# --------------------------------------------------------------------------- #
+# Who reads the game: NVDA straight away, Hariku Voice for talk (1.3)
+# --------------------------------------------------------------------------- #
+
+def test_mixed_reading_gives_talk_to_voices_and_the_rest_to_the_screen_reader(play):
+    s, client = play.services, play.client
+    s.values["reader"] = "mixed"
+    conn = _online(play)
+    s.spoken.clear()
+    conn.event("moved", "Kamu berjalan ke Kantin. Kantin. Jalan keluar: utara, barat daya.",
+               room="cantina", amb="cantina")
+    assert s.spoken[-1] == ("reader", "Kamu berjalan ke Kantin. Kantin. Jalan keluar: utara, barat daya.")
+    s.spoken.clear()
+    conn.event("say", "Sari bilang: halo Rafli!", actor="Sari", words="halo Rafli!")
+    assert s.spoken[0] == ("narrator", "Sari bilang:") or s.spoken[0][0] not in ("reader",)
+    assert all(who != "reader" for who, _line in s.spoken)          # a voice, not NVDA
+    s.spoken.clear()
+    conn.event("announce", "Pengumuman: server restart jam 3.", words="server restart jam 3.")
+    assert s.spoken and all(who != "reader" for who, _line in s.spoken)
+    assert client.messages[-1] == "Pengumuman: server restart jam 3."
+
+
+def test_nvda_reading_reads_everything_at_once_and_whole(play):
+    s = play.services
+    s.values["reader"] = "nvda"
+    conn = _online(play)
+    s.spoken.clear()
+    conn.event("say", "Sari bilang: halo Rafli!", actor="Sari", words="halo Rafli!")
+    conn.event("moved", "Kamu berjalan ke Dek Observasi.", room="observation")
+    assert s.spoken == [("reader", "Sari bilang: halo Rafli!"), ("reader", "Kamu berjalan ke Dek Observasi.")]
+
+
+def test_the_reader_can_be_changed_from_the_game(play):
+    assert orbit_parse.parse("pembaca nvda") == {"local": "set", "key": "reader", "value": "nvda"}
+    assert orbit_parse.parse("reader mixed") == {"local": "set", "key": "reader", "value": "mixed"}
+    assert orbit_parse.parse("pembaca suara") == {"local": "set", "key": "reader", "value": "voices"}
+    s, client = play.services, play.client
+    conn = _online(play)
+    assert client.submit("pembaca nvda") == "local"
+    assert s.values["reader"] == "nvda" and s.spoken[-1] == ("reader", "Semua dibacakan NVDA.")
+    assert conn.sent == []

@@ -57,13 +57,20 @@ import orbit_ws
 from orbit_text import _
 
 PROTOCOL_VERSION = 1
-CLIENT_NAME = "Hariku Orbit 1.2"
+CLIENT_NAME = "Hariku Orbit 1.3"
 MAX_MESSAGES = 500
 TRIM_MESSAGES = 50
 MAX_LINE = 2000
 ARUNA_SECONDS = 8.0
 TALK_KINDS = ("say", "whisper", "shout", "crew")
 OWN_TALK_KINDS = ("said", "whispered", "shouted", "crew_sent")
+# Who reads the game aloud (the "reader" setting): "mixed" (the default) gives
+# what people say and the announcements to Hariku Voice, in each player's
+# voice, and everything else to the screen reader at once, like any MUD
+# client; "nvda" gives everything to the screen reader; "voices" everything
+# to Hariku Voice.
+READERS = ("mixed", "nvda", "voices")
+VOICE_KINDS = TALK_KINDS + OWN_TALK_KINDS + ("announce",)
 JOBS = ("pilot", "engineer", "trader", "scientist", "security")
 LANGUAGES = ("id", "en")
 FAILURES = {"kicked": "fail_kicked", "replaced": "fail_replaced", "banned": "fail_banned"}
@@ -176,9 +183,32 @@ class OrbitClient:
             self._notify("trim", TRIM_MESSAGES)
 
     def _narrate(self, text, always=False):
-        """A line of the client's own, read by the narrator."""
+        """A line of the client's own, read by the narrator: the screen reader,
+        unless the reader setting is "voices" (or Aruna asked: Aruna answers
+        in Hariku Voice)."""
         if always or self.s.settings().get("speak", True) or self._aruna():
-            self.speaker.say(text)
+            if self._voiced("", self.s.settings()):
+                self.speaker.say(text)
+            else:
+                self.s.read(text)
+
+    def _voiced(self, kind, settings, preview=False):
+        """Whether a line of this kind goes to Hariku Voice (the Speaker), not
+        straight to the screen reader."""
+        reader = settings.get("reader", "mixed")
+        if self._aruna() or reader == "voices" or preview:
+            return True
+        if reader == "nvda":
+            return False
+        return kind in VOICE_KINDS
+
+    def _say(self, parts, voiced):
+        if voiced:
+            self.speaker.say_parts(parts)
+            return
+        text = " ".join(str(t).strip() for t, _voice in parts if str(t or "").strip())
+        if text:
+            self.s.read(text)
 
     def _aruna(self):
         return self.clock() < self.aruna_until
@@ -422,11 +452,15 @@ class OrbitClient:
         setting = "read_events" if message.get("event") else READ_KINDS.get(kind)
         if setting and not aruna and not settings.get(setting, True) and (actor or kind != "emote"):
             return
-        parts = self._parts(message, text, settings, aruna)
+        voiced = self._voiced(kind, settings, preview=bool(message.get("preview")))
+        if voiced:
+            parts = self._parts(message, text, settings, aruna)
+        else:       # the whole line for what others say; the short form for the rest
+            parts = [(text if kind in TALK_KINDS else str(message.get("brief") or text), None)]
         if delay:
-            self.s.call_later(delay, lambda: self.speaker.say_parts(parts))
+            self.s.call_later(delay, lambda: self._say(parts, voiced))
         else:
-            self.speaker.say_parts(parts)
+            self._say(parts, voiced)
 
     def _parts(self, message, text, settings, aruna):
         """What to say for an event, in parts: [(text, voice or None for the narrator)].
@@ -475,7 +509,7 @@ class OrbitClient:
             self.voices_hint_said = True
             text = _("voices_few")
             self.add_line(text)
-            self.speaker.say(text)
+            self._narrate(text, always=True)
 
     # --- what the player asks --------------------------------------------------------
 
@@ -574,6 +608,8 @@ class OrbitClient:
         self.s.set_setting(key, value)
         if key in ("effects_volume", "ambience_volume"):
             text = _(f"set_{key}", n=int(value))
+        elif key == "reader":
+            text = _(f"set_reader_{value}")
         else:
             text = _(f"set_{key}_{'on' if value else 'off'}")
         self.add_line(text)

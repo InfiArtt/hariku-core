@@ -10,8 +10,9 @@
 """
 Orbit's windows: the game window and the Preferences page.
 
-The game window has the Messages list (read-only, newest last; arrows read
-it, and a new message never moves the selection or the focus), the Command
+The game window has the Messages box (read-only text, newest line last, read
+with the arrow keys like any text; a new line never moves the focus, nor your
+reading place while you're in it), the Command
 field (Enter sends; Up and Down bring back earlier commands), Connect or
 Leave Orbit, Help, Settings (Orbit's Preferences page), and the status; the
 title says whether you're connected. Escape or closing it does what the
@@ -34,6 +35,8 @@ from orbit_text import _
 _BORDER = 10
 HISTORY = 50
 BACKGROUND_MODES = ("all", "important", "none")
+READERS = ("mixed", "nvda", "voices")
+MAX_LINES = 2000
 CLOSE_ACTIONS = ("stay", "leave")
 AUTO_LOGOUT = (0, 15, 30, 60)
 READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce",
@@ -100,8 +103,11 @@ class OrbitFrame(wx.Frame):
         self.closing = False
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.lst_messages = _labeled(panel, sizer, _("lbl_messages"),
-                                     lambda: wx.ListBox(panel, style=wx.LB_SINGLE), proportion=1)
+        self.txt_messages = _labeled(
+            panel, sizer, _("lbl_messages"),
+            lambda: wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2
+                                | wx.TE_NOHIDESEL),
+            proportion=1)
         self.txt_command = _labeled(panel, sizer, _("lbl_command"),
                                     lambda: wx.TextCtrl(panel, style=wx.TE_PROCESS_ENTER))
         row = wx.BoxSizer(wx.HORIZONTAL)
@@ -122,7 +128,7 @@ class OrbitFrame(wx.Frame):
 
         apply_rtl_layout(self)
         core.ui_scale.apply_appearance(self)
-        self.lst_messages.Set(list(client.messages))
+        self.txt_messages.ChangeValue("\n".join(client.messages))
         self.txt_command.Bind(wx.EVT_TEXT_ENTER, self._on_enter)
         self.txt_command.Bind(wx.EVT_KEY_DOWN, self._on_key)
         self.btn_connect.Bind(wx.EVT_BUTTON, self._on_connect)
@@ -186,23 +192,43 @@ class OrbitFrame(wx.Frame):
         if not _alive(self):
             raise RuntimeError("the window is gone")
         if event == "message":
-            self.lst_messages.Append(value)       # the selection and the focus stay put
+            self.append_line(value)
         elif event == "trim":
-            count = min(int(value), self.lst_messages.GetCount())
-            selected = self.lst_messages.GetSelection()
-            self.lst_messages.Freeze()
-            try:
-                for _i in range(count):
-                    self.lst_messages.Delete(0)
-            finally:
-                self.lst_messages.Thaw()
-            if selected != wx.NOT_FOUND and selected - count >= 0:
-                self.lst_messages.SetSelection(selected - count)
+            self.trim_lines(int(value))
         elif event == "status":
             self.txt_status.ChangeValue(value)
             self._update_buttons()
         elif event == "state":
             self._update_buttons()
+
+    def lines(self):
+        text = self.txt_messages.GetValue()
+        return text.split("\n") if text else []
+
+    def append_line(self, line):
+        """Add a line at the end. Someone reading the box keeps their place
+        (the caret and any selection stay put); otherwise it follows the end."""
+        box = self.txt_messages
+        reading = wx.Window.FindFocus() is box
+        if reading:
+            start, end = box.GetSelection()
+        box.AppendText(("\n" if box.GetLastPosition() > 0 else "") + str(line))
+        if reading:
+            box.SetSelection(start, end)
+
+    def trim_lines(self, count):
+        """Drop the oldest `count` lines (the client keeps the last few hundred)."""
+        box = self.txt_messages
+        lines = self.lines()
+        count = min(count, len(lines))
+        if count <= 0:
+            return
+        cut = len("\n".join(lines[:count])) + (1 if count < len(lines) else 0)
+        reading = wx.Window.FindFocus() is box
+        start, end = box.GetSelection()
+        box.Remove(0, cut)
+        if reading:
+            box.SetSelection(max(0, start - cut), max(0, end - cut))
 
     def _update_buttons(self):
         busy = self.client.online() or self.client.connecting()
@@ -282,6 +308,11 @@ class OrbitPanel(_PageBase):
                                    lambda: wx.TextCtrl(self, value=actions.status(),
                                                        style=wx.TE_READONLY))
         # Reading aloud
+        self.ch_reader = _labeled(
+            self, sizer, _("lbl_reader"),
+            lambda: wx.Choice(self, choices=[_(f"reader_{r}") for r in READERS]))
+        self.ch_reader.SetSelection(READERS.index(settings.get("reader", "mixed"))
+                                    if settings.get("reader", "mixed") in READERS else 0)
         self.chk_speak = _check(self, sizer, _("chk_speak"), settings["speak"])
         self.chk_voices = _check(self, sizer, _("chk_voices"), settings["voices"])
         self.chk_speak_own = _check(self, sizer, _("chk_speak_own"), settings.get("speak_own", True))
@@ -378,6 +409,8 @@ class OrbitPanel(_PageBase):
                          ("ambience", self.chk_ambience), ("sounds", self.chk_sounds),
                          ("other_sounds", self.chk_other_sounds)):
             box.SetValue(bool(settings.get(key)))
+        reader = settings.get("reader", "mixed")
+        self.ch_reader.SetSelection(READERS.index(reader) if reader in READERS else 0)
         self.sld_volume.SetValue(int(settings.get("ambience_volume", 25)))
         self.sld_effects.SetValue(int(settings.get("effects_volume", 100)))
         self.txt_ignored.ChangeValue(", ".join(settings.get("ignored") or []))
@@ -423,6 +456,7 @@ class OrbitPanel(_PageBase):
         settings = {"server": self.txt_server.GetValue().strip(),
                     "name": self.txt_name.GetValue().strip(),
                     "job": self.JOBS[index] if 0 <= index < len(self.JOBS) else "pilot",
+                    "reader": READERS[max(0, self.ch_reader.GetSelection())],
                     "speak": self.chk_speak.GetValue(),
                     "voices": self.chk_voices.GetValue(),
                     "speak_own": self.chk_speak_own.GetValue(),

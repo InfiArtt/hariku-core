@@ -47,6 +47,7 @@ import core.commands
 import core.hotkeys
 import core.preferences
 import core.sounds
+import core.speech
 import core.voice
 from core.commands import Reply
 
@@ -81,7 +82,7 @@ READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_m
                  "read_events")
 BOOL_SETTINGS = ("speak", "voices", "speak_own", "speak_names", "ambience", "sounds", "other_sounds",
                  "autoconnect") + READ_SETTINGS
-DEFAULT_SETTINGS = {"server": DEFAULT_SERVER, "name": "", "job": "pilot", "speak": True,
+DEFAULT_SETTINGS = {"server": DEFAULT_SERVER, "name": "", "job": "pilot", "speak": True, "reader": "mixed",
                     "voices": True, "speak_own": True, "speak_names": True,
                     "ambience": True, "ambience_volume": 25, "sounds": True,
                     "effects_volume": 100, "other_sounds": True,
@@ -117,6 +118,8 @@ def normalize_settings(raw):
     settings["effects_volume"] = _number(raw.get("effects_volume"), DEFAULT_SETTINGS["effects_volume"])
     if raw.get("background") in orbit_play.BACKGROUND_MODES:
         settings["background"] = raw["background"]
+    if raw.get("reader") in orbit_play.READERS:
+        settings["reader"] = raw["reader"]
     if raw.get("close_action") in orbit_play.CLOSE_ACTIONS:
         settings["close_action"] = raw["close_action"]
     if raw.get("auto_logout") in orbit_play.AUTO_LOGOUT:
@@ -260,6 +263,10 @@ class Services:
         _call_after(fn, *args)
 
     # --- speech -----------------------------------------------------------------------
+
+    def read(self, text):
+        """The screen reader, straight away (NVDA's own voice, speed and queue)."""
+        core.speech.speak(text, interrupt=False)
 
     def say(self, text):
         """The narrator when Hariku Voice can't speak (narrator_voice() is None)."""

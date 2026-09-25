@@ -212,6 +212,15 @@ _SETTINGS = sorted([
     (("suara", "orang", "lain"), "other_sounds"), (("other", "sounds"), "other_sounds"),
     (("other", "players", "sounds"), "other_sounds"), (("others", "sounds"), "other_sounds"),
 ], key=lambda e: -len(e[0]))
+# Who reads the game aloud ("reader"): the screen reader, Hariku Voice, or both.
+_READERS = {
+    ("pembaca", "nvda"): "nvda", ("reader", "nvda"): "nvda", ("baca", "pakai", "nvda"): "nvda",
+    ("nvda", "saja"): "nvda", ("nvda", "only"): "nvda", ("pembaca", "layar"): "nvda",
+    ("screen", "reader"): "nvda",
+    ("pembaca", "campuran"): "mixed", ("reader", "mixed"): "mixed", ("campuran",): "mixed",
+    ("pembaca", "suara"): "voices", ("reader", "voices"): "voices", ("pembaca", "hariku"): "voices",
+    ("semua", "suara", "hariku"): "voices", ("all", "voices"): "voices",
+}
 _VOLUMES = sorted([
     (("volume", "efek"), "effects_volume"), (("effects", "volume"), "effects_volume"),
     (("volume", "suara", "efek"), "effects_volume"), (("volume", "bunyi"), "effects_volume"),
@@ -340,6 +349,8 @@ def _goods(text, tokens, index, command):
 def _setting(tokens):
     """A quick setting ("suara pemain mati", "matikan ambience", "effects volume 40"), or None."""
     words = [t[2] for t in tokens]
+    if tuple(words) in _READERS:
+        return {"local": "set", "key": "reader", "value": _READERS[tuple(words)]}
     for phrase, key in _VOLUMES:
         n = len(phrase)
         if tuple(words[:n]) == phrase and len(words) == n + 1 and _number(words[n]) is not None:

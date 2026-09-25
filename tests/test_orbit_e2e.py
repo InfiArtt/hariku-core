@@ -127,6 +127,7 @@ class Services:
         self.loop = loop
         self.lang = language
         self.values = {"server": url, "name": name, "job": job, "speak": True, "voices": True,
+                       "reader": "voices",
                        "ambience": True, "ambience_volume": 25, "sounds": True, "effects_volume": 100,
                        "other_sounds": True, "background": "important", "close_action": "stay",
                        "auto_logout": 30, "ignored": [], "close_hints": 0}
@@ -173,6 +174,9 @@ class Services:
     def say(self, text):
         self.spoken.append(("narrator", text))
         return True                                  # as if Hariku Voice said it
+
+    def read(self, text):
+        self.spoken.append(("reader", text))
 
     def speak_voice(self, text, voice, on_done):
         self.spoken.append((voice["id"], text))
