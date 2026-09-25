@@ -1404,6 +1404,35 @@ def test_a_players_name_and_their_words_come_in_two_voices(play):
     assert s.spoken[-1] == (sari, "Sari bilang: server lama")
 
 
+def test_crew_chat_is_voiced_ignorable_and_heard_in_the_background(play):
+    s = play.services
+    conn = _online(play, name="Rafli")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    sari = orbit_speech.pick_voice("Sari", voices)["id"]
+    s.spoken.clear()
+    conn.event("crew", "Sari, ke kru Bintang: kumpul di Dek", actor="Sari", words="kumpul di Dek",
+               sound="crew_chat")
+    assert s.spoken == [("narrator", "Sari ke kru:"), (sari, "kumpul di Dek")]
+    conn.event("crew_sent", "Kamu bilang ke kru Bintang: siap", brief="Terkirim ke kru.", words="siap", voice=3)
+    assert s.spoken[-1] == (voices[2]["id"], "siap")
+    assert orbit_audio.cues_for({"k": "crew", "sound": "crew_chat"}) == [("crew_chat", 0.0, None, "whisper")]
+    assert orbit_audio.cues_for({"k": "crew_sent"}) == [("sent", 0.0, None, None)]
+    # ignored players are ignored here too; the "whispers" setting covers crew chat
+    s.values["ignored"] = ["sari"]
+    before = len(s.spoken)
+    conn.event("crew", "Sari, ke kru Bintang: halo", actor="Sari", words="halo")
+    assert len(s.spoken) == before
+    s.values["ignored"] = []
+    s.values["read_whisper"] = False
+    conn.event("crew", "Sari, ke kru Bintang: halo", actor="Sari", words="halo")
+    assert len(s.spoken) == before
+    s.values["read_whisper"] = True
+    # with the window closed, crew chat is still heard ("whispers, my name and events")
+    s.window = False
+    conn.event("crew", "Sari, ke kru Bintang: dengar?", actor="Sari", words="dengar?")
+    assert s.spoken[-1] == (sari, "dengar?")
+
+
 def test_your_own_lines_are_spoken_in_your_character_voice(play):
     s = play.services
     conn = _online(play, name="Rafli")
@@ -1839,7 +1868,7 @@ def test_the_stereo_sounds_move_where_they_should():
 def test_the_sound_set_stays_small():
     import orbit_sounds
     total = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in os.listdir(SOUNDS_DIR))
-    assert total < 10 * 1024 * 1024, total
+    assert total < 11 * 1024 * 1024, total
     recorded = sum(os.path.getsize(os.path.join(SOUNDS_DIR, n)) for n in orbit_sounds.RECORDED)
     assert recorded <= 3 * 1024 * 1024, recorded          # the recordings' budget
 

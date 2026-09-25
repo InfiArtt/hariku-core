@@ -62,19 +62,20 @@ MAX_MESSAGES = 500
 TRIM_MESSAGES = 50
 MAX_LINE = 2000
 ARUNA_SECONDS = 8.0
-TALK_KINDS = ("say", "whisper", "shout")
-OWN_TALK_KINDS = ("said", "whispered", "shouted")
+TALK_KINDS = ("say", "whisper", "shout", "crew")
+OWN_TALK_KINDS = ("said", "whispered", "shouted", "crew_sent")
 JOBS = ("pilot", "engineer", "trader", "scientist", "security")
 LANGUAGES = ("id", "en")
 FAILURES = {"kicked": "fail_kicked", "replaced": "fail_replaced", "banned": "fail_banned"}
 # What each read-aloud setting covers.
-READ_KINDS = {"say": "read_say", "emote": "read_say", "whisper": "read_whisper", "shout": "read_shout",
+READ_KINDS = {"say": "read_say", "emote": "read_say", "whisper": "read_whisper", "crew": "read_whisper",
+              "shout": "read_shout",
               "arrive": "read_moves", "leave": "read_moves", "paid": "read_money",
               "failed": "read_money", "received": "read_money", "gave": "read_money",
               "trade": "read_money", "announce": "read_announce"}
-IGNORABLE_KINDS = ("say", "whisper", "shout", "emote", "offer")
+IGNORABLE_KINDS = ("say", "whisper", "shout", "emote", "offer", "crew")
 # With the window closed, "whispers, my name and events" reads these kinds (and your name).
-BACKGROUND_KINDS = ("whisper", "announce", "system", "offer", "tones", "task")
+BACKGROUND_KINDS = ("whisper", "crew", "announce", "system", "offer", "tones", "task")
 BACKGROUND_MODES = ("all", "important", "none")
 CLOSE_ACTIONS = ("stay", "leave")
 AUTO_LOGOUT = (0, 15, 30, 60)

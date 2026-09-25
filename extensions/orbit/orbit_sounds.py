@@ -1705,6 +1705,23 @@ def arcade_over():
     return mono_bytes(_chip((G5, E5, C5), 0.16, 0.3, 7.0), RATE, 0.38)
 
 
+def crew_chat():
+    """A line on the crew's channel: a soft radio click and two quick notes."""
+    rng = random.Random(SEED + 950)
+    out = _zeros(0.3)
+    _put(out, 0.0, _burst(rng, 0.03, 2500, 1.5, 0.0005, 120), 0.5)
+    _put(out, 0.03, _chip((880.0, 1174.7), 0.07, 0.12, 25.0), 0.6)
+    return mono_bytes(out, RATE, 0.32)
+
+
+def crew_join():
+    """Someone joins the crew: a warm three-note welcome."""
+    out = _zeros(0.8)
+    for i, note in enumerate((C5, G5, C6)):
+        _put(out, 0.09 * i, _bell(note, 0.6, 5.0), 0.5)
+    return mono_bytes(out, RATE, 0.38)
+
+
 # The other worlds' ambience (kept as a name of its own; every loop is at LOOP_RATE now).
 SMALL_LOOP_RATE = LOOP_RATE
 
@@ -2206,7 +2223,8 @@ SOUNDS = (
        ("arcade_start.wav", arcade_start), ("arcade_ready.wav", arcade_ready), ("arcade_go.wav", arcade_go),
        ("arcade_hit.wav", arcade_hit), ("arcade_beat.wav", arcade_beat), ("arcade_meteor.wav", arcade_meteor),
        ("arcade_whoosh.wav", arcade_whoosh), ("arcade_crash.wav", arcade_crash),
-       ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over)]
+       ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over),
+       ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join)]
 )
 
 

@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 KIND_CUES = {
     "moved": "door", "arrive": "arrive", "leave": "leave", "whisper": "whisper",
     "say": "say", "shout": "shout", "emote": "emote",
-    "said": "sent", "whispered": "sent", "shouted": "sent",
+    "said": "sent", "whispered": "sent", "shouted": "sent", "crew": "whisper", "crew_sent": "sent",
     "announce": "announce", "system": "announce",
     "paid": "success", "received": "coins", "gave": "coins", "trade": "coins",
     "failed": "fail", "error": "error", "mission": "mission", "task": "task", "offer": "offer",
