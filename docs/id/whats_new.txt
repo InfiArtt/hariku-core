@@ -1,10 +1,11 @@
 Versi 2.10.0 (Pembaruan Inti)
 ================================================================================
-- Sambutan baru. Saat Hariku pertama kali menyala, Hariku mengajak kenalan:
-  "Halo! Aku Hariku. Boleh kenalan dulu?" Pilih bahasamu (langsung berganti),
-  sebutkan namamu dan mau dipanggil apa, dan sejak itu semua yang Hariku
-  ucapkan memakai namamu: "Senang kenalan, Rafli!", "Kamu tinggal di mana,
-  Rafli?". Cari kotamu, lalu dengar jam di sana dan, kalau tersambung ke
+- Sambutan baru. Saat Hariku pertama kali menyala, Hariku memperkenalkan diri
+  sebagai pendamping barumu: sopan, penasaran, dan sedikit kaku, dengan tugas
+  pertama mengenalmu. Pilih bahasamu (langsung berganti), sebutkan namamu dan
+  mau dipanggil apa, dan sejak itu semua yang Hariku ucapkan memakai namamu:
+  "Senang berkenalan denganmu, Rafli.", "Sekarang aku perlu tahu kamu tinggal
+  di mana, Rafli". Cari kotamu, lalu dengar jam di sana dan, kalau tersambung ke
   internet, cuacanya: "Di Batam sekarang jam 14:20, cerah berawan, 31
   derajat." Kotamu menjadi tempat utamamu, Rumah. Kalau mau, beri tahu ulang
   tahunmu, dan Hariku mengucapkan selamat di harinya.
@@ -20,8 +21,9 @@ Versi 2.10.0 (Pembaruan Inti)
   memasang hampir semua ekstensi sudah dihapus.
 - Terakhir, pilih apakah Hariku menyala bersama Windows dan menyapamu saat
   menyala (masing-masing seperti pengaturanmu sekarang; pada pemasangan baru,
-  menyala bersama Windows tidak dicentang), lalu dengar ringkasannya: "Semua
-  siap, Rafli! ... Selamat datang di Hariku!"
+  menyala bersama Windows tidak dicentang), lalu dengar ringkasannya: "Perkenalan
+  selesai, Rafli. ... Mulai sekarang, aku ada di sini kapan pun kamu butuh.
+  Selamat datang di Hariku."
 - Semua disimpan di tempat yang sama dengan pengaturan Hariku lainnya: nama,
   nama panggilan, dan ulang tahun di Pengaturan, Profil; kotamu di
   Pengaturan, Tempat, dan tempat-tempatmu yang lain tetap ada. Batal (Escape)

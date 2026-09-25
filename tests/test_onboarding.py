@@ -178,22 +178,26 @@ def test_answers_compare_and_copy(onb):
 def test_the_personal_texts_in_indonesian(onb, lang):
     lang("id")
     reply = onb.name_reply("Rafli")
-    assert reply == "Senang kenalan, Rafli!"
+    assert reply == "Senang berkenalan denganmu, Rafli."
     assert onb.question("where", "Rafli", reply) == (
-        "Senang kenalan, Rafli! Kamu tinggal di mana, Rafli? Ketik nama kotamu, lalu tekan Enter:")
-    assert onb.question("birthday", "Rafli") == "Kapan ulang tahunmu, Rafli? Tanggal:"
+        "Senang berkenalan denganmu, Rafli. Sekarang aku perlu tahu kamu tinggal di mana, Rafli, "
+        "supaya jamku tidak meleset. Ketik nama kotamu, lalu tekan Enter:")
+    assert onb.question("birthday", "Rafli") == (
+        "Pertanyaan berikutnya, untuk keperluan perayaan: kapan ulang tahunmu, Rafli? Tanggal:")
     assert onb.question("hello") == (
-        "Halo! Aku Hariku. Boleh kenalan dulu? Pertama, pilih bahasamu:")
+        "Halo. Aku Hariku, pendamping barumu di komputer ini. Pertama-tama, bahasa apa yang "
+        "kita pakai?")
     assert onb.question("startup", "Rafli") == (
-        "Satu lagi, Rafli: mau aku ikut menyala bersama komputermu?")
+        "Pertanyaan terakhir, Rafli: boleh aku ikut bangun setiap kali komputermu menyala?")
 
 
 def test_the_personal_texts_in_english(onb):
-    assert onb.name_reply("Rafli") == "Nice to meet you, Rafli!"
+    assert onb.name_reply("Rafli") == "It's a pleasure to meet you, Rafli."
     assert onb.question("where", "Rafli") == (
-        "Where do you live, Rafli? Type your city, then press Enter:")
+        "Now, where do you live, Rafli? I'd rather not get your time wrong. Type your city, "
+        "then press Enter:")
     assert onb.question("extensions", "Rafli").startswith(
-        "Anything else I should set up for you, Rafli? ")
+        "I can also learn new skills, Rafli. Which ones shall I install? ")
 
 
 @pytest.mark.parametrize("code", ["en", "id"])
@@ -204,7 +208,7 @@ def test_every_question_reads_well_without_a_name(onb, lang, code, page):
     text = onb.question(page, "", "")
     assert text and "{" not in text and "  " not in text, text
     assert not re.search(r"[,;:]\s*[?!.]|\s[,.?!]|^[\s,.]", text), text
-    assert onb.name_reply("") in ("Nice to meet you!", "Senang kenalan!")
+    assert onb.name_reply("") in ("It's a pleasure to meet you.", "Senang berkenalan denganmu.")
     assert "Rafli" in onb.question(page, "Rafli", "") or page in ("hello", "name")
 
 
@@ -246,8 +250,8 @@ def test_every_weather_code_has_words(onb, lang, code):
 
 def test_the_birthday_reply(onb, lang):
     lang("id")
-    assert onb.birthday_reply((12, 5, None)) == "Oke, 12 Mei. Nanti aku ucapkan selamat."
-    assert onb.birthday_reply((12, 5, 1999)) == "Oke, 12 Mei 1999. Nanti aku ucapkan selamat."
+    assert onb.birthday_reply((12, 5, None)) == "12 Mei, tercatat. Aku tidak akan lupa."
+    assert onb.birthday_reply((12, 5, 1999)) == "12 Mei 1999, tercatat. Aku tidak akan lupa."
     assert onb.birthday_reply(None) == ""
     assert onb.check_birthday(0, 0, None) is None
     import core.personal
@@ -360,7 +364,7 @@ def test_try_it_answers_the_time_and_the_date(onb, lang, nothing_runs):
 
 def test_try_it_never_runs_anything_else(onb, lang, nothing_runs):
     lang("id")
-    assert onb.try_answer("", None) == ("empty", "Ketik sesuatu dulu, misalnya jam berapa.")
+    assert onb.try_answer("", None) == ("empty", "Kotaknya masih kosong. Ketik sesuatu dulu, misalnya jam berapa.")
     assert onb.try_answer("buka pengaturan")[0] == "other"
     assert onb.try_answer("ingatkan aku besok jam 7 minum obat")[0] == "reminder"
     lang("en")
@@ -462,7 +466,7 @@ def test_install_texts(onb, lang):
     assert onb.install_progress_text(0, 2, a, True) == "Weather terpasang (1 dari 2)."
     assert onb.install_progress_text(1, 2, b, False) == "Timer & Alarm gagal dipasang (2 dari 2)."
     assert onb.install_summary([a, b], [], "Ctrl + X") == (
-        "Sudah terpasang: Weather dan Timer & Alarm. Tekan Enter untuk mulai memakai Hariku.")
+        "Sudah terpasang: Weather dan Timer & Alarm. Tekan Enter, dan kita mulai.")
     assert "Belum terpasang: Timer & Alarm" in onb.install_summary([a], [b], "Ctrl + X")
     assert onb.install_summary([], [a], "Ctrl + X").startswith(
         "Aku gagal memasang Weather; coba lagi nanti di Pengelola Ekstensi (Ctrl + X).")
@@ -479,20 +483,20 @@ def test_the_summary(onb, lang):
     lines = onb.summary(answers, place=BATAM, aruna_key="Ctrl + Alt + Backspace",
                         extensions=[{"name": "Weather"}, {"name": "Timer & Alarm"}])
     assert lines == [
-        "Semua siap, Rafli!",
+        "Perkenalan selesai, Rafli.",
         "Rumahmu di Batam.",
         "Tanggal 12 Mei nanti aku ucapkan selamat ulang tahun.",
         "Setiap kali komputermu menyala, aku menyapamu.",
         "Setelah kamu tekan Selesai, aku pasang Weather dan Timer & Alarm.",
         "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
-        "Selamat datang di Hariku!",
+        "Mulai sekarang, aku ada di sini kapan pun kamu butuh. Selamat datang di Hariku.",
     ]
     bare = onb.summary(onb.Answers(greet=False), aruna_key="Ctrl + Alt + Backspace")
-    assert bare == ["Semua siap!", "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
-                    "Selamat datang di Hariku!"]
+    assert bare == ["Perkenalan selesai.", "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
+                    "Mulai sekarang, aku ada di sini kapan pun kamu butuh. Selamat datang di Hariku."]
     lang("en")
     lines = onb.summary(onb.Answers(name="Rafli", greet=True), aruna_key="Ctrl + Alt + Backspace")
-    assert lines[:2] == ["All set, Rafli!", "Every time Hariku starts, I'll greet you."]
+    assert lines[:2] == ["Introductions complete, Rafli.", "Every time Hariku starts, I'll greet you."]
 
 
 # ------------------------------------------------------------

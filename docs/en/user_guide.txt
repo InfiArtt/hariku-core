@@ -40,7 +40,7 @@ later. Press Enter to go on (Next), Alt+B for Back, and Escape to stop.
      once, starting with the page you are on.
   2. Your name, and what Hariku should call you. The second field fills in
      the first word of your name; change it if you like. From here on,
-     Hariku uses that name: "Nice to meet you, Rafli!"
+     Hariku uses that name: "It's a pleasure to meet you, Rafli."
   3. Where you live. Type your city and press Enter; the cities found are
      listed (use the arrow keys, then Enter to go on). Hariku then tells you
      the time there and, when you're online, the weather: "In Batam it's

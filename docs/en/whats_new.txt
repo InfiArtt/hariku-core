@@ -1,10 +1,11 @@
 Version 2.10.0 (Core Update)
 ================================================================================
-- A new welcome. The first time Hariku starts, it gets to know you: "Hi! I'm
-  Hariku. Shall we get to know each other?" Choose your language (it
-  switches at once), say your name and what Hariku should call you, and from
-  then on everything it says uses that name: "Nice to meet you, Rafli!",
-  "Where do you live, Rafli?". Find your city and hear the time there and,
+- A new welcome. The first time Hariku starts, it introduces itself as your
+  new companion, polite, curious and a little formal, and its first task is
+  to get to know you. Choose your language (it switches at once), say your
+  name and what Hariku should call you, and from then on everything it says
+  uses that name: "It's a pleasure to meet you, Rafli.", "Now, where do you
+  live, Rafli?". Find your city and hear the time there and,
   when you're online, the weather: "In Batam it's 14:20 now, mostly clear,
   31 degrees." Your city becomes your main place, Home. Tell Hariku your
   birthday if you like, and it wishes you a happy birthday on the day.
@@ -19,8 +20,8 @@ Version 2.10.0 (Core Update)
   gone.
 - Last, choose whether Hariku starts with Windows and greets you when it
   starts (each as you had it; starting with Windows is off on a new
-  installation), and hear a summary: "All set, Rafli! ... Welcome to
-  Hariku!"
+  installation), and hear a summary: "Introductions complete, Rafli.
+  ... From now on, I'm here whenever you need me. Welcome to Hariku."
 - Everything is saved where the rest of Hariku keeps it: your name, what to
   call you and your birthday in Preferences, Profile; your city in
   Preferences, Places, where your other places stay. Cancel (Escape) saves
