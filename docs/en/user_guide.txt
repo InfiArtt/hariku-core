@@ -731,12 +731,15 @@ own.
      Settings (this Preferences page) and the status. The title says whether
      you're connected.
   3. Type commands in Indonesian or English. "bantuan" or "help" lists the
-     help topics: "bantuan bergerak" (moving), "bantuan ngobrol" (talking),
-     "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko" (shops),
-     "bantuan kapal" (ships and travel), "bantuan kasino" (the casino),
-     "bantuan kemajuan" (achievements and leaderboards) and "bantuan
-     pengaturan" (settings); "ulangi" or "repeat" reads the last message
-     again.
+     help topics, by group. The station: "bantuan bergerak" (moving),
+     "bantuan ngobrol" (talking), "bantuan penduduk" (people). Making a
+     living: "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko"
+     (shops), "bantuan kapal" (ships and travel). Fun: "bantuan kasino",
+     "bantuan arkade", "bantuan acara" (events), "bantuan perburuan" (the
+     hunt), "bantuan kru", "bantuan duel", "bantuan kemajuan" (achievements
+     and leaderboards). Life: "bantuan hewan" (pets), "bantuan keluarga"
+     (family), "bantuan pernikahan" (weddings). Also "bantuan pengaturan"
+     (settings); "ulangi" or "repeat" reads the last message again.
 
 Walking. You walk one room at a time by compass: n, s, e, w, ne, nw, se,
 sw, up and down, or north, south and so on; in Indonesian utara, selatan,
@@ -767,6 +770,23 @@ Sari ketemu di dek" (to anyone, anywhere), "teriak halo semua", and gestures
 of the Crew Quarters: "undang Sari" invites her, and she types "kunjungi"
 and your name from the Crew Quarters.
 
+People. The simulation has residents who aren't players, each with a voice
+and a story of their own: Bang Jali behind the Cantina's bar, Pak Harsa in
+Engineering, Kapten Bayu at the Dock, the shopkeepers, a traveller who
+comes to the Observation Deck only at night, and a few who walk the station
+on their daily rounds. They're never counted as players: "siapa" or "who"
+doesn't list them, and "lihat" or "look" names them apart, under
+"Penduduk di sini" (Residents here). "penduduk" or "residents" says where
+each one is now. "bicara dengan Jali" or "talk to Jali" greets them and
+says what you can ask about; "tanya Jali tentang gosip" or "ask Jali about
+gossip" asks; "sapa Jali" or "greet Jali", or a gesture ("lambai Jali"),
+says hello. Some of what they tell you is live: the gossip, the market,
+events, who's online, the time, your own progress. They remember you:
+talking each day, asking about new things, a small gift they like ("beri
+Jali 3 cabai") and the favours they ask for ("tanya Harsa tentang kerja",
+then bring what he needs) make them fonder of you, which opens new topics,
+special errands and, in their shop, a small discount.
+
 Work and progress. Type "kerja" or "work" at your workplace: engineers
 repeat the reactor's tones in Engineering (the Reactor Core pays more),
 pilots fly cargo to the Moon from the Dock, traders get a market report
@@ -794,7 +814,8 @@ Ring, up the lift from the Upper Deck's lift lobby, has the rest: Gearworks
 (devices such as the holo mapper, the scanner, the communicator, keycards
 and the EVA suit; better drills; job tools that raise your pay), Orbit
 Outfitters (clothes and titles), Cosy Corner (furniture for your cabin),
-Whiskers & Widgets (pets), the Food Court, and Second Orbit, a secondhand
+Whiskers & Widgets (pets), Starglint Jewellers (rings, and weddings), the
+Food Court, and Second Orbit, a secondhand
 shop that buys your things back for part of their price ("daftar" there says
 what it would pay, "jual senter" sells). Prices move a little each day, and
 each shop has one special. The Cantina's bar sells iced coffee (more XP for
@@ -843,9 +864,11 @@ Observation Deck), a market boom on one world, a double XP hour, happy
 hour at the Cantina, a power cut, and a runaway maintenance drone at the
 Dock that everyone fixes together ("perbaiki drone" or "fix drone"; the
 more you help, the bigger your reward). Every week there's a trading fair
-on the Mall Ring, a jackpot night and a night rush in Lumina City; every
-year the station's birthday on 25 September, New Year and the Lantern
-Festival. "acara" or "events" says what's on and what's coming; "ikut" or
+on the Mall Ring, a jackpot night, a night rush in Lumina City and a duel
+tournament on Pixel Pier; every year the station's birthday on 25
+September, New Year and the Lantern Festival, when every lantern lit in the
+Star Dome Hall counts towards a goal, and reaching it brings everyone a
+gift. "acara" or "events" says what's on and what's coming; "ikut" or
 "join" takes part where needed. In your own cabin, "adakan pesta" or
 "host party" invites everyone for half an hour. "ingatkan aku" or "remind
 me" (and an event's name), or the "Remind me of the next event" button in
@@ -875,7 +898,9 @@ read under the same setting). "kru" or "crew" shows your crew; "keluar kru"
 or "crew leave", "kru keluarkan Budi" or "crew kick Budi", "jadikan kapten
 Budi" or "crew captain Budi", and "moto kru" or "crew motto" and a line. Every
 XP your crew's members earn is a point for the crew; "papan kru" or "crews"
-shows the board.
+shows the board. North of the Hangar, the Crew Hangar is your crew's own
+room: only its members get in, and its board shows your crew's points and
+place.
 
 Duels. In the Zero-G Gym or on Pixel Pier's Tournament Stage, challenge
 someone there to a quick-draw duel: "duel Budi", or "duel Budi 20" for a
@@ -883,7 +908,65 @@ stake of up to 100 credits each; they answer "terima" (accept) or "tolak"
 (decline). When you hear "draw", type any number and Enter: the first wins
 the round, best of three, but typing before it loses the round. The winner
 takes both stakes. "duels" shows your record; "matikan duel" or "duels off"
-refuses every challenge ("duels on" takes them again).
+refuses every challenge ("duels on" takes them again). "papan skor duel" or
+"leaderboard duels" shows who has won the most. Every Sunday at 15:00 UTC
+the duel tournament runs for two hours on the Tournament Stage: the most
+duels won there take prizes, and the champion a title (ask Ciko, the
+stage's host, who leads).
+
+Pets. Whiskers & Widgets on the Mall Ring has a little robot, an orange
+space cat, a robot cat, a mini drone, a space fox and a glow jellyfish, and
+pet food and treats; the rarer ones sometimes choose a player out on the
+worlds. "status hewan" or "pet status" says how your pet is. "beri makan
+Kiki" or "feed Kiki", "main dengan Kiki" or "play with Kiki", "istirahatkan
+Kiki" or "rest Kiki", "elus" or "pat". A pet gets hungry, bored and tired
+slowly, in real time; left alone it grows sad and quiet, but it never comes
+to harm, and a little care always cheers it up. Looking after it helps it
+grow up, from little to young to grown. A young pet can learn tricks: "ajari
+trik duduk" or "teach trick sit" a few times when it's happy and rested,
+then "trik duduk" or "trick sit" shows it off. Your pet follows you, joins
+in your gestures and has its own sound. "namai Kiki" or "name pet Kiki",
+and "ganti nama Kiki jadi Momo" or "rename Kiki to Momo".
+
+Family. "ajak berpasangan Budi" or "partner with Budi" asks Budi to be your
+partner; Budi answers "terima" or "tolak". "pasangan" or "partner" shows
+your partnership. To end one, type "akhiri kemitraan" or "end partnership",
+then "konfirmasi akhiri" or "confirm end" within a minute; your partner is
+told kindly. At the family desk in the Medbay, "adopsi" or "adopt" gives a
+baby a home (from level 3): partners decide together, and you may also
+adopt on your own. A baby needs food (baby porridge from the Food Court:
+"beri makan Mira"), play ("main dengan Mira"), rest ("tidurkan Mira") and
+stories ("bacakan cerita untuk Mira"); with care it grows over real days,
+from baby to toddler to child, and says more as it grows. A child left
+alone gets quiet and asks for you, but is never harmed. "bawa Mira" or
+"bring Mira" takes your child along; a happy child at your side helps a
+little with work, and once a day "minta tolong Mira" or "ask Mira for help"
+brings you something small. Give your baby its name in the naming rite at
+the Star Dome Hall, with Ibu Sekar there: "upacara nama Mira" or "naming
+rite Mira". "keluarga" or "family" shows your family.
+
+Weddings. Buy a ring at Starglint Jewellers on the Mall Ring, then "lamar
+Budi" or "propose to Budi" in the same room; a yes makes you engaged. At
+the jeweller's wedding desk, book the day: a hall (the Star Dome Hall, the
+Jasmine Pavilion, or the castle's Great Hall in Evergrove), a tier (simple,
+grand or luxurious: more guests, music, and at the top fireworks for the
+whole station), a ceremony (the Way of Starlight's rite, or a neutral one)
+and a time, in station time (UTC): "pesan pernikahan paviliun megah netral
+14:00" or "book wedding pavilion grand neutral 14:00". "pernikahan" or
+"wedding" shows yours; "undang Budi ke pernikahan" or "invite Budi to the
+wedding" sends an invitation, and guests answer "hadir" or "tidak hadir"
+(rsvp yes, rsvp no). Be at the hall on time, both of you. In the Starlight
+rite, each of you lights a lantern ("nyalakan lentera"), the two lights are
+joined into one ("satukan cahaya"), there's a moment of silence, you each
+say your own vows ("ikrar" and your words), and the star bell rings three
+times; the neutral ceremony has your vows, each partner's "ya" or "yes",
+and your signatures ("tanda tangan" or "sign"). Guests can "lempar bunga"
+or "throw flowers", cheer and clap. Afterwards the station hears the news,
+you get a title and a keepsake, and "baca kenangan" or "read memory" brings
+the day back (guests can read it too). Your vows are kept in that memory.
+"batalkan pernikahan" or "cancel wedding" gives the money back if it's early
+enough; "jadwal pernikahan" or "wedding schedule" lists the weddings to
+come.
 
 The arcade. On Pixel Pier, Cabinet Row has four games played by ear, and a
 token machine: "beli 10 token" or "buy 10 tokens" (5 credits each). Then
@@ -914,7 +997,8 @@ achievement, some credits and sometimes a title; the big ones are news for
 the whole station. "prestasi" or "achievements" lists yours and the closest
 ones; "papan skor" or "leaderboard" shows the leaders, and "papan skor
 penambang" or "leaderboard miners" (or terkaya/richest, level,
-petani/farmers, beruntun/streak, kasino/casino) one board and your place.
+petani/farmers, beruntun/streak, kasino/casino, duel/duels) one board and
+your place.
 
 From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
 "orbit utara", "orbit bilang halo", "orbit bisik Sari nanti ya", "orbit
@@ -929,7 +1013,8 @@ Budi's own voice. Each player has a voice of their own when Hariku Voice has
 at least two voices of your language (Edge Voices or Piper Voices, from the
 Extension Store, add more): the voice they chose ("suaraku 3" or "my voice
 3", 1 to 10; the same number is always the same voice on your computer) or
-one picked from their name. Your own words are spoken in your own voice too
+one picked from their name. The residents have voices of their own too.
+Your own words are spoken in your own voice too
 (a whisper says who it's to first: "Ke Sari:"), and your gestures in the
 usual voice ("Kamu tersenyum."). With fewer than two voices, Orbit says so
 once and reads everyone in the usual voice. The Messages list keeps every
