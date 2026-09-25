@@ -40,7 +40,11 @@ later. Press Enter to go on (Next), Alt+B for Back, and Escape to stop.
      once, starting with the page you are on.
   2. Your name, and what Hariku should call you. The second field fills in
      the first word of your name; change it if you like. From here on,
-     Hariku uses that name: "It's a pleasure to meet you, Rafli."
+     Hariku uses that name: "Hey, Rafli! Finally, we meet." The third field,
+     "How I talk", picks Hariku's personality: "Follow what I call you" (a
+     nickname like Princess, bro or babyy changes how Hariku talks), or
+     Cheeky friend, Sweet, Laid-back bro, Royal or Polite. You can change it
+     later in Preferences, Profile.
   3. Where you live. Type your city and press Enter; the cities found are
      listed (use the arrow keys, then Enter to go on). Hariku then tells you
      the time there and, when you're online, the weather: "In Batam it's

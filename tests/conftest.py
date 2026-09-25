@@ -85,6 +85,16 @@ def tmp_data_dir(tmp_path):
     core.api.DATA_DIR = original
 
 
+@pytest.fixture(autouse=True)
+def _no_persona_left_behind():
+    """How Hariku talks (core.i18n's persona) is global: a test that saves a
+    nickname may switch it, so each test starts, and ends, without one."""
+    from core import i18n
+    i18n.set_persona("")
+    yield
+    i18n.set_persona("")
+
+
 @pytest.fixture
 def fresh_event_bus():
     """

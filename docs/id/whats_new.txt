@@ -1,14 +1,21 @@
 Versi 2.10.0 (Pembaruan Inti)
 ================================================================================
 - Sambutan baru. Saat Hariku pertama kali menyala, Hariku memperkenalkan diri
-  sebagai pendamping barumu: sopan, penasaran, dan sedikit kaku, dengan tugas
-  pertama mengenalmu. Pilih bahasamu (langsung berganti), sebutkan namamu dan
-  mau dipanggil apa, dan sejak itu semua yang Hariku ucapkan memakai namamu:
-  "Senang berkenalan denganmu, Rafli.", "Sekarang aku perlu tahu kamu tinggal
-  di mana, Rafli". Cari kotamu, lalu dengar jam di sana dan, kalau tersambung ke
+  sebagai teman barumu yang agak kepo, lalu mengajak kenalan. Pilih bahasamu
+  (langsung berganti), sebutkan namamu dan mau dipanggil apa, dan sejak itu
+  semua yang Hariku ucapkan memakai namamu: "Halo, Rafli! Akhirnya kita
+  kenalan juga.", "Nah, Rafli, kamu tinggal di mana?". Cari kotamu, lalu dengar jam di sana dan, kalau tersambung ke
   internet, cuacanya: "Di Batam sekarang jam 14:20, cerah berawan, 31
   derajat." Kotamu menjadi tempat utamamu, Rumah. Kalau mau, beri tahu ulang
   tahunmu, dan Hariku mengucapkan selamat di harinya.
+- Hariku punya kepribadian. Gaya bicaranya ikut panggilanmu: panggil dirimu
+  Princess dan Hariku menjawab seperti pelayan istana yang setia, bro dan
+  gayanya santai, babyy dan gayanya manis; panggilan lain mendapat teman
+  jahil. Kamu juga bisa memilih sendiri di halaman nama pada sambutan atau di
+  Pengaturan, Profil ("Gaya bicara Hariku"): Teman jahil, Manis, Santai ala
+  bro, Kerajaan, atau Sopan. Sambutan, jawaban Aruna, dan sapaan saat Hariku
+  menyala semuanya mengikutinya; ekstensi juga bisa memberi tiap persona
+  kata-katanya sendiri (teks "kunci@sweet" di file bahasanya).
 - Sambutan ini mengenalkan Aruna (Ctrl+Alt+Backspace, atau tombol yang kamu
   pilih): ketik "jam berapa" atau "what time is it" di situ juga, dan Aruna
   menjawab.
