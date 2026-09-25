@@ -32,8 +32,9 @@ import threading
 import time
 
 MAX_WAITING = 12                  # a busy room: older lines are only shown, not read
-READER_SECONDS_PER_CHAR = 0.06    # a guess at how long a screen reader takes
+READER_SECONDS_PER_CHAR = 0.05    # a guess at how long a screen reader takes...
 READER_MIN_SECONDS = 0.5
+READER_MAX_SECONDS = 8.0          # ...but a player's voice never waits longer than this
 POLL_SECONDS = 0.15
 MAX_AGE_SECONDS = 600.0
 
@@ -43,7 +44,9 @@ def primary(tag):
 
 
 def reader_seconds(text):
-    return READER_MIN_SECONDS + len(text or "") * READER_SECONDS_PER_CHAR
+    """About how long the screen reader takes to read `text` (the Observation
+    Deck's view is long; people often cut the reader short by typing)."""
+    return min(READER_MAX_SECONDS, READER_MIN_SECONDS + len(text or "") * READER_SECONDS_PER_CHAR)
 
 
 def voices_of(voices_by_provider, language):
