@@ -1,0 +1,18 @@
+{
+  "host": "127.0.0.1",
+  "port": 7340,
+  "database": "orbit.db",
+  "max_connections": 200,
+  "max_per_ip": 8,
+  "proxy_ip_header": "X-Real-IP",
+  "log_level": "INFO",
+  "game": {
+    "admins": ["Rafli"],
+    "start_credits": 100,
+    "flight_seconds": 60,
+    "pilot_cooldown": 300,
+    "engineer_cooldown": 120,
+    "market_seconds": 180,
+    "missions_per_day": 3
+  }
+}

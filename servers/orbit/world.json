@@ -1,0 +1,493 @@
+{
+  "start": "dock",
+  "locations": {
+    "dock": {
+      "name": {"en": "Dock", "id": "Dermaga"},
+      "ref": {"en": "the Dock", "id": "Dermaga"},
+      "in": {"en": "at the Dock", "id": "di Dermaga"},
+      "aliases": {"en": ["dock", "docks", "docking ring", "docking", "hangar", "shuttle bay"],
+                  "id": ["dermaga", "dok", "pelabuhan", "hangar"]},
+      "ambience": "vent",
+      "exits": ["promenade", "cargo"],
+      "job": "pilot",
+      "desc": {
+        "en": "The docking ring hums with pumps and clamps. Through a thick window you can see the cargo shuttle Merpati latched on, its belly scorched from the last reentry. A schedule board lists flights to Moon Base Tranquility.",
+        "id": "Cincin dermaga berdengung oleh pompa dan penjepit. Lewat jendela tebal kelihatan pesawat kargo Merpati yang sedang bersandar, perutnya gosong bekas masuk atmosfer. Papan jadwal menampilkan penerbangan ke Pangkalan Bulan Tranquility."
+      },
+      "hints": {
+        "pilot": {"en": "Pilots: type work to fly a cargo run to the Moon.",
+                  "id": "Pilot: ketik kerja untuk terbang mengantar kargo ke Bulan."}
+      },
+      "objects": {
+        "shuttle": {
+          "names": {"en": ["shuttle", "merpati", "cargo shuttle", "ship"], "id": ["pesawat", "merpati", "pesawat kargo", "kapal"]},
+          "desc": {"en": "The Merpati is a stubby cargo shuttle with a dove painted on its nose. Someone has stuck a sticker on the hatch: \"Batam - Bulan PP\".",
+                   "id": "Merpati adalah pesawat kargo gemuk dengan gambar burung merpati di hidungnya. Ada yang menempel stiker di pintunya: \"Batam - Bulan PP\"."}
+        },
+        "schedule": {
+          "names": {"en": ["schedule", "schedule board", "board", "flights"], "id": ["jadwal", "papan jadwal", "penerbangan"]},
+          "desc": {"en": "Cargo runs to Moon Base Tranquility leave whenever a pilot is ready. Round trip: about a minute, thanks to the station's very generous physics.",
+                   "id": "Penerbangan kargo ke Pangkalan Bulan Tranquility berangkat kapan saja ada pilot yang siap. Pulang pergi sekitar semenit, berkat fisika stasiun yang sangat murah hati."}
+        },
+        "window": {
+          "names": {"en": ["window"], "id": ["jendela"]},
+          "desc": {"en": "Beyond the Merpati, the black of space and a thin blue line: Earth's atmosphere, seen edge-on.",
+                   "id": "Di balik Merpati, hitamnya angkasa dan garis biru tipis: atmosfer Bumi, dilihat dari samping."}
+        }
+      }
+    },
+    "promenade": {
+      "name": {"en": "Promenade", "id": "Promenade"},
+      "ref": {"en": "the Promenade", "id": "Promenade"},
+      "in": {"en": "on the Promenade", "id": "di Promenade"},
+      "aliases": {"en": ["promenade", "main street", "street", "market", "shops", "corridor"],
+                  "id": ["promenade", "jalan utama", "pasar", "toko", "koridor"]},
+      "ambience": "vent",
+      "exits": ["dock", "cantina", "hydroponics", "medbay", "observation", "bridge", "cabin"],
+      "market": true,
+      "desc": {
+        "en": "The station's main street curves away in both directions, lined with little shops and warm lights. Market stalls sell goods from Earth and the Moon, and the mission board glows by the lift. You can smell coffee from the Cantina.",
+        "id": "Jalan utama stasiun melengkung ke dua arah, dipenuhi toko kecil dan lampu hangat. Kios pasar menjual barang dari Bumi dan Bulan, dan papan misi menyala di dekat lift. Tercium aroma kopi dari Kantin."
+      },
+      "hints": {
+        "all": {"en": "Type prices for the market, or missions for the mission board.",
+                "id": "Ketik harga untuk melihat pasar, atau misi untuk papan misi."}
+      },
+      "objects": {
+        "board": {
+          "names": {"en": ["board", "mission board", "missions", "noticeboard"], "id": ["papan", "papan misi", "misi", "papan pengumuman"]},
+          "desc": {"en": "The mission board: small jobs around the station, new every day. Type missions to read it.",
+                   "id": "Papan misi: kerjaan kecil di sekitar stasiun, baru setiap hari. Ketik misi untuk membacanya."}
+        },
+        "stalls": {
+          "names": {"en": ["stalls", "stall", "market", "shops"], "id": ["kios", "lapak", "pasar", "toko"]},
+          "desc": {"en": "Sacks of coffee, jars of spices, blocks of comet ice, memory chips and glittering meteorite shards. The prices change every few minutes. Type prices.",
+                   "id": "Karung kopi, toples rempah, balok es komet, chip memori, dan serpihan meteorit yang berkilau. Harganya berubah tiap beberapa menit. Ketik harga."}
+        },
+        "lift": {
+          "names": {"en": ["lift", "elevator"], "id": ["lift", "elevator"]},
+          "desc": {"en": "A lift to the station's other rings. A sign says: out of order until version 2.",
+                   "id": "Lift ke cincin-cincin lain stasiun. Ada tulisan: rusak sampai versi 2."}
+        }
+      }
+    },
+    "cantina": {
+      "name": {"en": "Cantina", "id": "Kantin"},
+      "ref": {"en": "the Cantina", "id": "Kantin"},
+      "in": {"en": "in the Cantina", "id": "di Kantin"},
+      "aliases": {"en": ["cantina", "bar", "cafe", "pub", "canteen"],
+                  "id": ["kantin", "bar", "kafe", "warung", "warkop"]},
+      "ambience": "cantina",
+      "exits": ["promenade", "observation"],
+      "desc": {
+        "en": "Round tables bolted to the floor, a long bar that makes the best iced coffee in low Earth orbit, and a jukebox that only plays dangdut and synthwave. It's the place to sit down and chat.",
+        "id": "Meja-meja bundar dibaut ke lantai, bar panjang yang bikin es kopi susu terenak di orbit rendah, dan jukebox yang cuma muter dangdut sama synthwave. Tempat paling pas buat duduk dan ngobrol."
+      },
+      "objects": {
+        "bar": {
+          "names": {"en": ["bar", "counter"], "id": ["bar", "meja bar", "konter"]},
+          "desc": {"en": "Behind the bar, a robot barista with one squeaky wheel pours iced coffee into cups with lids, so nothing floats away.",
+                   "id": "Di balik bar, robot barista dengan satu roda berdecit menuang es kopi susu ke gelas bertutup, supaya tidak ada yang melayang."}
+        },
+        "jukebox": {
+          "names": {"en": ["jukebox", "music"], "id": ["jukebox", "musik"]},
+          "desc": {"en": "Two buttons: DANGDUT and SYNTHWAVE. Someone has scratched a third one: BOTH.",
+                   "id": "Dua tombol: DANGDUT dan SYNTHWAVE. Ada yang menggores tombol ketiga: DUA-DUANYA."}
+        },
+        "menu": {
+          "names": {"en": ["menu"], "id": ["menu", "daftar menu"]},
+          "desc": {"en": "Iced coffee with milk, instant noodles, fried rice in a pouch, and \"Orbit Special\": nobody knows what it is.",
+                   "id": "Es kopi susu, mi instan, nasi goreng dalam kantong, dan \"Spesial Orbit\": tidak ada yang tahu isinya apa."}
+        }
+      }
+    },
+    "observation": {
+      "name": {"en": "Observation Deck", "id": "Dek Observasi"},
+      "ref": {"en": "the Observation Deck", "id": "Dek Observasi"},
+      "in": {"en": "on the Observation Deck", "id": "di Dek Observasi"},
+      "aliases": {"en": ["observation deck", "observation", "obs deck", "deck", "dome", "viewing deck"],
+                  "id": ["dek observasi", "dek", "observasi", "kubah", "anjungan pandang"]},
+      "ambience": "deck",
+      "exits": ["promenade", "cantina"],
+      "earth_view": true,
+      "desc": {
+        "en": "A dome of thick glass, dimmed so your eyes can see outside. Earth fills half the sky.",
+        "id": "Kubah kaca tebal, lampunya diredupkan supaya mata bisa melihat ke luar. Bumi memenuhi separuh langit."
+      },
+      "objects": {
+        "earth": {
+          "names": {"en": ["earth", "planet", "window", "view", "below"], "id": ["bumi", "planet", "jendela", "pemandangan", "bawah"]},
+          "earth": true,
+          "desc": {"en": "", "id": ""}
+        },
+        "telescope": {
+          "names": {"en": ["telescope", "scope"], "id": ["teleskop", "teropong"]},
+          "desc": {"en": "An old brass telescope, bolted to the rail. Someone has pointed it at the Moon and taped a note to it: \"hi mum\".",
+                   "id": "Teleskop kuningan tua, dibaut ke pagar. Ada yang mengarahkannya ke Bulan dan menempel catatan: \"halo mama\"."}
+        }
+      }
+    },
+    "engineering": {
+      "name": {"en": "Engineering", "id": "Ruang Mesin"},
+      "ref": {"en": "Engineering", "id": "Ruang Mesin"},
+      "in": {"en": "in Engineering", "id": "di Ruang Mesin"},
+      "aliases": {"en": ["engineering", "engine room", "engines", "reactor", "reactor room"],
+                  "id": ["ruang mesin", "mesin", "reaktor", "ruang reaktor", "teknik"]},
+      "ambience": "engine",
+      "exits": ["hydroponics", "cargo", "bridge"],
+      "job": "engineer",
+      "desc": {
+        "en": "Hot and loud. The fusion reactor thrums behind a blast window, pipes sing as coolant rushes through, and a repair console blinks amber.",
+        "id": "Panas dan bising. Reaktor fusi menderu di balik jendela tahan ledakan, pipa-pipa berdesis dialiri pendingin, dan konsol perbaikan berkedip kuning."
+      },
+      "hints": {
+        "engineer": {"en": "Engineers: type work to repair the reactor.",
+                     "id": "Insinyur: ketik kerja untuk memperbaiki reaktor."}
+      },
+      "objects": {
+        "reactor": {
+          "names": {"en": ["reactor", "fusion reactor", "core"], "id": ["reaktor", "reaktor fusi", "inti"]},
+          "desc": {"en": "A ball of light the size of a watermelon, held in magnetic fields. When it drifts out of tune, an engineer has to repeat the stabiliser tones.",
+                   "id": "Bola cahaya sebesar semangka, ditahan medan magnet. Kalau nadanya meleset, insinyur harus mengulang nada-nada penstabil."}
+        },
+        "console": {
+          "names": {"en": ["console", "repair console", "panel"], "id": ["konsol", "konsol perbaikan", "panel"]},
+          "desc": {"en": "Four big buttons, numbered one to four, each with its own tone. Low on the left, high on the right.",
+                   "id": "Empat tombol besar bernomor satu sampai empat, masing-masing punya nada sendiri. Rendah di kiri, tinggi di kanan."}
+        },
+        "pipes": {
+          "names": {"en": ["pipes", "pipe", "coolant"], "id": ["pipa", "pendingin"]},
+          "desc": {"en": "The pipes are warm to the touch and hum a low note, like a cat purring.",
+                   "id": "Pipanya hangat kalau disentuh dan berdengung rendah, seperti kucing mendengkur."}
+        }
+      }
+    },
+    "hydroponics": {
+      "name": {"en": "Hydroponics", "id": "Kebun Hidroponik"},
+      "ref": {"en": "Hydroponics", "id": "Kebun Hidroponik"},
+      "in": {"en": "in Hydroponics", "id": "di Kebun Hidroponik"},
+      "aliases": {"en": ["hydroponics", "garden", "farm", "greenhouse", "hydroponic garden"],
+                  "id": ["kebun hidroponik", "kebun", "hidroponik", "taman", "kebun sayur"]},
+      "ambience": "garden",
+      "exits": ["promenade", "engineering"],
+      "desc": {
+        "en": "Rows of lettuce, chillies and tomatoes grow under pink lights, and water trickles through clear tubes. It smells like rain here. Crates of fresh vegetables wait by the door.",
+        "id": "Deretan selada, cabai, dan tomat tumbuh di bawah lampu merah muda, air mengalir pelan di pipa-pipa bening. Baunya seperti habis hujan. Peti-peti sayur segar menunggu di dekat pintu."
+      },
+      "objects": {
+        "plants": {
+          "names": {"en": ["plants", "lettuce", "chillies", "chilli", "tomatoes", "vegetables"], "id": ["tanaman", "selada", "cabai", "cabe", "tomat", "sayur"]},
+          "desc": {"en": "The chillies are the station's pride: small, red and dangerously hot. Somebody has labelled one row \"for sambal only\".",
+                   "id": "Cabainya kebanggaan stasiun: kecil, merah, dan pedasnya berbahaya. Ada yang memberi label satu baris \"khusus sambal\"."}
+        },
+        "crates": {
+          "names": {"en": ["crates", "crate"], "id": ["peti", "peti sayur"]},
+          "desc": {"en": "Crates of fresh vegetables, ready for delivery. Take them only when a mission asks for them.",
+                   "id": "Peti-peti sayur segar, siap diantar. Ambil hanya kalau ada misi yang memintanya."}
+        }
+      }
+    },
+    "medbay": {
+      "name": {"en": "Medbay", "id": "Klinik"},
+      "ref": {"en": "the Medbay", "id": "Klinik"},
+      "in": {"en": "in the Medbay", "id": "di Klinik"},
+      "aliases": {"en": ["medbay", "med bay", "clinic", "infirmary", "sick bay", "hospital"],
+                  "id": ["klinik", "ruang medis", "rumah sakit", "puskesmas", "medbay"]},
+      "ambience": "vent",
+      "exits": ["promenade"],
+      "desc": {
+        "en": "Clean, white and quiet, apart from the patient beep of a heart monitor. A medkit cabinet hangs on the wall next to two neatly made beds.",
+        "id": "Bersih, putih, dan tenang, kecuali bunyi pelan monitor jantung. Lemari kotak P3K tergantung di dinding, di samping dua ranjang yang rapi."
+      },
+      "objects": {
+        "cabinet": {
+          "names": {"en": ["cabinet", "medkit", "medkits", "medkit cabinet"], "id": ["lemari", "kotak p3k", "p3k", "lemari obat"]},
+          "desc": {"en": "Rows of medkits with the station's logo, a planet with a ring. Missions sometimes need one delivered.",
+                   "id": "Deretan kotak P3K berlogo stasiun, planet bercincin. Kadang ada misi yang minta satu diantar."}
+        },
+        "beds": {
+          "names": {"en": ["beds", "bed"], "id": ["ranjang", "kasur", "tempat tidur"]},
+          "desc": {"en": "Two beds with straps, so patients don't float off in their sleep.",
+                   "id": "Dua ranjang dengan sabuk, supaya pasien tidak melayang waktu tidur."}
+        }
+      }
+    },
+    "bridge": {
+      "name": {"en": "Bridge", "id": "Anjungan"},
+      "ref": {"en": "the Bridge", "id": "Anjungan"},
+      "in": {"en": "on the Bridge", "id": "di Anjungan"},
+      "aliases": {"en": ["bridge", "command", "control room", "command deck"],
+                  "id": ["anjungan", "ruang kendali", "ruang komando", "komando"]},
+      "ambience": "vent",
+      "exits": ["promenade", "engineering"],
+      "desc": {
+        "en": "The captain's chair faces a wall of displays: the station's orbit, shuttle traffic and the health of every system. Officers talk in low voices over their consoles.",
+        "id": "Kursi kapten menghadap dinding layar: orbit stasiun, lalu lintas pesawat, dan kondisi semua sistem. Para perwira bicara pelan di depan konsol masing-masing."
+      },
+      "objects": {
+        "chair": {
+          "names": {"en": ["chair", "captain's chair", "captains chair"], "id": ["kursi", "kursi kapten"]},
+          "desc": {"en": "Leather, worn, with a cup holder that has seen a lot of coffee. Sitting in it is strictly forbidden, and very tempting.",
+                   "id": "Kulit, sudah usang, dengan tempat gelas yang sudah melihat banyak kopi. Duduk di situ dilarang keras, dan sangat menggoda."}
+        },
+        "displays": {
+          "names": {"en": ["displays", "display", "screens", "screen", "orbit"], "id": ["layar", "tampilan", "orbit"]},
+          "desc": {"en": "The main display draws the station's orbit as a green ring around Earth: one lap every 92 minutes.",
+                   "id": "Layar utama menggambar orbit stasiun sebagai cincin hijau mengelilingi Bumi: satu putaran tiap 92 menit."}
+        }
+      }
+    },
+    "cargo": {
+      "name": {"en": "Cargo Bay", "id": "Gudang Kargo"},
+      "ref": {"en": "the Cargo Bay", "id": "Gudang Kargo"},
+      "in": {"en": "in the Cargo Bay", "id": "di Gudang Kargo"},
+      "aliases": {"en": ["cargo bay", "cargo", "hold", "warehouse", "storage"],
+                  "id": ["gudang kargo", "gudang", "kargo", "ruang kargo"]},
+      "ambience": "vent",
+      "exits": ["dock", "engineering"],
+      "desc": {
+        "en": "A huge hold stacked with containers, strapped down so nothing drifts. A forklift drone beeps as it works, and the air smells of metal and cold.",
+        "id": "Ruang besar penuh kontainer yang diikat supaya tidak melayang. Drone forklift berbunyi bip sambil bekerja, dan udaranya berbau logam dan dingin."
+      },
+      "objects": {
+        "containers": {
+          "names": {"en": ["containers", "container", "boxes"], "id": ["kontainer", "peti kemas", "kotak"]},
+          "desc": {"en": "Containers from Earth, the Moon and one from \"unknown\". That one hums faintly. Best not to ask.",
+                   "id": "Kontainer dari Bumi, dari Bulan, dan satu dari \"tidak diketahui\". Yang itu berdengung pelan. Lebih baik tidak usah tanya."}
+        },
+        "drone": {
+          "names": {"en": ["drone", "forklift", "forklift drone"], "id": ["drone", "forklift", "drone forklift"]},
+          "desc": {"en": "The drone's name, painted on its side, is Pak Ogah. It beeps politely when it passes you.",
+                   "id": "Nama drone itu, dicat di sampingnya, Pak Ogah. Dia berbunyi bip dengan sopan waktu lewat di sebelahmu."}
+        }
+      }
+    },
+    "cabin": {
+      "name": {"en": "Your cabin", "id": "Kabinmu"},
+      "ref": {"en": "your cabin", "id": "kabinmu"},
+      "in": {"en": "in your cabin", "id": "di kabinmu"},
+      "aliases": {"en": ["cabin", "my cabin", "room", "my room", "quarters", "home", "bed"],
+                  "id": ["kabin", "kabinku", "kamar", "kamarku", "kabin saya", "kamar saya", "rumah"]},
+      "ambience": "vent",
+      "exits": ["promenade"],
+      "private": true,
+      "desc": {
+        "en": "Your own small cabin: a bunk with a blanket from home, a round window full of stars, and a shelf for your things. It's quiet here, and nobody else can come in.",
+        "id": "Kabin kecilmu sendiri: kasur dengan selimut dari rumah, jendela bundar penuh bintang, dan rak untuk barang-barangmu. Di sini tenang, dan tidak ada orang lain yang bisa masuk."
+      },
+      "objects": {
+        "bunk": {
+          "names": {"en": ["bunk", "bed", "blanket"], "id": ["kasur", "ranjang", "selimut"]},
+          "desc": {"en": "The blanket from home still smells a little of the laundry soap your family uses.",
+                   "id": "Selimut dari rumah masih sedikit wangi sabun cuci yang biasa dipakai keluargamu."}
+        },
+        "window": {
+          "names": {"en": ["window", "stars"], "id": ["jendela", "bintang"]},
+          "desc": {"en": "Stars, more than you have ever seen at once, and none of them twinkle up here.",
+                   "id": "Bintang, lebih banyak dari yang pernah kamu lihat sekaligus, dan tidak ada yang berkelip di atas sini."}
+        },
+        "shelf": {
+          "names": {"en": ["shelf"], "id": ["rak"]},
+          "desc": {"en": "A shelf with a net over it, so your things stay put.",
+                   "id": "Rak dengan jaring di depannya, supaya barang-barangmu tidak ke mana-mana."}
+        }
+      }
+    },
+    "shuttle": {
+      "name": {"en": "Cockpit of the Merpati", "id": "Kokpit Merpati"},
+      "ref": {"en": "the Merpati", "id": "Merpati"},
+      "in": {"en": "aboard the Merpati", "id": "di Merpati"},
+      "aliases": {"en": [], "id": []},
+      "ambience": "engine",
+      "exits": [],
+      "hidden": true,
+      "private": true,
+      "desc": {
+        "en": "The cockpit of the cargo shuttle Merpati. The autopilot hums, and the Moon grows slowly in the window.",
+        "id": "Kokpit pesawat kargo Merpati. Autopilot berdengung, dan Bulan perlahan membesar di jendela."
+      },
+      "objects": {}
+    }
+  },
+
+  "jobs": {
+    "pilot": {"name": {"en": "pilot", "id": "pilot"}},
+    "engineer": {"name": {"en": "engineer", "id": "insinyur"}},
+    "trader": {"name": {"en": "trader", "id": "pedagang"}},
+    "scientist": {"name": {"en": "scientist", "id": "ilmuwan"}},
+    "security": {"name": {"en": "security officer", "id": "petugas keamanan"}}
+  },
+
+  "goods": {
+    "coffee": {"one": {"en": "sack of coffee", "id": "karung kopi"}, "many": {"en": "sacks of coffee", "id": "karung kopi"},
+               "names": {"en": ["coffee", "sack of coffee", "sacks of coffee", "coffee beans"], "id": ["kopi", "karung kopi", "biji kopi"]},
+               "base": 12, "volatility": 0.06},
+    "spices": {"one": {"en": "jar of spices", "id": "toples rempah"}, "many": {"en": "jars of spices", "id": "toples rempah"},
+               "names": {"en": ["spices", "spice", "jar of spices", "jars of spices"], "id": ["rempah", "rempah-rempah", "toples rempah"]},
+               "base": 25, "volatility": 0.07},
+    "ice": {"one": {"en": "block of comet ice", "id": "balok es komet"}, "many": {"en": "blocks of comet ice", "id": "balok es komet"},
+            "names": {"en": ["ice", "comet ice", "ice block", "block of ice", "blocks of ice", "ice crystals"], "id": ["es", "es komet", "balok es", "balok es komet"]},
+            "base": 8, "volatility": 0.05},
+    "chips": {"one": {"en": "memory chip", "id": "chip memori"}, "many": {"en": "memory chips", "id": "chip memori"},
+              "names": {"en": ["chips", "chip", "memory chips", "memory chip"], "id": ["chip", "cip", "chip memori", "cip memori"]},
+              "base": 60, "volatility": 0.09},
+    "meteorite": {"one": {"en": "meteorite shard", "id": "serpihan meteorit"}, "many": {"en": "meteorite shards", "id": "serpihan meteorit"},
+                  "names": {"en": ["meteorite", "meteorites", "meteorite shard", "meteorite shards", "shards"], "id": ["meteorit", "serpihan meteorit", "batu meteor"]},
+                  "base": 90, "volatility": 0.12}
+  },
+
+  "items": {
+    "crate": {"one": {"en": "crate of vegetables", "id": "peti sayur"}, "many": {"en": "crates of vegetables", "id": "peti sayur"},
+              "names": {"en": ["crate", "crates", "vegetables", "crate of vegetables"], "id": ["peti", "peti sayur", "sayur"]}},
+    "medkit": {"one": {"en": "medkit", "id": "kotak P3K"}, "many": {"en": "medkits", "id": "kotak P3K"},
+               "names": {"en": ["medkit", "medkits", "first aid kit"], "id": ["kotak p3k", "p3k", "medkit", "obat"]}},
+    "part": {"one": {"en": "spare part", "id": "suku cadang"}, "many": {"en": "spare parts", "id": "suku cadang"},
+             "names": {"en": ["part", "parts", "spare part", "spare parts"], "id": ["suku cadang", "onderdil", "cadang"]}},
+    "flask": {"one": {"en": "flask of coffee", "id": "termos kopi"}, "many": {"en": "flasks of coffee", "id": "termos kopi"},
+              "names": {"en": ["flask", "flasks", "flask of coffee", "thermos"], "id": ["termos", "termos kopi"]}},
+    "sample": {"one": {"en": "plant sample", "id": "sampel tanaman"}, "many": {"en": "plant samples", "id": "sampel tanaman"},
+               "names": {"en": ["sample", "samples", "plant sample", "plant samples"], "id": ["sampel", "sampel tanaman", "contoh tanaman"]}},
+    "mailbag": {"one": {"en": "mailbag", "id": "kantong surat"}, "many": {"en": "mailbags", "id": "kantong surat"},
+                "names": {"en": ["mailbag", "mail", "mail bag", "letters"], "id": ["kantong surat", "surat", "pos"]}},
+    "iceblock": {"one": {"en": "tank of water", "id": "tangki air"}, "many": {"en": "tanks of water", "id": "tangki air"},
+                 "names": {"en": ["tank", "tanks", "water", "water tank", "tank of water"], "id": ["tangki", "tangki air", "air"]}}
+  },
+
+  "missions": {
+    "crates_cantina": {"item": "crate", "count": 3, "from": "hydroponics", "to": "cantina", "reward": 60},
+    "medkit_bridge": {"item": "medkit", "count": 1, "from": "medbay", "to": "bridge", "reward": 40},
+    "parts_engineering": {"item": "part", "count": 2, "from": "cargo", "to": "engineering", "reward": 55},
+    "coffee_bridge": {"item": "flask", "count": 2, "from": "cantina", "to": "bridge", "reward": 35},
+    "samples_medbay": {"item": "sample", "count": 2, "from": "hydroponics", "to": "medbay", "reward": 45},
+    "mail_dock": {"item": "mailbag", "count": 1, "from": "bridge", "to": "dock", "reward": 30},
+    "water_hydroponics": {"item": "iceblock", "count": 2, "from": "cargo", "to": "hydroponics", "reward": 50}
+  },
+
+  "emotes": {
+    "smile": {
+      "en": {"you": "You smile.", "they": "{actor} smiles.", "you_at": "You smile at {target}.", "they_at": "{actor} smiles at {target}.", "at_you": "{actor} smiles at you."},
+      "id": {"you": "Kamu tersenyum.", "they": "{actor} tersenyum.", "you_at": "Kamu tersenyum pada {target}.", "they_at": "{actor} tersenyum pada {target}.", "at_you": "{actor} tersenyum padamu."}
+    },
+    "wave": {
+      "en": {"you": "You wave.", "they": "{actor} waves.", "you_at": "You wave at {target}.", "they_at": "{actor} waves at {target}.", "at_you": "{actor} waves at you."},
+      "id": {"you": "Kamu melambaikan tangan.", "they": "{actor} melambaikan tangan.", "you_at": "Kamu melambai pada {target}.", "they_at": "{actor} melambai pada {target}.", "at_you": "{actor} melambai padamu."}
+    },
+    "laugh": {
+      "en": {"you": "You laugh.", "they": "{actor} laughs.", "you_at": "You laugh with {target}.", "they_at": "{actor} laughs with {target}.", "at_you": "{actor} laughs with you."},
+      "id": {"you": "Kamu tertawa.", "they": "{actor} tertawa.", "you_at": "Kamu tertawa bareng {target}.", "they_at": "{actor} tertawa bareng {target}.", "at_you": "{actor} tertawa bareng kamu."}
+    },
+    "nod": {
+      "en": {"you": "You nod.", "they": "{actor} nods.", "you_at": "You nod at {target}.", "they_at": "{actor} nods at {target}.", "at_you": "{actor} nods at you."},
+      "id": {"you": "Kamu mengangguk.", "they": "{actor} mengangguk.", "you_at": "Kamu mengangguk pada {target}.", "they_at": "{actor} mengangguk pada {target}.", "at_you": "{actor} mengangguk padamu."}
+    },
+    "shrug": {
+      "en": {"you": "You shrug.", "they": "{actor} shrugs.", "you_at": "You shrug at {target}.", "they_at": "{actor} shrugs at {target}.", "at_you": "{actor} shrugs at you."},
+      "id": {"you": "Kamu mengangkat bahu.", "they": "{actor} mengangkat bahu.", "you_at": "Kamu mengangkat bahu pada {target}.", "they_at": "{actor} mengangkat bahu pada {target}.", "at_you": "{actor} mengangkat bahu padamu."}
+    },
+    "clap": {
+      "en": {"you": "You clap.", "they": "{actor} claps.", "you_at": "You clap for {target}.", "they_at": "{actor} claps for {target}.", "at_you": "{actor} claps for you."},
+      "id": {"you": "Kamu bertepuk tangan.", "they": "{actor} bertepuk tangan.", "you_at": "Kamu bertepuk tangan untuk {target}.", "they_at": "{actor} bertepuk tangan untuk {target}.", "at_you": "{actor} bertepuk tangan untukmu."}
+    },
+    "cheer": {
+      "en": {"you": "You cheer!", "they": "{actor} cheers!", "you_at": "You cheer for {target}!", "they_at": "{actor} cheers for {target}!", "at_you": "{actor} cheers for you!"},
+      "id": {"you": "Kamu bersorak!", "they": "{actor} bersorak!", "you_at": "Kamu menyoraki {target}!", "they_at": "{actor} menyoraki {target}!", "at_you": "{actor} menyorakimu!"}
+    },
+    "sigh": {
+      "en": {"you": "You sigh.", "they": "{actor} sighs.", "you_at": "You sigh at {target}.", "they_at": "{actor} sighs at {target}.", "at_you": "{actor} sighs at you."},
+      "id": {"you": "Kamu menghela napas.", "they": "{actor} menghela napas.", "you_at": "Kamu menghela napas ke arah {target}.", "they_at": "{actor} menghela napas ke arah {target}.", "at_you": "{actor} menghela napas ke arahmu."}
+    },
+    "bow": {
+      "en": {"you": "You bow.", "they": "{actor} bows.", "you_at": "You bow to {target}.", "they_at": "{actor} bows to {target}.", "at_you": "{actor} bows to you."},
+      "id": {"you": "Kamu membungkuk memberi hormat.", "they": "{actor} membungkuk memberi hormat.", "you_at": "Kamu membungkuk hormat pada {target}.", "they_at": "{actor} membungkuk hormat pada {target}.", "at_you": "{actor} membungkuk hormat padamu."}
+    },
+    "dance": {
+      "en": {"you": "You dance, a little clumsily in low gravity.", "they": "{actor} dances, a little clumsily in low gravity.", "you_at": "You dance with {target}.", "they_at": "{actor} dances with {target}.", "at_you": "{actor} dances with you."},
+      "id": {"you": "Kamu berjoget, agak kikuk di gravitasi rendah.", "they": "{actor} berjoget, agak kikuk di gravitasi rendah.", "you_at": "Kamu berjoget bareng {target}.", "they_at": "{actor} berjoget bareng {target}.", "at_you": "{actor} berjoget bareng kamu."}
+    },
+    "hug": {
+      "en": {"you": "You hug yourself. Cosy.", "they": "{actor} hugs themself. Cosy.", "you_at": "You hug {target}.", "they_at": "{actor} hugs {target}.", "at_you": "{actor} hugs you."},
+      "id": {"you": "Kamu memeluk dirimu sendiri. Hangat.", "they": "{actor} memeluk dirinya sendiri. Hangat.", "you_at": "Kamu memeluk {target}.", "they_at": "{actor} memeluk {target}.", "at_you": "{actor} memelukmu."}
+    }
+  },
+
+  "earth": {
+    "regions": [
+      {"id": "indonesia", "points": [[-6.8, 110.0], [0.5, 101.5], [1.1, 104.0], [0.0, 114.0], [-2.0, 121.0], [-4.0, 137.0], [-8.4, 115.2]],
+       "name": {"en": "Indonesia", "id": "Indonesia"},
+       "day": {"en": "green islands scattered across a turquoise sea", "id": "pulau-pulau hijau bertebaran di laut biru toska"},
+       "night": {"en": "Java's lights glitter like a string of gold, with Jakarta the brightest bead", "id": "lampu-lampu Jawa berkilau seperti kalung emas, dengan Jakarta sebagai manik paling terang"}},
+      {"id": "philippines", "points": [[12.0, 122.0], [15.0, 121.0], [8.0, 125.0]],
+       "name": {"en": "the Philippines", "id": "Filipina"},
+       "day": {"en": "a scatter of islands under puffy clouds", "id": "gugusan pulau di bawah awan-awan tebal"},
+       "night": {"en": "Manila glows like an ember", "id": "Manila menyala seperti bara"}},
+      {"id": "indochina", "points": [[15.0, 101.0], [13.7, 100.5], [21.0, 105.8], [10.8, 106.7], [3.1, 101.7]],
+       "name": {"en": "Southeast Asia's mainland", "id": "daratan Asia Tenggara"},
+       "day": {"en": "green hills and the brown ribbon of the Mekong", "id": "bukit-bukit hijau dan pita cokelat Sungai Mekong"},
+       "night": {"en": "Bangkok and Kuala Lumpur shine like coins on black velvet", "id": "Bangkok dan Kuala Lumpur bersinar seperti koin di atas beludru hitam"}},
+      {"id": "australia", "points": [[-25.0, 134.0], [-32.0, 117.0], [-33.9, 151.2], [-19.0, 146.0], [-37.8, 145.0]],
+       "name": {"en": "Australia", "id": "Australia"},
+       "day": {"en": "the red heart of the desert, ringed by blue", "id": "jantung gurun yang merah, dikelilingi biru"},
+       "night": {"en": "dark almost everywhere, with a few bright cities along the coast", "id": "gelap hampir di mana-mana, dengan beberapa kota terang di sepanjang pantai"}},
+      {"id": "japan", "points": [[36.0, 138.0], [35.7, 139.7], [34.7, 135.5], [43.0, 141.3]],
+       "name": {"en": "Japan", "id": "Jepang"},
+       "day": {"en": "a green arc of islands with snowy mountains", "id": "lengkung pulau hijau dengan gunung bersalju"},
+       "night": {"en": "Tokyo spills light across the whole bay", "id": "Tokyo menumpahkan cahaya ke seluruh teluk"}},
+      {"id": "china", "points": [[32.0, 112.0], [39.9, 116.4], [23.1, 113.3], [30.6, 104.1], [31.2, 121.5], [40.0, 90.0]],
+       "name": {"en": "China", "id": "Tiongkok"},
+       "day": {"en": "mountains, rivers and the pale Gobi desert", "id": "pegunungan, sungai-sungai, dan Gurun Gobi yang pucat"},
+       "night": {"en": "a web of city lights spreads along the coast", "id": "jaring lampu kota menyebar di sepanjang pantai"}},
+      {"id": "india", "points": [[21.0, 78.0], [28.6, 77.2], [13.0, 80.3], [19.1, 72.9], [23.0, 88.0]],
+       "name": {"en": "India", "id": "India"},
+       "day": {"en": "the snow of the Himalaya to the north, green plains below it", "id": "salju Himalaya di utara, dataran hijau di bawahnya"},
+       "night": {"en": "thousands of towns sparkle like spilled sugar", "id": "ribuan kota berkilau seperti gula yang tumpah"}},
+      {"id": "arabia", "points": [[24.0, 45.0], [25.2, 55.3], [21.5, 39.2], [33.3, 44.4]],
+       "name": {"en": "Arabia", "id": "Jazirah Arab"},
+       "day": {"en": "gold and orange sand from edge to edge", "id": "pasir emas dan jingga dari ujung ke ujung"},
+       "night": {"en": "Dubai burns bright on the Gulf's shore", "id": "Dubai menyala terang di tepi Teluk"}},
+      {"id": "europe", "points": [[48.0, 10.0], [51.5, 0.0], [40.4, -3.7], [41.9, 12.5], [52.2, 21.0], [59.3, 18.1], [48.9, 2.35]],
+       "name": {"en": "Europe", "id": "Eropa"},
+       "day": {"en": "a patchwork of green fields under drifting clouds", "id": "tambalan ladang hijau di bawah awan yang berarak"},
+       "night": {"en": "cities glow everywhere, joined by threads of motorway", "id": "kota-kota menyala di mana-mana, disambung benang-benang jalan tol"}},
+      {"id": "russia", "points": [[60.0, 100.0], [55.8, 37.6], [62.0, 130.0], [56.0, 60.0], [66.0, 160.0]],
+       "name": {"en": "Siberia", "id": "Siberia"},
+       "day": {"en": "endless dark forest and winding rivers", "id": "hutan gelap tak berujung dan sungai yang berkelok"},
+       "night": {"en": "almost completely dark, with a lonely town here and there", "id": "hampir gelap total, dengan satu dua kota yang kesepian"}},
+      {"id": "africa", "points": [[0.0, 20.0], [15.0, 10.0], [-15.0, 25.0], [-29.0, 25.0], [9.0, 39.0], [25.0, 15.0], [30.0, 31.2], [6.5, 3.4]],
+       "name": {"en": "Africa", "id": "Afrika"},
+       "day": {"en": "the orange Sahara in the north and the deep green of the Congo", "id": "Sahara yang jingga di utara dan hijau pekat hutan Kongo"},
+       "night": {"en": "mostly dark, with the Nile a thin thread of light", "id": "sebagian besar gelap, dengan Sungai Nil seperti benang cahaya tipis"}},
+      {"id": "north_america", "points": [[40.0, -95.0], [34.0, -118.2], [40.7, -74.0], [50.0, -100.0], [62.0, -150.0], [19.4, -99.1], [45.5, -73.6]],
+       "name": {"en": "North America", "id": "Amerika Utara"},
+       "day": {"en": "prairies, mountains and the Great Lakes shining like mirrors", "id": "padang rumput, pegunungan, dan Danau-Danau Besar yang berkilau seperti cermin"},
+       "night": {"en": "a glittering grid of cities from coast to coast", "id": "kisi-kisi kota yang berkilau dari pantai ke pantai"}},
+      {"id": "south_america", "points": [[-10.0, -55.0], [-23.5, -46.6], [-34.6, -58.4], [-3.0, -60.0], [-33.4, -70.6], [4.7, -74.1], [-12.0, -77.0]],
+       "name": {"en": "South America", "id": "Amerika Selatan"},
+       "day": {"en": "the green ocean of the Amazon, and the Andes like a spine", "id": "samudra hijau Amazon, dan Pegunungan Andes seperti tulang punggung"},
+       "night": {"en": "São Paulo and Buenos Aires shine brightest", "id": "São Paulo dan Buenos Aires bersinar paling terang"}},
+      {"id": "antarctica", "points": [[-80.0, 0.0], [-75.0, 100.0], [-75.0, -100.0], [-70.0, 60.0]],
+       "name": {"en": "Antarctica", "id": "Antarktika"},
+       "day": {"en": "blinding white ice as far as you can see", "id": "es putih menyilaukan sejauh mata memandang"},
+       "night": {"en": "and maybe, if you're lucky, a green curtain of aurora", "id": "dan mungkin, kalau beruntung, tirai aurora hijau"}},
+      {"id": "pacific", "ocean": true, "points": [[0.0, -160.0], [20.0, -140.0], [-20.0, -130.0], [30.0, 170.0], [-30.0, -160.0], [10.0, 160.0], [-15.0, 175.0], [45.0, -160.0], [-40.0, -120.0]],
+       "name": {"en": "the Pacific Ocean", "id": "Samudra Pasifik"},
+       "day": {"en": "deep blue water with a few tiny islands", "id": "air biru tua dengan beberapa pulau mungil"},
+       "night": {"en": "black water, and not a single light", "id": "air hitam, tanpa satu lampu pun"}},
+      {"id": "atlantic", "ocean": true, "points": [[0.0, -25.0], [30.0, -45.0], [-25.0, -15.0], [45.0, -30.0], [15.0, -50.0], [-40.0, -30.0]],
+       "name": {"en": "the Atlantic Ocean", "id": "Samudra Atlantik"},
+       "day": {"en": "blue water streaked with long white clouds", "id": "air biru dengan garis-garis awan putih yang panjang"},
+       "night": {"en": "dark water, a ship's light here and there", "id": "air gelap, lampu kapal di sana-sini"}},
+      {"id": "indian", "ocean": true, "points": [[-15.0, 75.0], [-30.0, 90.0], [5.0, 65.0], [-10.0, 100.0], [-35.0, 60.0]],
+       "name": {"en": "the Indian Ocean", "id": "Samudra Hindia"},
+       "day": {"en": "turquoise water and towering storm clouds", "id": "air biru toska dan awan badai yang menjulang"},
+       "night": {"en": "dark water, with lightning flickering inside the clouds", "id": "air gelap, dengan kilat berkedip di dalam awan"}},
+      {"id": "southern", "ocean": true, "points": [[-60.0, 60.0], [-60.0, -100.0], [-60.0, 160.0], [-55.0, 0.0]],
+       "name": {"en": "the Southern Ocean", "id": "Samudra Selatan"},
+       "day": {"en": "grey waves and drifting icebergs", "id": "ombak kelabu dan gunung es yang hanyut"},
+       "night": {"en": "cold, dark water under the southern stars", "id": "air dingin dan gelap di bawah bintang-bintang selatan"}},
+      {"id": "arctic", "ocean": true, "points": [[85.0, 0.0], [80.0, 90.0], [80.0, -90.0], [75.0, 170.0]],
+       "name": {"en": "the Arctic", "id": "Arktik"},
+       "day": {"en": "a cracked white lid of sea ice", "id": "tutup es laut putih yang retak-retak"},
+       "night": {"en": "darkness, and sometimes an aurora dancing", "id": "kegelapan, dan kadang aurora yang menari"}}
+    ]
+  }
+}
