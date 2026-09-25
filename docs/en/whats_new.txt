@@ -25,6 +25,28 @@ Version 2.9.0 (Core Update)
   Alarm. Everything stays on your computer.
 - Aruna: when it asks "..., Set it?" or "..., Pasang?", "set it" and "pasang"
   are yes too.
+- New in the Extension Store: World Trip ("Keliling Dunia"). Ask Aruna "take
+  me to Tokyo", "fly to Paris", "bawa aku ke Jepang" (a country lands in its
+  capital or best-known city) or "take me anywhere". A cabin chime and the
+  captain's announcement give the distance and flight time from your main
+  place, the engines roar (any key, or "skip", skips the flight), then you
+  arrive: the local time, how far ahead of or behind home it is, and the
+  weather. A greeting for the time of day and "welcome to Tokyo" are spoken
+  in the local language by a native voice (Edge Voices has one for nearly
+  every language) and then explained, and live local radio plays quietly,
+  turning itself down while Hariku speaks.
+- World Trip: during a trip, ask "tell me about this city" (from Wikipedia),
+  "teach me a phrase" (eight everyday phrases in each of 31 languages, with
+  how to say them and what they mean), "next station", "radio louder",
+  "radio quieter", "what time is it there", "where am I" or "go home".
+  Everything the trip says shows in Aruna's Last result, and the trip goes on
+  when you close Aruna. Settings are in Preferences, World Trip. Only the
+  destination is sent to Open-Meteo, Wikipedia and Radio Browser; your own
+  place stays on your computer.
+- For extension developers: an answer told in steps stays in Aruna's Last
+  result. core.commands.hold_answer(seconds) keeps it open across pauses, and
+  core.commands.show_answer(text) adds a line that isn't spoken, such as a
+  phrase played in another voice. See DEVELOPERS.md.
 
 
 Version 2.8.0 (Core Update - September 25, 2026)
