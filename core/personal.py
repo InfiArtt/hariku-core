@@ -14,7 +14,7 @@ such as %time% and %reminders%, and those extensions register), the
 time-of-day greeting or the user's own startup greeting, and quiet hours.
 
 Everything lives in Core.json, unencrypted: "user_name" (also written by the
-first-run wizard and read by Lumina), "user_nickname", "user_title",
+welcome dialog, core.onboarding, and read by Lumina), "user_nickname", "user_title",
 "user_birthday" ({"day", "month", "year" or null}), "user_fields" (a list of
 {"key", "value"} in the user's order), "greet_on_startup", "custom_greeting"
 (the user's own words, raw), "custom_greeting_boot_only" and "quiet_hours"
@@ -362,6 +362,18 @@ def set_custom_greeting(text, boot_only=False):
     config = _config()
     config["custom_greeting"] = text
     config["custom_greeting_boot_only"] = bool(boot_only)
+    return core.api.save_data(DATA_KEY, config)
+
+
+def set_name(name, nickname=""):
+    """Save the user's name and what to call them (the welcome dialog, core
+    2.10); the rest of the profile stays. Raises ProfileError, saving
+    nothing, when either is too long."""
+    name = check_value(name, "name")
+    nickname = check_value(nickname, "nickname")
+    config = _config()
+    config["user_name"] = name
+    config["user_nickname"] = nickname
     return core.api.save_data(DATA_KEY, config)
 
 
