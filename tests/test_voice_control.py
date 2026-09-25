@@ -916,7 +916,7 @@ class TestInstall:
 # ------------------------------------------------------------
 
 WAKE_DEFAULTS = {"wake": False, "wake_phrase": "Hey Aruna", "wake_sensitivity": "normal",
-                 "wake_quiet_hours": False}
+                 "wake_quiet_hours": False, "wake_opens": "window"}
 
 
 class TestStore:
@@ -1713,6 +1713,8 @@ def page(vc, monkeypatch):
         txt_phrase=types.SimpleNamespace(GetValue=lambda: "  Hey   Aruna "),
         _wake_sensitivities=[name for name, _label in text.wake_sensitivity_choices()],
         choice_wake_sensitivity=FakeChoice(1),
+        _wake_opens=[name for name, _label in text.wake_opens_choices()],
+        choice_wake_opens=FakeChoice(0),
         chk_wake_quiet=types.SimpleNamespace(GetValue=lambda: False), _wake_was_on=False,
         wake_installed=False)
     fake._usable = lambda: True
@@ -1786,7 +1788,7 @@ class TestPage:
     def test_the_page_saves_the_sensitivity(self, page):
         page.choice_sensitivity.selection = 3
         wake_values = {"enabled": False, "phrase": "Hey Aruna", "sensitivity": "normal",
-                       "quiet_hours": False}
+                       "quiet_hours": False, "opens": "window"}
         assert page.get_settings() == {"model": "auto", "listen_on_open": True,
                                        "silence_ms": 1000, "sensitivity": "very_high",
                                        "wake": wake_values}
@@ -1800,7 +1802,7 @@ class TestPage:
 def test_manifest():
     with open(os.path.join(VC_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["id"] == "voice_control" and manifest["version"] == "1.1"
+    assert manifest["id"] == "voice_control" and manifest["version"] == "1.2"
     assert manifest["minimum_core_version"] == "2.7" and manifest["main"] == "main.py"
 
 
@@ -1833,7 +1835,7 @@ def test_the_page_creates_each_label_before_its_control():
         tree = ast.parse(f.read())
     calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
              and isinstance(node.func, ast.Name) and node.func.id == "_labeled"]
-    assert len(calls) == 11      # and the wake phrase, its advice, its sensitivity, its test
+    assert len(calls) == 12      # the wake phrase, its advice, sensitivity, what it opens, its test
     assert all(isinstance(call.args[3], ast.Lambda) for call in calls)
     controls = {"Choice", "ComboBox", "ListCtrl", "ListBox", "SpinCtrl", "Slider", "TextCtrl",
                 "Gauge"}
@@ -1841,3 +1843,76 @@ def test_the_page_creates_each_label_before_its_control():
             and isinstance(node.func, ast.Attribute) and node.func.attr in controls]
     inside = {id(n) for call in calls for n in ast.walk(call.args[3])}
     assert made and all(id(node) in inside for node in made)
+
+
+# ------------------------------------------------------------
+# 1.2: what the wake phrase opens
+# ------------------------------------------------------------
+
+def test_the_wake_opens_setting(userdata):
+    assert store.WAKE_OPENS_CHOICES == ("window", "background")
+    assert store.normalize_settings({"wake_opens": "background"})["wake_opens"] == "background"
+    for bad in ("tray", "", None, 1, ["background"]):
+        assert store.normalize_settings({"wake_opens": bad})["wake_opens"] == "window"
+
+
+def test_saving_what_the_wake_phrase_opens(vc):
+    wake_values = {"enabled": True, "phrase": "Yo what's up", "sensitivity": "high",
+                   "quiet_hours": False, "opens": "background"}
+    vc.save_settings("auto", True, 1000, "normal", wake_values)
+    assert store.load_settings()["wake_opens"] == "background"
+    vc.save_settings("auto", True, 1000, "normal", dict(wake_values, opens=None))
+    assert store.load_settings()["wake_opens"] == "background"     # missing: kept
+
+
+class FakeBarModule(types.SimpleNamespace):
+    def __init__(self, supported=True, bar=None):
+        super().__init__(opened=[], fronted=[], bar=bar)
+        if supported:
+            self.CAN_OPEN_IN_BACKGROUND = True
+
+    def current_bar(self):
+        return self.bar
+
+    def open_command_bar(self, listen=None, background=False):
+        self.opened.append((listen, background))
+
+    def bring_to_front(self, bar):
+        self.fronted.append(bar)
+
+
+@pytest.mark.parametrize("opens, supported, expected", [
+    ("window", True, (True, False)),
+    ("background", True, (True, True)),
+    ("background", False, (True, False)),     # an older Hariku: the window
+])
+def test_the_wake_phrase_opens_aruna_as_chosen(vc, monkeypatch, opens, supported, expected):
+    import ui
+    fake = FakeBarModule(supported)
+    monkeypatch.setitem(sys.modules, "ui.command_bar", fake)
+    monkeypatch.setattr(ui, "command_bar", fake, raising=False)
+    vc.save_settings("auto", True, 1000, "normal", {"enabled": True, "phrase": "Hey Aruna",
+                                                    "sensitivity": "normal",
+                                                    "quiet_hours": False, "opens": opens})
+    vc.open_aruna_listening()
+    assert fake.opened == [expected] and fake.fronted == []
+    assert vc.background_supported() is supported
+
+
+def test_the_wake_phrase_with_aruna_open_listens_without_moving_focus(vc, monkeypatch):
+    import ui
+    started = []
+    bar = types.SimpleNamespace(_listening=False, start_listening=lambda: started.append(1))
+    fake = FakeBarModule(True, bar)
+    monkeypatch.setitem(sys.modules, "ui.command_bar", fake)
+    monkeypatch.setattr(ui, "command_bar", fake, raising=False)
+    vc.save_settings("auto", True, 1000, "normal", {"enabled": True, "phrase": "Hey Aruna",
+                                                    "sensitivity": "normal",
+                                                    "quiet_hours": False, "opens": "background"})
+    vc.open_aruna_listening()
+    assert started == [1] and fake.fronted == [] and fake.opened == []
+    vc.save_settings("auto", True, 1000, "normal", {"enabled": True, "phrase": "Hey Aruna",
+                                                    "sensitivity": "normal",
+                                                    "quiet_hours": False, "opens": "window"})
+    vc.open_aruna_listening()
+    assert fake.fronted == [bar]

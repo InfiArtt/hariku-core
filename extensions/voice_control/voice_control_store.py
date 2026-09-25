@@ -61,10 +61,14 @@ MODEL_CHOICES = ("auto",) + MODEL_NAMES
 SILENCE_CHOICES = (600, 800, 1000, 1500, 2000)    # milliseconds
 SENSITIVITY_CHOICES = audio.SENSITIVITIES           # least sensitive first
 WAKE_SENSITIVITY_CHOICES = wake.SENSITIVITIES       # least sensitive first
+# What the wake phrase does (1.2): open Aruna, or listen without a window
+# (needs core 2.9's background Aruna; older cores open the window).
+WAKE_OPENS_CHOICES = ("window", "background")
 DEFAULT_SETTINGS = {"model": "auto", "listen_on_open": True, "silence_ms": 1000,
                     "sensitivity": audio.DEFAULT_SENSITIVITY, "speeds": {},
                     "wake": False, "wake_phrase": wake.DEFAULT_PHRASE,
-                    "wake_sensitivity": wake.DEFAULT_SENSITIVITY, "wake_quiet_hours": False}
+                    "wake_sensitivity": wake.DEFAULT_SENSITIVITY, "wake_quiet_hours": False,
+                    "wake_opens": "window"}
 
 
 def root_dir():
@@ -329,6 +333,8 @@ def normalize_settings(raw):
         "wake_sensitivity": wake_sensitivity if isinstance(wake_sensitivity, str)
         and wake_sensitivity in WAKE_SENSITIVITY_CHOICES else DEFAULT_SETTINGS["wake_sensitivity"],
         "wake_quiet_hours": raw.get("wake_quiet_hours") is True,
+        "wake_opens": raw.get("wake_opens") if raw.get("wake_opens") in WAKE_OPENS_CHOICES
+        else DEFAULT_SETTINGS["wake_opens"],
     }
 
 

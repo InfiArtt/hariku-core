@@ -1518,7 +1518,7 @@ class TestText:
 def test_manifest_and_privacy_words():
     with open(os.path.join(VC_DIR, "manifest.json"), encoding="utf-8") as f:
         manifest = json.load(f)
-    assert manifest["version"] == "1.1" and manifest["minimum_core_version"] == "2.7"
+    assert manifest["version"] == "1.2" and manifest["minimum_core_version"] == "2.7"
     assert "wake phrase" in manifest["description"]
     with open(os.path.join(VC_DIR, "voice_control_wake.py"), encoding="utf-8") as f:
         source = f.read()

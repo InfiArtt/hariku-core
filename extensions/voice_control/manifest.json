@@ -1,7 +1,7 @@
 {
     "id": "voice_control",
     "name": "Voice Control",
-    "version": "1.1",
+    "version": "1.2",
     "description": "Talk to Aruna, Hariku's command bar (Ctrl+Alt+Backspace): \"latest earthquake\", \"what time is it\", or \"remind me to take medicine tomorrow at 8\", in Indonesian or English. Speech is recognised on this computer by whisper.cpp and is never saved or sent anywhere. Download the program and a speech model in Preferences, Voice Control; each shows its size before you download it. Optionally, say a wake phrase such as \"Hey Aruna\" to open Aruna listening without a key (off until you turn it on; it listens on this computer only). A headset is recommended.",
     "author": "Rafli",
     "main": "main.py",

@@ -178,6 +178,15 @@ class VoiceControlPanel(_PageBase):
                                              in text.wake_sensitivity_choices()]))
         self.choice_wake_sensitivity.SetSelection(
             self._wake_sensitivity_index(settings["wake_sensitivity"]))
+        self._wake_opens = [name for name, _label in text.wake_opens_choices()]
+        self.choice_wake_opens = _labeled(
+            self, root, _("lbl_wake_opens"),
+            lambda: wx.Choice(self, choices=[label for _name, label in text.wake_opens_choices()]))
+        self.choice_wake_opens.SetSelection(self._wake_opens.index(settings["wake_opens"]))
+        if not getattr(self._c, "background_supported", lambda: False)():
+            # An older Hariku can only open the window: the choice would do nothing.
+            self.choice_wake_opens.GetPrevSibling().Hide()
+            self.choice_wake_opens.Hide()
         self.chk_wake_quiet = wx.CheckBox(self, label=_("chk_wake_quiet"))
         self.chk_wake_quiet.SetValue(settings["wake_quiet_hours"])
         root.Add(self.chk_wake_quiet, 0, wx.LEFT | wx.RIGHT | wx.TOP, _BORDER)
@@ -518,6 +527,9 @@ class VoiceControlPanel(_PageBase):
                 "phrase": wake.tidy(self.txt_phrase.GetValue()) or wake.DEFAULT_PHRASE,
                 "sensitivity": self._wake_sensitivity(),
                 "quiet_hours": self.chk_wake_quiet.GetValue(),
+                "opens": self._wake_opens[self.choice_wake_opens.GetSelection()]
+                if 0 <= self.choice_wake_opens.GetSelection() < len(self._wake_opens)
+                else "window",
             },
         }
 
