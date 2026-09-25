@@ -298,6 +298,48 @@ the [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/).
   Piper and Windows voices speak on your computer. Orbit's sounds are
   generated and come with the extension.
 
+## Dropbox
+
+The Dropbox extension talks to Dropbox only after you connect it in
+Preferences, Dropbox, and only with your own sign-in. From then on, whenever
+Hariku runs, it keeps a connection to Dropbox to hear about changes, until you
+disconnect. Hariku's developer receives nothing. Everything goes to Dropbox over encrypted connections
+(`api.dropboxapi.com`, and `notify.dropboxapi.com` to hear about changes); see
+the [Dropbox privacy policy](https://www.dropbox.com/privacy).
+
+- Signing in happens in your browser, on `dropbox.com`. Dropbox then sends the
+  browser back to a small listener on this computer (`http://127.0.0.1:17613`,
+  open only while you sign in, reachable only from this computer) with a
+  one-time code; when that port is taken, you paste the code into Hariku
+  instead. The code is traded for a sign-in with PKCE, a secret made for that
+  one sign-in, so Hariku has no app secret to leak. Hariku asks for four
+  permissions: your account's name and email, the details of your files and
+  folders (not their contents), reading shared links, and making shared links.
+- What is sent: the paths (folders and names) of the files you change in your
+  Dropbox folder, to ask Dropbox whether it has that version yet (it answers
+  with the size and times); the path of a file whose link you copy, or the
+  name you search for; and requests for what changed in your account, for the
+  files and folders shared with you, and for the names of people who changed
+  or shared something. When a file has no shared link yet, copying its link
+  makes one with your account's usual link settings.
+- Hariku never uploads, downloads or reads your files' contents: the Dropbox
+  desktop app syncs them. To follow your files, Hariku reads the app's
+  `info.json` to find the Dropbox folder, lets Windows tell it which files in
+  that folder changed, and reads only their names, sizes and times (never an
+  online-only file, which would download it).
+- To know which file you're on in File Explorer, Hariku asks File Explorer
+  through a short PowerShell command on this computer; nothing about it is
+  sent anywhere except that file's path when you copy its link.
+- On your computer, in `%APPDATA%\Hariku2`: `DropboxAccount` (the sign-in,
+  encrypted with Windows' Data Protection API so only your Windows account on
+  this computer can read it, and your Dropbox account's name, email and id),
+  `Dropbox` (what to announce) and `DropboxShared` (which shared files and
+  folders were already there, so only new ones are announced). The
+  short-lived access token is only kept in memory. Tokens are never written
+  to the log.
+- "Disconnect Dropbox" asks Dropbox to revoke the sign-in and deletes it and
+  `DropboxShared` from this computer.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
