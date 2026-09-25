@@ -1,3 +1,31 @@
+Versi 2.11.0 (Pembaruan Inti)
+================================================================================
+- Setiap ekstensi sekarang punya panduannya sendiri. Cara main Orbit, cara
+  memakai Dropbox, Kalkulator & Konversi, Timer & Alarm, dan lainnya dulu
+  ada di Panduan Pengguna Hariku; sekarang tiap panduan ikut bersama
+  ekstensinya dan ikut diperbarui bersamanya, dalam bahasa Inggris dan
+  Indonesia untuk setiap ekstensi resmi. Buka lewat Bantuan, Panduan
+  ekstensi... (daftar ekstensi terpasang yang punya panduan; Enter membuka
+  yang dipilih), lewat tombol Panduan yang baru di tab Terpasang pada
+  Pengelola Ekstensi, atau minta ke Aruna: "panduan orbit", "cara pakai
+  dropbox", "bantuan kalkulator", "guide for orbit", atau "how to use
+  dropbox". Kalau Aruna ragu ekstensi mana yang kamu maksud, dia bertanya
+  dulu. "orbit bantuan" tetap bantuan milik Orbit di dalam game.
+- Panduan terbuka sebagai halaman di browser web-mu, begitu juga Panduan
+  Pengguna (Bantuan, Panduan Pengguna). Dengan NVDA, halamannya dalam mode
+  jelajah: H dan Shift+H lompat dari judul ke judul, 1, 2, dan 3 menurut
+  tingkatnya, dan NVDA+F7 menampilkan semua judul. Kalau browser tidak bisa
+  dibuka, panduannya tampil sebagai teks di sebuah jendela.
+- Aruna mengerti kalimat yang tidak diawali kata tertentu. Kalkulator &
+  Konversi yang pertama memakainya: "25 x 4", "5 km ke mil", "2 foot in
+  inches", dan, tepat setelah sebuah jawaban, "tambah 5" langsung dijawab,
+  tanpa "berapa" atau "hitung" di depannya.
+- Untuk pembuat ekstensi: taruh panduanmu di docs/<bahasa>/guide.md (judul
+  # pertamanya adalah judul panduan) dan Hariku menemukannya; core.guides
+  membuka panduan dari kodemu. core.commands.add_intent menerima matcher
+  untuk kalimat tanpa kata tetap. Lihat DEVELOPERS.md.
+
+
 Versi 2.10.0 (Pembaruan Inti - 25 September 2026)
 ================================================================================
 - Sambutan baru. Saat Hariku pertama kali menyala, Hariku memperkenalkan diri

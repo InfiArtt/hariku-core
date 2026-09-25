@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 APP_NAME = "Hariku"
-CORE_VERSION = "2.10.0"
+CORE_VERSION = "2.11.0"
 
 # The oldest Hariku an extension can be made for and still run here: an
 # extension whose last_tested_core_version (or, without one, its

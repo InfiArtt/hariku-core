@@ -1,3 +1,30 @@
+Version 2.11.0 (Core Update)
+================================================================================
+- Every extension has its own guide now. How to play Orbit, how to use
+  Dropbox, the Calculator & Converter, Timer & Alarm and the others used to
+  be in Hariku's User Guide; now each guide comes with its extension and is
+  updated with it, in English and Indonesian for every official extension.
+  Open one from Help, Extension guides... (the installed extensions that
+  have a guide; Enter opens the one selected), with the new Guide button on
+  the Extension Manager's Installed tab, or by asking Aruna: "panduan orbit",
+  "cara pakai dropbox", "bantuan kalkulator", "guide for orbit" or "how to
+  use dropbox". When Aruna isn't sure which extension you mean, it asks
+  first. "orbit bantuan" is still Orbit's own help in the game.
+- A guide opens as a page in your web browser, and so does the User Guide
+  (Help, User Guide). With NVDA, the page is in browse mode: H and Shift+H
+  jump from heading to heading, 1, 2 and 3 go by level, and NVDA+F7 lists
+  every heading. If the browser can't be opened, the guide shows as text in
+  a window.
+- Aruna understands sentences that don't start with a fixed word. The
+  Calculator & Converter is the first to use it: "25 x 4", "5 km ke mil",
+  "2 foot in inches" and, right after an answer, "tambah 5" are answered as
+  they are, without "berapa" or "what's" in front.
+- For extension developers: put your guide in docs/<language>/guide.md (its
+  first # heading is its title) and Hariku finds it; core.guides opens
+  guides from your code. core.commands.add_intent takes a matcher for
+  sentences with no fixed words. See DEVELOPERS.md.
+
+
 Version 2.10.0 (Core Update - September 25, 2026)
 ================================================================================
 - A new welcome. The first time Hariku starts, it introduces itself as your
