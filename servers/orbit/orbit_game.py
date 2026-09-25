@@ -69,6 +69,7 @@ from orbit_pets import PetsMixin
 from orbit_progress import ProgressMixin
 from orbit_trade import TradeMixin
 from orbit_travel import TravelMixin
+from orbit_weddings import WeddingsMixin
 from orbit_work import WorkMixin
 
 logger = logging.getLogger("orbit.game")
@@ -146,12 +147,12 @@ class Session:
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-          PetsMixin, FamilyMixin, AdminMixin)
+          PetsMixin, FamilyMixin, WeddingsMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
            TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-           PetsMixin, FamilyMixin, AdminMixin):
+           PetsMixin, FamilyMixin, WeddingsMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -183,6 +184,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.init_crews()
         self.init_duels()
         self.init_family()
+        self.init_weddings()
         self.init_npcs()
 
     # ------------------------------------------------------------------ helpers
@@ -245,8 +247,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         and (for the client's footsteps and echo) its floor and acoustics."""
         lid = session.char["location"]
         loc = self.world.locations[lid]
-        return {"room": lid, "amb": loc["ambience"], "floor": loc.get("floor", "metal"),
-                "acoustics": loc.get("acoustics", "room")}
+        return {"room": lid, "amb": self.wedding_ambience(session, lid) or loc["ambience"],
+                "floor": loc.get("floor", "metal"), "acoustics": loc.get("acoustics", "room")}
 
     def _find_session(self, name):
         return self.sessions.get(orbit_safety.name_key(name))
@@ -452,6 +454,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             notes.append(self.render(lang, "farm_ripe_join", n=ripe))
         notes.extend(self.pet_join_notes(session))
         notes.extend(self.family_join_notes(session))
+        notes.extend(self.wedding_join_notes(session))
         if self.daily_ready(char) and not new:
             notes.append(self.render(lang, "daily_ready"))
         notes.extend(self.check_achievements(session, quiet=True))
@@ -588,6 +591,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             parts.append(self.render(lang, "look_alone"))
         if residents:
             parts.append(residents)
+        decor = self.wedding_decor(session)
+        if decor:
+            parts.append(decor)
         mark = self.hunt_mark(session)
         if mark:
             parts.append(mark)
@@ -825,6 +831,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 self._send(other, "emote", text=emote[other.lang]["they"].format(actor=actor),
                            extra=extra)
             self.companions_join_in(session, eid)
+            self.wedding_emote(session, eid)
             return
         self._send(session, "emote", text=emote[session.lang]["you_at"].format(target=target.name),
                    extra={"emote": eid})
@@ -1069,6 +1076,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         "pets": ("pets", "pet", "hewan", "peliharaan", "hewan peliharaan", "tricks", "trik"),
         "family": ("family", "keluarga", "partner", "partners", "pasangan", "children", "child", "anak", "adopt",
                    "adopsi", "baby", "bayi", "naming", "upacara nama"),
+        "weddings": ("weddings", "wedding", "pernikahan", "nikah", "menikah", "marry", "marriage", "lamaran",
+                     "lamar", "propose", "rings", "cincin", "venue", "venues"),
         "admin": ("admin",),
     }
 
@@ -1116,6 +1125,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_duels(now)
         self.tick_npcs(now)
         self.tick_family(now)
+        self.tick_weddings(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):

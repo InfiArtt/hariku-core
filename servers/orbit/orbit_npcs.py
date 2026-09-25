@@ -50,8 +50,8 @@ logger = logging.getLogger("orbit.game")
 LANGS = ("en", "id")
 NPC_DEFAULTS = {
     "walk_seconds": [8, 14],        # a step every so many seconds when walking to the next place
-    "idle_gap": [180, 420],         # seconds between one resident's idle lines
-    "room_gap": 120,                # at most one idle line a room in this many seconds
+    "idle_gap": [420, 900],         # seconds between one resident's idle lines
+    "room_gap": 300,                # at most one idle line a room in this many seconds
     "quiet_seconds": 90,            # none this soon after a player talked or gestured in the room
     "notice_seconds": 1800,         # a resident greets a player they know at most this often...
     "notice_chance": 0.5,           # ...and only now and then
@@ -733,7 +733,10 @@ class NpcsMixin:
             lines = [line for line in self.npc_defs[nid].get("idle", []) if line.get("room") in (None, room)]
             if not lines:
                 continue
+            if len(lines) > 1 and state.get("last_idle") in lines:
+                lines.remove(state["last_idle"])            # never the same line twice running
             line = self.npc_rng.choice(lines)
+            state["last_idle"] = line
             self.room_idle[room] = now
             words = {lang: line[lang] for lang in LANGS}
             if line["kind"] == "say":

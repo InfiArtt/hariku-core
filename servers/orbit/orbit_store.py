@@ -910,6 +910,16 @@ class Store:
                                tuple(statuses)).fetchall()
         return [self._wedding(row) for row in rows]
 
+    def celebrations(self, since, venue=None):
+        """Weddings under way, or done and still in their reception (it ends at `ends`) after `since`."""
+        where = "(status = 'ceremony' OR (status = 'done' AND ends > ?))"
+        args = (float(since),)
+        if venue is not None:
+            where += " AND venue = ?"
+            args += (venue,)
+        rows = self.db.execute(f"SELECT * FROM weddings WHERE {where} ORDER BY starts, id", args).fetchall()
+        return [self._wedding(row) for row in rows]
+
     def weddings_of_partnership(self, pid, statuses=None):
         if statuses:
             marks = ", ".join("?" for _s in statuses)

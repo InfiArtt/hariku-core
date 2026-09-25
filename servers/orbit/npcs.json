@@ -2,8 +2,8 @@
   "_note": "The station's residents (orbit_npcs.py): characters who are not players. Every line is in English and Indonesian, with the same number of variants and the same {placeholders} in both. Schedules are station time (UTC): [hour, room], a room of null meaning off duty. Topics may take live values (\"live\": a provider in orbit_npcs.py) and \"cases\" (other lines for what the provider found). \"min\" is the affinity a topic or favour needs. See README.md.",
   "rules": {
     "walk_seconds": [8, 14],
-    "idle_gap": [180, 420],
-    "room_gap": 120,
+    "idle_gap": [420, 900],
+    "room_gap": 300,
     "quiet_seconds": 90,
     "notice_seconds": 1800,
     "notice_chance": 0.5,

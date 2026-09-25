@@ -1445,6 +1445,60 @@
         }
       }
     },
+    "title_starlit": {
+      "type": "title",
+      "one": {"en": "title 'Bound by Starlight'", "id": "gelar 'Terikat Cahaya Bintang'"},
+      "many": {"en": "titles 'Bound by Starlight'", "id": "gelar 'Terikat Cahaya Bintang'"},
+      "names": {"en": ["bound by starlight", "title bound by starlight"], "id": ["terikat cahaya bintang", "gelar terikat cahaya bintang"]},
+      "desc": {
+        "en": "A title for those who joined their lights in the Starlight rite. Wear it to show it.",
+        "id": "Gelar untuk mereka yang menyatukan cahaya dalam upacara Cahaya Bintang. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Bound by Starlight", "id": "Terikat Cahaya Bintang"}}
+    },
+    "title_wedded": {
+      "type": "title",
+      "one": {"en": "title 'Life Partner'", "id": "gelar 'Teman Sehidup'"},
+      "many": {"en": "titles 'Life Partner'", "id": "gelar 'Teman Sehidup'"},
+      "names": {"en": ["life partner", "title life partner"], "id": ["teman sehidup", "gelar teman sehidup"]},
+      "desc": {
+        "en": "A title for those who signed the station's register together. Wear it to show it.",
+        "id": "Gelar untuk mereka yang bersama-sama menandatangani buku catatan stasiun. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Life Partner", "id": "Teman Sehidup"}}
+    },
+    "keepsake_lantern": {
+      "type": "furniture",
+      "one": {"en": "twin-light lantern", "id": "lentera cahaya kembar"},
+      "many": {"en": "twin-light lanterns", "id": "lentera cahaya kembar"},
+      "names": {"en": ["twin-light lantern", "twin lantern", "keepsake", "wedding keepsake"], "id": ["lentera cahaya kembar", "lentera kembar", "kenang-kenangan", "kenang-kenangan pernikahan"]},
+      "desc": {
+        "en": "A small paper lantern holding two flames that lean into one. A keepsake of your wedding: type read memory to read the memory of the day.",
+        "id": "Lentera kertas kecil berisi dua nyala api yang condong menjadi satu. Kenang-kenangan pernikahanmu: ketik baca kenangan untuk membaca kenangan hari itu."
+      },
+      "unique": true,
+      "pawn": false,
+      "effects": {"cabin": {"en": "A twin-light lantern glows on a shelf, its two flames leaning into one.", "id": "Lentera cahaya kembar menyala di rak, dua nyala apinya condong menjadi satu."}}
+    },
+    "keepsake_star": {
+      "type": "furniture",
+      "one": {"en": "silver keepsake star", "id": "bintang kenangan perak"},
+      "many": {"en": "silver keepsake stars", "id": "bintang kenangan perak"},
+      "names": {"en": ["silver keepsake star", "keepsake star", "keepsake", "wedding keepsake"], "id": ["bintang kenangan perak", "bintang kenangan", "kenang-kenangan", "kenang-kenangan pernikahan"]},
+      "desc": {
+        "en": "A small silver star engraved with two names and a date. A keepsake of your wedding: type read memory to read the memory of the day.",
+        "id": "Bintang perak kecil berukir dua nama dan sebuah tanggal. Kenang-kenangan pernikahanmu: ketik baca kenangan untuk membaca kenangan hari itu."
+      },
+      "unique": true,
+      "pawn": false,
+      "effects": {"cabin": {"en": "A silver keepsake star hangs by the window, engraved with two names.", "id": "Bintang kenangan perak tergantung di dekat jendela, berukir dua nama."}}
+    },
     "baby_porridge": {
       "type": "consumable",
       "one": {"en": "pot of baby porridge", "id": "mangkuk bubur bayi"},
@@ -1837,6 +1891,35 @@
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
+  "weddings": {
+    "_note": "Weddings (orbit_weddings.py). A tier's price is paid when booking; guests is how many may be invited; ambience: the celebration's sound for clients that have it; fireworks for the whole station. A hall takes one wedding each slot_minutes; a wedding lasts length_minutes (the reception at least ten minutes after the ceremony); book at least lead_minutes and at most ahead_days ahead. The ceremony waits wait_minutes for the couple (then it is missed: missed_refund back). Cancelling: refund [seconds before, share], the first that fits. A character marries again only after cooldown_days. Proposals wait ask_seconds; the ceremony waits for lanterns, the joined light, vows, a yes and signatures the given seconds.",
+    "tiers": {
+      "simple": {"price": 1000, "guests": 10},
+      "grand": {"price": 4000, "guests": 30, "ambience": true},
+      "luxurious": {"price": 10000, "guests": 60, "ambience": true, "fireworks": true}
+    },
+    "slot_minutes": 60,
+    "length_minutes": 45,
+    "lead_minutes": 10,
+    "ahead_days": 14,
+    "remind_minutes": 10,
+    "wait_minutes": 20,
+    "cooldown_days": 7,
+    "refund": [[86400, 1.0], [3600, 0.5]],
+    "missed_refund": 0.5,
+    "ask_seconds": 120,
+    "snub_seconds": 600,
+    "vow_limit": 300,
+    "vow_seconds": 180,
+    "lantern_seconds": 90,
+    "join_seconds": 60,
+    "consent_seconds": 180,
+    "sign_seconds": 180,
+    "flowers_seconds": 15,
+    "officiants": {"starlight": "sekar", "neutral": "safira"},
+    "titles": {"starlight": "title_starlit", "neutral": "title_wedded"},
+    "keepsakes": {"starlight": "keepsake_lantern", "neutral": "keepsake_star"}
+  },
   "family": {
     "_note": "Families (orbit_family.py). Proposals wait ask_seconds; a player declined waits snub_seconds before asking again, and partner_cooldown after a partnership ends. Adopting costs adopt_price (from adopt_level, at most max_children each, adopt_days apart). A child's needs fall by decay points an hour; care for a low need (below care_below) counts towards the next stage (care points and days). A happy child (stage 2) at your side adds xp_bonus to work XP, and fetches once a day from the fetch table (weights).",
     "ask_seconds": 120,

@@ -159,6 +159,18 @@ PHRASEBOOK = [
     ("anak", "id", "family"), ("children", "en", "family"), ("bacakan cerita untuk Mira", "id", "child"),
     ("read a story to Mira", "en", "child"), ("minta tolong Mira", "id", "child"), ("bawa Mira", "id", "child"),
     ("bring Mira", "en", "child"), ("upacara nama Mira", "id", "naming"), ("naming rite Mira", "en", "naming"),
+    # weddings (1.2)
+    ("lamar Budi", "id", "wedding"), ("propose to Budi", "en", "wedding"), ("pernikahan", "id", "wedding"),
+    ("my wedding", "en", "wedding"), ("pesan pernikahan paviliun megah netral 14:00", "id", "wedding"),
+    ("book wedding pavilion grand neutral 14:00", "en", "wedding"), ("batalkan pernikahan", "id", "wedding"),
+    ("cancel wedding", "en", "wedding"), ("jadwal pernikahan", "id", "wedding"), ("wedding schedule", "en", "wedding"),
+    ("undang Budi ke pernikahan", "id", "wedding"), ("invite Budi to the wedding", "en", "wedding"),
+    ("hadir", "id", "wedding"), ("rsvp yes", "en", "wedding"), ("tidak hadir", "id", "wedding"),
+    ("rsvp no", "en", "wedding"), ("undangan", "id", "wedding"), ("invitations", "en", "wedding"),
+    ("lempar bunga", "id", "wedding"), ("throw flowers", "en", "wedding"), ("ikrar aku berjanji", "id", "wedding"),
+    ("vow I promise", "en", "wedding"), ("satukan cahaya", "id", "wedding"), ("join the lights", "en", "wedding"),
+    ("ya", "id", "wedding"), ("yes", "en", "wedding"), ("tidak", "id", "wedding"), ("tanda tangan", "id", "wedding"),
+    ("sign", "en", "wedding"), ("baca kenangan", "id", "wedding"), ("read memory", "en", "wedding"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

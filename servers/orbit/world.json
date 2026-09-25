@@ -2198,6 +2198,7 @@
       "ambience": "mall",
       "exits": {"sw": "mall_east"},
       "shop": "jewels",
+      "wedding_desk": true,
       "floor": "carpet",
       "acoustics": "small",
       "hints": {

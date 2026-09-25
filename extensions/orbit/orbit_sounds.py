@@ -2063,6 +2063,74 @@ def baby():
     return mono_bytes(out, RATE, 0.24)
 
 
+def lanterns_join():
+    """Two lanterns' lights brought into one: two warm tones glide into one, and it blooms."""
+    out = _zeros(1.7)
+    n = int(1.2 * RATE)
+    for f0 in (392.0, 523.25):
+        phase = 0.0
+        tone = []
+        for i in range(n):
+            x = i / n
+            f = f0 + (440.0 - f0) * min(1.0, x * 1.4)
+            phase += TAU * f / RATE
+            tone.append((math.sin(phase) + 0.2 * math.sin(2 * phase)) * min(1.0, i / 2000.0) * (1.0 - 0.3 * x))
+        _put(out, 0.0, tone, 0.45)
+    _put(out, 0.85, _bell(880.0, 0.8, 3.5, partials=((1, 1.0), (2.0, 0.3), (3.0, 0.1))), 0.35)
+    return mono_bytes(_reverb(out, RATE, size=1.0, wet=0.4), RATE, 0.3, fade_out=0.3)
+
+
+def wedding_music():
+    """A short, gentle processional: a harp's arpeggios under a slow melody."""
+    out = _zeros(3.1)
+    harp = ((1, 1.0), (2.0, 0.35), (3.0, 0.12), (4.0, 0.05))
+    chords = ((261.63, 329.63, 392.0), (220.0, 261.63, 329.63), (174.61, 220.0, 261.63), (196.0, 246.94, 293.66))
+    for c, chord in enumerate(chords):
+        for k, note in enumerate(chord * 2):
+            _put(out, c * 0.72 + k * 0.12, _bell(note, 0.6, 3.4, partials=harp), 0.26)
+    melody = ((0.0, 659.25), (0.36, 783.99), (0.72, 880.0), (1.08, 783.99), (1.44, 698.46), (1.8, 659.25),
+              (2.16, 587.33), (2.52, 523.25))
+    for at, note in melody:
+        _put(out, at, _bell(note, 0.55, 2.6, partials=((1, 1.0), (2.0, 0.15))), 0.45)
+    return mono_bytes(_reverb(out, RATE, size=1.2, wet=0.4), RATE, 0.32, fade_out=0.4)
+
+
+def _petals():
+    """Petals falling: a soft patter of tiny, light touches (mixed with a recording in flowers)."""
+    rng = random.Random(SEED + 490)
+    return mono_bytes(_grains(rng, 0.6, 26, 3000, 7000, grain=0.001, env=lambda a: math.sin(math.pi * a)),
+                      RATE, 0.3)
+
+
+def amb_wedding():
+    """A celebration: a warm chord, a harp now and then, and a happy murmur all round."""
+    rng = random.Random(SEED + 40)
+    left, right = _small_blank()
+    rate = SMALL_LOOP_RATE
+    notes = (196.0, 247.0, 293.75, 392.0)            # whole cycles in the loop's 4 seconds
+    for i in range(len(left)):
+        t = i / rate
+        swell = 0.75 + 0.25 * math.sin(TAU * 0.25 * t)
+        left[i] = sum(math.sin(TAU * f * t) / (k + 1.5) for k, f in enumerate(notes)) * 0.09 * swell
+        right[i] = sum(math.sin(TAU * (f + 0.25) * t) / (k + 1.5) for k, f in enumerate(notes)) * 0.09 * swell
+    for voice in range(4):
+        filt = _SVF(3.0)
+        gl, gr = _pan(-0.8 + 0.53 * voice)
+        syllable, target, next_change = 0.0, 0.0, 0
+        for i in range(len(left)):
+            if i >= next_change:
+                target = rng.uniform(0.2, 0.7) if rng.random() < 0.6 else 0.0
+                next_change = i + int(rng.uniform(0.1, 0.3) * rate)
+            syllable += 0.005 * (target - syllable)
+            v = filt.band_pass(rng.uniform(-1, 1), 550 + 120 * voice, rate) * syllable * 0.35
+            left[i] += v * gl
+            right[i] += v * gr
+    for start, note, position in ((0.4, 587.33, -0.6), (1.6, 783.99, 0.5), (2.8, 659.25, -0.2)):
+        _add(left, right, start, _bell(note, 0.9, 3.0, rate=rate, partials=((1, 1.0), (2.0, 0.3))), position,
+             0.06, rate=rate)
+    return _small_wav(left, right, 0.38, equal_power=False)
+
+
 def pet_trick():
     """A pet shows off a trick: a quick sparkling rise and a little ta-da."""
     out = _zeros(0.8)
@@ -2251,6 +2319,10 @@ RECORDED.update({
                            ("interface-sounds/question_003.wav", 0.3, 0.8)]),
     "cargo.wav": (-6.0, [("impact-sounds/impactWood_heavy_000.wav", 0.0, 1.0),
                          ("impact-sounds/impactPlank_medium_001.wav", 0.25, 0.8)]),
+    # Orbit 1.2: a ring's box opening with a glint, and petals thrown at a wedding
+    "ring.wav": (-7.0, [("rpg-audio/bookOpen.wav", 0.0, 0.7), ("interface-sounds/glass_004.wav", 0.12, 0.9),
+                        ("interface-sounds/glass_002.wav", 0.45, 0.5)]),
+    "flowers.wav": (-9.0, [("rpg-audio/cloth1.wav", 0.0, 0.8), ("synth:_petals", 0.1, 0.6)]),
     "lottery_draw.wav": (-6.0, [("interface-sounds/bong_001.wav", 0.0, 1.0),
                                 ("interface-sounds/bong_001.wav", 0.28, 0.8),
                                 ("casino-audio/chips-handle-5.wav", 0.55, 0.8)]),
@@ -2353,7 +2425,8 @@ SOUNDS = (
        ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join), ("duel_start.wav", duel_start),
        ("npc_warm.wav", npc_warm), ("pet_fox.wav", pet_fox), ("pet_jelly.wav", pet_jelly),
        ("pet_minidrone.wav", pet_minidrone), ("pet_robocat.wav", pet_robocat), ("pet_trick.wav", pet_trick),
-       ("baby.wav", baby)]
+       ("baby.wav", baby), ("lanterns_join.wav", lanterns_join), ("wedding_music.wav", wedding_music),
+       ("amb_wedding.wav", amb_wedding)]
 )
 
 

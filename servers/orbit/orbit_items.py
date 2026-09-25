@@ -565,6 +565,8 @@ class ItemsMixin:
 
     def cmd_lantern(self, session, message):
         char, lang = session.char, session.lang
+        if self.wedding_lantern(session):
+            return                              # a lantern in the Starlight rite
         if not self._at_temple(session):
             return
         temple = self.econ.get("temple", {})

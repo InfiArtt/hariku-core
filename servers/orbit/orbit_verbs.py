@@ -294,6 +294,42 @@ VERBS = [
     (("upacara", "nama"), "naming"), (("upacara", "pemberian", "nama"), "naming"), (("naming", "rite"), "naming"),
     (("naming", "ceremony"), "naming"), (("name", "the", "baby"), "naming"), (("name", "baby"), "naming"),
     (("namai", "bayi"), "naming"), (("namai", "anak"), "naming"),
+    # weddings
+    (("lamar",), "propose"), (("melamar",), "propose"), (("propose", "to"), "propose"), (("propose",), "propose"),
+    (("pernikahan",), "wedding"), (("pernikahanku",), "wedding"), (("wedding",), "wedding"),
+    (("my", "wedding"), "wedding"), (("our", "wedding"), "wedding"),
+    (("pesan", "pernikahan"), "wedding_book"), (("pesan", "venue"), "wedding_book"), (("pesan", "aula"), "wedding_book"),
+    (("book", "wedding"), "wedding_book"), (("book", "a", "wedding"), "wedding_book"),
+    (("book", "the", "wedding"), "wedding_book"), (("book", "our", "wedding"), "wedding_book"),
+    (("book", "venue"), "wedding_book"),
+    (("batalkan", "pernikahan"), "wedding_cancel"), (("batal", "pernikahan"), "wedding_cancel"),
+    (("cancel", "wedding"), "wedding_cancel"), (("cancel", "the", "wedding"), "wedding_cancel"),
+    (("cancel", "our", "wedding"), "wedding_cancel"),
+    (("jadwal", "pernikahan"), "wedding_schedule"), (("wedding", "schedule"), "wedding_schedule"),
+    (("weddings",), "wedding_schedule"), (("daftar", "pernikahan"), "wedding_schedule"),
+    (("undangan",), "wedding_invitations"), (("undanganku",), "wedding_invitations"),
+    (("invitations",), "wedding_invitations"), (("my", "invitations"), "wedding_invitations"),
+    (("hadir",), "wedding_rsvp_yes"), (("rsvp", "yes"), "wedding_rsvp_yes"), (("aku", "datang"), "wedding_rsvp_yes"),
+    (("saya", "datang"), "wedding_rsvp_yes"), (("i'll", "come"), "wedding_rsvp_yes"), (("i", "will", "come"), "wedding_rsvp_yes"),
+    (("tidak", "hadir"), "wedding_rsvp_no"), (("rsvp", "no"), "wedding_rsvp_no"), (("tidak", "bisa", "hadir"), "wedding_rsvp_no"),
+    (("can't", "come"), "wedding_rsvp_no"), (("cannot", "come"), "wedding_rsvp_no"), (("i", "can't", "come"), "wedding_rsvp_no"),
+    (("lempar", "bunga"), "wedding_flowers"), (("tabur", "bunga"), "wedding_flowers"),
+    (("taburkan", "bunga"), "wedding_flowers"), (("throw", "flowers"), "wedding_flowers"),
+    (("throw", "petals"), "wedding_flowers"),
+    (("ikrar",), "wedding_vow"), (("janji",), "wedding_vow"), (("janjiku",), "wedding_vow"), (("vow",), "wedding_vow"),
+    (("my", "vow"), "wedding_vow"), (("my", "vow", "is"), "wedding_vow"),
+    (("satukan", "cahaya"), "wedding_join"), (("satukan", "lentera"), "wedding_join"),
+    (("join", "the", "lights"), "wedding_join"), (("join", "lights"), "wedding_join"),
+    (("join", "the", "lanterns"), "wedding_join"),
+    (("ya",), "wedding_yes"), (("yes",), "wedding_yes"), (("bersedia",), "wedding_yes"),
+    (("saya", "bersedia"), "wedding_yes"), (("aku", "bersedia"), "wedding_yes"),
+    (("tidak",), "wedding_no"), (("no",), "wedding_no"),
+    (("tanda", "tangan"), "wedding_sign"), (("tandatangani",), "wedding_sign"), (("tanda", "tangani"), "wedding_sign"),
+    (("sign",), "wedding_sign"), (("sign", "the", "register"), "wedding_sign"),
+    (("baca", "kenangan"), "wedding_memory"), (("kenangan",), "wedding_memory"), (("kenanganku",), "wedding_memory"),
+    (("read", "memory"), "wedding_memory"), (("read", "the", "memory"), "wedding_memory"),
+    (("read", "memories"), "wedding_memory"), (("memory",), "wedding_memory"), (("memories",), "wedding_memory"),
+    (("wedding", "memory"), "wedding_memory"),
     # trading (and anything waiting for a yes)
     (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
     (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
@@ -441,6 +477,8 @@ def parse(text, lang="en", find_direction=None):
             return {"c": "visit", "to": name}
         if meaning == "invite" and {"kru", "crew", "kruku"} & set(more.lower().split()):
             return {"c": "crew_invite", "to": name}          # "undang Budi ke kru"
+        if meaning == "invite" and WEDDING_WORDS & set(more.lower().strip(".,!?").split()):
+            return {"c": "wedding", "op": "invite", "to": name}     # "undang Budi ke pernikahan"
         return {"c": "invite", "op": "remove" if meaning == "uninvite" else "add", "to": name}
     if meaning == "pat":
         return {"c": "pet", "op": "pat"}
@@ -552,6 +590,14 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "child", "op": meaning[6:], "a": " ".join(words)}
     if meaning == "naming":
         return {"c": "naming", "a": rest}
+    if meaning == "propose":
+        return {"c": "wedding", "op": "propose", "to": rest}
+    if meaning == "wedding" or meaning.startswith("wedding_"):
+        op = "status" if meaning == "wedding" else meaning[8:]
+        message = {"c": "wedding", "op": op, "a": rest}
+        if op in ("rsvp_yes", "rsvp_no", "cancel"):
+            message["to"] = _word(text, tokens[used]).strip(_EDGE) if used < len(tokens) else ""
+        return message
     if meaning == "residents":
         return {"c": "residents"}
     if meaning == "ask":
@@ -566,6 +612,7 @@ def parse(text, lang="en", find_direction=None):
 
 
 ABOUT_WORDS = ("tentang", "soal", "mengenai", "perihal", "about", "regarding")
+WEDDING_WORDS = {"pernikahan", "pernikahanku", "pernikahan kami", "wedding", "nikah", "resepsi", "pesta"}
 TO_WORDS = ("ke", "pada", "kepada", "sama", "to")
 
 
