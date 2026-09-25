@@ -509,8 +509,10 @@ def join(game, name, job="pilot", lang="en", secret=None, ip_hash=None):
 
 
 def cmd(game, conn, c, **fields):
+    """The last thing the command said (an achievement it happened to earn aside)."""
     game.receive(conn, dict(t="cmd", c=c, **fields))
-    return conn.sent[-1] if conn.sent else None
+    said = [m for m in conn.sent if m.get("sound") != "achievement"]
+    return said[-1] if said else None
 
 
 def walk(game, conn, dest):

@@ -233,7 +233,8 @@ class EconomyMixin:
         if shop is not None:
             tid = self.world.find_thing(text)
             if tid in shop.get("stock", []):
-                n = self._count(message, high=20)
+                ticket = self.world.things[tid].get("service") == "ticket"
+                n = self._count(message, high=int(self.econ["casino"]["lottery"]["max_tickets"]) if ticket else 20)
                 if n is None:
                     self._error(session, "bad_number")
                     return
@@ -278,6 +279,9 @@ class EconomyMixin:
 
     def cmd_sell(self, session, message):
         char, lang = session.char, session.lang
+        if self._loc(char).get("pawn"):
+            self.pawn_sell(session, message)
+            return
         here = self.market_here(char)
         if here is None or not here[0]:
             self._market_where(session)
@@ -471,6 +475,7 @@ class EconomyMixin:
                     space -= 1
         if golden:
             got["golden_chilli"] = got.get("golden_chilli", 0) + golden
+            char["stats"]["golden"] = int(char["stats"].get("golden") or 0) + golden
         total = sum(got.values())
         for gid, n in got.items():
             self.give_thing(char, gid, n)
@@ -556,6 +561,8 @@ class EconomyMixin:
         n = min(n, self.bag_size(char) - self._goods_count(char))
         self.give_thing(char, ore, n)
         char["mined"] = int(char.get("mined") or 0) + n
+        if ore == "quantum":
+            char["stats"]["quantum"] = int(char["stats"].get("quantum") or 0) + n
         self._set_cooldown(char, "mine", float(mining["cooldown"][tier]))
         key_found = self._rare_key(char, float((mining.get("key_chance") or {}).get(spot, 0)))
         self._save(session)
@@ -626,6 +633,10 @@ class EconomyMixin:
                              harvested=char.get("harvested", 0), plots=self.plot_count(char),
                              bag=self.bag_size(char), known=known, total=total)]
         parts.extend(self.appearance(lang, char))
+        table = self.econ.get("achievements", {})
+        if table:
+            have = len([a for a in self.store.achievements_of(char["id"]) if a in table])
+            parts.append(self.render(lang, "profile_achievements", n=have, total=len(table)))
         voice = int(char.get("voice") or 0)
         parts.append(self.render(lang, "profile_voice_n", n=voice) if voice
                      else self.render(lang, "profile_voice_auto"))

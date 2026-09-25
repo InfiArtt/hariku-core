@@ -50,10 +50,13 @@ import orbit_lang
 import orbit_safety
 import orbit_verbs
 from orbit_admin import AdminMixin
+from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
 from orbit_items import ItemsMixin
 from orbit_lang import pick
 from orbit_nav import NavMixin
+from orbit_progress import ProgressMixin
+from orbit_trade import TradeMixin
 from orbit_work import WorkMixin
 
 logger = logging.getLogger("orbit.game")
@@ -111,6 +114,8 @@ class Session:
         self.invites = {}         # who may visit your cabin: name key -> until
         self.invisible = False    # an admin nobody sees
         self.away = False         # the player's window is hidden and they've been quiet
+        self.blackjack = None     # a hand at the casino's card table
+        self.earned = None        # the achievements they have (read when first needed)
         self.chat = orbit_safety.TokenBucket(config["chat_rate"], config["chat_burst"], clock)
         self.shout = orbit_safety.TokenBucket(1.0 / max(1, config["shout_seconds"]), 1, clock)
         self.econ = orbit_safety.TokenBucket(config["econ_rate"], config["econ_burst"], clock)
@@ -124,7 +129,11 @@ class Session:
         return self.char["name_key"]
 
 
-class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
+MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin, AdminMixin)
+
+
+class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
+           AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -144,6 +153,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
                 self.reserved.update(w for w in loc.get("aliases", {}).get(lang, []) if " " not in w)
         self.reserved.update(world.emotes)
         self.transfer_fails = {}          # address hash -> [times]: wrong transfer codes
+        self.offers = {}                  # name key -> the trade offered to them
+        self.challenges = {}              # name key -> the coin flip they're challenged to
+        self._lottery = None              # the lottery's state (meta "lottery"), when read
         self.init_economy()
 
     # ------------------------------------------------------------------ helpers
@@ -237,6 +249,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         if minutes < 120:
             return self.render(lang, "dur_minute" if minutes == 1 else "dur_minutes", n=minutes)
         hours = minutes / 60.0
+        if hours >= 48:
+            return self.render(lang, "dur_days", n=int(round(hours / 24)))
         return self.render(lang, "dur_hours", n=f"{hours:.1f}".rstrip("0").rstrip("."))
 
     def _save(self, session_or_char):
@@ -409,6 +423,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
             notes.append(self.render(lang, "farm_ripe_join", n=ripe))
         if self.daily_ready(char) and not new:
             notes.append(self.render(lang, "daily_ready"))
+        notes.extend(self.check_achievements(session, quiet=True))
         return [n for n in notes if n]
 
     def _refuse(self, conn, code, **params):
@@ -430,6 +445,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         self._save(session)
 
     def _remove(self, session, key="leave_quit"):
+        self.leave_casino(session)
+        self.forget_offers(session)
         self.sessions.pop(session.key, None)
         self._save(session)
         if not self._loc(session.char).get("private") and not session.invisible:
@@ -453,6 +470,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
             session.away = False              # any command: back from being away
         try:
             handler(self, session, message)
+            if self.sessions.get(session.key) is session:
+                self.check_achievements(session)
         except Exception:
             logger.exception("the command %r failed", command)
             self._error(session, "oops")
@@ -773,7 +792,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         if not have:
             self._error(session, "dont_have", thing=info["many"])
             return
-        if info["type"] not in ("good", "cargo") and not info.get("tradeable"):
+        if not self._tradeable(thing):
             self._error(session, "cant_give", thing=info["many"])
             return
         if have < n:
@@ -785,8 +804,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         if info.get("unique") and target.char["inventory"].get(thing):
             self._error(session, "they_have_one", name=target.name)
             return
-        self._take_away(char, thing, n)
-        target.char["inventory"][thing] = target.char["inventory"].get(thing, 0) + n
+        self._hand_over(char, target.char, (thing, n))
         self.store.save_all([char, target.char])
         self._send(target, "received", "give_thing_other", extra={"actor": session.name},
                    actor=session.name, things=self._count_of(thing, n))
@@ -874,7 +892,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
         "work": ("work", "kerja", "job", "jobs", "pekerjaan", "missions", "misi", "level"),
         "money": ("money", "uang", "kredit", "credits", "farm", "farming", "kebun", "tani", "mining",
                   "tambang", "harian", "daily", "market", "pasar", "dagang"),
-        "shops": ("shops", "shop", "toko", "belanja", "items", "barang", "alat", "things"),
+        "shops": ("shops", "shop", "toko", "belanja", "items", "barang", "alat", "things", "mall", "mal",
+                  "trade", "trading", "tukar", "dagang", "pawn", "loak"),
+        "casino": ("casino", "kasino", "judi", "gambling", "dadu", "dice", "slot", "slots", "blackjack",
+                   "lotre", "lottery", "undian"),
+        "progress": ("progress", "kemajuan", "prestasi", "achievements", "leaderboard", "leaderboards",
+                     "papan", "skor", "score", "scores"),
         "admin": ("admin",),
     }
 
@@ -884,7 +907,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
             if topic in words:
                 if name == "admin" and not self.is_admin(session):
                     break
-                self._send(session, "info", f"help_{name}")
+                casino = self.econ["casino"]
+                self._send(session, "info", f"help_{name}", low=casino["min_bet"], high=casino["max_bet"],
+                           limit=casino["hour_limit"])
                 return
         self._send(session, "info", "help")
 
@@ -902,24 +927,29 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
                     self._send(session, "flight", "flight_half")
                 if now >= float(flight.get("arrive", 0)):
                     self._settle_flight(session)
+                    self.check_achievements(session)
             self.tick_session(session, now)
             if session.conn is None and session.dropped_at is not None and \
                     now - session.dropped_at >= self.config["linkdead_seconds"]:
                 logger.info("%s left", session.name)
                 self._remove(session)
+        self.tick_offers(now)
+        self.tick_lottery(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):
-        """Everything that happens to one player as time passes (rides, air, crops)."""
+        """Everything that happens to one player as time passes (rides, air, crops, cards)."""
         self.tick_ride(session, now)
         self.tick_air(session, now)
         self.tick_farm(session, now)
         self.tick_invites(session, now)
+        self.tick_casino(session, now)
 
     def shutdown(self):
         """The server is stopping: say so, and save everyone."""
         for session in list(self.sessions.values()):
             self._send(session, "system", "server_restart")
+            self.leave_casino(session)
             self._save(session)
         self.market.save()
         self.save_economy()
@@ -936,7 +966,7 @@ def _collect_commands():
         "text": Game.cmd_text, "help": Game.cmd_help, "bye": Game.cmd_bye, "away": Game.cmd_away,
         "status": Game.cmd_status,
     }
-    for mixin in (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, AdminMixin):
+    for mixin in MIXINS:
         commands.update(mixin.commands())
     return commands
 

@@ -29,11 +29,13 @@ import logging
 import random
 import re
 
+import orbit_safety
 from orbit_lang import pick
 
 logger = logging.getLogger("orbit.game")
 
 REPAIR_MIN, REPAIR_MAX = 3, 6
+CARD_WORDS = {"card", "a card", "kartu", "cards", "another card", "kartu lagi"}
 
 
 class WorkMixin:
@@ -533,13 +535,12 @@ class WorkMixin:
         self._send(session, "mission", "mission_accepted", title=self._mission_title(mid),
                    where=self.world.locations[m["from"]]["in"])
 
-    def accept_pending(self, session):
-        """ "accept" with no number: an invitation or offer waiting for you (none yet)."""
-        return False
-
     def cmd_take(self, session, message):
         char = session.char
         text = self._arg(message, "item", 60) or self._arg(message)
+        if session.blackjack and orbit_safety.name_key(text) in CARD_WORDS:
+            self.cmd_hit(session, message)          # "ambil kartu" at the card table
+            return
         item = self.world.find_item(text)
         if item is None:
             if self.world.find_good(text):

@@ -22,15 +22,15 @@ salt made once for this server, so a leaked database can't be used to log in.
 Chat is never stored here.
 
 Other tables: companions (a pet, and later other companions, with its
-owners), transfer codes (only a hash, for 10 minutes), secrets that no
-longer work (moved to another computer, or revoked by an admin, so the old
-computer is told why), the transfers log, the admins' log, bans by address
-(a salted hash), and "meta" for server values (the market's prices, the
-economy's totals, the salt).
+owners), achievements, lottery tickets, transfer codes (only a hash, for 10
+minutes), secrets that no longer work (moved to another computer, or revoked
+by an admin, so the old computer is told why), the transfers log, the
+admins' log, bans by address (a salted hash), and "meta" for server values
+(the market's prices, the economy's totals, the lottery's pot, the salt).
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is
-saved next to it (orbit.db.before-v1.bak); columns and tables are only ever
+saved next to it (orbit.db.before-v2.bak); columns and tables are only ever
 added, never dropped.
 
 Everything is written at once (autocommit, or one transaction for things
@@ -50,7 +50,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -138,11 +138,32 @@ CREATE TABLE IF NOT EXISTS admin_log (
 );
 """
 
+# Version 2 (Orbit 1.1, the casino and achievements).
+V2_COLUMNS = (
+    ("casino_net", "INTEGER NOT NULL DEFAULT 0"),
+)
+V2_TABLES = """
+CREATE TABLE IF NOT EXISTS achievements (
+    char_id INTEGER NOT NULL,
+    achievement TEXT NOT NULL,
+    earned REAL NOT NULL,
+    PRIMARY KEY (char_id, achievement)
+);
+CREATE INDEX IF NOT EXISTS achievements_by_name ON achievements (achievement);
+CREATE TABLE IF NOT EXISTS lottery_tickets (
+    week TEXT NOT NULL,
+    char_id INTEGER NOT NULL,
+    tickets INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (week, char_id)
+);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
-FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS)
+FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
 JSON_FIELDS = ("inventory", "stats")
-INT_FIELDS = ("voice", "xp", "streak", "mined", "harvested")
+INT_FIELDS = ("voice", "xp", "streak", "mined", "harvested", "casino_net")
+BOARD_COLUMNS = ("credits", "xp", "mined", "harvested", "streak", "casino_net")
 
 
 class Character(dict):
@@ -202,6 +223,8 @@ class Store:
         with self.transaction():
             if version < 1:
                 self._migrate_1()
+            if version < 2:
+                self._migrate_2()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -243,6 +266,15 @@ class Store:
                     pass
             if xp:
                 self.db.execute("UPDATE characters SET xp = ? WHERE id = ? AND xp = 0", (xp, row["id"]))
+
+    def _migrate_2(self):
+        have = self._columns("characters")
+        for name, decl in V2_COLUMNS:
+            if name not in have:
+                self.db.execute(f"ALTER TABLE characters ADD COLUMN {name} {decl}")
+        for statement in V2_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
 
     @contextlib.contextmanager
     def transaction(self):
@@ -351,14 +383,14 @@ class Store:
         self.db.execute(
             "UPDATE characters SET job = ?, credits = ?, location = ?, description = ?, "
             "inventory = ?, stats = ?, banned = ?, muted_until = ?, last_seen = ?, voice = ?, "
-            "xp = ?, streak = ?, last_daily = ?, mined = ?, harvested = ? WHERE id = ?",
+            "xp = ?, streak = ?, last_daily = ?, mined = ?, harvested = ?, casino_net = ? WHERE id = ?",
             (char["job"], int(char["credits"]), char["location"], char["description"],
              json.dumps(char["inventory"], separators=(",", ":")),
              json.dumps(char["stats"], separators=(",", ":")),
              int(bool(char["banned"])), float(char["muted_until"]), char["last_seen"],
              int(char.get("voice") or 0), int(char.get("xp") or 0), int(char.get("streak") or 0),
              str(char.get("last_daily") or ""), int(char.get("mined") or 0),
-             int(char.get("harvested") or 0), char["id"]))
+             int(char.get("harvested") or 0), int(char.get("casino_net") or 0), char["id"]))
 
     def save_all(self, chars):
         """Several characters at once: all saved, or none (a trade)."""
@@ -375,25 +407,71 @@ class Store:
                               "WHERE banned = 0").fetchone()
         return int(row["total"]), int(row["n"]), int(row["top"])
 
-    def top(self, column, limit=5):
-        """[(name, value)] with the highest `column` (a leaderboard)."""
-        if column not in ("credits", "xp", "mined", "harvested", "streak"):
+    @staticmethod
+    def _without(exclude):
+        """(" AND name_key NOT IN (?, ?)", keys): characters left off a leaderboard."""
+        keys = sorted(exclude or ())
+        if not keys:
+            return "", ()
+        return f" AND name_key NOT IN ({', '.join('?' for _k in keys)})", tuple(keys)
+
+    def top(self, column, limit=5, exclude=()):
+        """[(name, value)] with the highest `column` (a leaderboard), leaving out
+        the characters whose name keys are in `exclude` (the admins)."""
+        if column not in BOARD_COLUMNS:
             raise ValueError(column)
-        rows = self.db.execute(f"SELECT name, {column} AS value FROM characters WHERE banned = 0 "
-                               f"ORDER BY {column} DESC, name_key LIMIT ?", (int(limit),)).fetchall()
+        skip, keys = self._without(exclude)
+        rows = self.db.execute(f"SELECT name, {column} AS value FROM characters WHERE banned = 0{skip} "
+                               f"ORDER BY {column} DESC, name_key LIMIT ?", keys + (int(limit),)).fetchall()
         return [(row["name"], int(row["value"])) for row in rows]
 
-    def rank_of(self, column, char_id):
+    def rank_of(self, column, char_id, exclude=()):
         """1 for the highest `column`, and so on."""
-        if column not in ("credits", "xp", "mined", "harvested", "streak"):
+        if column not in BOARD_COLUMNS:
             raise ValueError(column)
         row = self.db.execute(f"SELECT {column} AS value FROM characters WHERE id = ?",
                               (char_id,)).fetchone()
         if row is None:
             return None
+        skip, keys = self._without(exclude)
         higher = self.db.execute(f"SELECT COUNT(*) FROM characters WHERE banned = 0 AND "
-                                 f"{column} > ?", (row["value"],)).fetchone()[0]
+                                 f"{column} > ?{skip}", (row["value"],) + keys).fetchone()[0]
         return higher + 1
+
+    # --- achievements --------------------------------------------------------------------
+
+    def add_achievement(self, char_id, achievement):
+        """True when it's new for this character (and now kept)."""
+        cursor = self.db.execute("INSERT OR IGNORE INTO achievements (char_id, achievement, earned) "
+                                 "VALUES (?, ?, ?)", (char_id, achievement, self.clock()))
+        return cursor.rowcount == 1
+
+    def achievements_of(self, char_id):
+        rows = self.db.execute("SELECT achievement FROM achievements WHERE char_id = ? ORDER BY earned, rowid",
+                               (char_id,)).fetchall()
+        return [row["achievement"] for row in rows]
+
+    def achievement_count(self, achievement):
+        return self.db.execute("SELECT COUNT(*) FROM achievements WHERE achievement = ?",
+                               (achievement,)).fetchone()[0]
+
+    # --- the lottery -----------------------------------------------------------------------
+
+    def add_tickets(self, week, char_id, n):
+        self.db.execute("INSERT INTO lottery_tickets (week, char_id, tickets) VALUES (?, ?, ?) "
+                        "ON CONFLICT(week, char_id) DO UPDATE SET tickets = tickets + excluded.tickets",
+                        (week, char_id, int(n)))
+
+    def tickets(self, week, char_id):
+        row = self.db.execute("SELECT tickets FROM lottery_tickets WHERE week = ? AND char_id = ?",
+                              (week, char_id)).fetchone()
+        return int(row["tickets"]) if row else 0
+
+    def lottery_entries(self, week):
+        """[(char_id, tickets)] of a week's draw, in a fixed order."""
+        rows = self.db.execute("SELECT char_id, tickets FROM lottery_tickets WHERE week = ? AND tickets > 0 "
+                               "ORDER BY char_id", (week,)).fetchall()
+        return [(row["char_id"], int(row["tickets"])) for row in rows]
 
     # --- moving a character to another computer ---------------------------------------------
 

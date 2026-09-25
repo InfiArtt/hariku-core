@@ -66,6 +66,26 @@ PHRASEBOOK = [
     ("elus", "id", "pet"), ("pat", "en", "pet"), ("namai Kiki", "id", "pet"),
     ("ekonomi", "id", "admin"), ("economy", "en", "admin"), ("grant Budi 5", "en", "admin"),
     ("atur harga kopi 20", "id", "admin"), ("cabut akses Budi", "id", "admin"),
+    # the mall, the casino, trading, achievements (stage 2)
+    ("kasino", "id", "casino"), ("casino", "en", "casino"), ("dadu 50 tinggi", "id", "dice"),
+    ("dice 50 high", "en", "dice"), ("lempar dadu 20 tujuh", "id", "dice"), ("roll 20 low", "en", "dice"),
+    ("slot 20", "id", "slots"), ("main slot 20", "id", "slots"), ("slots 20", "en", "slots"),
+    ("blackjack 50", "id", "blackjack"), ("play blackjack 50", "en", "blackjack"),
+    ("tambah kartu", "id", "hit"), ("kartu lagi", "id", "hit"), ("hit", "en", "hit"), ("cukup", "id", "stand"),
+    ("stand", "en", "stand"), ("ambil kartu", "id", "take"),
+    ("tantang Budi 50", "id", "challenge"), ("challenge Budi 50", "en", "challenge"),
+    ("lotre", "id", "lottery"), ("lottery", "en", "lottery"), ("beli 5 tiket", "id", "buy"),
+    ("buy 5 tickets", "en", "buy"),
+    ("tawarkan Budi 3 besi untuk 200 kredit", "id", "offer"), ("offer Budi 3 iron for 200 credits", "en", "offer"),
+    ("tukar Budi senter dengan 2 platina", "id", "offer"),
+    ("terima", "id", "accept"), ("accept", "en", "accept"), ("terima tawaran", "id", "accept"),
+    ("tolak", "id", "decline"), ("decline", "en", "decline"), ("batalkan tawaran", "id", "cancel_offer"),
+    ("cancel offer", "en", "cancel_offer"),
+    ("prestasi", "id", "achievements"), ("achievements", "en", "achievements"),
+    ("prestasi Budi", "id", "achievements"),
+    ("papan skor", "id", "leaderboard"), ("papan skor penambang", "id", "leaderboard"),
+    ("leaderboard", "en", "leaderboard"), ("leaderboard miners", "en", "leaderboard"),
+    ("jual senter", "id", "sell"), ("sell headlamp", "en", "sell"),
 ]
 
 

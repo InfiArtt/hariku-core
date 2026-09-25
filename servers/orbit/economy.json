@@ -142,64 +142,26 @@
       "name": {"en": "Star Supply", "id": "Toko Bintang"},
       "stock": [
         "mapper",
-        "holomapper",
-        "scanner",
         "headlamp",
         "beacon",
-        "communicator",
-        "keycard_crew",
-        "keycard_tech",
-        "keycard_officer",
-        "eva_suit",
-        "oxygen_tank",
-        "drill_steel",
-        "drill_plasma",
-        "thruster",
-        "sprinkler",
-        "grow_lamp",
         "bag_big",
-        "bag_cargo",
-        "wrench",
-        "diagkit",
-        "navcomp",
-        "autopilot",
-        "terminal",
-        "ledger",
-        "microscope",
-        "spectrometer",
-        "bodyscanner",
-        "drone",
         "plot",
+        "kerupuk",
+        "iced_coffee",
         "seed_kangkung",
         "seed_chilli",
         "seed_tomato",
         "seed_strawberry",
         "seed_vanilla",
         "seed_dragonfruit",
-        "seed_moonmelon",
-        "lava_lamp",
-        "monstera",
-        "batik_rug",
-        "bookshelf",
-        "hammock",
-        "aquarium",
-        "sofa",
-        "star_projector",
-        "earth_hologram",
-        "bomber_jacket",
-        "batik_shirt",
-        "coveralls",
-        "star_cloak",
-        "gold_suit",
-        "title_coffee",
-        "title_explorer",
-        "title_golden",
-        "title_legend",
-        "robot_pet",
-        "cat_pet"
+        "seed_moonmelon"
       ]
     },
-    "bar": {"name": {"en": "the Cantina bar", "id": "bar Kantin"}, "stock": ["iced_coffee", "martabak", "kerupuk"]},
+    "bar": {
+      "name": {"en": "the Cantina bar", "id": "bar Kantin"},
+      "stock": ["iced_coffee", "martabak", "kerupuk"],
+      "fixed": true
+    },
     "seeds": {
       "name": {"en": "the seed rack", "id": "rak bibit"},
       "stock": [
@@ -211,8 +173,72 @@
         "seed_dragonfruit",
         "seed_moonmelon",
         "plot"
+      ],
+      "fixed": true
+    },
+    "gear": {
+      "name": {"en": "Gearworks", "id": "Gearworks"},
+      "stock": [
+        "mapper",
+        "headlamp",
+        "beacon",
+        "holomapper",
+        "scanner",
+        "communicator",
+        "keycard_crew",
+        "keycard_tech",
+        "keycard_officer",
+        "eva_suit",
+        "oxygen_tank",
+        "drill_steel",
+        "drill_plasma",
+        "thruster",
+        "sprinkler",
+        "grow_lamp",
+        "bag_cargo",
+        "wrench",
+        "diagkit",
+        "navcomp",
+        "autopilot",
+        "terminal",
+        "ledger",
+        "microscope",
+        "spectrometer",
+        "bodyscanner",
+        "drone"
       ]
-    }
+    },
+    "outfit": {
+      "name": {"en": "Orbit Outfitters", "id": "Butik Orbit"},
+      "stock": [
+        "bomber_jacket",
+        "batik_shirt",
+        "coveralls",
+        "star_cloak",
+        "gold_suit",
+        "title_coffee",
+        "title_explorer",
+        "title_golden",
+        "title_legend"
+      ]
+    },
+    "furniture": {
+      "name": {"en": "Cosy Corner", "id": "Pojok Nyaman"},
+      "stock": [
+        "lava_lamp",
+        "monstera",
+        "batik_rug",
+        "bookshelf",
+        "hammock",
+        "aquarium",
+        "sofa",
+        "star_projector",
+        "earth_hologram"
+      ]
+    },
+    "pets": {"name": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"}, "stock": ["robot_pet", "cat_pet"]},
+    "food": {"name": {"en": "the Food Court", "id": "Pujasera"}, "stock": ["iced_coffee", "martabak", "kerupuk"]},
+    "casino": {"name": {"en": "the lottery booth", "id": "loket lotre"}, "stock": ["lottery_ticket"], "fixed": true}
   },
   "things": {
     "compass": {
@@ -225,7 +251,8 @@
         "id": "Kompas saku kuningan yang juga tahu kamu sedang di dek mana. Ketik kompas kapan saja."
       },
       "unique": true,
-      "effects": {"compass": true}
+      "effects": {"compass": true},
+      "pawn": false
     },
     "mapper": {
       "type": "gear",
@@ -327,7 +354,8 @@
       },
       "price": 100,
       "unique": true,
-      "effects": {"access": ["crew"]}
+      "effects": {"access": ["crew"]},
+      "pawn": false
     },
     "keycard_tech": {
       "type": "gear",
@@ -344,7 +372,8 @@
       "price": 1500,
       "unique": true,
       "level": 3,
-      "effects": {"access": ["crew", "tech"]}
+      "effects": {"access": ["crew", "tech"]},
+      "pawn": false
     },
     "keycard_officer": {
       "type": "gear",
@@ -358,7 +387,8 @@
       "price": 5000,
       "unique": true,
       "level": 6,
-      "effects": {"access": ["crew", "tech", "officer"]}
+      "effects": {"access": ["crew", "tech", "officer"]},
+      "pawn": false
     },
     "brass_key": {
       "type": "gear",
@@ -1196,7 +1226,328 @@
           }
         }
       }
+    },
+    "lottery_ticket": {
+      "type": "service",
+      "one": {"en": "lottery ticket", "id": "tiket lotre"},
+      "many": {"en": "lottery tickets", "id": "tiket lotre"},
+      "names": {
+        "en": ["lottery ticket", "ticket", "tickets", "lottery tickets"],
+        "id": ["tiket lotre", "tiket", "karcis", "karcis lotre"]
+      },
+      "desc": {
+        "en": "A ticket for this week's draw. The more you hold, the better your chance; the pot is four fifths of all tickets sold.",
+        "id": "Tiket untuk undian minggu ini. Makin banyak, makin besar peluangmu; hadiahnya empat perlima dari semua tiket yang terjual."
+      },
+      "price": 10,
+      "service": "ticket"
+    },
+    "title_cartographer": {
+      "type": "title",
+      "one": {"en": "title 'Cartographer'", "id": "gelar 'Kartografer'"},
+      "many": {"en": "titles 'Cartographer'", "id": "gelar 'Kartografer'"},
+      "names": {"en": ["cartographer", "title cartographer"], "id": ["kartografer", "gelar kartografer"]},
+      "desc": {
+        "en": "A title: 'Cartographer'. Earned by walking every public room of the station. Wear it to show it.",
+        "id": "Gelar: 'Kartografer'. Didapat dengan menjelajahi setiap ruangan umum stasiun. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Cartographer", "id": "Kartografer"}}
+    },
+    "title_green": {
+      "type": "title",
+      "one": {"en": "title 'Green Thumb'", "id": "gelar 'Tangan Dingin'"},
+      "many": {"en": "titles 'Green Thumb'", "id": "gelar 'Tangan Dingin'"},
+      "names": {"en": ["green thumb", "title green thumb"], "id": ["tangan dingin", "gelar tangan dingin"]},
+      "desc": {
+        "en": "A title: 'Green Thumb'. Earned by harvesting 500 crops. Wear it to show it.",
+        "id": "Gelar: 'Tangan Dingin'. Didapat dengan memanen 500 hasil kebun. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Green Thumb", "id": "Tangan Dingin"}}
+    },
+    "title_digger": {
+      "type": "title",
+      "one": {"en": "title 'Deep Digger'", "id": "gelar 'Penggali Ulung'"},
+      "many": {"en": "titles 'Deep Digger'", "id": "gelar 'Penggali Ulung'"},
+      "names": {"en": ["deep digger", "title deep digger"], "id": ["penggali ulung", "gelar penggali ulung"]},
+      "desc": {
+        "en": "A title: 'Deep Digger'. Earned by mining 500 lumps of ore. Wear it to show it.",
+        "id": "Gelar: 'Penggali Ulung'. Didapat dengan menambang 500 bongkah bijih. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Deep Digger", "id": "Penggali Ulung"}}
+    },
+    "title_tycoon": {
+      "type": "title",
+      "one": {"en": "title 'Tycoon'", "id": "gelar 'Juragan'"},
+      "many": {"en": "titles 'Tycoon'", "id": "gelar 'Juragan'"},
+      "names": {"en": ["tycoon", "title tycoon"], "id": ["juragan", "gelar juragan"]},
+      "desc": {
+        "en": "A title: 'Tycoon'. Earned by holding 100,000 credits at once. Wear it to show it.",
+        "id": "Gelar: 'Juragan'. Didapat dengan memegang 100.000 kredit sekaligus. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Tycoon", "id": "Juragan"}}
+    },
+    "title_lucky": {
+      "type": "title",
+      "one": {"en": "title 'Lucky Star'", "id": "gelar 'Bintang Hoki'"},
+      "many": {"en": "titles 'Lucky Star'", "id": "gelar 'Bintang Hoki'"},
+      "names": {"en": ["lucky star", "title lucky star"], "id": ["bintang hoki", "gelar bintang hoki"]},
+      "desc": {
+        "en": "A title: 'Lucky Star'. Earned by winning the weekly lottery. Wear it to show it.",
+        "id": "Gelar: 'Bintang Hoki'. Didapat dengan memenangkan lotre mingguan. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Lucky Star", "id": "Bintang Hoki"}}
     }
   },
-  "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10}
+  "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
+  "prices": {
+    "wobble": 0.1,
+    "special": 0.2,
+    "_note": "Shop prices move up to this much either way each day, and one thing in each shop is this much cheaper (today's special); fixed shops don't."
+  },
+  "pawn": {"rate": 0.4},
+  "trading": {"seconds": 120},
+  "casino": {
+    "min_bet": 5,
+    "max_bet": 500,
+    "hour_limit": 5000,
+    "cooldown": 3,
+    "big_win": 1000,
+    "dice": {"high_low": 2.3, "seven": 5.5},
+    "slots": {
+      "symbols": {"star": 8, "moon": 6, "comet": 4, "planet": 3, "rocket": 2, "orbit": 1},
+      "three": {"star": 3, "moon": 7, "comet": 14, "planet": 25, "rocket": 50, "orbit": 200},
+      "two": {"orbit": 6, "rocket": 2},
+      "pair": 1.0
+    },
+    "blackjack": {"win": 2.0, "natural": 2.5, "dealer_stands": 17, "seconds": 60},
+    "coinflip": {"fee": 0.05, "seconds": 60, "min": 10, "max": 1000},
+    "lottery": {"price": 10, "max_tickets": 50, "house": 0.2, "weekday": 6, "hour": 12}
+  },
+  "achievements": {
+    "first_steps": {
+      "en": "Finding Your Feet",
+      "id": "Mulai Melangkah",
+      "stat": "rooms",
+      "at": 10,
+      "credits": 25,
+      "desc": {"en": "visit 10 rooms", "id": "datangi 10 ruangan"}
+    },
+    "cartographer": {
+      "en": "Cartographer",
+      "id": "Kartografer",
+      "stat": "rooms",
+      "at": "all",
+      "credits": 300,
+      "thing": "title_cartographer",
+      "station": true,
+      "desc": {"en": "visit every public room", "id": "datangi setiap ruangan umum"}
+    },
+    "hard_worker": {
+      "en": "Hard Worker",
+      "id": "Pekerja Keras",
+      "stat": "shifts",
+      "at": 25,
+      "credits": 100,
+      "desc": {"en": "work 25 shifts", "id": "kerja 25 shift"}
+    },
+    "tireless": {
+      "en": "Tireless",
+      "id": "Tak Kenal Lelah",
+      "stat": "shifts",
+      "at": 250,
+      "credits": 500,
+      "station": true,
+      "desc": {"en": "work 250 shifts", "id": "kerja 250 shift"}
+    },
+    "helping_hand": {
+      "en": "Helping Hand",
+      "id": "Ringan Tangan",
+      "stat": "missions",
+      "at": 10,
+      "credits": 100,
+      "desc": {"en": "complete 10 missions", "id": "selesaikan 10 misi"}
+    },
+    "level_5": {
+      "en": "Getting There",
+      "id": "Mulai Mahir",
+      "stat": "level",
+      "at": 5,
+      "credits": 100,
+      "desc": {"en": "reach level 5", "id": "capai level 5"}
+    },
+    "level_10": {
+      "en": "Chief",
+      "id": "Kepala",
+      "stat": "level",
+      "at": 10,
+      "credits": 300,
+      "station": true,
+      "desc": {"en": "reach level 10", "id": "capai level 10"}
+    },
+    "level_20": {
+      "en": "Living Legend",
+      "id": "Legenda Hidup",
+      "stat": "level",
+      "at": 20,
+      "credits": 2000,
+      "station": true,
+      "desc": {"en": "reach level 20", "id": "capai level 20"}
+    },
+    "first_harvest": {
+      "en": "First Harvest",
+      "id": "Panen Perdana",
+      "stat": "harvested",
+      "at": 1,
+      "credits": 20,
+      "desc": {"en": "harvest a crop", "id": "memanen hasil kebun"}
+    },
+    "green_thumb": {
+      "en": "Green Thumb",
+      "id": "Tangan Dingin",
+      "stat": "harvested",
+      "at": 500,
+      "credits": 400,
+      "thing": "title_green",
+      "station": true,
+      "desc": {"en": "harvest 500 crops", "id": "memanen 500 hasil kebun"}
+    },
+    "golden_luck": {
+      "en": "Golden Luck",
+      "id": "Hoki Emas",
+      "stat": "golden",
+      "at": 1,
+      "credits": 50,
+      "desc": {"en": "find a golden chilli", "id": "menemukan cabai emas"}
+    },
+    "rockhound": {
+      "en": "Rockhound",
+      "id": "Pemburu Batu",
+      "stat": "mined",
+      "at": 1,
+      "credits": 20,
+      "desc": {"en": "mine a lump of ore", "id": "menambang sebongkah bijih"}
+    },
+    "deep_digger": {
+      "en": "Deep Digger",
+      "id": "Penggali Ulung",
+      "stat": "mined",
+      "at": 500,
+      "credits": 400,
+      "thing": "title_digger",
+      "station": true,
+      "desc": {"en": "mine 500 lumps of ore", "id": "menambang 500 bongkah bijih"}
+    },
+    "quantum_leap": {
+      "en": "Quantum Leap",
+      "id": "Lompatan Kuantum",
+      "stat": "quantum",
+      "at": 1,
+      "credits": 200,
+      "station": true,
+      "desc": {"en": "find a quantum crystal", "id": "menemukan kristal kuantum"}
+    },
+    "regular": {
+      "en": "Regular",
+      "id": "Pelanggan Setia",
+      "stat": "streak",
+      "at": 7,
+      "credits": 100,
+      "desc": {"en": "claim the daily bonus 7 days in a row", "id": "ambil bonus harian 7 hari berturut-turut"}
+    },
+    "resident": {
+      "en": "Resident",
+      "id": "Warga Tetap",
+      "stat": "streak",
+      "at": 30,
+      "credits": 1000,
+      "station": true,
+      "desc": {"en": "claim the daily bonus 30 days in a row", "id": "ambil bonus harian 30 hari berturut-turut"}
+    },
+    "home_sweet_home": {
+      "en": "Home Sweet Home",
+      "id": "Rumahku Istanaku",
+      "stat": "furniture",
+      "at": 5,
+      "credits": 100,
+      "desc": {"en": "own 5 pieces of furniture", "id": "punya 5 perabot"}
+    },
+    "well_off": {
+      "en": "Well Off",
+      "id": "Berkecukupan",
+      "stat": "credits",
+      "at": 10000,
+      "credits": 0,
+      "station": true,
+      "desc": {"en": "hold 10,000 credits", "id": "memegang 10.000 kredit"}
+    },
+    "tycoon": {
+      "en": "Tycoon",
+      "id": "Juragan",
+      "stat": "credits",
+      "at": 100000,
+      "credits": 0,
+      "thing": "title_tycoon",
+      "station": true,
+      "desc": {"en": "hold 100,000 credits", "id": "memegang 100.000 kredit"}
+    },
+    "time_traveller": {
+      "en": "Time Traveller",
+      "id": "Penjelajah Waktu",
+      "stat": "capsule",
+      "at": 1,
+      "credits": 0,
+      "station": true,
+      "desc": {"en": "open the time capsule", "id": "membuka kapsul waktu"}
+    },
+    "natural": {
+      "en": "Natural",
+      "id": "Blackjack Alami",
+      "stat": "naturals",
+      "at": 1,
+      "credits": 25,
+      "desc": {"en": "get a blackjack in your first two cards", "id": "dapat blackjack dari dua kartu pertama"}
+    },
+    "jackpot": {
+      "en": "Jackpot!",
+      "id": "Jackpot!",
+      "stat": "jackpots",
+      "at": 1,
+      "credits": 0,
+      "station": true,
+      "desc": {"en": "hit the Orbit jackpot on a slot machine", "id": "kena jackpot Orbit di mesin slot"}
+    },
+    "lucky_draw": {
+      "en": "Lucky Draw",
+      "id": "Undian Beruntung",
+      "stat": "lotteries",
+      "at": 1,
+      "credits": 0,
+      "thing": "title_lucky",
+      "station": true,
+      "desc": {"en": "win the weekly lottery", "id": "memenangkan lotre mingguan"}
+    },
+    "handshake": {
+      "en": "Handshake",
+      "id": "Jabat Tangan",
+      "stat": "trades",
+      "at": 1,
+      "credits": 25,
+      "desc": {"en": "trade with another player", "id": "berdagang dengan pemain lain"}
+    }
+  }
 }

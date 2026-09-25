@@ -22,6 +22,9 @@ every client can use them:
     parse("arah ke kantin")       -> {"c": "way", "a": "kantin"}
     parse("tanam 2 tomat")        -> {"c": "plant", "item": "tomat", "n": 2}
     parse("naik kancil")          -> {"c": "board"}
+    parse("dadu 50 tinggi")       -> {"c": "dice", "a": "tinggi", "n": 50}
+    parse("tawarkan Budi 3 besi untuk 200 kredit")
+                                  -> {"c": "offer", "to": "Budi", "a": "3 besi untuk 200 kredit"}
     parse("beri kredit Budi 50")  -> {"c": "admin", "op": "grant", "to": "Budi", "n": 50}
 
 `find_direction(word, lang)` comes from the world (its direction words), so
@@ -111,6 +114,47 @@ VERBS = [
     (("dig",), "mine"),
     (("kumpulkan",), "collect"), (("collect",), "collect"), (("salvage",), "collect"),
     (("pulung",), "collect"), (("memulung",), "collect"), (("kais",), "collect"),
+    # the casino
+    (("kasino",), "casino"), (("casino",), "casino"), (("menu", "kasino"), "casino"),
+    (("casino", "menu"), "casino"),
+    (("dadu",), "dice"), (("lempar", "dadu"), "dice"), (("main", "dadu"), "dice"), (("kocok", "dadu"), "dice"),
+    (("dice",), "dice"), (("roll",), "dice"), (("roll", "dice"), "dice"), (("roll", "the", "dice"), "dice"),
+    (("play", "dice"), "dice"),
+    (("slot",), "slots"), (("slots",), "slots"), (("main", "slot"), "slots"), (("mesin", "slot"), "slots"),
+    (("putar", "slot"), "slots"), (("play", "slots"), "slots"), (("play", "the", "slots"), "slots"),
+    (("spin",), "slots"), (("slot", "machine"), "slots"),
+    (("blackjack",), "blackjack"), (("main", "blackjack"), "blackjack"), (("play", "blackjack"), "blackjack"),
+    (("bj",), "blackjack"), (("main", "kartu"), "blackjack"),
+    (("hit",), "hit"), (("hit", "me"), "hit"), (("tambah", "kartu"), "hit"), (("kartu", "lagi"), "hit"),
+    (("minta", "kartu"), "hit"), (("another", "card"), "hit"), (("one", "more", "card"), "hit"),
+    (("stand",), "stand"), (("cukup",), "stand"), (("sudah", "cukup"), "stand"),
+    (("i", "stand"), "stand"),
+    (("tantang",), "challenge"), (("challenge",), "challenge"), (("lempar", "koin"), "challenge"),
+    (("coinflip",), "challenge"), (("coin", "flip"), "challenge"), (("flip", "a", "coin"), "challenge"),
+    (("adu", "koin"), "challenge"),
+    (("lotre",), "lottery"), (("lottery",), "lottery"), (("undian",), "lottery"), (("lotere",), "lottery"),
+    (("lotre", "mingguan"), "lottery"), (("weekly", "lottery"), "lottery"),
+    # trading (and anything waiting for a yes)
+    (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
+    (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
+    (("tawarkan",), "offer"), (("tawari",), "offer"), (("offer",), "offer"), (("tukar",), "offer"),
+    (("trade",), "offer"), (("barter",), "offer"),
+    (("tolak",), "decline"), (("decline",), "decline"), (("refuse",), "decline"), (("reject",), "decline"),
+    (("menolak",), "decline"), (("tolak", "tawaran"), "decline"), (("decline", "offer"), "decline"),
+    (("tolak", "tantangan"), "decline"),
+    (("batalkan", "tawaran"), "cancel_offer"), (("batal", "tawaran"), "cancel_offer"),
+    (("tarik", "tawaran"), "cancel_offer"), (("cancel", "offer"), "cancel_offer"),
+    (("withdraw", "offer"), "cancel_offer"), (("cancel", "challenge"), "cancel_offer"),
+    (("batalkan", "tantangan"), "cancel_offer"), (("batal", "tantangan"), "cancel_offer"),
+    # achievements, leaderboards
+    (("prestasi",), "achievements"), (("prestasiku",), "achievements"), (("pencapaian",), "achievements"),
+    (("achievements",), "achievements"), (("achievement",), "achievements"),
+    (("my", "achievements"), "achievements"), (("badges",), "achievements"), (("lencana",), "achievements"),
+    (("papan", "skor"), "leaderboard"), (("papan", "peringkat"), "leaderboard"),
+    (("peringkat", "teratas"), "leaderboard"), (("klasemen",), "leaderboard"),
+    (("leaderboard",), "leaderboard"), (("leaderboards",), "leaderboard"), (("scoreboard",), "leaderboard"),
+    (("high", "scores"), "leaderboard"), (("top", "players"), "leaderboard"), (("top",), "leaderboard"),
+    (("lihat", "papan", "skor"), "leaderboard"), (("skor",), "leaderboard"),
     # help, the status
     (("bantuan",), "help"), (("help",), "help"),
     (("status",), "status"), (("status", "orbit"), "status"), (("orbit", "status"), "status"),
@@ -216,7 +260,8 @@ def parse(text, lang="en", find_direction=None):
             return {"c": "compass"}
         return {"c": "way", "a": rest}
     if meaning in ("map", "where", "compass", "scan", "board", "daily", "rank", "harvest", "water",
-                   "farm", "mine", "collect", "transfer", "friends", "status"):
+                   "farm", "mine", "collect", "transfer", "friends", "status", "casino", "hit", "stand",
+                   "lottery", "decline", "cancel_offer"):
         if meaning == "board" and used == 1 and words[0] == "naik" and rest:
             return None
         return {"c": meaning}
@@ -263,6 +308,31 @@ def parse(text, lang="en", find_direction=None):
         return message
     if meaning == "help":
         return {"c": "help", "a": rest}
+    if meaning in ("dice", "slots", "blackjack"):
+        choice, n = _thing_and_count(tokens, used)
+        message = {"c": meaning}
+        if choice and meaning == "dice":
+            message["a"] = choice
+        if n is not None:
+            message["n"] = n
+        return message
+    if meaning == "challenge":
+        name, _more = _name_and_rest(text, tokens, used)
+        message = {"c": "challenge", "to": name}
+        numbers = [_number(t[2]) for t in tokens[used + 1:] if _number(t[2]) is not None]
+        if numbers:
+            message["n"] = numbers[0]
+        return message
+    if meaning == "accept":
+        numbers = [_number(t[2]) for t in tokens[used:] if _number(t[2]) is not None]
+        return {"c": "accept", "n": numbers[0]} if numbers else {"c": "accept"}
+    if meaning == "offer":
+        name, more = _name_and_rest(text, tokens, used)
+        return {"c": "offer", "to": name, "a": more}
+    if meaning == "achievements":
+        return {"c": "achievements", "to": _word(text, tokens[used]) if used < len(tokens) else ""}
+    if meaning == "leaderboard":
+        return {"c": "leaderboard", "a": rest}
     if meaning in ADMIN_OPS:
         return _admin(meaning, text, tokens, used)
     return None

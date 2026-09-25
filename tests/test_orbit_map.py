@@ -430,28 +430,67 @@ def test_cabin_guests_by_invitation(make_game):
 def test_the_shop_sells_things_with_levels_and_limits(make_game):
     game = make_game()
     ani = join(game, "Ani")
+    char = game.sessions["ani"].char
     assert cmd(game, ani, "list")["text"].startswith("There's no shop here.")
     walk(game, ani, "shop")
     groups = cmd(game, ani, "list")["text"]
-    assert groups.startswith("Star Supply sells devices (11), tools (18), seeds (7), furniture (9), clothes (5)")
+    assert groups.startswith("Star Supply sells devices (3), tools (2), food (2) and seeds (7).")
     devices = cmd(game, ani, "list", a="perangkat")["text"]
-    assert "pocket mapper, 250" in devices and "holo mapper, 1200 (level 4)" in devices
-    assert cmd(game, ani, "buy", item="holo mapper")["text"] == "holo mapper needs level 4. Type rank to see yours."
+    mapper = game.price_of(char, "mapper", "general")
+    assert f"pocket mapper, {mapper}" in devices and "holo mapper" not in devices
+    headlamp = game.price_of(char, "headlamp", "general")
+    char["credits"] = 1000
     bought = cmd(game, ani, "buy", item="headlamp")
-    assert bought["text"] == "You buy 1 headlamp for 120 credits, and put it on. You have -20 left." or \
-        bought["text"] == "That costs 120 credits, and you have 100."
-    game.sessions["ani"].char["credits"] = 1000
-    bought = cmd(game, ani, "buy", item="headlamp")
-    assert bought["text"] == "You buy 1 headlamp for 120 credits, and put it on. You have 880 left."
-    assert game.sessions["ani"].char["stats"]["worn"] == {"head": "headlamp"}
+    assert bought["text"] == f"You buy 1 headlamp for {headlamp} credits, and put it on. You have {1000 - headlamp} left."
+    assert char["stats"]["worn"] == {"head": "headlamp"}
     assert cmd(game, ani, "buy", item="headlamp")["text"] == "You already have one: headlamp."
-    assert "headlamp, 120 (you have it)" in cmd(game, ani, "list", a="devices")["text"]
+    assert f"headlamp, {headlamp} (you have it)" in cmd(game, ani, "list", a="devices")["text"]
     assert cmd(game, ani, "buy", item="plot")["text"].startswith("You buy one more plot in Hydroponics for 150")
     assert cmd(game, ani, "buy", item="plot")["text"].startswith("You buy one more plot in Hydroponics for 250")
+    walk(game, ani, "gear_shop")
+    gear = cmd(game, ani, "list")["text"]
+    assert gear.startswith("Gearworks sells devices (")
+    assert cmd(game, ani, "buy", item="holo mapper")["text"] == "holo mapper needs level 4. Type rank to see yours."
+    holo = game.price_of(char, "holomapper", "gear")
+    assert f"holo mapper, {holo}" in cmd(game, ani, "list", a="devices")["text"]
     examine = cmd(game, ani, "look", a="scanner")["text"]
-    assert examine.startswith("Sweeps the rooms around you") and examine.endswith("Price here: 400 credits.")
+    assert examine.startswith("Sweeps the rooms around you")
+    assert examine.endswith(f"Price here: {game.price_of(char, 'scanner', 'gear')} credits.")
     walk(game, ani, "promenade")
     assert cmd(game, ani, "buy", item="mapper")["text"] == "pocket mappers are sold at Star Supply."
+
+
+def test_prices_move_a_little_each_day_and_each_shop_has_a_special(make_game, clock):
+    game = make_game()
+    ani = join(game, "Ani")
+    char = game.sessions["ani"].char
+    rules = game.econ["prices"]
+    seen = {}
+    for _day in range(6):
+        for sid, shop in game.world.shops.items():
+            special = game.special_of(sid)
+            for tid in shop["stock"]:
+                base = int(game.world.things[tid].get("price") or 0)
+                price = game.price_of(char, tid, sid)
+                if shop.get("fixed") or game.world.things[tid].get("service"):
+                    assert tid == "plot" or price == base, (sid, tid)
+                    continue
+                cut = rules["special"] if tid == special else 0
+                low = base * (1 - rules["wobble"] - cut)
+                high = base * (1 + rules["wobble"] - cut)
+                assert low - 1 <= price <= high + 1, (sid, tid, base, price)
+                assert price == game.price_of(char, tid, sid)          # the same all day
+                seen.setdefault((sid, tid), set()).add(price)
+            assert (special is None) == bool(shop.get("fixed")), sid
+            assert special is None or special in shop["stock"]
+        clock.advance(86400)
+    assert sum(1 for prices in seen.values() if len(prices) > 1) > len(seen) // 2    # they do move
+    walk(game, ani, "shop")
+    special = game.special_of("general")
+    listed = "".join(cmd(game, ani, "list", a=group)["text"] for group in ("devices", "seeds", "tools", "food"))
+    assert listed.count("(today's special)") == 1
+    name = game.world.things[special]["one"]["en"]
+    assert f"{name}, {game.price_of(char, special, 'general')} (today's special)" in listed
 
 
 def test_using_and_wearing_things(make_game, clock):
@@ -485,9 +524,11 @@ def test_a_pet_is_a_companion_of_its_own(make_game, monkeypatch):
     ani = join(game, "Ani")
     budi = join(game, "Budi")
     game.sessions["ani"].char["credits"] = 2000
-    walk(game, ani, "shop")
+    walk(game, ani, "pet_shop")
+    price = game.price_of(game.sessions["ani"].char, "robot_pet", "pets")
     adopted = cmd(game, ani, "buy", item="little robot")
-    assert adopted["text"].startswith("You adopt your new friend, little robot, for 600 credits!")
+    assert adopted["text"].startswith(f"You adopt your new friend, little robot, for {price} credits!")
+    assert abs(price - 600) <= 600 * 0.3
     pets = game.store.companions_of(game.sessions["ani"].char["id"])
     assert [(p["kind"], p["name"]) for p in pets] == [("robot_pet", "Bip")]
     assert cmd(game, ani, "buy", item="robot")["text"].startswith("You already have one")

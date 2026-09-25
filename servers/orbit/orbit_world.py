@@ -40,7 +40,7 @@ import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LANGS = ("en", "id")
-AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue")
+AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino")
 DIRECTIONS = ("n", "ne", "e", "se", "s", "sw", "w", "nw", "u", "d")
 LOCKS = ("crew", "tech", "officer", "brass")
 FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet", "sand", "snow", "wood", "dust")

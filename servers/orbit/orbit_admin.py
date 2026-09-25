@@ -349,8 +349,8 @@ class AdminMixin:
     def _admin_log(self, session, message):
         lang = session.lang
         rows = self.store.admin_log(10)
-        entries = [f"{self._ago(lang, row['time'])}: {row['actor']} {row['action']} {row['target']} {row['detail']}".strip()
-                   for row in rows]
+        entries = [f"{self._ago(lang, row['time'])}: {row['actor']} {row['action']} {row['target']} "
+                   f"{row['detail']}".strip() for row in rows]
         self._send(session, "info", "admin_log", entries="; ".join(entries) or "-")
 
     def _ago(self, lang, when):

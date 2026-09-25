@@ -108,6 +108,15 @@
     "transit": {
       "name": {"en": "in flight", "id": "dalam penerbangan"},
       "in": {"en": "in flight", "id": "dalam penerbangan"}
+    },
+    "mall": {
+      "name": {"en": "the Mall Ring", "id": "Cincin Mal"},
+      "in": {"en": "on the Mall Ring", "id": "di Cincin Mal"},
+      "deck": 0,
+      "about": {
+        "en": "shops and the Food Court, a lift up from the Upper Deck",
+        "id": "toko-toko dan Pujasera, naik lift dari Dek Atas"
+      }
     }
   },
   "shuttles": {"links": [["dock", "belt"]]},
@@ -282,8 +291,8 @@
             "id": ["plakat", "papan nama", "petunjuk", "denah"]
           },
           "desc": {
-            "en": "Upper Deck: the Bridge, the Observation Deck, the Science Lab, Communications and the Archive. Main Deck: the Promenade, the Sky Park, the Cantina, Star Supply, the Medbay, Hydroponics and the crew cabins. Lower Deck: Engineering, the Workshop, the Cargo Bay, the Dock and the Airlock.",
-            "id": "Dek Atas: Anjungan, Dek Observasi, Laboratorium Sains, Ruang Komunikasi, dan Arsip. Dek Utama: Promenade, Taman Langit, Kantin, Toko Bintang, Klinik, Kebun Hidroponik, dan kabin kru. Dek Bawah: Ruang Mesin, Bengkel, Gudang Kargo, Dermaga, dan Airlock."
+            "en": "Mall Ring, at the top: Gearworks, Orbit Outfitters, Cosy Corner, Whiskers & Widgets, Second Orbit and the Food Court. Upper Deck: the Bridge, the Observation Deck, the Science Lab, Communications and the Archive. Main Deck: the Promenade, the Sky Park, the Cantina, Star Supply, the Medbay, Hydroponics and the crew cabins. Lower Deck: Engineering, the Workshop, the Cargo Bay, the Dock and the Airlock.",
+            "id": "Cincin Mal, paling atas: Gearworks, Butik Orbit, Pojok Nyaman, Kumis & Kabel, Loak Orbit Kedua, dan Pujasera. Dek Atas: Anjungan, Dek Observasi, Laboratorium Sains, Ruang Komunikasi, dan Arsip. Dek Utama: Promenade, Taman Langit, Kantin, Toko Bintang, Klinik, Kebun Hidroponik, dan kabin kru. Dek Bawah: Ruang Mesin, Bengkel, Gudang Kargo, Dermaga, dan Airlock."
           }
         },
         "lift": {
@@ -587,8 +596,8 @@
             "id": ["plakat", "papan nama", "petunjuk", "denah"]
           },
           "desc": {
-            "en": "Upper Deck: the Bridge, the Observation Deck, the Science Lab, Communications and the Archive. Main Deck: the Promenade, the Sky Park, the Cantina, Star Supply, the Medbay, Hydroponics and the crew cabins. Lower Deck: Engineering, the Workshop, the Cargo Bay, the Dock and the Airlock.",
-            "id": "Dek Atas: Anjungan, Dek Observasi, Laboratorium Sains, Ruang Komunikasi, dan Arsip. Dek Utama: Promenade, Taman Langit, Kantin, Toko Bintang, Klinik, Kebun Hidroponik, dan kabin kru. Dek Bawah: Ruang Mesin, Bengkel, Gudang Kargo, Dermaga, dan Airlock."
+            "en": "Mall Ring, at the top: Gearworks, Orbit Outfitters, Cosy Corner, Whiskers & Widgets, Second Orbit and the Food Court. Upper Deck: the Bridge, the Observation Deck, the Science Lab, Communications and the Archive. Main Deck: the Promenade, the Sky Park, the Cantina, Star Supply, the Medbay, Hydroponics and the crew cabins. Lower Deck: Engineering, the Workshop, the Cargo Bay, the Dock and the Airlock.",
+            "id": "Cincin Mal, paling atas: Gearworks, Butik Orbit, Pojok Nyaman, Kumis & Kabel, Loak Orbit Kedua, dan Pujasera. Dek Atas: Anjungan, Dek Observasi, Laboratorium Sains, Ruang Komunikasi, dan Arsip. Dek Utama: Promenade, Taman Langit, Kantin, Toko Bintang, Klinik, Kebun Hidroponik, dan kabin kru. Dek Bawah: Ruang Mesin, Bengkel, Gudang Kargo, Dermaga, dan Airlock."
           }
         },
         "lift": {
@@ -746,7 +755,7 @@
       "area": "main",
       "at": [-2, 0],
       "ambience": "cantina",
-      "exits": {"e": "promenade_west"},
+      "exits": {"e": "promenade_west", "w": "casino"},
       "desc": {
         "en": "Round tables bolted to the floor, a long bar that makes the best iced coffee in low Earth orbit, and a jukebox that only plays dangdut and synthwave. It's the place to sit down and chat.",
         "id": "Meja-meja bundar dibaut ke lantai, bar panjang yang bikin es kopi susu terenak di orbit rendah, dan jukebox yang cuma muter dangdut sama synthwave. Tempat paling pas buat duduk dan ngobrol."
@@ -780,6 +789,52 @@
         "all": {
           "en": "The bar sells iced coffee and snacks: type list.",
           "id": "Bar menjual es kopi dan camilan: ketik daftar."
+        }
+      }
+    },
+    "casino": {
+      "name": {"en": "Casino Corner", "id": "Pojok Kasino"},
+      "ref": {"en": "the Casino Corner", "id": "Pojok Kasino"},
+      "in": {"en": "in the Casino Corner", "id": "di Pojok Kasino"},
+      "aliases": {"en": ["casino", "casino corner", "games"], "id": ["kasino", "pojok kasino", "judi", "tempat judi"]},
+      "area": "main",
+      "at": [-3, 0],
+      "ambience": "casino",
+      "exits": {"e": "cantina"},
+      "floor": "carpet",
+      "acoustics": "room",
+      "shop": "casino",
+      "hints": {
+        "all": {
+          "en": "Type casino for the games and their rules. Credits here are only for playing: no real money.",
+          "id": "Ketik kasino untuk daftar permainan dan aturannya. Kredit di sini hanya untuk bermain: bukan uang sungguhan."
+        }
+      },
+      "desc": {
+        "en": "A dim, carpeted corner behind the Cantina, all soft lights and chiming machines: a dice table, a row of slot machines, a card table with a robot dealer in a waistcoat, and a lottery booth.",
+        "id": "Pojok berkarpet yang remang di belakang Kantin, penuh lampu lembut dan mesin yang berdenting: meja dadu, deretan mesin slot, meja kartu dengan bandar robot berompi, dan loket lotre."
+      },
+      "objects": {
+        "dealer": {
+          "names": {"en": ["dealer", "robot dealer", "card table"], "id": ["bandar", "robot bandar", "meja kartu"]},
+          "desc": {
+            "en": "The dealer shuffles with a soft whirr and wishes everyone luck in the same calm voice.",
+            "id": "Bandar mengocok kartu dengan dengung pelan dan mendoakan semua orang beruntung dengan suara tenang yang sama."
+          }
+        },
+        "machines": {
+          "names": {"en": ["machines", "slot machines", "slots"], "id": ["mesin", "mesin slot", "slot"]},
+          "desc": {
+            "en": "Six machines with pictures of stars, moons, comets, planets, rockets and one golden ring called the Orbit.",
+            "id": "Enam mesin bergambar bintang, bulan, komet, planet, roket, dan satu cincin emas bernama Orbit."
+          }
+        },
+        "booth": {
+          "names": {"en": ["booth", "lottery booth", "lottery"], "id": ["loket", "loket lotre", "lotre"]},
+          "desc": {
+            "en": "Tickets for this week's draw, every Sunday at 19:00 in Jakarta. Type lottery.",
+            "id": "Tiket untuk undian minggu ini, setiap Minggu pukul 19.00 WIB. Ketik lotre."
+          }
         }
       }
     },
@@ -1119,7 +1174,12 @@
       "area": "upper",
       "at": [0, -1],
       "ambience": "vent",
-      "exits": {"n": "command", "w": "archive", "d": {"to": "lift_main", "via": "lift"}},
+      "exits": {
+        "n": "command",
+        "w": "archive",
+        "d": {"to": "lift_main", "via": "lift"},
+        "u": {"to": "lift_mall", "via": "lift"}
+      },
       "landmark": true,
       "desc": {
         "en": "A round lobby with a glass lift in the middle and a thick blue carpet. A brass plaque by the lift lists the decks.",
@@ -1132,8 +1192,8 @@
             "id": ["plakat", "papan nama", "petunjuk", "denah"]
           },
           "desc": {
-            "en": "Upper Deck: the Bridge, the Observation Deck, the Science Lab, Communications and the Archive. Main Deck: the Promenade, the Sky Park, the Cantina, Star Supply, the Medbay, Hydroponics and the crew cabins. Lower Deck: Engineering, the Workshop, the Cargo Bay, the Dock and the Airlock.",
-            "id": "Dek Atas: Anjungan, Dek Observasi, Laboratorium Sains, Ruang Komunikasi, dan Arsip. Dek Utama: Promenade, Taman Langit, Kantin, Toko Bintang, Klinik, Kebun Hidroponik, dan kabin kru. Dek Bawah: Ruang Mesin, Bengkel, Gudang Kargo, Dermaga, dan Airlock."
+            "en": "Mall Ring, at the top: Gearworks, Orbit Outfitters, Cosy Corner, Whiskers & Widgets, Second Orbit and the Food Court. Upper Deck: the Bridge, the Observation Deck, the Science Lab, Communications and the Archive. Main Deck: the Promenade, the Sky Park, the Cantina, Star Supply, the Medbay, Hydroponics and the crew cabins. Lower Deck: Engineering, the Workshop, the Cargo Bay, the Dock and the Airlock.",
+            "id": "Cincin Mal, paling atas: Gearworks, Butik Orbit, Pojok Nyaman, Kumis & Kabel, Loak Orbit Kedua, dan Pujasera. Dek Atas: Anjungan, Dek Observasi, Laboratorium Sains, Ruang Komunikasi, dan Arsip. Dek Utama: Promenade, Taman Langit, Kantin, Toko Bintang, Klinik, Kebun Hidroponik, dan kabin kru. Dek Bawah: Ruang Mesin, Bengkel, Gudang Kargo, Dermaga, dan Airlock."
           }
         },
         "lift": {
@@ -1709,6 +1769,328 @@
       },
       "objects": {},
       "acoustics": "small"
+    },
+    "lift_mall": {
+      "name": {"en": "Mall Lift Lobby", "id": "Lobi Lift Mal"},
+      "ref": {"en": "the Mall Lift Lobby", "id": "Lobi Lift Mal"},
+      "in": {"en": "in the Mall Lift Lobby", "id": "di Lobi Lift Mal"},
+      "aliases": {"en": ["mall lift", "mall lobby", "mall lift lobby"], "id": ["lift mal", "lobi mal", "lobi lift mal"]},
+      "area": "mall",
+      "at": [0, -1],
+      "ambience": "mall",
+      "exits": {"n": "atrium", "d": {"to": "lift_upper", "via": "lift"}},
+      "floor": "stone",
+      "acoustics": "hall",
+      "landmark": true,
+      "desc": {
+        "en": "The lift opens onto polished white floors and soft music. A banner hangs overhead: Welcome to the Mall Ring, open every hour of every day.",
+        "id": "Lift terbuka ke lantai putih mengilap dan musik lembut. Spanduk tergantung di atas: Selamat datang di Cincin Mal, buka setiap jam setiap hari."
+      },
+      "objects": {
+        "banner": {
+          "names": {"en": ["banner"], "id": ["spanduk"]},
+          "desc": {
+            "en": "Under the welcome, smaller letters: shoplifting is pointless in a closed space station.",
+            "id": "Di bawah ucapan selamat datang, huruf yang lebih kecil: mencuri di stasiun luar angkasa yang tertutup itu sia-sia."
+          }
+        },
+        "lift": {
+          "names": {"en": ["lift", "elevator"], "id": ["lift", "elevator"]},
+          "desc": {"en": "Type down to go back to the Upper Deck.", "id": "Ketik turun untuk kembali ke Dek Atas."}
+        }
+      }
+    },
+    "atrium": {
+      "name": {"en": "Grand Atrium", "id": "Atrium Agung"},
+      "ref": {"en": "the Grand Atrium", "id": "Atrium Agung"},
+      "in": {"en": "in the Grand Atrium", "id": "di Atrium Agung"},
+      "aliases": {
+        "en": ["atrium", "grand atrium", "mall", "mall ring"],
+        "id": ["atrium", "atrium agung", "mal", "cincin mal"]
+      },
+      "area": "mall",
+      "at": [0, 0],
+      "ambience": "mall",
+      "exits": {"s": "lift_mall", "w": "mall_west", "e": "mall_east", "n": "food_court"},
+      "floor": "stone",
+      "acoustics": "hall",
+      "landmark": true,
+      "desc": {
+        "en": "A bright, round hall at the heart of the Mall Ring. A fountain of floating water droplets turns slowly in the middle, and a glowing directory lists the shops.",
+        "id": "Aula bundar yang terang di jantung Cincin Mal. Air mancur berisi tetes-tetes air yang melayang berputar pelan di tengahnya, dan papan petunjuk bercahaya mencantumkan toko-tokonya."
+      },
+      "objects": {
+        "fountain": {
+          "names": {"en": ["fountain", "droplets", "water"], "id": ["air mancur", "tetesan", "air"]},
+          "desc": {
+            "en": "Each droplet is the size of a marble. Children try to catch them; the droplets always win.",
+            "id": "Setiap tetes sebesar kelereng. Anak-anak mencoba menangkapnya; tetesannya selalu menang."
+          }
+        },
+        "directory": {
+          "names": {"en": ["directory", "map", "shops"], "id": ["petunjuk", "denah", "daftar toko"]},
+          "desc": {
+            "en": "West: Gearworks, Orbit Outfitters and Second Orbit (a pawn shop). East: Cosy Corner and Whiskers & Widgets. North: the Food Court.",
+            "id": "Barat: Gearworks, Butik Orbit, dan Loak Orbit Kedua (toko barang bekas). Timur: Pojok Nyaman dan Kumis & Kabel. Utara: Pujasera."
+          }
+        }
+      }
+    },
+    "food_court": {
+      "name": {"en": "Food Court", "id": "Pujasera"},
+      "ref": {"en": "the Food Court", "id": "Pujasera"},
+      "in": {"en": "in the Food Court", "id": "di Pujasera"},
+      "aliases": {
+        "en": ["food court", "food", "cafe", "restaurant"],
+        "id": ["pujasera", "tempat makan", "kafe", "foodcourt"]
+      },
+      "area": "mall",
+      "at": [0, 1],
+      "ambience": "cantina",
+      "exits": {"s": "atrium"},
+      "shop": "food",
+      "acoustics": "hall",
+      "hints": {
+        "all": {
+          "en": "Food here gives little boosts. Type list to see what's for sale, and buy to buy.",
+          "id": "Makanan di sini memberi sedikit dorongan. Ketik daftar untuk melihat barang dijual, dan beli untuk membeli."
+        }
+      },
+      "desc": {
+        "en": "Long tables with magnetic trays, and counters selling iced coffee, martabak and crackers in sealed bags. Somebody's birthday song drifts from a corner table.",
+        "id": "Meja-meja panjang dengan nampan magnet, dan konter yang menjual es kopi susu, martabak, dan kerupuk dalam kantong tersegel. Lagu ulang tahun seseorang terdengar dari meja pojok."
+      },
+      "objects": {
+        "counters": {
+          "names": {"en": ["counters", "counter"], "id": ["konter"]},
+          "desc": {
+            "en": "Every counter has a small robot cook with a very serious face.",
+            "id": "Setiap konter punya robot juru masak kecil dengan wajah yang sangat serius."
+          }
+        }
+      }
+    },
+    "mall_west": {
+      "name": {"en": "West Arcade", "id": "Lorong Barat Mal"},
+      "ref": {"en": "the West Arcade", "id": "Lorong Barat Mal"},
+      "in": {"en": "in the West Arcade", "id": "di Lorong Barat Mal"},
+      "aliases": {"en": ["west arcade", "mall west"], "id": ["lorong barat mal", "mal barat"]},
+      "area": "mall",
+      "at": [-1, 0],
+      "ambience": "mall",
+      "exits": {"e": "atrium", "w": "gear_shop", "n": "outfitter", "s": "pawn"},
+      "floor": "stone",
+      "desc": {
+        "en": "A gently curving walkway of shop fronts: tools to the west, clothes to the north, and a cluttered secondhand shop to the south.",
+        "id": "Jalan melengkung pelan dengan deretan etalase: perkakas di barat, pakaian di utara, dan toko barang bekas yang berantakan di selatan."
+      },
+      "objects": {
+        "windows": {
+          "names": {"en": ["windows", "shop windows"], "id": ["etalase", "jendela toko"]},
+          "desc": {
+            "en": "One window shows a mannequin in an EVA suit, posed as if it's dancing.",
+            "id": "Satu etalase memajang manekin berpakaian EVA, berpose seperti sedang berjoget."
+          }
+        }
+      }
+    },
+    "gear_shop": {
+      "name": {"en": "Gearworks", "id": "Gearworks"},
+      "ref": {"en": "Gearworks", "id": "Gearworks"},
+      "in": {"en": "at Gearworks", "id": "di Gearworks"},
+      "aliases": {
+        "en": ["gearworks", "gear shop", "tool shop", "tools"],
+        "id": ["gearworks", "toko perkakas", "toko alat", "alat"]
+      },
+      "area": "mall",
+      "at": [-2, 0],
+      "ambience": "mall",
+      "exits": {"e": "mall_west"},
+      "shop": "gear",
+      "floor": "metal",
+      "hints": {
+        "all": {
+          "en": "Devices, keycards, EVA gear and tools. Type list to see what's for sale, and buy to buy.",
+          "id": "Perangkat, kartu akses, perlengkapan EVA, dan perkakas. Ketik daftar untuk melihat barang dijual, dan beli untuk membeli."
+        }
+      },
+      "desc": {
+        "en": "Racks of devices and tools up to the ceiling: mappers, scanners, headlamps, keycards, drills, and a spacesuit on a stand that follows you with its empty helmet.",
+        "id": "Rak-rak perangkat dan perkakas sampai ke langit-langit: pemeta, pemindai, senter kepala, kartu akses, bor, dan pakaian antariksa di sebuah tiang yang helm kosongnya seolah mengikutimu."
+      },
+      "objects": {
+        "racks": {
+          "names": {"en": ["racks", "rack"], "id": ["rak"]},
+          "desc": {
+            "en": "Every price tag has been hand-written by someone with very neat letters.",
+            "id": "Setiap label harga ditulis tangan oleh seseorang dengan huruf yang sangat rapi."
+          }
+        }
+      }
+    },
+    "outfitter": {
+      "name": {"en": "Orbit Outfitters", "id": "Butik Orbit"},
+      "ref": {"en": "Orbit Outfitters", "id": "Butik Orbit"},
+      "in": {"en": "at Orbit Outfitters", "id": "di Butik Orbit"},
+      "aliases": {
+        "en": ["outfitters", "outfitter", "orbit outfitters", "clothes shop", "boutique"],
+        "id": ["butik orbit", "butik", "toko baju", "toko pakaian"]
+      },
+      "area": "mall",
+      "at": [-1, 1],
+      "ambience": "mall",
+      "exits": {"s": "mall_west"},
+      "shop": "outfit",
+      "floor": "carpet",
+      "acoustics": "small",
+      "hints": {
+        "all": {
+          "en": "Clothes and titles. Type list to see what's for sale, and buy to buy.",
+          "id": "Pakaian dan gelar. Ketik daftar untuk melihat barang dijual, dan beli untuk membeli."
+        }
+      },
+      "desc": {
+        "en": "Rails of clothes in every colour, a mirror that compliments you, and a counter of engraved name plates for those who want a title.",
+        "id": "Deretan gantungan baju segala warna, cermin yang memujimu, dan konter plakat nama berukir untuk yang menginginkan gelar."
+      },
+      "objects": {
+        "mirror": {
+          "names": {"en": ["mirror"], "id": ["cermin"]},
+          "desc": {
+            "en": "It says: 'Stunning. Truly. Would you like to try the golden one?'",
+            "id": "Cermin itu bilang: 'Memukau. Sungguh. Mau coba yang emas?'"
+          }
+        }
+      }
+    },
+    "pawn": {
+      "name": {"en": "Second Orbit", "id": "Loak Orbit Kedua"},
+      "ref": {"en": "Second Orbit", "id": "Loak Orbit Kedua"},
+      "in": {"en": "at Second Orbit", "id": "di Loak Orbit Kedua"},
+      "aliases": {
+        "en": ["second orbit", "pawn shop", "pawn", "secondhand"],
+        "id": ["loak orbit kedua", "loak", "toko loak", "barang bekas"]
+      },
+      "area": "mall",
+      "at": [-1, -1],
+      "ambience": "mall",
+      "exits": {"n": "mall_west"},
+      "pawn": true,
+      "floor": "wood",
+      "acoustics": "small",
+      "hints": {
+        "all": {
+          "en": "Type sell and a thing you own: she pays 40 percent of its price.",
+          "id": "Ketik jual dan barang yang kamu punya: dia membayar 40 persen dari harganya."
+        }
+      },
+      "desc": {
+        "en": "A narrow shop stuffed with things people didn't need any more. The owner, an old woman with a jeweller's loupe, buys your things for a fraction of their price.",
+        "id": "Toko sempit yang penuh barang yang sudah tidak dibutuhkan orang. Pemiliknya, seorang nenek dengan kaca pembesar perhiasan, membeli barangmu dengan sebagian kecil harganya."
+      },
+      "objects": {
+        "loupe": {
+          "names": {"en": ["loupe", "owner", "old woman"], "id": ["kaca pembesar", "pemilik", "nenek"]},
+          "desc": {
+            "en": "She squints through it at everything, including you.",
+            "id": "Dia menyipitkan mata lewat kaca itu ke semua benda, termasuk kamu."
+          }
+        }
+      }
+    },
+    "mall_east": {
+      "name": {"en": "East Arcade", "id": "Lorong Timur Mal"},
+      "ref": {"en": "the East Arcade", "id": "Lorong Timur Mal"},
+      "in": {"en": "in the East Arcade", "id": "di Lorong Timur Mal"},
+      "aliases": {"en": ["east arcade", "mall east"], "id": ["lorong timur mal", "mal timur"]},
+      "area": "mall",
+      "at": [1, 0],
+      "ambience": "mall",
+      "exits": {"w": "atrium", "e": "furniture_shop", "n": "pet_shop"},
+      "floor": "stone",
+      "desc": {
+        "en": "The quieter half of the Mall Ring: a furniture shop to the east, and to the north a shop that chirps, purrs and beeps.",
+        "id": "Separuh Cincin Mal yang lebih tenang: toko perabot di timur, dan di utara toko yang berkicau, mendengkur, dan berbunyi bip."
+      },
+      "objects": {
+        "bench": {
+          "names": {"en": ["bench", "benches"], "id": ["bangku"]},
+          "desc": {
+            "en": "A bench for people waiting for people who are still shopping.",
+            "id": "Bangku untuk orang yang menunggu orang yang masih belanja."
+          }
+        }
+      }
+    },
+    "furniture_shop": {
+      "name": {"en": "Cosy Corner", "id": "Pojok Nyaman"},
+      "ref": {"en": "Cosy Corner", "id": "Pojok Nyaman"},
+      "in": {"en": "at Cosy Corner", "id": "di Pojok Nyaman"},
+      "aliases": {
+        "en": ["cosy corner", "cozy corner", "furniture shop", "furniture"],
+        "id": ["pojok nyaman", "toko perabot", "perabot"]
+      },
+      "area": "mall",
+      "at": [2, 0],
+      "ambience": "mall",
+      "exits": {"w": "mall_east"},
+      "shop": "furniture",
+      "floor": "carpet",
+      "acoustics": "small",
+      "hints": {
+        "all": {
+          "en": "Furniture for your cabin, seen by the guests you invite. Type list to see what's for sale, and buy to buy.",
+          "id": "Perabot untuk kabinmu, dilihat tamu yang kamu undang. Ketik daftar untuk melihat barang dijual, dan beli untuk membeli."
+        }
+      },
+      "desc": {
+        "en": "Sofas, rugs, lamps and hammocks arranged like little rooms. It smells of rattan and new cushions.",
+        "id": "Sofa, karpet, lampu, dan hammock ditata seperti kamar-kamar kecil. Baunya rotan dan bantal baru."
+      },
+      "objects": {
+        "sofas": {
+          "names": {"en": ["sofas", "sofa"], "id": ["sofa"]},
+          "desc": {
+            "en": "One of them has a sign: 'Try me'. It's very comfortable.",
+            "id": "Salah satunya punya papan: 'Coba aku'. Sangat nyaman."
+          }
+        }
+      }
+    },
+    "pet_shop": {
+      "name": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"},
+      "ref": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"},
+      "in": {"en": "at Whiskers & Widgets", "id": "di Kumis & Kabel"},
+      "aliases": {
+        "en": ["whiskers and widgets", "whiskers & widgets", "pet shop", "pets", "robot shop"],
+        "id": ["kumis dan kabel", "kumis & kabel", "toko hewan", "toko peliharaan"]
+      },
+      "area": "mall",
+      "at": [1, 1],
+      "ambience": "mall",
+      "exits": {"s": "mall_east"},
+      "shop": "pets",
+      "floor": "wood",
+      "acoustics": "small",
+      "hints": {
+        "all": {
+          "en": "Pets looking for a home. Type list to see what's for sale, and buy to buy.",
+          "id": "Peliharaan yang mencari rumah. Ketik daftar untuk melihat barang dijual, dan beli untuk membeli."
+        }
+      },
+      "desc": {
+        "en": "Little robots roll between baskets where orange cats sleep in magnetic harnesses. Everything here wants to come home with you.",
+        "id": "Robot-robot kecil menggelinding di antara keranjang tempat kucing-kucing oren tidur dengan tali magnet. Semua di sini ingin ikut pulang denganmu."
+      },
+      "objects": {
+        "baskets": {
+          "names": {"en": ["baskets", "basket", "cats"], "id": ["keranjang", "kucing"]},
+          "desc": {
+            "en": "One cat opens an eye, decides you're acceptable, and closes it again.",
+            "id": "Seekor kucing membuka satu mata, memutuskan kamu boleh juga, lalu menutupnya lagi."
+          }
+        }
+      }
     }
   },
   "jobs": {

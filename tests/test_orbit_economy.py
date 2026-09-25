@@ -549,11 +549,12 @@ def test_an_old_database_is_migrated_and_nothing_is_lost(tmp_path, clock):
     _old_database(path)
     store = orbit_store.Store(path, clock=clock, iterations=1000, durable=False)
     assert store.version() == orbit_store.SCHEMA_VERSION and store.migrated_from == 0
-    assert os.path.exists(path + ".before-v1.bak")
+    assert os.path.exists(path + f".before-v{orbit_store.SCHEMA_VERSION}.bak")
     columns = {row["name"] for row in store.db.execute("PRAGMA table_info(characters)")}
-    assert {"voice", "xp", "streak", "last_daily", "mined", "harvested"} <= columns
+    assert {"voice", "xp", "streak", "last_daily", "mined", "harvested", "casino_net"} <= columns
     tables = {row["name"] for row in store.db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
-    assert {"companions", "companion_owners", "transfer_codes", "old_secrets", "transfers", "admin_log"} <= tables
+    assert {"companions", "companion_owners", "transfer_codes", "old_secrets", "transfers", "admin_log",
+            "achievements", "lottery_tickets"} <= tables
     quila = store.by_name("quilafly")
     assert (quila["credits"], quila["location"], quila["description"], quila["inventory"]) == \
         (1234, "cantina", "hello", {"coffee": 2})
@@ -562,7 +563,7 @@ def test_an_old_database_is_migrated_and_nothing_is_lost(tmp_path, clock):
     assert store.get_json("market")["prices"]["coffee"] == 15.5 and store.get_meta("secret_salt") == "ab" * 16
     store.close()
     # The backup is the old database, untouched.
-    backup = sqlite3.connect(path + ".before-v1.bak")
+    backup = sqlite3.connect(path + f".before-v{orbit_store.SCHEMA_VERSION}.bak")
     assert backup.execute("PRAGMA user_version").fetchone()[0] == 0
     assert backup.execute("SELECT credits FROM characters WHERE name_key = 'quilafly'").fetchone()[0] == 1234
     backup.close()
@@ -570,7 +571,7 @@ def test_an_old_database_is_migrated_and_nothing_is_lost(tmp_path, clock):
     again = orbit_store.Store(path, clock=clock, iterations=1000, durable=False)
     assert again.migrated_from is None and again.by_name("quilafly")["xp"] == 110
     again.close()
-    assert [f for f in os.listdir(tmp_path) if f.endswith(".bak")] == ["orbit.db.before-v1.bak"]
+    assert [f for f in os.listdir(tmp_path) if f.endswith(".bak")] == [f"orbit.db.before-v{orbit_store.SCHEMA_VERSION}.bak"]
 
 
 def test_a_migrated_character_plays_on(tmp_path, make_game, clock):
@@ -583,7 +584,7 @@ def test_a_migrated_character_plays_on(tmp_path, make_game, clock):
     assert conn.sent[0]["name"] == "Quilafly" and conn.sent[0]["credits"] == 1234 and conn.sent[0]["room"] == "cantina"
     room = conn.sent[1]["text"]
     assert room.startswith("Selamat datang kembali, Quilafly. Baru di stasiun: sekarang kamu berjalan dengan arah")
-    assert "Kantin." in room and "Jalan keluar: timur." in room
+    assert "Kantin." in room and "Jalan keluar: timur, barat." in room
     char = game.sessions["quilafly"].char
     assert char["inventory"]["compass"] == 1 and char["inventory"]["keycard_crew"] == 1   # level 2 already
     assert game.level_of(char["xp"]) == 2

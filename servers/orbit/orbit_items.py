@@ -28,8 +28,16 @@ Things you own, and what they do (economy.json "things"):
 
 A pet is a companion (a table of its own, so pets can one day be cared
 for, grow, and belong to two people). Things stay in the inventory; seeds,
-food and a brass key can be given or sold to other players, the rest can't.
+food, furniture, clothes and a brass key can be given or traded to other
+players, the rest can't (the pawn shop buys most of it back).
+
+Shop prices move a little each day (economy.json "prices": up to 10 percent
+either way), the same for everyone that day, and one thing in each shop is
+today's special, cheaper still. The bar, the seed rack and the lottery
+booth keep fixed prices, and so do farm plots.
 """
+
+import hashlib
 
 import orbit_safety
 from orbit_lang import pick
@@ -167,17 +175,46 @@ class ItemsMixin:
     def job_level(self, char):
         return self.level_of(int(char.get("xp") or 0))
 
-    def price_of(self, char, tid):
+    def _day_fraction(self, *parts):
+        """A number from 0 to 1, the same all day for the same parts."""
+        digest = hashlib.sha256(":".join((self.today(),) + parts).encode("utf-8")).digest()
+        return int.from_bytes(digest[:6], "big") / float(1 << 48)
+
+    def _wobbles(self, sid):
+        shop = self.world.shops.get(sid) if sid else None
+        return bool(shop) and not shop.get("fixed")
+
+    def special_of(self, sid):
+        """Today's special in shop `sid` (one of the things whose price moves), or None."""
+        if not self._wobbles(sid):
+            return None
+        stock = [tid for tid in self.world.shops[sid].get("stock", [])
+                 if not self.world.things[tid].get("service") and self.world.things[tid].get("price")]
+        if not stock:
+            return None
+        return stock[int(self._day_fraction("special", sid) * len(stock)) % len(stock)]
+
+    def price_of(self, char, tid, sid=None):
+        """What `tid` costs `char` (in shop `sid`, today)."""
         thing = self.world.things[tid]
         if thing.get("service") == "plot":
             prices = self.econ["farm"]["plot_prices"]
             bought = max(0, self.plot_count(char) - int(self.econ["farm"]["plots"]))
             return int(prices[min(bought, len(prices) - 1)])
-        return int(thing.get("price") or 0)
+        price = int(thing.get("price") or 0)
+        if not price or thing.get("service") or not self._wobbles(sid):
+            return price
+        rules = self.econ.get("prices", {})
+        factor = 1 + float(rules.get("wobble", 0)) * (2 * self._day_fraction(sid, tid) - 1)
+        if tid == self.special_of(sid):
+            factor -= float(rules.get("special", 0))
+        return max(1, int(round(price * factor)))
 
-    def entry_text(self, lang, char, tid):
+    def entry_text(self, lang, char, tid, sid=None):
         thing = self.world.things[tid]
         notes = []
+        if sid and tid == self.special_of(sid):
+            notes.append(self.render(lang, "shop_special"))
         if thing.get("unique") and (self.owns(char, tid) or self._has_pet(char, tid)):
             notes.append(self.render(lang, "shop_owned"))
         elif thing.get("level", 1) > self.job_level(char):
@@ -186,7 +223,7 @@ class ItemsMixin:
             notes.append(self.render(lang, "shop_job", job=self.world.job_name(thing["job"])))
         if thing.get("service") == "plot" and self.plot_count(char) >= int(self.econ["farm"]["max_plots"]):
             notes = [self.render(lang, "shop_max")]
-        return self.render(lang, "shop_entry", thing=thing["one"], price=self.price_of(char, tid),
+        return self.render(lang, "shop_entry", thing=thing["one"], price=self.price_of(char, tid, sid),
                            notes="".join(notes))
 
     def cmd_list(self, session, message):
@@ -195,6 +232,9 @@ class ItemsMixin:
         if shop is None:
             if self._loc(char).get("market"):
                 self.cmd_prices(session, {"a": self._arg(message)})
+                return
+            if self._loc(char).get("pawn"):
+                self.pawn_list(session)
                 return
             self._error(session, "list_where")
             return
@@ -214,7 +254,7 @@ class ItemsMixin:
         if not stock:
             self._error(session, "shop_nothing")
             return
-        entries = [self.entry_text(lang, char, tid) for tid in stock]
+        entries = [self.entry_text(lang, char, tid, sid) for tid in stock]
         self._info(session, "shop_list", shop=shop["name"], entries="; ".join(entries))
 
     def where_sold(self, tid):
@@ -240,7 +280,11 @@ class ItemsMixin:
         if thing.get("service") == "plot" and self.plot_count(char) >= int(self.econ["farm"]["max_plots"]):
             self._error(session, "plots_max", max=self.econ["farm"]["max_plots"])
             return
-        total = self.price_of(char, tid) * n
+        if thing.get("service") == "ticket":
+            self.buy_tickets(session, n)
+            return
+        sid, _shop = self.shop_here(char)
+        total = self.price_of(char, tid, sid) * n
         if total > char["credits"]:
             self._error(session, "buy_poor", total=total, credits=char["credits"])
             return
@@ -301,7 +345,7 @@ class ItemsMixin:
         elif self.owns(char, tid) and char["inventory"][tid] > 1:
             parts.append(self.render(lang, "examine_count", n=char["inventory"][tid]))
         if shop is not None and tid in shop.get("stock", []):
-            parts.append(self.render(lang, "examine_price", price=self.price_of(char, tid)))
+            parts.append(self.render(lang, "examine_price", price=self.price_of(char, tid, sid)))
         self._info(session, text=" ".join(parts))
         return True
 
