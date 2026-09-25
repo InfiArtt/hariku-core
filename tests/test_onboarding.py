@@ -128,9 +128,9 @@ def test_use_language_switches_at_once_and_keeps_other_translations(lang, i18n_c
 
 def test_prefill_on_a_first_run(onb):
     answers = onb.prefill(first_run=True, windows_tags=["id-ID"])
-    assert answers.as_dict() == {"language": "id", "name": "", "nickname": "", "place": None,
-                                 "birthday": None, "autostart": False, "greet": True,
-                                 "extensions": []}
+    assert answers.as_dict() == {"language": "id", "name": "", "nickname": "", "persona": "auto",
+                                 "place": None, "birthday": None, "autostart": False,
+                                 "greet": True, "extensions": []}
     assert onb.nickname_is_automatic(answers)
 
 
@@ -158,8 +158,8 @@ def test_prefill_shows_the_whole_profile(onb, lang):
                 "greet_on_startup": False, "auto_start": False})
     answers = onb.prefill(windows_tags=["en-US"])
     assert answers.as_dict() == {"language": "id", "name": "Rafli Hidayat", "nickname": "Bro",
-                                 "place": None, "birthday": (12, 5, 1999), "autostart": False,
-                                 "greet": False, "extensions": []}
+                                 "persona": "auto", "place": None, "birthday": (12, 5, 1999),
+                                 "autostart": False, "greet": False, "extensions": []}
     assert not onb.nickname_is_automatic(answers)
 
 
@@ -178,26 +178,27 @@ def test_answers_compare_and_copy(onb):
 def test_the_personal_texts_in_indonesian(onb, lang):
     lang("id")
     reply = onb.name_reply("Rafli")
-    assert reply == "Senang berkenalan denganmu, Rafli."
+    assert reply == "Halo, Rafli! Akhirnya kita kenalan juga."
     assert onb.question("where", "Rafli", reply) == (
-        "Senang berkenalan denganmu, Rafli. Sekarang aku perlu tahu kamu tinggal di mana, Rafli, "
-        "supaya jamku tidak meleset. Ketik nama kotamu, lalu tekan Enter:")
+        "Halo, Rafli! Akhirnya kita kenalan juga. Nah, Rafli, kamu tinggal di mana? Biar aku "
+        "nggak bilang selamat pagi pas di tempatmu sudah tengah malam. Ketik nama kotamu, lalu "
+        "tekan Enter:")
     assert onb.question("birthday", "Rafli") == (
-        "Pertanyaan berikutnya, untuk keperluan perayaan: kapan ulang tahunmu, Rafli? Tanggal:")
+        "Sekarang pertanyaan paling penting: kapan ulang tahunmu, Rafli? Tanggal:")
     assert onb.question("hello") == (
-        "Halo. Aku Hariku, pendamping barumu di komputer ini. Pertama-tama, bahasa apa yang "
-        "kita pakai?")
+        "Halo! Aku Hariku, teman barumu yang agak kepo. Pertama, kita ngobrol pakai bahasa apa?")
     assert onb.question("startup", "Rafli") == (
-        "Pertanyaan terakhir, Rafli: boleh aku ikut bangun setiap kali komputermu menyala?")
+        "Terakhir, janji: boleh aku ikut bangun tiap komputermu menyala, Rafli? Aku nggak "
+        "berisik kok. Sedikit.")
 
 
 def test_the_personal_texts_in_english(onb):
-    assert onb.name_reply("Rafli") == "It's a pleasure to meet you, Rafli."
+    assert onb.name_reply("Rafli") == "Hey, Rafli! Finally, we meet."
     assert onb.question("where", "Rafli") == (
-        "Now, where do you live, Rafli? I'd rather not get your time wrong. Type your city, "
-        "then press Enter:")
+        "So, Rafli, where do you live? That way I won't say good morning at midnight. Type your "
+        "city, then press Enter:")
     assert onb.question("extensions", "Rafli").startswith(
-        "I can also learn new skills, Rafli. Which ones shall I install? ")
+        "What else should I learn, Rafli? Pick some, I'm a fast learner. ")
 
 
 @pytest.mark.parametrize("code", ["en", "id"])
@@ -208,7 +209,7 @@ def test_every_question_reads_well_without_a_name(onb, lang, code, page):
     text = onb.question(page, "", "")
     assert text and "{" not in text and "  " not in text, text
     assert not re.search(r"[,;:]\s*[?!.]|\s[,.?!]|^[\s,.]", text), text
-    assert onb.name_reply("") in ("It's a pleasure to meet you.", "Senang berkenalan denganmu.")
+    assert onb.name_reply("") in ("Hey! Finally, we meet.", "Halo! Akhirnya kita kenalan juga.")
     assert "Rafli" in onb.question(page, "Rafli", "") or page in ("hello", "name")
 
 
@@ -250,8 +251,8 @@ def test_every_weather_code_has_words(onb, lang, code):
 
 def test_the_birthday_reply(onb, lang):
     lang("id")
-    assert onb.birthday_reply((12, 5, None)) == "12 Mei, tercatat. Aku tidak akan lupa."
-    assert onb.birthday_reply((12, 5, 1999)) == "12 Mei 1999, tercatat. Aku tidak akan lupa."
+    assert onb.birthday_reply((12, 5, None)) == "12 Mei, dicatat! Siap-siap aku heboh di hari itu."
+    assert onb.birthday_reply((12, 5, 1999)) == "12 Mei 1999, dicatat! Siap-siap aku heboh di hari itu."
     assert onb.birthday_reply(None) == ""
     assert onb.check_birthday(0, 0, None) is None
     import core.personal
@@ -364,7 +365,7 @@ def test_try_it_answers_the_time_and_the_date(onb, lang, nothing_runs):
 
 def test_try_it_never_runs_anything_else(onb, lang, nothing_runs):
     lang("id")
-    assert onb.try_answer("", None) == ("empty", "Kotaknya masih kosong. Ketik sesuatu dulu, misalnya jam berapa.")
+    assert onb.try_answer("", None) == ("empty", "Kotaknya masih kosong, lho. Aku belum bisa baca pikiran. Ketik sesuatu dulu, misalnya jam berapa.")
     assert onb.try_answer("buka pengaturan")[0] == "other"
     assert onb.try_answer("ingatkan aku besok jam 7 minum obat")[0] == "reminder"
     lang("en")
@@ -466,7 +467,7 @@ def test_install_texts(onb, lang):
     assert onb.install_progress_text(0, 2, a, True) == "Weather terpasang (1 dari 2)."
     assert onb.install_progress_text(1, 2, b, False) == "Timer & Alarm gagal dipasang (2 dari 2)."
     assert onb.install_summary([a, b], [], "Ctrl + X") == (
-        "Sudah terpasang: Weather dan Timer & Alarm. Tekan Enter, dan kita mulai.")
+        "Sudah terpasang: Weather dan Timer & Alarm. Tekan Enter, dan ayo mulai!")
     assert "Belum terpasang: Timer & Alarm" in onb.install_summary([a], [b], "Ctrl + X")
     assert onb.install_summary([], [a], "Ctrl + X").startswith(
         "Aku gagal memasang Weather; coba lagi nanti di Pengelola Ekstensi (Ctrl + X).")
@@ -483,20 +484,20 @@ def test_the_summary(onb, lang):
     lines = onb.summary(answers, place=BATAM, aruna_key="Ctrl + Alt + Backspace",
                         extensions=[{"name": "Weather"}, {"name": "Timer & Alarm"}])
     assert lines == [
-        "Perkenalan selesai, Rafli.",
+        "Beres, Rafli! Kita resmi kenalan.",
         "Rumahmu di Batam.",
         "Tanggal 12 Mei nanti aku ucapkan selamat ulang tahun.",
         "Setiap kali komputermu menyala, aku menyapamu.",
         "Setelah kamu tekan Selesai, aku pasang Weather dan Timer & Alarm.",
         "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
-        "Mulai sekarang, aku ada di sini kapan pun kamu butuh. Selamat datang di Hariku.",
+        "Mulai sekarang aku ada di sini, siap diganggu kapan saja. Selamat datang di Hariku!",
     ]
     bare = onb.summary(onb.Answers(greet=False), aruna_key="Ctrl + Alt + Backspace")
-    assert bare == ["Perkenalan selesai.", "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
-                    "Mulai sekarang, aku ada di sini kapan pun kamu butuh. Selamat datang di Hariku."]
+    assert bare == ["Beres! Kita resmi kenalan.", "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
+                    "Mulai sekarang aku ada di sini, siap diganggu kapan saja. Selamat datang di Hariku!"]
     lang("en")
     lines = onb.summary(onb.Answers(name="Rafli", greet=True), aruna_key="Ctrl + Alt + Backspace")
-    assert lines[:2] == ["Introductions complete, Rafli.", "Every time Hariku starts, I'll greet you."]
+    assert lines[:2] == ["Done, Rafli! We're officially acquainted.", "Every time Hariku starts, I'll greet you."]
 
 
 # ------------------------------------------------------------
@@ -659,7 +660,9 @@ def test_every_welcome_text_exists_in_both_languages():
     welcome_en = {k for k in en if k.startswith("onb_")}
     welcome_id = {k for k in id_ if k.startswith("onb_")}
     assert welcome_en == welcome_id
-    assert not welcome_en - used, f"unused welcome texts: {sorted(welcome_en - used)}"
+    # A persona's version ("key@sweet") counts as its key (tests/test_persona.py checks them).
+    unused = {k.split("@")[0] for k in welcome_en} - used
+    assert not unused, f"unused welcome texts: {sorted(unused)}"
     for key in welcome_en:
         fields = lambda text: sorted(re.findall(r"\{(\w+)\}", text))
         assert fields(en[key]) == fields(id_[key]), key

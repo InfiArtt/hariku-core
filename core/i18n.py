@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 _current_language = "en"
 _fallback_language = "en"
 _language_cache = {}  # domain -> {lang_code -> {manifest: {}, messages: {}}}
+_persona = ""         # how Hariku talks (core.persona): "key@persona" is looked up first
 
 # Core locales directory
 import builtins as _builtins
@@ -99,6 +100,17 @@ def use_language(language_code):
         return False
     _current_language = language_code
     return True
+
+
+def set_persona(persona):
+    """Talk in `persona` (core 2.10; core.persona chooses it): from now on a
+    text is looked up as "key@persona" first, then as "key". "" for none."""
+    global _persona
+    _persona = str(persona or "")
+
+
+def get_persona():
+    return _persona
 
 
 def translations(key, domain="core"):
@@ -186,16 +198,18 @@ def _load_domain(domain, locales_dir):
 
 def _translate(domain, key, **kwargs):
     """
-    Internal translation lookup. 
+    Internal translation lookup.
     Tries current language first, then falls back to fallback language,
-    then returns the key itself if no translation found.
+    then returns the key itself if no translation found. In each language the
+    persona's own version ("key@persona") comes before the plain one.
     """
     domain_data = _language_cache.get(domain, {})
-    
+    keys = (f"{key}@{_persona}", key) if _persona else (key,)
+
     # Try current language
     lang_data = domain_data.get(_current_language)
     if lang_data:
-        text = lang_data["messages"].get(key)
+        text = next((lang_data["messages"][k] for k in keys if k in lang_data["messages"]), None)
         if text is not None:
             if kwargs:
                 try:
@@ -203,12 +217,13 @@ def _translate(domain, key, **kwargs):
                 except (KeyError, IndexError):
                     return text
             return text
-    
+
     # Fallback to default language
     if _current_language != _fallback_language:
         fallback_data = domain_data.get(_fallback_language)
         if fallback_data:
-            text = fallback_data["messages"].get(key)
+            messages = fallback_data["messages"]
+            text = next((messages[k] for k in keys if k in messages), None)
             if text is not None:
                 if kwargs:
                     try:
