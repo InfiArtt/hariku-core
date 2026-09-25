@@ -46,7 +46,9 @@ Voice Control.
 
 Every label is created right before its control (see core.core_panels.
 _labeled). Focus moves only when the bar opens (to the field) and when it
-closes (back to the previous window). Global hotkeys use RegisterHotKey
+closes (back to the previous window). The bar has no owner window
+(DIALOG_NO_PARENT), so it opens on the virtual desktop the user is on and
+never brings Hariku's hidden main window along. Global hotkeys use RegisterHotKey
 (core.hotkeys); no keyboard hook is ever installed. The only key state read
 here is GetAsyncKeyState, to wait until the key that confirmed has been let
 go before focus moves.
@@ -130,6 +132,13 @@ def _user32():
         dll.IsWindow.restype = ctypes.wintypes.BOOL
         dll.IsWindowVisible.argtypes = [HWND]
         dll.IsWindowVisible.restype = ctypes.wintypes.BOOL
+        dll.GetWindowThreadProcessId.argtypes = [HWND, ctypes.POINTER(ctypes.wintypes.DWORD)]
+        dll.GetWindowThreadProcessId.restype = ctypes.wintypes.DWORD
+        dll.AttachThreadInput.argtypes = [ctypes.wintypes.DWORD, ctypes.wintypes.DWORD,
+                                          ctypes.wintypes.BOOL]
+        dll.AttachThreadInput.restype = ctypes.wintypes.BOOL
+        dll.BringWindowToTop.argtypes = [HWND]
+        dll.BringWindowToTop.restype = ctypes.wintypes.BOOL
         _user32_dll = dll
     return _user32_dll
 
@@ -218,7 +227,10 @@ class CommandBar(wx.Dialog):
 
     def __init__(self, parent=None, previous=0, decide=None, run=None, say=None):
         super().__init__(parent, title=_("cmd_title"),
-                         style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP)
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.STAY_ON_TOP | wx.DIALOG_NO_PARENT)
+        # DIALOG_NO_PARENT: without it wx makes Hariku's main window the bar's
+        # owner, and Windows then shows the bar on the owner's virtual desktop
+        # (switching the user there) and brings the hidden main window along.
         self._previous = previous
         self._decide = decide or core.commands.decide
         self._run = run or run_command
@@ -777,13 +789,35 @@ def current_bar():
         return None
 
 
+def to_foreground(hwnd):
+    """Make `hwnd` the foreground window. Windows lets only the process that
+    got the last input do that: after a hotkey that's Hariku, but after the
+    wake phrase nobody pressed anything. If refused, Hariku's thread shares the
+    foreground window's input state for a moment (AttachThreadInput; no hook)
+    and asks again."""
+    try:
+        user32 = _user32()
+        if user32.SetForegroundWindow(hwnd) and int(user32.GetForegroundWindow() or 0) == hwnd:
+            return True
+        foreground = user32.GetForegroundWindow()
+        other = user32.GetWindowThreadProcessId(foreground, None) if foreground else 0
+        mine = ctypes.windll.kernel32.GetCurrentThreadId()
+        attached = bool(other and other != mine and user32.AttachThreadInput(other, mine, True))
+        try:
+            user32.BringWindowToTop(hwnd)
+            return bool(user32.SetForegroundWindow(hwnd))
+        finally:
+            if attached:
+                user32.AttachThreadInput(other, mine, False)
+    except Exception:
+        logger.debug("Command bar: could not come to the front", exc_info=True)
+        return False
+
+
 def bring_to_front(bar):
     bar.Show()
     bar.Raise()
-    try:
-        _user32().SetForegroundWindow(bar.GetHandle())
-    except Exception:
-        pass
+    to_foreground(bar.GetHandle())
     bar.txt_input.SetFocus()
 
 
