@@ -201,6 +201,18 @@ restarting Hariku", it is saved in `%APPDATA%\Hariku2` on your computer; pinned
 items are always saved there. Copies that password managers mark as private
 are never recorded.
 
+## Timer & Alarm
+
+The Timer & Alarm extension sends nothing over the internet. What you type or
+say to Aruna to set an alarm or a timer is read on your computer, with rules
+built into Hariku (no AI and no online service), and is not stored; only the
+alarm or timer you set is kept (its name, when it is due and how often it
+repeats), with your sound and ring settings, in `%APPDATA%\Hariku2` on your
+computer. To stop a ring when you press a key, it asks Windows when the
+keyboard or mouse was last used, only while something rings or after a ring
+you missed; it never records which keys you press. Its sounds are Windows' own
+alarm sounds on your computer or tones that come with the extension.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
