@@ -12,10 +12,27 @@ import os
 _OldStaticText = wx.StaticText
 
 class PrefixAccessible(wx.Accessible):
-    def __init__(self, win, prefix):
+    """The name a screen reader gets for a control: the text of the label
+    created just before it, then the control's own label. With `source` (the
+    label, core 2.10), the label's current text is read each time, so a label
+    changed later with SetLabel (the welcome dialog's questions, which say the
+    user's name) is what the screen reader says; `prefix` is the text it had
+    when attached, used once the label is gone."""
+
+    def __init__(self, win, prefix, source=None):
         super().__init__(win)
         self.win = win
         self.prefix = prefix
+        self.source = source
+
+    def current_prefix(self):
+        source = self.source
+        try:
+            if source:   # a destroyed window is falsy
+                return source.GetLabelText().replace('\n', ' ').strip()
+        except RuntimeError:
+            pass
+        return self.prefix
 
     def GetName(self, childId):
         if childId == wx.ACC_SELF:
@@ -24,7 +41,7 @@ class PrefixAccessible(wx.Accessible):
                 label = self.win.GetLabel().replace('&', '')
             elif hasattr(self.win, 'GetValue') and isinstance(self.win.GetValue(), str):
                 label = self.win.GetValue()
-            return wx.ACC_OK, f"{self.prefix} {label}".strip()
+            return wx.ACC_OK, f"{self.current_prefix()} {label}".strip()
         return wx.ACC_NOT_IMPLEMENTED, ""
 
 class AccessibleStaticText(_OldStaticText):
@@ -54,7 +71,7 @@ class AccessibleStaticText(_OldStaticText):
                     # wxPython doesn't have HasAccessible, but we can just set it
                     prefix = self.GetLabel().replace('&', '').replace('\n', ' ')
                     if prefix.strip():
-                        acc = PrefixAccessible(next_child, prefix)
+                        acc = PrefixAccessible(next_child, prefix, source=self)
                         next_child.SetAccessible(acc)
         except ValueError:
             pass
