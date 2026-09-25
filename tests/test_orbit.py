@@ -297,8 +297,8 @@ def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
     monkeypatch.setattr(core.commands, "_intents", {})
     monkeypatch.setattr(core.commands, "_answer_actions", set())
     omain.register(fresh_event_bus)
-    assert {args[1] for args, _kw in actions} == {"open", "look", "who", "credits", "connect", "status",
-                                                  "leave", "daily", "harvest", "profile"}
+    assert {args[1] for args, _kw in actions} == {"open", "look", "who", "credits", "connect", "disconnect",
+                                                  "status", "leave", "daily", "harvest", "profile"}
     for args, kwargs in actions:
         assert args[0] == "Orbit" and args[3] is None and kwargs == {}        # no default keys
     assert core.commands.is_answer_action("Orbit.look") and core.commands.is_answer_action("Orbit.who")
@@ -307,11 +307,35 @@ def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
     assert "buka orbit" in core.commands.aliases_for("Orbit.open")
     assert "orbit keluar" in core.commands.aliases_for("Orbit.leave")
     assert "orbit status" in core.commands.aliases_for("Orbit.status")
+    assert "orbit connect" in core.commands.aliases_for("Orbit.connect")
+    assert "orbit disconnect" not in core.commands.aliases_for("Orbit.connect")
+    assert "orbit putuskan" in core.commands.aliases_for("Orbit.disconnect")
     assert panels[0][0] == "Orbit"
     assert omain._on_before_speak in fresh_event_bus._listeners["on_before_speak"]
     omain.teardown()
     assert core.commands.intents() == [] and core.commands.aliases_for("Orbit.open") == []
     assert omain._on_before_speak not in fresh_event_bus._listeners.get("on_before_speak", [])
+
+
+def test_connect_only_connects_and_disconnect_only_disconnects(omain, play):
+    s, client = play.services, play.client
+    omain._client = client
+    omain._disconnect()                                   # not connected: it says so
+    assert s.connections == [] and s.spoken[-1] == ("narrator", "Belum tersambung.")
+    omain._connect()                                      # "orbit connect"
+    assert len(s.connections) == 1
+    s.connections[-1].welcome()
+    assert client.online()
+    omain._connect()                                      # said again: still connected, not a toggle
+    assert len(s.connections) == 1 and client.online() and not s.connections[-1].stopped
+    omain._disconnect()                                   # "orbit disconnect"
+    assert not client.online() and s.connections[-1].stopped
+    omain._connect()
+    assert len(s.connections) == 2
+    actions = {name: aliases for name, _d, _t, _fn, aliases, _a in omain.ACTIONS}
+    assert "orbit putuskan" not in actions["connect"] and "orbit disconnect" not in actions["connect"]
+    assert set(actions["disconnect"]) == {"orbit putuskan", "orbit disconnect"}
+    assert "orbit keluar" in actions["leave"]
 
 
 def test_settings_are_checked(omain):
@@ -535,7 +559,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.3", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.4", "lang": "id",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -1638,7 +1662,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert other.connections == []
     assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
     hello = other.connections[-1].hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.3", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.4", "lang": "id",
                      "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
     other.connections[-1].welcome(name="Rafli")
     account = other.accounts["wss://infiartt.com/orbit/ws"]

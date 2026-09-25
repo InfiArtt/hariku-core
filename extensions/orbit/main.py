@@ -422,14 +422,17 @@ def _ask(text):
     return run
 
 
-def _toggle_connection():
-    if _client is None:
-        return
-    if _client.online() or _client.connecting():
-        _client.disconnect()
-    else:
-        _client.aruna_until = _client.clock() + orbit_play.ARUNA_SECONDS
-        _client.connect()
+def _connect():
+    """ "orbit connect": connects; already connected, it says so. Never a toggle, so saying it
+    twice doesn't log you out."""
+    if _client is not None:
+        _client.submit("sambungkan", "aruna")
+
+
+def _disconnect():
+    """ "orbit disconnect": disconnects; not connected, it says so."""
+    if _client is not None:
+        _client.submit("putuskan", "aruna")
 
 
 def _leave():
@@ -447,8 +450,10 @@ ACTIONS = (
      ("orbit siapa online", "orbit siapa yang online", "orbit who is online", "orbit who"), True),
     ("credits", "action_credits", "title_credits", _ask("inventory"),
      ("orbit cek kredit", "orbit kredit", "orbit check credits", "orbit inventory", "orbit tas"), True),
-    ("connect", "action_connect", "title_connect", _toggle_connection,
-     ("orbit sambungkan", "orbit putuskan", "orbit connect", "orbit disconnect"), True),
+    ("connect", "action_connect", "title_connect", _connect,
+     ("orbit sambungkan", "orbit hubungkan", "orbit connect"), True),
+    ("disconnect", "action_disconnect", "title_disconnect", _disconnect,
+     ("orbit putuskan", "orbit disconnect"), True),
     ("status", "action_status", "title_status", _ask("status"),
      ("orbit status", "status orbit", "orbit connection status"), True),
     ("leave", "action_leave", "title_leave", _leave,
