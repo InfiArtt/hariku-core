@@ -317,9 +317,12 @@ which, like any web host, sees your IP address; see the
   as your character on that server. `orbit_sounds` holds your own sound
   files if you add any, and `orbit_sound_cache` copies of Orbit's sounds made
   for your volume and for where things happen.
-- Other players' words may be read with Hariku Voice: with an Edge voice,
-  that text is sent to Microsoft's speech service (see Edge Voices below);
-  Piper and Windows voices speak on your computer. Orbit's sounds come with
+- Orbit's messages, other players' words and your own are read with Hariku
+  Voice: with an Edge voice, that text is sent to Microsoft's speech service
+  (see Edge Voices below); Piper and Windows voices speak on your computer.
+  Orbit never records or sends your voice: what you say in the game is the
+  text you typed (or said to Aruna, see Voice Control), and the other
+  players' computers read it in the character voice you chose. Orbit's sounds come with
   the extension (some synthesized, some made from Kenney's public-domain
   recordings); nothing is downloaded for them. Credits are only for playing:
   they have no real-money value and can't be bought or cashed out, and the
