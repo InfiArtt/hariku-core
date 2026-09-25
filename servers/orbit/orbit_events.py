@@ -152,6 +152,72 @@ class EventsMixin:
                 return lantern
         return None
 
+    # --- the Lantern Festival's goal -------------------------------------------------------
+
+    def festival_rules(self):
+        temple = self.econ.get("temple", {})
+        return {"goal": int(temple.get("festival_goal", 30)), "cap": int(temple.get("festival_cap", 5)),
+                "credits": int(temple.get("festival_reward", 60)), "thing": temple.get("festival_thing")}
+
+    def festival_lantern(self, session):
+        """A lantern lit during the Lantern Festival counts towards its goal (a few from each player);
+        reaching it is a gift for everyone."""
+        row = self.active_of("lantern_festival")
+        if row is None:
+            return
+        rules = self.festival_rules()
+        char = session.char
+        state = row["state"]
+        if self.store.event_points(row["id"], char["id"]) >= rules["cap"]:
+            self._info(session, "festival_counted", n=int(state.get("lanterns", 0)), goal=rules["goal"])
+            return
+        self.store.add_event_points(row["id"], char["id"], 1, self.now())
+        state["lanterns"] = int(state.get("lanterns", 0)) + 1
+        lit = state["lanterns"]
+        self.store.save_event(row)
+        if state.get("reached"):
+            return
+        if lit >= rules["goal"]:
+            state["reached"] = True
+            self.store.save_event(row)
+            logger.info("the Lantern Festival reached its goal")
+            for other in list(self.sessions.values()):
+                self._send(other, "announce", "festival_goal", n=lit, credits=rules["credits"],
+                           extra={"sound": "event_party", "event": "lantern_festival"})
+                self.festival_reward(other, row)
+        elif lit * 2 >= rules["goal"] and not state.get("half"):
+            state["half"] = True
+            self.store.save_event(row)
+            for other in list(self.sessions.values()):
+                self._send(other, "announce", "festival_half", n=lit, goal=rules["goal"],
+                           extra={"sound": "lantern", "event": "lantern_festival"})
+        else:
+            self._info(session, "festival_progress", n=lit, goal=rules["goal"])
+
+    def festival_reward(self, session, row):
+        """Everyone's gift when the festival's goal is reached (once each festival; later arrivals too)."""
+        char = session.char
+        if char["stats"].get("festival_reward") == row["id"]:
+            return
+        rules = self.festival_rules()
+        char["stats"]["festival_reward"] = row["id"]
+        if rules["credits"]:
+            self.earn(char, rules["credits"], "events")
+        thing = rules["thing"]
+        if thing in self.world.things and not self.owns(char, thing):
+            self.give_thing(char, thing)
+        self._save(session)
+        self._send(session, "paid", "festival_gift", n=rules["credits"],
+                   thing=self.world.things[thing]["one"] if thing in self.world.things else "",
+                   credits=char["credits"], extra={"sound": "coins"})
+
+    def festival_join_notes(self, session):
+        """Coming in on a festival day after its goal was reached: your share of the gift."""
+        row = self.active_of("lantern_festival")
+        if row is not None and row["state"].get("reached"):
+            self.festival_reward(session, row)
+        return []
+
     # --- starting and ending --------------------------------------------------------------
 
     def _event_text(self, lang, eid, field, row=None):

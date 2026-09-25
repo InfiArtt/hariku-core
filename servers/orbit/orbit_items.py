@@ -593,3 +593,4 @@ class ItemsMixin:
                    extra={"sound": "lantern"})
         self._to_room(self.room_of(char), "emote", "lantern_other", exclude=(session,),
                       extra={"actor": session.name, "sound": "lantern"}, actor=session.name, n=count)
+        self.festival_lantern(session)

@@ -1445,6 +1445,19 @@
         }
       }
     },
+    "lantern_charm": {
+      "type": "furniture",
+      "one": {"en": "festival lantern charm", "id": "jimat lentera festival"},
+      "many": {"en": "festival lantern charms", "id": "jimat lentera festival"},
+      "names": {"en": ["festival lantern charm", "lantern charm", "festival charm"], "id": ["jimat lentera festival", "jimat lentera", "jimat festival"]},
+      "desc": {
+        "en": "A tiny paper lantern that never quite goes out, given to everyone on the station when the Lantern Festival reached its goal.",
+        "id": "Lentera kertas mungil yang tak pernah benar-benar padam, diberikan kepada semua orang di stasiun saat Festival Lentera mencapai tujuannya."
+      },
+      "unique": true,
+      "pawn": false,
+      "effects": {"cabin": {"en": "A tiny festival lantern hangs by the door, still glowing.", "id": "Lentera festival mungil tergantung di dekat pintu, masih menyala."}}
+    },
     "title_starlit": {
       "type": "title",
       "one": {"en": "title 'Bound by Starlight'", "id": "gelar 'Terikat Cahaya Bintang'"},
@@ -1890,7 +1903,8 @@
       "effects": {"title": {"en": "Arcade Ace", "id": "Jagoan Arkade"}}
     }
   },
-  "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
+  "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10, "festival_goal": 30, "festival_cap": 5,
+             "festival_reward": 60, "festival_thing": "lantern_charm"},
   "weddings": {
     "_note": "Weddings (orbit_weddings.py). A tier's price is paid when booking; guests is how many may be invited; ambience: the celebration's sound for clients that have it; fireworks for the whole station. A hall takes one wedding each slot_minutes; a wedding lasts length_minutes (the reception at least ten minutes after the ceremony); book at least lead_minutes and at most ahead_days ahead. The ceremony waits wait_minutes for the couple (then it is missed: missed_refund back). Cancelling: refund [seconds before, share], the first that fits. A character marries again only after cooldown_days. Proposals wait ask_seconds; the ceremony waits for lanterns, the joined light, vows, a yes and signatures the given seconds.",
     "tiers": {

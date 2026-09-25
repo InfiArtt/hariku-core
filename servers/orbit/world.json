@@ -5443,12 +5443,12 @@
       "kind": "seasonal",
       "name": {"en": "The Lantern Festival of the Way of Starlight", "id": "Festival Lentera Jalan Cahaya Bintang"},
       "about": {
-        "en": "light a lantern in the Star Dome Hall: free today, with a gift",
-        "id": "nyalakan lentera di Aula Kubah Bintang: gratis hari ini, dengan hadiah"
+        "en": "light a lantern in the Star Dome Hall: free today, with a gift, and when enough glow, a gift for everyone",
+        "id": "nyalakan lentera di Aula Kubah Bintang: gratis hari ini, dengan hadiah, dan kalau cukup banyak yang menyala, hadiah untuk semua"
       },
       "start": {
-        "en": "Today is the Lantern Festival of the Way of Starlight: the hundredth day of the year, when the station fills with small lights. Lanterns in the Star Dome Hall are free today, and whoever lights one is thanked with a gift.",
-        "id": "Hari ini Festival Lentera Jalan Cahaya Bintang: hari keseratus dalam setahun, saat stasiun dipenuhi cahaya-cahaya kecil. Lentera di Aula Kubah Bintang gratis hari ini, dan siapa pun yang menyalakannya diberi hadiah."
+        "en": "Today is the Lantern Festival of the Way of Starlight: the hundredth day of the year, when the station fills with small lights. Lanterns in the Star Dome Hall are free today, whoever lights one is thanked with a gift, and when enough of them glow together, everyone on the station shares a gift.",
+        "id": "Hari ini Festival Lentera Jalan Cahaya Bintang: hari keseratus dalam setahun, saat stasiun dipenuhi cahaya-cahaya kecil. Lentera di Aula Kubah Bintang gratis hari ini, siapa pun yang menyalakannya diberi hadiah, dan kalau cukup banyak yang menyala bersama, semua orang di stasiun berbagi hadiah."
       },
       "end": {
         "en": "The Lantern Festival is over; the lanterns glow on until morning.",

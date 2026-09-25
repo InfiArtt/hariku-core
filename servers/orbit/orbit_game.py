@@ -455,6 +455,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         notes.extend(self.pet_join_notes(session))
         notes.extend(self.family_join_notes(session))
         notes.extend(self.wedding_join_notes(session))
+        notes.extend(self.festival_join_notes(session))
         if self.daily_ready(char) and not new:
             notes.append(self.render(lang, "daily_ready"))
         notes.extend(self.check_achievements(session, quiet=True))
