@@ -11,12 +11,13 @@ import wx
 import os
 
 class DocumentViewerDialog(wx.Dialog):
-    def __init__(self, parent, title, filename):
+    def __init__(self, parent, title, filename=None, text=None):
         # wx.RESIZE_BORDER lets the user resize the dialog
         super().__init__(parent, title=title, size=(600, 450),
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         
         self.filename = filename
+        self.text = text            # shown as it is, instead of a file (core 2.11)
         self._init_ui()
         self.CentreOnParent()
         
@@ -42,6 +43,9 @@ class DocumentViewerDialog(wx.Dialog):
         self.SetSizer(vbox)
         
     def _load_content(self):
+        if self.text is not None:
+            self.text_ctrl.SetValue(self.text)
+            return
         import core.i18n
         import sys
         
@@ -75,5 +79,12 @@ class DocumentViewerDialog(wx.Dialog):
 
 def show_document(parent, title, filename):
     dlg = DocumentViewerDialog(parent, title, filename)
+    dlg.ShowModal()
+    dlg.Destroy()
+
+
+def show_text(parent, title, text):
+    """Show a text (a guide the web browser couldn't open, core 2.11) read-only."""
+    dlg = DocumentViewerDialog(parent, title, text=text)
     dlg.ShowModal()
     dlg.Destroy()
