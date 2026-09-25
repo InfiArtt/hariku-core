@@ -660,8 +660,8 @@ def test_no_teleporting_only_the_way(make_game):
     rafli = join(game, "Tono", lang="id")                  # not an admin: admins may teleport
     way = cmd(game, rafli, "go", a="kantin")
     assert way["k"] == "info" and way["text"] == (
-        "Kamu berjalan di stasiun satu arah demi satu arah. Arah ke Kantin: "
-        "timur, timur, selatan, naik, utara, barat, barat.")
+        "Kamu berjalan di stasiun satu arah demi satu arah. Ke Kantin: "
+        "2 timur, selatan, naik, utara, lalu 2 barat.")
     assert game.sessions["tono"].char["location"] == "dock"
     walk(game, rafli, "promenade_west")
     moved = cmd(game, rafli, "go", a="kantin")              # next door: that's a walk

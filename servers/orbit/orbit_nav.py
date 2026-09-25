@@ -38,6 +38,20 @@ invite someone and they may visit.
 import orbit_safety
 from orbit_lang import pick
 
+LONG_ROUTE = 8               # a route of this many steps (in three runs or more) also says how many
+
+
+def route_groups(path):
+    """[(how, n)]: a route's steps with runs of the same direction together
+    (the Kancil is always a run of its own)."""
+    groups = []
+    for how, _room in path:
+        if groups and groups[-1][0] == how and how != "shuttle":
+            groups[-1][1] += 1
+        else:
+            groups.append([how, 1])
+    return [(how, n) for how, n in groups]
+
 
 class NavMixin:
     @staticmethod
@@ -345,18 +359,36 @@ class NavMixin:
                          if not loc.get("secret") and not loc.get("hidden"))
         return rooms
 
-    def route_for(self, char, dest):
-        return self.world.route(char["location"], dest,
+    def route_for(self, char, dest, start=None):
+        return self.world.route(start or char["location"], dest,
                                 can_pass=lambda room, ex: self.can_pass(char, room, ex))
 
+    def group_text(self, lang, how, n):
+        """One run of a route: "east", "2 east", "up 3 levels", "ride the Kancil"."""
+        if how == "shuttle":
+            return self.render(lang, "step_kancil")
+        word = self.dir_word(lang, how)
+        if n == 1:
+            return word
+        key = {"u": "step_up_many", "d": "step_down_many"}.get(how, "step_many")
+        return self.render(lang, key, n=n, dir=word)
+
+    def join_steps(self, lang, parts):
+        """ "a", "a, then b" / "a lalu b", "a, b, then c" / "a, b, lalu c"."""
+        if len(parts) <= 1:
+            return "".join(parts)
+        if len(parts) == 2:
+            return self.render(lang, "route_two", a=parts[0], b=parts[1])
+        return self.render(lang, "route_many", rest=", ".join(parts[:-1]), last=parts[-1])
+
     def steps_text(self, lang, path):
-        words = []
-        for how, _room in path:
-            if how == "shuttle":
-                words.append(self.render(lang, "step_kancil"))
-            else:
-                words.append(self.dir_word(lang, how))
-        return ", ".join(words)
+        """A route, compact: "2 east, south, up, north, then 2 west" (and how many steps
+        when it's long)."""
+        groups = route_groups(path)
+        text = self.join_steps(lang, [self.group_text(lang, how, n) for how, n in groups])
+        if len(path) >= LONG_ROUTE and len(groups) > 2:
+            text = self.render(lang, "route_long", steps=text, n=len(path))
+        return text
 
     def cmd_way(self, session, message):
         text = self._arg(message)

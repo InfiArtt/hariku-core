@@ -233,19 +233,19 @@ def test_look_lists_the_exits_short_and_the_same_every_time(make_game):
 def test_the_way_needs_a_mapper_beyond_the_landmarks(make_game):
     game = make_game()
     tono = join(game, "Tono", "scientist")
-    assert "The way to the Promenade: east, east, south, up, north." == cmd(game, tono, "way", a="promenade")["text"]
-    assert cmd(game, tono, "way", a="science lab")["text"].startswith("The way to the Science Lab:")   # workplace
-    assert cmd(game, tono, "way", a="my cabin")["text"].startswith("The way to your cabin:")
+    assert "To the Promenade: 2 east, south, up, then north." == cmd(game, tono, "way", a="promenade")["text"]
+    assert cmd(game, tono, "way", a="science lab")["text"].startswith("To the Science Lab:")   # workplace
+    assert cmd(game, tono, "way", a="my cabin")["text"].startswith("To your cabin:")
     unknown = cmd(game, tono, "way", a="archive")
     assert unknown["k"] == "error" and unknown["text"].startswith("You don't know the way to the Station Archive yet.")
     walk(game, tono, "archive")                             # been there, but no mapper yet
     walk(game, tono, "dock")
     assert cmd(game, tono, "way", a="archive")["k"] == "error"
     give(game, "tono", "mapper")
-    assert cmd(game, tono, "way", a="archive")["text"].startswith("The way to the Station Archive: east, east")
+    assert cmd(game, tono, "way", a="archive")["text"].startswith("To the Station Archive: 2 east, south, up 2 levels")
     assert cmd(game, tono, "way", a="gym")["k"] == "error"           # never been there
     give(game, "tono", "holomapper")
-    assert cmd(game, tono, "way", a="gym")["text"].startswith("The way to the Zero-G Gym:")
+    assert cmd(game, tono, "way", a="gym")["text"].startswith("To the Zero-G Gym:")
     assert cmd(game, tono, "way", a="time capsule room")["k"] == "error"      # secret: no map shows it
     assert cmd(game, tono, "way", a="captain's quarters")["text"].startswith("You can't get to")
     assert cmd(game, tono, "way", a="the belt")["text"].endswith("ride the Kancil.")
@@ -403,7 +403,7 @@ def test_a_beacon_leads_you_back(make_game):
     placed = cmd(game, ani, "use", item="beacon", equip=True)
     assert placed["text"].startswith("You place your beacon in the Workshop") and placed["sound"] == "gadget"
     walk(game, ani, "dock")
-    assert cmd(game, ani, "way", a="suar")["text"] == "The way to the Workshop: east, east, east, east."
+    assert cmd(game, ani, "way", a="suar")["text"] == "To the Workshop: 4 east."
 
 
 def test_cabin_guests_by_invitation(make_game):

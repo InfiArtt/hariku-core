@@ -161,7 +161,7 @@ def test_main_street_is_a_place_not_a_game(make_game, clock):
     game = make_game()
     ani = join(game, "Ani")
     game.receive(ani, {"t": "cmd", "c": "text", "a": "main street"})     # "main" is also "play"
-    assert "The way to the Promenade" in ani.sent[-1]["text"]
+    assert "To the Promenade: " in ani.sent[-1]["text"]
 
 
 # ------------------------------------------------------------

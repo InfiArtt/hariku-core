@@ -371,7 +371,7 @@ def typed(text, expect):
         (text, window.lines()[-3:])
 
 
-typed("go to the cantina", "The way to the Cantina: east, east, south, up, north, west, west.")
+typed("go to the cantina", "To the Cantina: 2 east, south, up, north, then 2 west.")
 for step, place in (("e", "the Cargo Bay"), ("e", "the Service Corridor"), ("s", "the Lower Lift Lobby")):
     typed(step, f"to {place}.")
 typed("up", "You go up to the Main Lift Lobby.")

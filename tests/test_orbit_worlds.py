@@ -395,13 +395,13 @@ def test_asking_the_way_to_another_world(make_game):
     assert options.startswith("That's on another world: Karmina Colony, 6 away. Travel by the Gate in the Gate Hall "
                               "(85 credits, at once), the ferry at the Dock (23 credits, about 4 minutes) and or a "
                               "ship of your own") or "the Gate in the Gate Hall (85 credits, at once)" in options
-    assert "Then from Karmina Spaceport, the way to the Red Market: north, west." in options
+    assert "Then from Karmina Spaceport, the way to the Red Market: north, then west." in options
     assert cmd(game, ani, "go", a="karmina")["text"].startswith("That's on another world: Karmina Colony")
     worlds = cmd(game, ani, "worlds")["text"]
     assert worlds.startswith("You're on the station. The worlds: the Asteroid Belt,")
     assert "Karmina, the red planet: water ice sells dear" in worlds and "6 away (Gate 85 and ferry 23)" in worlds
     # the Belt is still the Kancil's
-    assert cmd(game, ani, "way", a="belt")["text"].startswith("The way to the Belt Platform")
+    assert cmd(game, ani, "way", a="belt")["text"].startswith("To the Belt Platform")
 
 
 # ------------------------------------------------------------

@@ -270,7 +270,7 @@ def test_two_players_on_the_station(server, indonesian):
     sari.wait_for("Rafli pergi ke timur, ke Gudang Kargo.")
     sari.do("timur", "Kamu berjalan ke timur, ke Gudang Kargo.")
     rafli.wait_for("Sari datang dari arah barat, dari Dermaga.")
-    assert "Kamu berjalan di stasiun satu arah demi satu arah." in sari.do("pergi ke kantin", "Arah ke Kantin:")
+    assert "Kamu berjalan di stasiun satu arah demi satu arah." in sari.do("pergi ke kantin", "Ke Kantin: timur, selatan, naik, utara, lalu 2 barat.")
 
     # Talking: the others hear the speaker's name, then the words in the speaker's own
     # voice; you hear your own words in your voice.
