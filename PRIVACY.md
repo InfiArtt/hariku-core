@@ -63,6 +63,25 @@ The first time you start Hariku 2.8, it makes "Home" from what was already
 on your computer (Flight Radar's exact home, or else the Weather city),
 without connecting to anything.
 
+## The welcome
+
+The welcome (the first start, and Help, Welcome Dialog) saves your name,
+nickname, birthday and city only on your computer, like Preferences, Profile
+and Places. While it is open it connects only for these:
+
+- Finding your city sends the text you typed and your Hariku language to
+  Open-Meteo's city search (`geocoding-api.open-meteo.com`), when you press
+  Enter or Search.
+- The weather in your city: the city's point rounded to about 1 kilometre
+  goes to Open-Meteo (`api.open-meteo.com`), for the city you choose or the
+  main place you already have. See Open-Meteo's
+  [terms and privacy policy](https://open-meteo.com/en/terms).
+- The extension store listing from GitHub Pages, to suggest extensions.
+  Nothing is downloaded until you press Finish; then only the extensions you
+  ticked are downloaded from Hariku's GitHub releases.
+
+"Try it" (meeting Aruna) answers on your computer and sends nothing.
+
 ## Weather
 
 The Weather extension sends nothing until it has a place: your main place,

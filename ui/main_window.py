@@ -509,8 +509,10 @@ class MainWindow(wx.Frame):
         webbrowser.open(core.endpoints.NEW_ISSUE_URL)
 
     def OnShowWelcome(self, event):
+        # The welcome again, with everything filled in from the current
+        # settings; Cancel changes nothing.
         from ui.onboarding_dialog import run_onboarding
-        run_onboarding()
+        run_onboarding(self)
 
     def OnCheckUpdate(self, event):
         import core.updater
