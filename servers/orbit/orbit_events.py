@@ -710,6 +710,23 @@ class EventsMixin:
             text += " " + self.render(lang, "events_coming", entries="; ".join(entries))
         self._send(session, "info", text=text, extra={"schedule": schedule})
 
+    def next_event(self, now):
+        """(start, event id) of the next weekly or seasonal event that isn't on now, or None."""
+        coming = []
+        for entry in self.config.get("events_weekly") or []:
+            eid = entry.get("event")
+            if eid in self.events_def and not self.active_of(eid):
+                coming.append((self.weekly_start(entry, now), eid))
+        for eid, definition in self.events_def.items():
+            if definition.get("kind") == "seasonal" and not self.active_of(eid):
+                start = self.next_seasonal(definition, now)
+                if start is not None and start <= now:
+                    start = self.next_seasonal(definition, start + 86400)
+                if start is not None:
+                    coming.append((start, eid))
+        coming = [c for c in coming if c[0] > now]
+        return min(coming) if coming else None
+
     def next_seasonal(self, definition, now):
         when = datetime.datetime.fromtimestamp(now, datetime.timezone.utc)
         for year in (when.year, when.year + 1):

@@ -244,6 +244,19 @@ VERBS = [
     (("duels", "on"), "duels_on"), (("duel", "on"), "duels_on"), (("nyalakan", "duel"), "duels_on"),
     (("duel", "nyala"), "duels_on"), (("duels",), "duels"), (("status", "duel"), "duels"),
     (("hentikan", "duel"), "duel_stop"), (("stop", "duel"), "duel_stop"), (("stop", "the", "duel"), "duel_stop"),
+    # the residents (characters who are not players)
+    (("bicara", "dengan"), "talk"), (("bicara", "sama"), "talk"), (("berbicara", "dengan"), "talk"),
+    (("ngobrol", "dengan"), "talk"), (("ngobrol", "sama"), "talk"), (("mengobrol", "dengan"), "talk"),
+    (("ajak", "bicara"), "talk"), (("ajak", "ngobrol"), "talk"), (("talk", "to"), "talk"),
+    (("talk", "with"), "talk"), (("speak", "to"), "talk"), (("speak", "with"), "talk"), (("chat", "with"), "talk"),
+    (("chat", "to"), "talk"), (("talk",), "talk"),
+    (("tanya",), "ask"), (("tanyakan",), "ask"), (("tanya", "ke"), "ask"), (("tanya", "pada"), "ask"),
+    (("tanya", "sama"), "ask"), (("tanya", "kepada"), "ask"), (("bertanya", "pada"), "ask"),
+    (("bertanya", "kepada"), "ask"), (("bertanya", "ke"), "ask"), (("ask",), "ask"),
+    (("sapa",), "greet"), (("menyapa",), "greet"), (("greet",), "greet"), (("say", "hi", "to"), "greet"),
+    (("say", "hello", "to"), "greet"),
+    (("penduduk",), "residents"), (("residents",), "residents"), (("warga",), "residents"), (("npc",), "residents"),
+    (("npcs",), "residents"), (("daftar", "penduduk"), "residents"), (("who", "lives", "here"), "residents"),
     # trading (and anything waiting for a yes)
     (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
     (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
@@ -482,6 +495,12 @@ def parse(text, lang="en", find_direction=None):
         if n is not None:
             message["n"] = n
         return message
+    if meaning in ("talk", "greet"):
+        return {"c": meaning, "to": rest}
+    if meaning == "residents":
+        return {"c": "residents"}
+    if meaning == "ask":
+        return _ask(text, tokens, used)
     if meaning == "achievements":
         return {"c": "achievements", "to": _word(text, tokens[used]) if used < len(tokens) else ""}
     if meaning == "leaderboard":
@@ -489,6 +508,24 @@ def parse(text, lang="en", find_direction=None):
     if meaning in ADMIN_OPS:
         return _admin(meaning, text, tokens, used)
     return None
+
+
+ABOUT_WORDS = ("tentang", "soal", "mengenai", "perihal", "about", "regarding")
+TO_WORDS = ("ke", "pada", "kepada", "sama", "to")
+
+
+def _ask(text, tokens, used):
+    """ "tanya Bang Jali tentang gosip", "ask Jali about the reactor", "tanya Jali gosip"."""
+    start = used
+    if start < len(tokens) and tokens[start][2] in TO_WORDS:
+        start += 1
+    if start >= len(tokens):
+        return {"c": "ask", "to": "", "a": ""}
+    for i in range(start, len(tokens)):
+        if tokens[i][2] in ABOUT_WORDS:
+            name = text[tokens[start][0]:tokens[i - 1][1]].strip(_EDGE) if i > start else ""
+            return {"c": "ask", "to": name, "a": _rest(text, tokens, i + 1)}
+    return {"c": "ask", "to": _word(text, tokens[start]), "a": _rest(text, tokens, start + 1)}
 
 
 def _admin(op, text, tokens, used):

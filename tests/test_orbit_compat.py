@@ -133,6 +133,17 @@ PHRASEBOOK = [
     ("duel Budi 50", "en", "duel"), ("tantang duel Budi 50", "id", "duel"), ("duel dengan Budi", "id", "duel"),
     ("duels", "en", "duels"), ("duels off", "en", "duels"), ("matikan duel", "id", "duels"),
     ("nyalakan duel", "id", "duels"), ("hentikan duel Budi", "id", "admin"),
+    # the residents (1.2; Kapten Bayu keeps the Dock, where these start)
+    ("bicara dengan Bayu", "id", "talk"), ("bicara sama Kapten Bayu", "id", "talk"), ("ngobrol dengan Bayu", "id", "talk"),
+    ("talk to Bayu", "en", "talk"), ("talk with captain bayu", "en", "talk"), ("chat with Bayu", "en", "talk"),
+    ("tanya Bayu tentang feri", "id", "ask"), ("tanya Kapten Bayu soal pabean", "id", "ask"),
+    ("ask Bayu about the ferry", "en", "ask"), ("ask Bayu about recipes", "en", "ask"),
+    ("sapa Bayu", "id", "greet"), ("greet Bayu", "en", "greet"), ("halo Bayu", "id", "greet"),
+    ("hello Bayu", "en", "greet"), ("say hi to Bayu", "en", "greet"),
+    ("lambai ke Bayu", "id", "emote"), ("wave to Bayu", "en", "emote"), ("peluk Bayu", "id", "emote"),
+    ("lihat Bayu", "id", "look"), ("look at Bayu", "en", "look"), ("beri Bayu 1 kerupuk", "id", "give"),
+    ("give Bayu a cracker", "en", "give"),
+    ("penduduk", "id", "residents"), ("residents", "en", "residents"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

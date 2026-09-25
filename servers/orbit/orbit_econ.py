@@ -773,6 +773,9 @@ class EconomyMixin:
         if table:
             have = len([a for a in self.store.achievements_of(char["id"]) if a in table])
             parts.append(self.render(lang, "profile_achievements", n=have, total=len(table)))
+        residents = self.npc_friends(lang, char)
+        if residents:
+            parts.append(residents)
         voice = int(char.get("voice") or 0)
         parts.append(self.render(lang, "profile_voice_n", n=voice) if voice
                      else self.render(lang, "profile_voice_auto"))

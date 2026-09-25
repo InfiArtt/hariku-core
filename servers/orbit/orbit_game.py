@@ -48,6 +48,7 @@ import time
 import orbit_earth
 import orbit_hunt
 import orbit_lang
+import orbit_npcs
 import orbit_safety
 import orbit_verbs
 from orbit_admin import AdminMixin
@@ -62,6 +63,7 @@ from orbit_items import ItemsMixin
 from orbit_lang import pick
 from orbit_local import LocalMixin
 from orbit_nav import NavMixin
+from orbit_npcs import NpcsMixin
 from orbit_progress import ProgressMixin
 from orbit_trade import TradeMixin
 from orbit_travel import TravelMixin
@@ -141,11 +143,12 @@ class Session:
 
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-          TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, AdminMixin)
+          TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
+          AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin,
+           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
            AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
@@ -165,6 +168,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             for lang in orbit_lang.LANGUAGES:
                 self.reserved.update(w for w in loc.get("aliases", {}).get(lang, []) if " " not in w)
         self.reserved.update(world.emotes)
+        self.reserved.update((world.npcs or {}).get("npcs", {}))     # the residents' own names
         self.transfer_fails = {}          # address hash -> [times]: wrong transfer codes
         self.offers = {}                  # name key -> the trade offered to them
         self.challenges = {}              # name key -> the coin flip they're challenged to
@@ -176,6 +180,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.init_hunt()
         self.init_crews()
         self.init_duels()
+        self.init_npcs()
 
     # ------------------------------------------------------------------ helpers
 
@@ -569,11 +574,14 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                     parts.append(pick(hint, lang))
             parts.extend(self.cabin_lines(session))
         others = self._in_room(self.room_of(char), exclude=(session,), visible=True)
+        residents = self.residents_text(session)
         if others:
             parts.append(self.render(lang, "look_people",
                                      people=[self._person(lang, o) for o in sorted(others, key=lambda o: o.key)]))
-        elif full and not loc.get("private"):
+        elif full and not loc.get("private") and not residents:
             parts.append(self.render(lang, "look_alone"))
+        if residents:
+            parts.append(residents)
         mark = self.hunt_mark(session)
         if mark:
             parts.append(mark)
@@ -605,6 +613,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         other = None if dark else self._find_near(session, target)
         if other is not None:
             self._send(session, "info", text=self.player_text(lang, other))
+            return
+        nid = None if dark else self.npc_here(session, target)
+        if nid is not None:
+            self._send(session, "info", text=self.npc_look_text(session, nid))
             return
         oid, obj = self.world.find_object(session.char["location"], target)
         if obj is not None:
@@ -669,11 +681,46 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             extra["words"] = words
         return extra
 
+    def _said_to_resident(self, session, text):
+        """ "bicara dengan Jali" reaches the server as saying "dengan Jali" (both clients read
+        "bicara" as say), and "say hi to Jali" as saying "hi to Jali": the resident's command."""
+        words = [w.strip(".,!?;:") for w in str(text or "").split()]
+        low = [w.lower() for w in words]
+        if len(words) >= 2 and low[0] in orbit_npcs.TALK_PREFIXES:
+            nid = self.npc_here(session, " ".join(words[1:]))
+            if nid is not None:
+                return {"c": "talk", "to": " ".join(words[1:])}
+        for size in (2, 1):
+            if len(words) > size + 1 and " ".join(low[:size]) in orbit_npcs.GREETING_WORDS and \
+                    low[size] in ("to", "ke", "pada", "kepada", "sama"):
+                nid = self.npc_here(session, " ".join(words[size + 1:]))
+                if nid is not None:
+                    return {"c": "greet", "to": " ".join(words[size + 1:])}
+        return None
+
+    def _greeting_to_resident(self, session, text):
+        """ "halo Jali", "selamat pagi Bu Sekar": a greeting to a resident here."""
+        words = [w.strip(".,!?;:") for w in str(text or "").split()]
+        low = [w.lower() for w in words]
+        for size in (2, 1):
+            if len(words) > size and " ".join(low[:size]) in orbit_npcs.GREETING_WORDS:
+                rest = words[size:]
+                if rest and rest[0].lower() in ("to", "ke", "pada", "kepada", "sama"):
+                    rest = rest[1:]
+                if rest and self.npc_here(session, " ".join(rest)) is not None:
+                    return {"c": "greet", "to": " ".join(rest)}
+        return None
+
     def cmd_say(self, session, message):
+        resident = self._said_to_resident(session, self._arg(message))
+        if resident is not None:
+            self.run(session, resident)
+            return
         words = self._chat_text(session, self._arg(message))
         if words is None:
             return
         room = self.room_of(session.char)
+        self.note_room_chat(session)
         others = self._in_room(room, exclude=(session,))
         for other in others:
             self._send(other, "say", "say_other", extra=self._voice_extra(session, words), actor=session.name,
@@ -691,6 +738,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             self.cmd_crew_say(session, message)             # "tell crew ..." / "bisik kru ...": the crew
             return
         if target is None or (target.invisible and not self.is_admin(session)):
+            resident = self.find_npc(name) if name else None
+            if resident is not None:
+                self._error(session, "npc_whisper", name=self.npc_name(resident))
+                return
             self._error(session, "no_player", name=name or "?")
             return
         if target is session:
@@ -735,23 +786,35 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             return
         target_name = self._arg(message, "to", 40)
         target = None
+        eid = self._arg(message, "e", 20)
         if target_name:
             target = self._find_near(session, target_name)
             if target is None:
+                resident = self.npc_here(session, target_name)
+                if resident is not None:
+                    if not session.chat.take():
+                        self._error(session, "slow_down")
+                        return
+                    self.note_room_chat(session)
+                    self.npc_emote_at(session, resident, eid, emote)
+                    return
+                if self.emote_at_companion(session, target_name, eid, emote):
+                    return
                 self._error(session, "not_here", name=target_name)
                 return
         if not session.chat.take():
             self._error(session, "slow_down")
             return
+        self.note_room_chat(session)
         actor = session.name
         room = self.room_of(session.char)
-        eid = self._arg(message, "e", 20)
         extra = {"actor": actor, "emote": eid}
         if target is None:
             self._send(session, "emote", text=emote[session.lang]["you"], extra={"emote": eid})
             for other in self._in_room(room, exclude=(session,)):
                 self._send(other, "emote", text=emote[other.lang]["they"].format(actor=actor),
                            extra=extra)
+            self.companions_join_in(session, eid)
             return
         self._send(session, "emote", text=emote[session.lang]["you_at"].format(target=target.name),
                    extra={"emote": eid})
@@ -828,6 +891,17 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             # "beri kredit Budi 50" read by an older client as "give kredit a budi".
             target_name, what = self._arg(message, "item", 60), "credits"
         target = self._find_near(session, target_name) if target_name else None
+        if target is None and target_name:
+            if self.give_to_companion(session, target_name, message):
+                return                           # "beri makan Kiki": feeding a pet or a child
+            resident, item_text = self.npc_for_give(session, target_name, self._arg(message, "item", 60))
+            if resident is not None:
+                n = self._count(message)
+                if n is None:
+                    self._error(session, "bad_number")
+                    return
+                self.npc_receive(session, resident, item_text, n)
+                return
         if target is None:
             self._error(session, "not_here", name=target_name or "?")
             return
@@ -945,7 +1019,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if parsed is not None:
             self.run(session, parsed)
             return
-        if self._find_near(session, text) or self.world.find_object(session.char["location"], text)[1]:
+        greeting = self._greeting_to_resident(session, text)
+        if greeting is not None:
+            self.run(session, greeting)
+            return
+        if self._find_near(session, text) or self.world.find_object(session.char["location"], text)[1] or \
+                self.npc_here(session, text):
             self.cmd_look(session, {"a": text})
         elif self.world.find_location(text):
             self.cmd_go(session, {"a": text})
@@ -975,6 +1054,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         "duels": ("duels", "duel", "duels on", "duels off", "tantang", "adu", "arena", "contest"),
         "arcade": ("arcade", "arkade", "games", "permainan", "tokens", "token", "tickets", "prizes", "hadiah",
                    "pixel pier", "dermaga piksel", "high scores", "skor tertinggi"),
+        "people": ("people", "residents", "resident", "npc", "npcs", "penduduk", "warga", "orang", "tokoh",
+                   "characters", "karakter"),
         "admin": ("admin",),
     }
 
@@ -1020,6 +1101,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_hunt(now)
         self.tick_crews(now)
         self.tick_duels(now)
+        self.tick_npcs(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):

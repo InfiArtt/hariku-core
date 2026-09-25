@@ -230,6 +230,7 @@ class NavMixin:
         self.pet_follows(session)
         self.gig_arrived(session)
         self.arcade_left(session)
+        self.npc_notice(session)
 
     def _announce_leave(self, session, old_room, old_loc, new_loc, d, host):
         name = session.name

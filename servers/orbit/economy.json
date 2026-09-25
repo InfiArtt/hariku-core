@@ -247,7 +247,11 @@
         "earth_hologram"
       ]
     },
-    "pets": {"name": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"}, "stock": ["robot_pet", "cat_pet"]},
+    "pets": {
+      "name": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"},
+      "stock": ["robot_pet", "cat_pet", "minidrone_pet", "robocat_pet", "fox_pet", "jelly_pet", "pet_food", "pet_treat"]
+    },
+    "jewels": {"name": {"en": "Starglint Jewellers", "id": "Perhiasan Kilau Bintang"}, "stock": ["ring_silver", "ring_gold", "ring_star"]},
     "food": {"name": {"en": "the Food Court", "id": "Pujasera"}, "stock": ["iced_coffee", "martabak", "kerupuk"]},
     "casino": {"name": {"en": "the lottery booth", "id": "loket lotre"}, "stock": ["lottery_ticket"], "fixed": true},
     "shipyard": {
@@ -1201,6 +1205,7 @@
         "pet": {
           "name": "Bip",
           "kind": {"en": "little robot", "id": "robot kecil"},
+          "sound": "pet_robot",
           "reactions": {
             "en": [
               "{pet} beeps happily and spins in a circle.",
@@ -1212,6 +1217,15 @@
               "{pet} mengedipkan lampunya membentuk pelangi kecil.",
               "{pet} menyundul pelan kaki {owner}."
             ]
+          },
+          "eat": {"en": "{pet} slurps up the pellets with a happy whirr and a burp of steam.", "id": "{pet} menyedot pelet-peletnya dengan desing riang dan sendawa uap."},
+          "tricks": {
+            "spin": {"names": {"en": ["spin", "twirl"], "id": ["putar", "berputar"]}, "stage": 1,
+                     "do": {"en": "{pet} spins on the spot, faster and faster, then stops and bows.", "id": "{pet} berputar di tempat, makin lama makin cepat, lalu berhenti dan membungkuk."}},
+            "lights": {"names": {"en": ["light show", "lights"], "id": ["pertunjukan lampu", "lampu"]}, "stage": 1,
+                       "do": {"en": "{pet} dims the lights around it and flashes a tiny rainbow show.", "id": "{pet} meredupkan lampu di sekitarnya dan menampilkan pertunjukan pelangi mungil."}},
+            "song": {"names": {"en": ["beep song", "song", "sing"], "id": ["lagu bip", "lagu", "nyanyi"]}, "stage": 2,
+                     "do": {"en": "{pet} beeps a whole little song, and ends on a note so high it squeaks.", "id": "{pet} berbunyi bip membawakan sebuah lagu kecil, dan menutupnya dengan nada setinggi decitan."}}
           }
         }
       }
@@ -1234,6 +1248,7 @@
         "pet": {
           "name": "Oyen",
           "kind": {"en": "orange space cat", "id": "kucing oren antariksa"},
+          "sound": "pet_cat",
           "reactions": {
             "en": [
               "{pet} purrs and floats a slow somersault.",
@@ -1245,9 +1260,261 @@
               "{pet} menyundul tangan {owner}, minta dielus lagi.",
               "{pet} menguap lebar, tidak terkesan dengan luar angkasa."
             ]
+          },
+          "eat": {"en": "{pet} eats with great dignity, then licks the bowl with none at all.", "id": "{pet} makan dengan penuh wibawa, lalu menjilati mangkuknya tanpa wibawa sama sekali."},
+          "tricks": {
+            "highfive": {"names": {"en": ["high five", "paw"], "id": ["tos", "salaman", "kaki"]}, "stage": 1,
+                         "do": {"en": "{pet} lifts one orange paw and gives {owner} a very serious high five.", "id": "{pet} mengangkat satu kaki orennya dan memberi {owner} tos yang sangat serius."}},
+            "somersault": {"names": {"en": ["somersault", "flip"], "id": ["jungkir balik", "salto"]}, "stage": 1,
+                           "do": {"en": "{pet} tucks in its tail and turns a perfect somersault in the air.", "id": "{pet} melipat ekornya dan berjungkir balik dengan sempurna di udara."}},
+            "fetch": {"names": {"en": ["fetch"], "id": ["ambil", "tangkap"]}, "stage": 2,
+                      "do": {"en": "{pet} bats a floating ball across the room, chases it, and brings it back. Mostly.", "id": "{pet} menepuk bola yang melayang ke seberang ruangan, mengejarnya, lalu membawanya kembali. Hampir."}}
           }
         }
       }
+    },
+    "robocat_pet": {
+      "type": "pet",
+      "one": {"en": "robot cat", "id": "kucing robot"},
+      "many": {"en": "robot cats", "id": "kucing robot"},
+      "names": {
+        "en": ["robot cat", "robocat", "robo cat", "mechanical cat"],
+        "id": ["kucing robot", "kucing mekanik", "robokucing"]
+      },
+      "desc": {
+        "en": "A sleek cat of silver panels with green lamp eyes and a purr like a tiny engine. It swears it is a real cat.",
+        "id": "Kucing ramping dari pelat perak dengan mata lampu hijau dan dengkur seperti mesin mungil. Ia bersumpah kucing sungguhan."
+      },
+      "price": 1100,
+      "unique": true,
+      "effects": {
+        "pet": {
+          "name": "Timah",
+          "kind": {"en": "robot cat", "id": "kucing robot"},
+          "sound": "pet_robocat",
+          "reactions": {
+            "en": [
+              "{pet} purrs with a soft mechanical whirr.",
+              "{pet} blinks its green lamp eyes slowly at {owner}: a robot cat's kiss.",
+              "{pet} stretches, and every panel clicks back into place."
+            ],
+            "id": [
+              "{pet} mendengkur dengan desing mekanik yang lembut.",
+              "{pet} mengedipkan mata lampu hijaunya pelan-pelan ke arah {owner}: tanda sayang ala kucing robot.",
+              "{pet} menggeliat, dan setiap pelatnya berbunyi klik kembali ke tempatnya."
+            ]
+          },
+          "eat": {"en": "{pet} nibbles the pellets and its eyes glow a little brighter.", "id": "{pet} menggigiti pelet-peletnya dan matanya berpendar sedikit lebih terang."},
+          "tricks": {
+            "pounce": {"names": {"en": ["pounce"], "id": ["terkam", "menerkam"]}, "stage": 1,
+                       "do": {"en": "{pet} wiggles, waits, and pounces on a speck of light with a triumphant click.", "id": "{pet} menggoyangkan badan, menunggu, lalu menerkam setitik cahaya dengan bunyi klik penuh kemenangan."}},
+            "rollover": {"names": {"en": ["roll over", "roll"], "id": ["guling", "berguling"]}, "stage": 1,
+                         "do": {"en": "{pet} rolls over with a clatter of panels and shows its shiny belly.", "id": "{pet} berguling dengan bunyi pelat berderak dan memamerkan perutnya yang mengilap."}},
+            "chase": {"names": {"en": ["laser chase", "chase"], "id": ["kejar laser", "kejar"]}, "stage": 2,
+                      "do": {"en": "{pet} projects its own laser dot and chases it round the room, delighted every time it catches it.", "id": "{pet} memancarkan titik lasernya sendiri dan mengejarnya keliling ruangan, girang setiap kali berhasil menangkapnya."}}
+          }
+        }
+      }
+    },
+    "fox_pet": {
+      "type": "pet",
+      "one": {"en": "space fox", "id": "rubah antariksa"},
+      "many": {"en": "space foxes", "id": "rubah antariksa"},
+      "names": {
+        "en": ["space fox", "fox", "star fox"],
+        "id": ["rubah antariksa", "rubah", "rubah bintang"]
+      },
+      "desc": {
+        "en": "A small fox with fur the colour of a nebula and a tail tipped with faint light. It found its way to the simulation from Evergrove's woods, and it is very clever.",
+        "id": "Rubah kecil berbulu sewarna nebula dengan ujung ekor yang bercahaya samar. Ia menemukan jalan ke simulasi dari hutan Evergrove, dan ia sangat cerdik."
+      },
+      "price": 1300,
+      "unique": true,
+      "effects": {
+        "pet": {
+          "name": "Senja",
+          "kind": {"en": "space fox", "id": "rubah antariksa"},
+          "sound": "pet_fox",
+          "reactions": {
+            "en": [
+              "{pet} yips and chases its own glowing tail.",
+              "{pet} sits beside {owner} with its ears up, listening to everything.",
+              "{pet} curls its tail around {owner}'s ankle."
+            ],
+            "id": [
+              "{pet} menyalak kecil dan mengejar ekornya yang bercahaya.",
+              "{pet} duduk di samping {owner} dengan telinga tegak, mendengarkan semuanya.",
+              "{pet} melingkarkan ekornya di pergelangan kaki {owner}."
+            ]
+          },
+          "eat": {"en": "{pet} gulps its food, then pretends it has not eaten at all.", "id": "{pet} melahap makanannya, lalu berpura-pura belum makan sama sekali."},
+          "tricks": {
+            "sit": {"names": {"en": ["sit"], "id": ["duduk"]}, "stage": 1,
+                    "do": {"en": "{pet} sits, tail swept neatly around its paws, looking extremely pleased with itself.", "id": "{pet} duduk, ekornya tersapu rapi di sekeliling kakinya, tampak sangat bangga pada dirinya."}},
+            "jump": {"names": {"en": ["jump", "leap"], "id": ["lompat", "loncat"]}, "stage": 1,
+                     "do": {"en": "{pet} leaps high, twists in the air, and lands without a sound.", "id": "{pet} melompat tinggi, berputar di udara, dan mendarat tanpa suara."}},
+            "howl": {"names": {"en": ["howl", "howl at the stars", "sing"], "id": ["lolong", "melolong", "nyanyi"]}, "stage": 2,
+                     "do": {"en": "{pet} points its nose at the ceiling and sings a thin, silvery howl for the stars.", "id": "{pet} mengarahkan moncongnya ke langit-langit dan melantunkan lolongan tipis keperakan untuk bintang-bintang."}}
+          }
+        }
+      }
+    },
+    "jelly_pet": {
+      "type": "pet",
+      "one": {"en": "glow jellyfish", "id": "ubur-ubur cahaya"},
+      "many": {"en": "glow jellyfish", "id": "ubur-ubur cahaya"},
+      "names": {
+        "en": ["glow jellyfish", "jellyfish", "jelly", "glowing jellyfish"],
+        "id": ["ubur-ubur cahaya", "ubur-ubur", "ubur ubur"]
+      },
+      "desc": {
+        "en": "A jellyfish the size of a teacup, drifting inside a floating bubble of water and pulsing with soft blue light. It follows you like a small moon.",
+        "id": "Ubur-ubur seukuran cangkir teh, melayang di dalam gelembung air yang terapung dan berdenyut dengan cahaya biru lembut. Ia mengikutimu seperti bulan kecil."
+      },
+      "price": 1600,
+      "unique": true,
+      "effects": {
+        "pet": {
+          "name": "Lumi",
+          "kind": {"en": "glow jellyfish", "id": "ubur-ubur cahaya"},
+          "sound": "pet_jelly",
+          "reactions": {
+            "en": [
+              "{pet} pulses a happy pink inside its bubble.",
+              "{pet} drifts in a slow circle around {owner}'s head.",
+              "{pet} ripples its ribbons, and the bubble hums a little."
+            ],
+            "id": [
+              "{pet} berdenyut merah muda riang di dalam gelembungnya.",
+              "{pet} melayang memutari kepala {owner} pelan-pelan.",
+              "{pet} mengibaskan pita-pitanya, dan gelembungnya berdengung pelan."
+            ]
+          },
+          "eat": {"en": "{pet} glows brighter as the food drifts into its bubble and disappears.", "id": "{pet} berpendar lebih terang saat makanannya melayang masuk ke gelembung lalu menghilang."},
+          "tricks": {
+            "glow": {"names": {"en": ["glow", "shine"], "id": ["berpendar", "bersinar"]}, "stage": 1,
+                     "do": {"en": "{pet} glows so brightly that everyone's shadow jumps onto the wall.", "id": "{pet} berpendar begitu terang sampai bayangan semua orang melompat ke dinding."}},
+            "dance": {"names": {"en": ["float dance", "dance"], "id": ["tari melayang", "menari", "tari"]}, "stage": 1,
+                      "do": {"en": "{pet} dances in its bubble, ribbons swirling in slow loops.", "id": "{pet} menari di dalam gelembungnya, pita-pitanya berputar dalam lingkaran lambat."}},
+            "rainbow": {"names": {"en": ["rainbow", "colours", "colors"], "id": ["pelangi", "warna"]}, "stage": 2,
+                        "do": {"en": "{pet} pulses through every colour of the rainbow, one after another, and ends in gold.", "id": "{pet} berdenyut melewati setiap warna pelangi, satu demi satu, dan berakhir keemasan."}}
+          }
+        }
+      }
+    },
+    "minidrone_pet": {
+      "type": "pet",
+      "one": {"en": "mini drone", "id": "drone mini"},
+      "many": {"en": "mini drones", "id": "drone mini"},
+      "names": {
+        "en": ["mini drone", "pet drone", "dronelet", "little drone"],
+        "id": ["drone mini", "drone peliharaan", "drone kecil"]
+      },
+      "desc": {
+        "en": "A drone no bigger than your fist, with four tiny rotors and one curious camera eye. It hovers at your shoulder and whistles when it is pleased.",
+        "id": "Drone tak lebih besar dari kepalan tangan, dengan empat baling-baling mungil dan satu mata kamera yang ingin tahu. Ia melayang di bahumu dan bersiul kalau senang."
+      },
+      "price": 1000,
+      "unique": true,
+      "effects": {
+        "pet": {
+          "name": "Zip",
+          "kind": {"en": "mini drone", "id": "drone mini"},
+          "sound": "pet_minidrone",
+          "reactions": {
+            "en": [
+              "{pet} whistles and does a little loop around {owner}.",
+              "{pet} tilts its camera eye, curious about everything.",
+              "{pet} lands on {owner}'s shoulder and powers down its rotors, content."
+            ],
+            "id": [
+              "{pet} bersiul dan berputar kecil mengelilingi {owner}.",
+              "{pet} memiringkan mata kameranya, ingin tahu segalanya.",
+              "{pet} hinggap di bahu {owner} dan mematikan baling-balingnya, puas."
+            ]
+          },
+          "eat": {"en": "{pet} docks on the pellet and charges with a contented hum.", "id": "{pet} menempel pada pelet dan mengisi daya dengan dengung puas."},
+          "tricks": {
+            "loop": {"names": {"en": ["loop", "loop the loop"], "id": ["putaran", "jungkir"]}, "stage": 1,
+                     "do": {"en": "{pet} flies a perfect loop the loop and whistles a fanfare for itself.", "id": "{pet} terbang berputar sempurna dan bersiul memainkan fanfare untuk dirinya sendiri."}},
+            "fetch": {"names": {"en": ["fetch"], "id": ["ambil"]}, "stage": 1,
+                      "do": {"en": "{pet} zooms off, grabs a bolt from the floor, and drops it proudly in {owner}'s hand.", "id": "{pet} melesat, menyambar sebuah baut dari lantai, dan menjatuhkannya dengan bangga di tangan {owner}."}},
+            "spotlight": {"names": {"en": ["spotlight", "light"], "id": ["sorot", "lampu sorot"]}, "stage": 2,
+                          "do": {"en": "{pet} rises high and shines a spotlight on {owner}, as if they were the star of the show.", "id": "{pet} naik tinggi dan menyorotkan lampu ke {owner}, seolah dialah bintang pertunjukannya."}}
+          }
+        }
+      }
+    },
+    "pet_food": {
+      "type": "consumable",
+      "one": {"en": "bag of pet food", "id": "kantong pakan hewan"},
+      "many": {"en": "bags of pet food", "id": "kantong pakan hewan"},
+      "names": {
+        "en": ["pet food", "bag of pet food", "pet pellets", "kibble"],
+        "id": ["pakan hewan", "pakan", "kantong pakan", "makanan hewan"]
+      },
+      "desc": {
+        "en": "Pellets that every pet on the station eats, from cats to jellyfish; the robots get energy pellets that smell the same. Type feed pet.",
+        "id": "Pelet yang dimakan semua peliharaan di stasiun, dari kucing sampai ubur-ubur; para robot dapat pelet energi yang baunya sama. Ketik beri makan hewan."
+      },
+      "price": 6,
+      "tradeable": true,
+      "effects": {"pet_food": 35}
+    },
+    "pet_treat": {
+      "type": "consumable",
+      "one": {"en": "pet treat", "id": "camilan hewan"},
+      "many": {"en": "pet treats", "id": "camilan hewan"},
+      "names": {
+        "en": ["pet treat", "treat", "treats", "pet treats"],
+        "id": ["camilan hewan", "camilan peliharaan", "snack hewan"]
+      },
+      "desc": {
+        "en": "A star-shaped biscuit that pets adore. It fills a little and delights a lot. Type feed pet treat.",
+        "id": "Biskuit berbentuk bintang yang disukai peliharaan. Sedikit mengenyangkan dan sangat menyenangkan. Ketik beri makan hewan camilan."
+      },
+      "price": 15,
+      "tradeable": true,
+      "effects": {"pet_food": 20, "pet_fun": 20}
+    },
+    "ring_silver": {
+      "type": "outfit",
+      "one": {"en": "silver band", "id": "cincin perak"},
+      "many": {"en": "silver bands", "id": "cincin perak"},
+      "names": {"en": ["silver band", "silver ring"], "id": ["cincin perak"]},
+      "desc": {
+        "en": "A plain band of polished silver, simple and true. Give it with a proposal: propose to, and a name.",
+        "id": "Cincin polos dari perak yang mengilap, sederhana dan tulus. Berikan saat melamar: lamar, lalu sebuah nama."
+      },
+      "price": 500,
+      "slot": "hand",
+      "effects": {"ring": 1, "look": {"en": "a silver band", "id": "cincin perak"}}
+    },
+    "ring_gold": {
+      "type": "outfit",
+      "one": {"en": "gold band", "id": "cincin emas"},
+      "many": {"en": "gold bands", "id": "cincin emas"},
+      "names": {"en": ["gold band", "gold ring", "golden ring"], "id": ["cincin emas"]},
+      "desc": {
+        "en": "A warm gold band with a line of tiny stars engraved inside. Give it with a proposal: propose to, and a name.",
+        "id": "Cincin emas yang hangat dengan deretan bintang mungil terukir di bagian dalamnya. Berikan saat melamar: lamar, lalu sebuah nama."
+      },
+      "price": 1500,
+      "slot": "hand",
+      "effects": {"ring": 2, "look": {"en": "a gold band", "id": "cincin emas"}}
+    },
+    "ring_star": {
+      "type": "outfit",
+      "one": {"en": "star-crystal ring", "id": "cincin kristal bintang"},
+      "many": {"en": "star-crystal rings", "id": "cincin kristal bintang"},
+      "names": {"en": ["star-crystal ring", "star crystal ring", "star ring", "crystal ring"], "id": ["cincin kristal bintang", "cincin bintang", "cincin kristal"]},
+      "desc": {
+        "en": "A ring set with a crystal that holds a tiny point of starlight, which brightens when the wearer smiles. Give it with a proposal: propose to, and a name.",
+        "id": "Cincin bermata kristal yang menyimpan setitik cahaya bintang, yang makin terang saat pemakainya tersenyum. Berikan saat melamar: lamar, lalu sebuah nama."
+      },
+      "price": 4000,
+      "slot": "hand",
+      "effects": {"ring": 3, "look": {"en": "a star-crystal ring", "id": "cincin kristal bintang"}}
     },
     "lottery_ticket": {
       "type": "service",

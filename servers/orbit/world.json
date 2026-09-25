@@ -1909,8 +1909,8 @@
         "directory": {
           "names": {"en": ["directory", "map", "shops"], "id": ["petunjuk", "denah", "daftar toko"]},
           "desc": {
-            "en": "West: Gearworks, Orbit Outfitters and Second Orbit (a pawn shop). East: Cosy Corner and Whiskers & Widgets. North: the Food Court.",
-            "id": "Barat: Gearworks, Butik Orbit, dan Loak Orbit Kedua (toko barang bekas). Timur: Pojok Nyaman dan Kumis & Kabel. Utara: Pujasera."
+            "en": "West: Gearworks, Orbit Outfitters and Second Orbit (a pawn shop). East: Cosy Corner, Whiskers & Widgets and Starglint Jewellers, with the wedding desk. North: the Food Court.",
+            "id": "Barat: Gearworks, Butik Orbit, dan Loak Orbit Kedua (toko barang bekas). Timur: Pojok Nyaman, Kumis & Kabel, dan Perhiasan Kilau Bintang, dengan meja pernikahannya. Utara: Pujasera."
           }
         }
       }
@@ -2085,11 +2085,11 @@
       "area": "mall",
       "at": [1, 0],
       "ambience": "mall",
-      "exits": {"w": "atrium", "e": "furniture_shop", "n": "pet_shop", "s": "shipyard"},
+      "exits": {"w": "atrium", "e": "furniture_shop", "n": "pet_shop", "s": "shipyard", "ne": "jeweller"},
       "floor": "stone",
       "desc": {
-        "en": "The quieter half of the Mall Ring: a furniture shop to the east, and to the north a shop that chirps, purrs and beeps.",
-        "id": "Separuh Cincin Mal yang lebih tenang: toko perabot di timur, dan di utara toko yang berkicau, mendengkur, dan berbunyi bip."
+        "en": "The quieter half of the Mall Ring: a furniture shop to the east, to the north a shop that chirps, purrs and beeps, and to the northeast a jeweller's window that glitters even with the lights off.",
+        "id": "Separuh Cincin Mal yang lebih tenang: toko perabot di timur, di utara toko yang berkicau, mendengkur, dan berbunyi bip, dan di timur laut etalase toko perhiasan yang berkilau bahkan saat lampunya mati."
       },
       "objects": {
         "bench": {
@@ -2167,6 +2167,48 @@
           "desc": {
             "en": "One cat opens an eye, decides you're acceptable, and closes it again.",
             "id": "Seekor kucing membuka satu mata, memutuskan kamu boleh juga, lalu menutupnya lagi."
+          }
+        }
+      }
+    },
+    "jeweller": {
+      "name": {"en": "Starglint Jewellers", "id": "Perhiasan Kilau Bintang"},
+      "ref": {"en": "Starglint Jewellers", "id": "Perhiasan Kilau Bintang"},
+      "in": {"en": "at Starglint Jewellers", "id": "di Perhiasan Kilau Bintang"},
+      "aliases": {
+        "en": ["starglint jewellers", "starglint", "jewellers", "jeweller", "jewelers", "jeweler", "jewellery shop", "jewelry shop", "ring shop", "wedding desk"],
+        "id": ["perhiasan kilau bintang", "kilau bintang", "toko perhiasan", "toko cincin", "meja pernikahan"]
+      },
+      "area": "mall",
+      "at": [2, 1],
+      "ambience": "mall",
+      "exits": {"sw": "mall_east"},
+      "shop": "jewels",
+      "floor": "carpet",
+      "acoustics": "small",
+      "hints": {
+        "all": {
+          "en": "Rings for a proposal, and the wedding desk. Type list to see the rings, and talk to Safira about weddings.",
+          "id": "Cincin untuk melamar, dan meja pernikahan. Ketik daftar untuk melihat cincin, dan bicara dengan Safira soal pernikahan."
+        }
+      },
+      "desc": {
+        "en": "Glass cases of rings sit on deep blue velvet, each one lit by its own tiny lamp. At the back, a writing desk holds a thick leather book of bookings and a vase of fresh jasmine.",
+        "id": "Etalase kaca berisi cincin tertata di atas beludru biru tua, masing-masing diterangi lampu mungilnya sendiri. Di belakang, sebuah meja tulis menyimpan buku pemesanan bersampul kulit yang tebal dan sebuah vas berisi melati segar."
+      },
+      "objects": {
+        "cases": {
+          "names": {"en": ["cases", "display cases", "rings", "velvet"], "id": ["etalase", "cincin", "beludru"]},
+          "desc": {
+            "en": "Silver bands, gold bands, and a single ring with a crystal that holds a tiny point of starlight.",
+            "id": "Cincin perak, cincin emas, dan satu cincin berkristal yang menyimpan setitik cahaya bintang."
+          }
+        },
+        "book": {
+          "names": {"en": ["book", "booking book", "desk", "wedding desk"], "id": ["buku", "buku pemesanan", "meja", "meja pernikahan"]},
+          "desc": {
+            "en": "The wedding desk. Engaged couples book a hall here: book wedding, the hall, the tier, the ceremony and the time. Type wedding schedule for the weddings to come.",
+            "id": "Meja pernikahan. Pasangan yang bertunangan memesan aula di sini: pesan pernikahan, aulanya, kelasnya, upacaranya, dan waktunya. Ketik jadwal pernikahan untuk pernikahan yang akan datang."
           }
         }
       }
@@ -3140,11 +3182,11 @@
         }
       },
       "objects": {
-        "woman": {
-          "names": {"en": ["woman", "seller", "coat"], "id": ["perempuan", "penjual", "mantel"]},
+        "stalls": {
+          "names": {"en": ["stalls", "stall", "crates"], "id": ["kios", "peti"]},
           "desc": {
-            "en": "She never says her name. Type prices to hear what she sells.",
-            "id": "Ia tak pernah menyebut namanya. Ketik harga untuk mendengar apa yang ia jual."
+            "en": "Two stalls with their shutters half down, and crates with no labels stacked behind them. Type prices to hear what's for sale, or talk to Bayang.",
+            "id": "Dua kios dengan rolling door setengah tertutup, dan peti-peti tanpa label bertumpuk di belakangnya. Ketik harga untuk mendengar apa yang dijual, atau bicara dengan Bayang."
           }
         }
       }

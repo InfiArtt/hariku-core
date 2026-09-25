@@ -43,6 +43,7 @@ import difflib
 import json
 import os
 import re
+import string
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -75,6 +76,15 @@ def _strip_articles(text):
     return " ".join(words)
 
 
+def strip_articles(text):
+    """What a name is compared as: lower case, no punctuation, no "the"/"ke" in front."""
+    return _strip_articles(text)
+
+
+def _fields(text):
+    return {name for _lit, name, _spec, _conv in string.Formatter().parse(str(text)) if name}
+
+
 class WorldError(ValueError):
     pass
 
@@ -88,9 +98,10 @@ def _exit(value):
 
 
 class World:
-    def __init__(self, data, economy=None):
+    def __init__(self, data, economy=None, npcs=None):
         self.data = data
         self.economy = economy or {}
+        self.npcs = npcs or {}
         self.start = data["start"]
         self.locations = data["locations"]
         self.areas = data.get("areas", {})
@@ -130,17 +141,22 @@ class World:
                     self._dir_words[lang][norm(word)] = d
 
     @classmethod
-    def load(cls, path=None, economy_path=None):
+    def load(cls, path=None, economy_path=None, npcs_path=None):
         path = path or os.path.join(HERE, "world.json")
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-        economy_path = economy_path or os.path.join(os.path.dirname(os.path.abspath(path)),
-                                                    "economy.json")
+        folder = os.path.dirname(os.path.abspath(path))
+        economy_path = economy_path or os.path.join(folder, "economy.json")
         if not os.path.exists(economy_path):
             economy_path = os.path.join(HERE, "economy.json")
         with open(economy_path, encoding="utf-8") as f:
             economy = json.load(f)
-        return cls(data, economy)
+        npcs_path = npcs_path or os.path.join(folder, "npcs.json")
+        if not os.path.exists(npcs_path):
+            npcs_path = os.path.join(HERE, "npcs.json")
+        with open(npcs_path, encoding="utf-8") as f:
+            npcs = json.load(f)
+        return cls(data, economy, npcs)
 
     def _things(self):
         things = {}
@@ -201,6 +217,7 @@ class World:
                 problems.append(f"shuttle link {a} - {b}: unknown room")
         problems.extend(self._check_worlds())
         problems.extend(self._check_events())
+        problems.extend(self._check_npcs())
         for old, new in self.moved.items():
             if new not in self.locations:
                 problems.append(f"moved {old} -> unknown {new}")
@@ -326,6 +343,129 @@ class World:
                 if field not in event:
                     problems.append(f"event {eid}: needs {field}")
         return problems
+
+    NPC_KINDS = ("talker", "resident")
+    NPC_LIVE = ("time", "who", "gossip", "market", "event", "progress", "special", "ferry", "lanterns", "festival",
+                "hunt", "pet", "arcade", "duels", "tournament", "contraband", "weddings", "tiers")
+    NPC_LINES = ("greet", "greet_known", "greet_friend", "unknown")
+
+    def _check_npcs(self):
+        problems = []
+        seen_names = {}
+
+        def pair(where, value, need_list=True):
+            """Both languages, the same count and the same {placeholders}."""
+            if not isinstance(value, dict) or not all(lang in value for lang in LANGS):
+                problems.append(f"{where}: needs en and id")
+                return
+            if need_list:
+                en, idn = value["en"], value["id"]
+                if not isinstance(en, list) or not isinstance(idn, list) or not en or len(en) != len(idn):
+                    problems.append(f"{where}: needs as many lines in en as in id")
+                    return
+                pairs = zip(en, idn)
+            else:
+                pairs = [(value["en"], value["id"])]
+            for a, b in pairs:
+                if not isinstance(a, str) or not isinstance(b, str) or _fields(a) != _fields(b):
+                    problems.append(f"{where}: the languages differ in their {{placeholders}}")
+
+        for nid, npc in (self.npcs.get("npcs") or {}).items():
+            where = f"npc {nid}"
+            if not isinstance(npc.get("name"), str) or not npc["name"]:
+                problems.append(f"{where}: needs a name")
+            if npc.get("kind") not in self.NPC_KINDS:
+                problems.append(f"{where}: unknown kind {npc.get('kind')!r}")
+            if not isinstance(npc.get("voice"), int) or not 1 <= npc["voice"] <= 10:
+                problems.append(f"{where}: the voice is a number from 1 to 10")
+            for field in ("role", "desc"):
+                pair(f"{where} {field}", npc.get(field), need_list=False)
+            for field in ("appear", "vanish"):
+                if field in npc:
+                    pair(f"{where} {field}", npc[field], need_list=False)
+            names = npc.get("names") or {}
+            if not all(names.get(lang) for lang in LANGS):
+                problems.append(f"{where}: needs names in en and id")
+            # Their own names are theirs alone ("shopkeeper" may be anyone's: it's found in a room).
+            own = {_strip_articles(npc.get("name", "")), nid} | {
+                _strip_articles(names[lang][0]) for lang in LANGS if names.get(lang)}
+            for key in own:
+                if key in seen_names and seen_names[key] != nid:
+                    problems.append(f"{where}: the name {key!r} is {seen_names[key]}'s too")
+                seen_names[key] = nid
+            schedule = npc.get("schedule") or []
+            hours = [entry[0] for entry in schedule if isinstance(entry, list) and len(entry) == 2]
+            if not schedule or len(hours) != len(schedule) or hours != sorted(set(hours)) or \
+                    not all(isinstance(h, int) and 0 <= h <= 23 for h in hours):
+                problems.append(f"{where}: a schedule is [[hour, room]], by hour")
+                continue
+            rooms = [room for _h, room in schedule if room is not None]
+            home = npc.get("home")
+            if home not in self.locations:
+                problems.append(f"{where}: unknown home {home!r}")
+                continue
+            for room in rooms:
+                loc = self.locations.get(room)
+                if loc is None or loc.get("private") or loc.get("hidden"):
+                    problems.append(f"{where}: can't be in {room!r}")
+                elif self.npc_route(home, room) is None:
+                    problems.append(f"{where}: no walk from {home} to {room}")
+            if npc.get("shop") and npc["shop"] not in self.shops:
+                problems.append(f"{where}: unknown shop {npc['shop']!r}")
+            for tid in npc.get("likes", []):
+                if tid not in self.things:
+                    problems.append(f"{where}: likes the unknown {tid!r}")
+            for field in self.NPC_LINES:
+                pair(f"{where} {field}", npc.get(field))
+            for i, line in enumerate(npc.get("idle", [])):
+                if line.get("kind") not in ("say", "emote"):
+                    problems.append(f"{where} idle {i}: say or emote")
+                if line.get("room") and line["room"] not in self.locations:
+                    problems.append(f"{where} idle {i}: unknown room")
+                pair(f"{where} idle {i}", {lang: line.get(lang) for lang in LANGS}, need_list=False)
+            topics = npc.get("topics") or {}
+            if not topics:
+                problems.append(f"{where}: needs topics")
+            for tid, topic in topics.items():
+                tw = f"{where} topic {tid}"
+                if not all(topic.get("names", {}).get(lang) for lang in LANGS):
+                    problems.append(f"{tw}: needs names in en and id")
+                if topic.get("favour"):
+                    if not npc.get("favours"):
+                        problems.append(f"{tw}: no favours to ask")
+                    continue
+                pair(f"{tw} say", topic.get("say"))
+                if topic.get("live") is not None and topic["live"] not in self.NPC_LIVE:
+                    problems.append(f"{tw}: unknown live value {topic['live']!r}")
+                for case, lines in (topic.get("cases") or {}).items():
+                    pair(f"{tw} case {case}", lines)
+            for favour in npc.get("favours", []):
+                fw = f"{where} favour {favour.get('id')}"
+                if favour.get("repeat", "daily") not in ("daily", "once"):
+                    problems.append(f"{fw}: repeat daily or once")
+                for tid, n in (favour.get("needs") or {}).items():
+                    if tid not in self.things or not isinstance(n, int) or n < 1:
+                        problems.append(f"{fw}: needs an unknown {tid!r}")
+                if len(favour.get("needs") or {}) != 1:
+                    problems.append(f"{fw}: needs one kind of thing")
+                thing = (favour.get("reward") or {}).get("thing")
+                if thing and thing not in self.things:
+                    problems.append(f"{fw}: rewards the unknown {thing!r}")
+                for field in ("ask", "thanks"):
+                    pair(f"{fw} {field}", favour.get(field), need_list=False)
+        return problems
+
+    def npc_route(self, start, goal):
+        """The walk between two rooms for a resident: doors they have keys to,
+        never into vacuum, the dark, the private rooms or a shuttle; or None."""
+        def can_pass(_room, ex):
+            loc = self.locations[ex["to"]]
+            return not (loc.get("airless") or loc.get("dark") or loc.get("private") or loc.get("hidden")
+                        or loc.get("secret"))
+        path = self.route(start, goal, can_pass=can_pass)
+        if path is None or any(how == "shuttle" for how, _room in path):
+            return None
+        return path
 
     # --- the worlds ----------------------------------------------------------------------
 

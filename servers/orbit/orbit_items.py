@@ -143,7 +143,7 @@ class ItemsMixin:
         if title:
             lines.append(self.render(lang, "look_title", title=title))
         wearing = []
-        for slot in ("body", "suit", "head"):
+        for slot in ("body", "suit", "head", "hand"):
             thing = self.world.things.get(worn.get(slot))
             if thing:
                 wearing.append((thing.get("effects") or {}).get("look") or thing["one"])
@@ -218,13 +218,14 @@ class ItemsMixin:
         price = int(thing.get("price") or 0)
         if not price or thing.get("service"):
             return price
+        friend = 1.0 - self.npc_discount(char, sid)          # the keeper's friends pay a little less
         if not self._wobbles(sid):
-            return max(1, int(round(price * self.shop_discount(sid)))) if sid else price
+            return max(1, int(round(price * self.shop_discount(sid) * friend))) if sid else price
         rules = self.econ.get("prices", {})
         factor = 1 + float(rules.get("wobble", 0)) * (2 * self._day_fraction(sid, tid) - 1)
         if tid == self.special_of(sid):
             factor -= float(rules.get("special", 0))
-        return max(1, int(round(price * factor * self.shop_discount(sid))))
+        return max(1, int(round(price * factor * self.shop_discount(sid) * friend)))
 
     def entry_text(self, lang, char, tid, sid=None):
         thing = self.world.things[tid]
@@ -280,7 +281,13 @@ class ItemsMixin:
             self._info(session, "shop_list_in", shop=shop["name"], entries="; ".join(entries),
                        have=self._count_of(currency, int(char["inventory"].get(currency) or 0)))
             return
-        self._info(session, "shop_list", shop=shop["name"], entries="; ".join(entries))
+        text = self.render(lang, "shop_list", shop=shop["name"], entries="; ".join(entries))
+        friend = self.npc_discount(char, sid)
+        if friend:
+            keeper = next((nid for nid, d in self.npc_defs.items() if d.get("shop") == sid), None)
+            text += " " + self.render(lang, "shop_friend_price", name=self.npc_name(keeper) if keeper else "?",
+                                      pct=int(round(friend * 100)))
+        self._info(session, text=text)
 
     def where_sold(self, tid):
         for lid, loc in self.world.locations.items():
@@ -628,3 +635,14 @@ class ItemsMixin:
     def pet_follows(self, session):
         """A pet walks in with its owner, now and then."""
         self.pet_reacts(session, chance=0.15)
+
+    def emote_at_companion(self, session, name, eid, emote):
+        """A gesture at your own pet or child (orbit_pets.py). False: none by that name."""
+        return False
+
+    def companions_join_in(self, session, eid):
+        """Your pet (or child) joins in a gesture of yours."""
+
+    def give_to_companion(self, session, name, message):
+        """ "beri makan Kiki" (read by the clients as giving "makan" something). False: not that."""
+        return False

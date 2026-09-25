@@ -31,7 +31,11 @@ transfer codes (only a hash, for 10 minutes), secrets that no longer work (moved
 by an admin, so the old computer is told why), the transfers log, the
 admins' log, bans by address (a salted hash), and "meta" for server values
 (the market's prices, each world's market, the economy's totals, the
-lottery's pot, the salt).
+lottery's pot, the salt). Since Orbit 1.2 (schema 8): what each resident
+remembers of each character (npc_memory: affinity, talks, gifts, favours,
+small notes), partnerships between two characters, weddings (their hall,
+tier, ceremony, time, what was paid, their progress and the memory kept
+afterwards) and their guests (invited, answered, came).
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is
@@ -55,7 +59,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -247,12 +251,75 @@ CREATE TABLE IF NOT EXISTS crew_members (
 CREATE INDEX IF NOT EXISTS crew_members_crew ON crew_members (crew_id);
 """
 
+# Version 8 (Orbit 1.2): what the station's residents remember of each
+# player; partnerships, weddings and their guests; duels won, as a column
+# for the leaderboard (it is also in the stats).
+V8_COLUMNS = (
+    ("duels_won", "INTEGER NOT NULL DEFAULT 0"),
+)
+V8_TABLES = """
+CREATE TABLE IF NOT EXISTS npc_memory (
+    npc TEXT NOT NULL,
+    char_id INTEGER NOT NULL,
+    affinity INTEGER NOT NULL DEFAULT 0,
+    talks INTEGER NOT NULL DEFAULT 0,
+    gifts INTEGER NOT NULL DEFAULT 0,
+    favours INTEGER NOT NULL DEFAULT 0,
+    first_met REAL NOT NULL DEFAULT 0,
+    last_met REAL NOT NULL DEFAULT 0,
+    state TEXT NOT NULL DEFAULT '{}',
+    PRIMARY KEY (npc, char_id)
+);
+CREATE INDEX IF NOT EXISTS npc_memory_char ON npc_memory (char_id);
+CREATE TABLE IF NOT EXISTS partnerships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    a INTEGER NOT NULL,
+    b INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    since REAL NOT NULL,
+    engaged REAL NOT NULL DEFAULT 0,
+    married REAL NOT NULL DEFAULT 0,
+    ended REAL NOT NULL DEFAULT 0,
+    ended_by TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS partnerships_a ON partnerships (a, status);
+CREATE INDEX IF NOT EXISTS partnerships_b ON partnerships (b, status);
+CREATE TABLE IF NOT EXISTS weddings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partnership INTEGER NOT NULL,
+    venue TEXT NOT NULL,
+    tier TEXT NOT NULL,
+    style TEXT NOT NULL,
+    starts REAL NOT NULL,
+    ends REAL NOT NULL,
+    status TEXT NOT NULL,
+    booked_by INTEGER NOT NULL,
+    paid INTEGER NOT NULL DEFAULT 0,
+    refunded INTEGER NOT NULL DEFAULT 0,
+    state TEXT NOT NULL DEFAULT '{}',
+    memory TEXT NOT NULL DEFAULT '',
+    created REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS weddings_by_status ON weddings (status, starts);
+CREATE TABLE IF NOT EXISTS wedding_guests (
+    wedding INTEGER NOT NULL,
+    char_id INTEGER NOT NULL,
+    rsvp TEXT NOT NULL DEFAULT 'invited',
+    invited REAL NOT NULL,
+    told INTEGER NOT NULL DEFAULT 0,
+    attended INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (wedding, char_id)
+);
+CREATE INDEX IF NOT EXISTS wedding_guests_char ON wedding_guests (char_id);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
-FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
+FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS + V8_COLUMNS)
 JSON_FIELDS = ("inventory", "stats")
-INT_FIELDS = ("voice", "xp", "streak", "mined", "harvested", "casino_net")
-BOARD_COLUMNS = ("credits", "xp", "mined", "harvested", "streak", "casino_net")
+INT_FIELDS = ("voice", "xp", "streak", "mined", "harvested", "casino_net", "duels_won")
+BOARD_COLUMNS = ("credits", "xp", "mined", "harvested", "streak", "casino_net", "duels_won")
+ACTIVE_PARTNERSHIP = ("partners", "engaged", "married")
 
 
 class Character(dict):
@@ -324,6 +391,8 @@ class Store:
                 self._migrate_6()
             if version < 7:
                 self._migrate_7()
+            if version < 8:
+                self._migrate_8()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -399,6 +468,25 @@ class Store:
         for statement in V7_TABLES.split(";"):
             if statement.strip():
                 self.db.execute(statement)
+
+    def _migrate_8(self):
+        have = self._columns("characters")
+        for name, decl in V8_COLUMNS:
+            if name not in have:
+                self.db.execute(f"ALTER TABLE characters ADD COLUMN {name} {decl}")
+        for statement in V8_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+        # Duels won so far (kept in the stats since 1.1) count on the new board.
+        for row in self.db.execute("SELECT id, stats FROM characters").fetchall():
+            try:
+                stats = json.loads(row["stats"] or "{}")
+                won = max(0, int(stats.get("duels_won") or 0)) if isinstance(stats, dict) else 0
+            except (ValueError, TypeError):
+                won = 0
+            if won:
+                self.db.execute("UPDATE characters SET duels_won = ? WHERE id = ? AND duels_won = 0",
+                                (won, row["id"]))
 
     @contextlib.contextmanager
     def transaction(self):
@@ -504,17 +592,23 @@ class Store:
 
     def save(self, char):
         char["last_seen"] = self.clock()
+        try:
+            char["duels_won"] = max(0, int(char["stats"].get("duels_won") or 0))
+        except (TypeError, ValueError):
+            char["duels_won"] = 0
         self.db.execute(
             "UPDATE characters SET job = ?, credits = ?, location = ?, description = ?, "
             "inventory = ?, stats = ?, banned = ?, muted_until = ?, last_seen = ?, voice = ?, "
-            "xp = ?, streak = ?, last_daily = ?, mined = ?, harvested = ?, casino_net = ? WHERE id = ?",
+            "xp = ?, streak = ?, last_daily = ?, mined = ?, harvested = ?, casino_net = ?, duels_won = ? "
+            "WHERE id = ?",
             (char["job"], int(char["credits"]), char["location"], char["description"],
              json.dumps(char["inventory"], separators=(",", ":")),
              json.dumps(char["stats"], separators=(",", ":")),
              int(bool(char["banned"])), float(char["muted_until"]), char["last_seen"],
              int(char.get("voice") or 0), int(char.get("xp") or 0), int(char.get("streak") or 0),
              str(char.get("last_daily") or ""), int(char.get("mined") or 0),
-             int(char.get("harvested") or 0), int(char.get("casino_net") or 0), char["id"]))
+             int(char.get("harvested") or 0), int(char.get("casino_net") or 0), char["duels_won"],
+             char["id"]))
 
     def save_all(self, chars):
         """Several characters at once: all saved, or none (a trade)."""
@@ -699,6 +793,191 @@ class Store:
         self.db.execute("UPDATE companions SET name = ?, stats = ?, state = ? WHERE id = ?",
                         (comp["name"], json.dumps(comp.get("stats") or {}),
                          json.dumps(comp.get("state") or {}), comp["id"]))
+
+    def companion_by_id(self, comp_id):
+        row = self.db.execute("SELECT * FROM companions WHERE id = ?", (comp_id,)).fetchone()
+        return self._companion(row) if row else None
+
+    def companion_owners(self, comp_id):
+        """[(char_id, role)] of a companion, the first to have it first."""
+        rows = self.db.execute("SELECT char_id, role FROM companion_owners WHERE companion_id = ? "
+                               "ORDER BY since, char_id", (comp_id,)).fetchall()
+        return [(row["char_id"], row["role"]) for row in rows]
+
+    def add_companion_owner(self, comp_id, char_id, role="owner"):
+        self.db.execute("INSERT OR IGNORE INTO companion_owners (companion_id, char_id, role, since) "
+                        "VALUES (?, ?, ?, ?)", (comp_id, char_id, role, self.clock()))
+
+    # --- what the station's residents remember ------------------------------------------
+
+    def npc_memory(self, npc, char_id):
+        """What resident `npc` remembers of a character (all zeros for a stranger)."""
+        row = self.db.execute("SELECT * FROM npc_memory WHERE npc = ? AND char_id = ?", (npc, char_id)).fetchone()
+        if row is None:
+            return {"npc": npc, "char_id": char_id, "affinity": 0, "talks": 0, "gifts": 0, "favours": 0,
+                    "first_met": 0.0, "last_met": 0.0, "state": {}}
+        memory = dict(row)
+        try:
+            state = json.loads(memory.get("state") or "{}")
+        except ValueError:
+            state = {}
+        memory["state"] = state if isinstance(state, dict) else {}
+        return memory
+
+    def save_npc_memory(self, memory):
+        self.db.execute(
+            "INSERT INTO npc_memory (npc, char_id, affinity, talks, gifts, favours, first_met, last_met, state) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(npc, char_id) DO UPDATE SET "
+            "affinity = excluded.affinity, talks = excluded.talks, gifts = excluded.gifts, "
+            "favours = excluded.favours, first_met = excluded.first_met, last_met = excluded.last_met, "
+            "state = excluded.state",
+            (memory["npc"], memory["char_id"], int(memory["affinity"]), int(memory["talks"]), int(memory["gifts"]),
+             int(memory["favours"]), float(memory["first_met"]), float(memory["last_met"]),
+             json.dumps(memory.get("state") or {}, separators=(",", ":"))))
+
+    def npc_memories_of(self, char_id):
+        """[memory] of every resident who has met a character, the fondest first."""
+        rows = self.db.execute("SELECT npc FROM npc_memory WHERE char_id = ? ORDER BY affinity DESC, npc",
+                               (char_id,)).fetchall()
+        return [self.npc_memory(row["npc"], char_id) for row in rows]
+
+    # --- partnerships -------------------------------------------------------------------
+
+    def partnership_of(self, char_id):
+        """A character's partnership that hasn't ended (partners, engaged or married), or None."""
+        row = self.db.execute(
+            "SELECT * FROM partnerships WHERE (a = ? OR b = ?) AND status IN ('partners', 'engaged', 'married') "
+            "ORDER BY id DESC LIMIT 1", (char_id, char_id)).fetchone()
+        return dict(row) if row else None
+
+    def partnership_by_id(self, pid):
+        row = self.db.execute("SELECT * FROM partnerships WHERE id = ?", (pid,)).fetchone()
+        return dict(row) if row else None
+
+    def add_partnership(self, a, b, status, when):
+        a, b = sorted((int(a), int(b)))
+        cursor = self.db.execute("INSERT INTO partnerships (a, b, status, since, engaged) VALUES (?, ?, ?, ?, ?)",
+                                 (a, b, status, float(when), float(when) if status == "engaged" else 0.0))
+        return self.partnership_by_id(cursor.lastrowid)
+
+    def save_partnership(self, p):
+        self.db.execute("UPDATE partnerships SET status = ?, engaged = ?, married = ?, ended = ?, ended_by = ? "
+                        "WHERE id = ?", (p["status"], float(p["engaged"]), float(p["married"]), float(p["ended"]),
+                                         p.get("ended_by") or "", p["id"]))
+
+    def last_partnership_end(self, char_id):
+        row = self.db.execute("SELECT MAX(ended) AS t FROM partnerships WHERE (a = ? OR b = ?) AND status = 'ended'",
+                              (char_id, char_id)).fetchone()
+        return float(row["t"] or 0)
+
+    # --- weddings -------------------------------------------------------------------------
+
+    @staticmethod
+    def _wedding(row):
+        if row is None:
+            return None
+        wedding = dict(row)
+        for name, empty in (("state", {}), ("memory", {})):
+            try:
+                value = json.loads(wedding.get(name) or "{}")
+            except ValueError:
+                value = {}
+            wedding[name] = value if isinstance(value, dict) else dict(empty)
+        return wedding
+
+    def add_wedding(self, partnership, venue, tier, style, starts, ends, booked_by, paid):
+        cursor = self.db.execute(
+            "INSERT INTO weddings (partnership, venue, tier, style, starts, ends, status, booked_by, paid, created) "
+            "VALUES (?, ?, ?, ?, ?, ?, 'booked', ?, ?, ?)",
+            (partnership, venue, tier, style, float(starts), float(ends), booked_by, int(paid), self.clock()))
+        return self.wedding_by_id(cursor.lastrowid)
+
+    def wedding_by_id(self, wid):
+        return self._wedding(self.db.execute("SELECT * FROM weddings WHERE id = ?", (wid,)).fetchone())
+
+    def save_wedding(self, wedding):
+        self.db.execute("UPDATE weddings SET venue = ?, tier = ?, style = ?, starts = ?, ends = ?, status = ?, "
+                        "paid = ?, refunded = ?, state = ?, memory = ? WHERE id = ?",
+                        (wedding["venue"], wedding["tier"], wedding["style"], float(wedding["starts"]),
+                         float(wedding["ends"]), wedding["status"], int(wedding["paid"]), int(wedding["refunded"]),
+                         json.dumps(wedding.get("state") or {}, separators=(",", ":")),
+                         json.dumps(wedding.get("memory") or {}, separators=(",", ":")) if wedding.get("memory")
+                         else "", wedding["id"]))
+
+    def weddings_with(self, statuses):
+        marks = ", ".join("?" for _s in statuses)
+        rows = self.db.execute(f"SELECT * FROM weddings WHERE status IN ({marks}) ORDER BY starts, id",
+                               tuple(statuses)).fetchall()
+        return [self._wedding(row) for row in rows]
+
+    def weddings_of_partnership(self, pid, statuses=None):
+        if statuses:
+            marks = ", ".join("?" for _s in statuses)
+            rows = self.db.execute(f"SELECT * FROM weddings WHERE partnership = ? AND status IN ({marks}) "
+                                   "ORDER BY starts, id", (pid,) + tuple(statuses)).fetchall()
+        else:
+            rows = self.db.execute("SELECT * FROM weddings WHERE partnership = ? ORDER BY starts, id",
+                                   (pid,)).fetchall()
+        return [self._wedding(row) for row in rows]
+
+    def weddings_in(self, venue, start, end, statuses):
+        """Weddings at `venue` whose time overlaps [start, end)."""
+        marks = ", ".join("?" for _s in statuses)
+        rows = self.db.execute(f"SELECT * FROM weddings WHERE venue = ? AND status IN ({marks}) AND starts < ? "
+                               "AND ends > ? ORDER BY starts", (venue,) + tuple(statuses) + (float(end), float(start))
+                               ).fetchall()
+        return [self._wedding(row) for row in rows]
+
+    def last_wedding_of(self, char_id):
+        """When a character's last wedding took place (0: never)."""
+        row = self.db.execute(
+            "SELECT MAX(w.starts) AS t FROM weddings w JOIN partnerships p ON p.id = w.partnership "
+            "WHERE (p.a = ? OR p.b = ?) AND w.status = 'done'", (char_id, char_id)).fetchone()
+        return float(row["t"] or 0)
+
+    def memories_of(self, char_id):
+        """Weddings a character married in, or went to as a guest: [(wedding, "couple" or "guest")]."""
+        rows = self.db.execute(
+            "SELECT w.*, CASE WHEN p.a = ? OR p.b = ? THEN 'couple' ELSE 'guest' END AS was FROM weddings w "
+            "JOIN partnerships p ON p.id = w.partnership LEFT JOIN wedding_guests g ON g.wedding = w.id "
+            "AND g.char_id = ? WHERE w.status = 'done' AND (p.a = ? OR p.b = ? OR g.attended = 1) "
+            "ORDER BY w.starts DESC", (char_id,) * 5).fetchall()
+        found = []
+        for row in rows:
+            was = row["was"]
+            found.append((self._wedding(row), was))
+        return found
+
+    def add_guest(self, wedding_id, char_id, when):
+        """True when newly invited."""
+        cursor = self.db.execute("INSERT OR IGNORE INTO wedding_guests (wedding, char_id, invited) VALUES (?, ?, ?)",
+                                 (wedding_id, char_id, float(when)))
+        return cursor.rowcount == 1
+
+    def set_guest(self, wedding_id, char_id, **fields):
+        allowed = {"rsvp", "told", "attended"}
+        sets = [(k, v) for k, v in fields.items() if k in allowed]
+        if not sets:
+            return
+        self.db.execute(f"UPDATE wedding_guests SET {', '.join(f'{k} = ?' for k, _v in sets)} "
+                        "WHERE wedding = ? AND char_id = ?", tuple(v for _k, v in sets) + (wedding_id, char_id))
+
+    def guests_of(self, wedding_id):
+        """[{char_id, name, rsvp, told, attended}] of a wedding, by when they were invited."""
+        rows = self.db.execute(
+            "SELECT g.char_id, c.name, c.name_key, g.rsvp, g.told, g.attended FROM wedding_guests g "
+            "JOIN characters c ON c.id = g.char_id WHERE g.wedding = ? ORDER BY g.invited, c.name_key",
+            (wedding_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+    def invitations_of(self, char_id, statuses=("booked", "waiting", "ceremony")):
+        """[(wedding, rsvp, told)] a character is invited to that are still to come."""
+        marks = ", ".join("?" for _s in statuses)
+        rows = self.db.execute(
+            f"SELECT w.*, g.rsvp AS guest_rsvp, g.told AS guest_told FROM wedding_guests g "
+            f"JOIN weddings w ON w.id = g.wedding WHERE g.char_id = ? AND w.status IN ({marks}) "
+            "ORDER BY w.starts", (char_id,) + tuple(statuses)).fetchall()
+        return [(self._wedding(row), row["guest_rsvp"], int(row["guest_told"])) for row in rows]
 
     # --- ships ------------------------------------------------------------------------------
 

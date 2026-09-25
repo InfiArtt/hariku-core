@@ -1958,6 +1958,22 @@ def creature():
 
 
 # ------------------------------------------------------------
+# Orbit 1.2: the residents, pets, families and weddings
+# ------------------------------------------------------------
+
+A5 = 880.0
+
+
+def npc_warm():
+    """A resident counts you as closer: two warm notes rising a fourth, softly."""
+    out = _zeros(0.85)
+    partials = ((1, 1.0), (2.0, 0.22), (3.0, 0.05))
+    _put(out, 0.0, _bell(E5, 0.7, 4.5, partials=partials), 0.5)
+    _put(out, 0.15, _bell(A5, 0.7, 4.5, partials=partials), 0.45)
+    return mono_bytes(_reverb(out, RATE, size=0.7, wet=0.3), RATE, 0.3, fade_out=0.12)
+
+
+# ------------------------------------------------------------
 # Recorded cues (Kenney's CC0 packs)
 # ------------------------------------------------------------
 
@@ -2234,7 +2250,8 @@ SOUNDS = (
        ("arcade_hit.wav", arcade_hit), ("arcade_beat.wav", arcade_beat), ("arcade_meteor.wav", arcade_meteor),
        ("arcade_whoosh.wav", arcade_whoosh), ("arcade_crash.wav", arcade_crash),
        ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over),
-       ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join), ("duel_start.wav", duel_start)]
+       ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join), ("duel_start.wav", duel_start),
+       ("npc_warm.wav", npc_warm)]
 )
 
 
