@@ -1,3 +1,46 @@
+Versi 2.10.0 (Pembaruan Inti)
+================================================================================
+- Sambutan baru. Saat Hariku pertama kali menyala, Hariku mengajak kenalan:
+  "Halo! Aku Hariku. Boleh kenalan dulu?" Pilih bahasamu (langsung berganti),
+  sebutkan namamu dan mau dipanggil apa, dan sejak itu semua yang Hariku
+  ucapkan memakai namamu: "Senang kenalan, Rafli!", "Kamu tinggal di mana,
+  Rafli?". Cari kotamu, lalu dengar jam di sana dan, kalau tersambung ke
+  internet, cuacanya: "Di Batam sekarang jam 14:20, cerah berawan, 31
+  derajat." Kotamu menjadi tempat utamamu, Rumah. Kalau mau, beri tahu ulang
+  tahunmu, dan Hariku mengucapkan selamat di harinya.
+- Sambutan ini mengenalkan Aruna (Ctrl+Alt+Backspace, atau tombol yang kamu
+  pilih): ketik "jam berapa" atau "what time is it" di situ juga, dan Aruna
+  menjawab.
+- Hariku menyarankan beberapa ekstensi dari Toko, masing-masing dengan satu
+  kalimat penjelasan: Weather, Morning Briefing, Timer & Alarm, Voice
+  Control, World Trip, Earthquakes & Tsunami, dan lainnya; hanya yang bisa
+  berjalan di Hariku ini dan belum kamu punya. Tidak ada yang diunduh sebelum
+  kamu menekan Selesai. Setelah itu dipasang satu per satu, masing-masing
+  diumumkan, dan yang gagal tidak menghentikan yang lain. "Preset" lama yang
+  memasang hampir semua ekstensi sudah dihapus.
+- Terakhir, pilih apakah Hariku menyala bersama Windows dan menyapamu saat
+  menyala (masing-masing seperti pengaturanmu sekarang; pada pemasangan baru,
+  menyala bersama Windows tidak dicentang), lalu dengar ringkasannya: "Semua
+  siap, Rafli! ... Selamat datang di Hariku!"
+- Semua disimpan di tempat yang sama dengan pengaturan Hariku lainnya: nama,
+  nama panggilan, dan ulang tahun di Pengaturan, Profil; kotamu di
+  Pengaturan, Tempat, dan tempat-tempatmu yang lain tetap ada. Batal (Escape)
+  tidak menyimpan apa pun, dan bertanya dulu kalau kamu sudah mengetik
+  sesuatu. Pada saat pertama kali, Hariku lalu tetap menyala seperti biasa
+  (tidak lagi tertutup), dan sambutan tidak muncul lagi. Buka lagi kapan
+  saja lewat Bantuan, Dialog Selamat Datang: isinya pengaturanmu sekarang,
+  dan hanya yang kamu ubah yang berubah.
+- Dibuat untuk pembaca layar: pertanyaan tiap halaman dibacakan bersama
+  kolomnya, sisanya menyusul sebentar kemudian, Enter untuk lanjut, dan
+  Escape untuk berhenti.
+- Pembaca layar sekarang membacakan teks terbaru dari label yang berubah
+  (misalnya jumlah kota yang ditemukan di Pengaturan, Tempat), bukan teks
+  saat jendela dibuka.
+- Untuk pembuat ekstensi: core.i18n.use_language() mengganti bahasa saat itu
+  juga, dan core.i18n.translations() memberi sebuah teks dalam semua bahasa.
+  Lihat DEVELOPERS.md.
+
+
 Versi 2.9.0 (Pembaruan Inti - 25 September 2026)
 ================================================================================
 - Untuk pembuat ekstensi: perintah dengan isi. Ekstensi sekarang bisa
