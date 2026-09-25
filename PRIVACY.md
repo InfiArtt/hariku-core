@@ -289,17 +289,17 @@ which, like any web host, sees your IP address; see the
   voice number you chose for others to hear, its pet (a name and a kind),
   its ship (model, name, where it's docked or flying, fuel and cargo), the
   events it took part in (and how much it helped), its achievements, its
-  lottery tickets for the week's draw, its best score and how many games
-  it played at each arcade cabinet, how far it got in each season of
-  the hunt (its riddle, how many tries and wrong answers, when it may try
-  again, when it finished and in which place; the answers you type are
-  only checked, never kept), what it won or
-  lost at the casino in all (and its bets of the last hour, a minute at a
-  time, for the hourly limit), how many trades it made, when it was made
-  and last seen, and whether an admin muted or banned it. There is no
-  password and no email. If an admin bans you, a salted hash of your IP
-  address is kept for 7 days. Trade offers and coin-flip challenges are
-  kept only in the server's memory, until they are answered or run out.
+  lottery tickets for the week's draw, its best score and how many games it
+  played at each arcade cabinet, its crew and its role there, how far it got
+  in each season of the hunt (its riddle, how many tries and wrong answers,
+  when it may try again, when it finished and in which place; the answers
+  you type are only checked, never kept), what it won or lost at the casino
+  in all (and its bets of the last hour, a minute at a time, for the hourly
+  limit), how many trades it made, when it was made and last seen, and
+  whether an admin muted or banned it. There is no password and no email. If
+  an admin bans you, a salted hash of your IP address is kept for 7 days.
+  Trade offers, coin-flip challenges and crew invitations are kept only in
+  the server's memory, until they are answered or run out.
 - Moving your character to another computer: the server keeps only a keyed
   hash of the transfer code, for 10 minutes or until it is used. After a
   move, the hash of the old computer's secret is kept so that computer can be
@@ -308,17 +308,18 @@ which, like any web host, sees your IP address; see the
   To limit guessing, the server remembers wrong codes per connection
   address for 15 minutes, in memory only.
 - Chat is not stored. What you say is passed on to the players in the same
-  place, a whisper to one player, a shout to everyone online, and then it is
-  gone: the server writes no chat, secrets, codes or IP addresses to its log
-  (only names, and who joined, left or was muted). Other players see your
-  character's name, job and rank, where it is, what you say and do, what it
-  wears, its pet, its public progress (level, what it mined and harvested,
-  its achievements, and its place on the leaderboards: credits, level, ore,
-  crops, the daily streak and casino winnings) and its description. Big
-  casino wins, the lottery's winner, new arcade high scores (the tables
-  show everyone's best), how far players got in the hunt (and its board)
-  and some achievements are announced to everyone online.
-  Admins are left off the leaderboards and the hunt's board.
+  place, a whisper to one player, a shout to everyone online, crew chat to
+  your crew's members online, and then it is gone: the server writes no
+  chat, secrets, codes or IP addresses to its log (only names, and who
+  joined, left or was muted). Other players see your character's name, job
+  and rank, where it is, what you say and do, what it wears, its pet, its
+  public progress (level, what it mined and harvested, its achievements, and
+  its place on the leaderboards: credits, level, ore, crops, the daily
+  streak and casino winnings), its crew and its description. Big casino
+  wins, the lottery's winner, new arcade high scores (the tables show
+  everyone's best), how far players got in the hunt (and its board) and some
+  achievements are announced to everyone online. Admins are left off the
+  leaderboards and the hunt's board.
 - "Remind me" makes an ordinary Hariku reminder on your computer; the server
   isn't told.
 - On your computer, in `%APPDATA%\Hariku2`: your Orbit settings (including the

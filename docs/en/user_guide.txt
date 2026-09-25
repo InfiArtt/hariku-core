@@ -866,6 +866,17 @@ pemburu" or "hunt board" shows who has come furthest, and how close the
 rival company is. Admins may release an official hint for a riddle that
 proves too hard.
 
+Crews. Band together with friends: "buat kru" or "crew create" and a name
+founds a crew (500 credits, from level 3), and you're its captain. "kru
+undang Budi" or "crew invite Budi" asks someone in; they answer "terima"
+(accept) or "tolak" (decline). "kru bilang" or "crew say" and your words
+reach every member online, wherever they are (heard as whispers are, and
+read under the same setting). "kru" or "crew" shows your crew; "keluar kru"
+or "crew leave", "kru keluarkan Budi" or "crew kick Budi", "jadikan kapten
+Budi" or "crew captain Budi", and "moto kru" or "crew motto" and a line. Every
+XP your crew's members earn is a point for the crew; "papan kru" or "crews"
+shows the board.
+
 The arcade. On Pixel Pier, Cabinet Row has four games played by ear, and a
 token machine: "beli 10 token" or "buy 10 tokens" (5 credits each). Then
 "main" or "play" and a game: Quick Draw ("adu cepat": wait for the beep,
