@@ -1588,6 +1588,38 @@ def robot_beep():
         _put(samples, start, tone)
     return mono_bytes(samples, RATE, 0.4)
 
+
+def hunt_clue():
+    """A clue of the hunt: a music box's question, four notes that don't resolve."""
+    left, right = _blank(1.6)
+    for i, (note, position) in enumerate(((E5, -0.5), (G5, -0.15), (E5 * 2, 0.15), (G5 * 1.5, 0.5))):
+        _add(left, right, i * 0.16, _bell(note, 0.9, 4.5, partials=((1, 1.0), (3.0, 0.18), (5.4, 0.05))),
+             position, 0.5)
+    _echo(left, right, RATE, ((0.18, 0.3, 1), (0.34, 0.2, -1)))
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.4)
+
+
+def hunt_found():
+    """A note of the Lost Chord found: C, E, G and B blooming from left to right."""
+    left, right = _blank(2.4)
+    for i, (note, position) in enumerate(((C5, -0.6), (E5, -0.2), (G5, 0.2), (987.77, 0.6))):
+        _add(left, right, i * 0.12, _soft_square(note, 1.2, 2.2), position, 0.32)
+        _add(left, right, i * 0.12 + 0.01, _bell(note * 2, 1.6, 2.0), position, 0.28)
+    _add(left, right, 0.5, _bell(C6 * 2, 1.4, 2.4), 0.0, 0.18)
+    _echo(left, right, RATE, ((0.11, 0.3, 1), (0.21, 0.22, -1), (0.33, 0.14, 1)))
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.3), RATE, 0.42)
+
+
+def hunt_rival():
+    """The rival is ahead: three low notes stepping down, and a dull thud."""
+    left, right = _blank(1.5)
+    for i, note in enumerate((G5 / 2, 369.99, E5 / 2 * 0.944)):
+        _add(left, right, i * 0.2, _soft_square(note, 0.5, 5.0), 0.4 - 0.4 * i, 0.5)
+    _add(left, right, 0.62, _thump(55, 0.5, 7.0), 0.0, 0.9)
+    _echo(left, right, RATE, ((0.2, 0.25, -1),))
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.4)
+
+
 # The other worlds' ambience (kept as a name of its own; every loop is at LOOP_RATE now).
 SMALL_LOOP_RATE = LOOP_RATE
 
@@ -2084,7 +2116,8 @@ SOUNDS = (
        ("amb_neon.wav", amb_neon), ("amb_arcade.wav", amb_arcade), ("creature.wav", creature),
        ("event_start.wav", event_start), ("event_end.wav", event_end), ("event_party.wav", event_party),
        ("event_storm.wav", event_storm), ("event_boss.wav", event_boss), ("event_meteor.wav", event_meteor),
-       ("fireworks.wav", fireworks), ("robot_beep.wav", robot_beep)]
+       ("fireworks.wav", fireworks), ("robot_beep.wav", robot_beep),
+       ("hunt_clue.wav", hunt_clue), ("hunt_found.wav", hunt_found), ("hunt_rival.wav", hunt_rival)]
 )
 
 
