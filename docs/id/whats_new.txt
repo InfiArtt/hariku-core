@@ -1,4 +1,4 @@
-Versi 2.10.0 (Pembaruan Inti)
+Versi 2.10.0 (Pembaruan Inti - 25 September 2026)
 ================================================================================
 - Sambutan baru. Saat Hariku pertama kali menyala, Hariku memperkenalkan diri
   sebagai teman barumu yang agak kepo, lalu mengajak kenalan. Pilih bahasamu
