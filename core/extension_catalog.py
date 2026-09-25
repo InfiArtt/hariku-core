@@ -159,6 +159,18 @@ def can_install(row):
     return not row["installed"] and not row["problem"] and not row["needs_core"]
 
 
+def can_open_guide(row, done="", has_guide=None):
+    """Whether the Installed tab's Guide button works for a row (core 2.11):
+    an installed extension, not just removed, with a guide of its own.
+    has_guide(ext_id) defaults to core.guides.has_guide."""
+    if not row or not row.get("installed") or done == "removed":
+        return False
+    if has_guide is None:
+        import core.guides
+        has_guide = core.guides.has_guide
+    return bool(has_guide(row["id"]))
+
+
 def waits_for_core(row):
     """The Hariku version the row waits for (to run, update or install), else ""."""
     if row["problem"] == "needs_core":

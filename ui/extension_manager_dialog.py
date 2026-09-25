@@ -10,7 +10,8 @@
 The Extension Manager (Extensions, Manage Extensions; Ctrl+X): four tabs, each
 with a Search field, the list (Name, Version, Status), a Details box and the
 tab's buttons.
-  * Installed    - Enable/Disable, Remove (Delete too), Update.
+  * Installed    - Enable/Disable, Remove (Delete too), Update, Guide (the
+                   extension's own guide, core 2.11: ui/guides_dialog.py).
   * Updates      - Update (Enter too), Update all.
   * Available    - Install (Enter too).
   * Incompatible - extensions made for a Hariku older than this one still
@@ -37,6 +38,7 @@ import wx
 
 import core.extension_catalog as catalog
 import core.extension_manager
+import core.guides
 import core.store
 from core.core_panels import _labeled, _speak
 from core.i18n import get_translator
@@ -83,7 +85,7 @@ def _download_worker(done, finished, rows):
 
 # The buttons of each tab, in Tab order.
 BUTTONS = {
-    "installed": ("toggle", "uninstall", "update", "check_core"),
+    "installed": ("toggle", "uninstall", "update", "guide", "check_core"),
     "updates": ("update", "update_all", "check_core"),
     "available": ("install", "check_core"),
     "incompatible": ("update", "uninstall"),
@@ -234,6 +236,7 @@ class ExtensionManagerDialog(wx.Dialog):
         self.busy = False
         self._generation = 0
         self._closed = False
+        self._guides = {}           # ext id -> whether it has a guide (read once)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.notebook = wx.Notebook(self)
@@ -284,6 +287,7 @@ class ExtensionManagerDialog(wx.Dialog):
         its rows (only their Status changes) and gets the new ones when it's
         shown next."""
         data = self._data()
+        self._guides.clear()        # installing or updating may bring one
         store_state = ("loading" if self.registry is None else
                        "failed" if not self.registry else "ready")
         shown = self.current_tab() if keep_current else None
@@ -352,6 +356,8 @@ class ExtensionManagerDialog(wx.Dialog):
             return bool(catalog.waits_for_core(row))
         if key == "toggle":
             return row["installed"]
+        if key == "guide":
+            return catalog.can_open_guide(row, done, self._has_guide)
         if key == "uninstall":
             return row["installed"] and row["source"] != catalog.BUNDLED
         if key == "update":
@@ -361,6 +367,11 @@ class ExtensionManagerDialog(wx.Dialog):
             return (not self.busy and catalog.can_install(row)
                     and done not in ("installed", "downloading"))
         return False
+
+    def _has_guide(self, ext_id):
+        if ext_id not in self._guides:
+            self._guides[ext_id] = core.guides.has_guide(ext_id)
+        return self._guides[ext_id]
 
     def _updatable(self, page):
         return [r for r in page.rows if catalog.can_update(r)
@@ -403,6 +414,10 @@ class ExtensionManagerDialog(wx.Dialog):
             _speak(_("ext_msg_removed", name=row["name"]))
         else:
             wx.MessageBox(_("ext_msg_uninstall_failed"), _("error"), wx.OK | wx.ICON_ERROR, self)
+
+    def _do_guide(self, row, page):
+        from ui.guides_dialog import show_guide
+        show_guide(self, row["id"])
 
     def _do_install(self, row, page):
         self._download([row])
