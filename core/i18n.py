@@ -83,6 +83,35 @@ def set_language(language_code):
     logger.info(f"Language changed to: {language_code}")
 
 
+def use_language(language_code):
+    """
+    Switch the language right away, without saving it and without a restart
+    (core 2.10; the welcome dialog does this when the user picks a language).
+    Translators look the language up each time they are called, so every text
+    made from now on is in it. Unlike set_language(), the translations already
+    loaded stay, extensions' included. Returns whether `language_code` is one
+    of the core's languages (nothing changes otherwise).
+    """
+    global _current_language
+    if "core" not in _language_cache or not _language_cache["core"]:
+        _load_domain("core", CORE_LOCALES_DIR)
+    if language_code not in _language_cache.get("core", {}):
+        return False
+    _current_language = language_code
+    return True
+
+
+def translations(key, domain="core"):
+    """Every language's text for `key` (core 2.10), in no particular order;
+    languages without it are left out."""
+    found = []
+    for lang_data in _language_cache.get(domain, {}).values():
+        text = lang_data["messages"].get(key)
+        if isinstance(text, str) and text not in found:
+            found.append(text)
+    return found
+
+
 def _load_domain(domain, locales_dir):
     """
     Load all available language files for a given domain from a locales directory.
