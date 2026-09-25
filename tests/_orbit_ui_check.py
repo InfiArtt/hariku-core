@@ -182,6 +182,8 @@ sounds, ambiences, voiced = [], [], []
 services.play = lambda name, pan=0.0, acoustics=None: sounds.append(name) or True
 settings_opened = []
 services.open_settings = lambda: settings_opened.append(1)
+reminders = []
+services.add_reminder = lambda title, when: reminders.append((title, when)) or True
 services.ambience = lambda name, volume: ambiences.append((name, volume))
 
 
@@ -278,7 +280,7 @@ kinds = check_labels(page, "Preferences")
 assert kinds == (["StaticText", "TextCtrl", "StaticText", "TextCtrl", "StaticText", "Choice",
                   "StaticText", "Button", "StaticText", "TextCtrl", "CheckBox", "CheckBox", "CheckBox",
                   "CheckBox", "StaticText"]
-                 + ["CheckBox"] * 6
+                 + ["CheckBox"] * 7
                  + ["StaticText", "Choice", "StaticText", "Choice", "StaticText", "Choice", "CheckBox",
                     "CheckBox", "StaticText", "Slider", "CheckBox", "StaticText", "Slider", "CheckBox",
                     "StaticText", "TextCtrl", "StaticText", "Button", "StaticText", "TextCtrl",
@@ -342,11 +344,15 @@ assert pump(lambda: main._frame is not None and main._frame.IsShown())
 window = main._frame
 panel = window.GetChildren()[0]
 kinds = check_labels(panel, "the Orbit window")
-assert kinds == ["StaticText", "ListBox", "StaticText", "TextCtrl", "Button", "Button", "Button",
+assert kinds == ["StaticText", "ListBox", "StaticText", "TextCtrl", "Button", "Button", "Button", "Button",
                  "StaticText", "TextCtrl"], kinds
 assert window.GetTitle() == "Orbit: Connected", window.GetTitle()
 fire(window.btn_settings, wx.EVT_BUTTON)
 assert settings_opened == [1]
+assert window.btn_remind.GetLabel() == "&Remind me of the next event"
+fire(window.btn_remind, wx.EVT_BUTTON)                   # asks the server what's coming, then sets one
+assert pump(lambda: reminders, 10), main._client.messages[-3:]
+assert reminders[0][0].startswith("Orbit: ")
 assert window.lst_messages.GetName() == "Messages" and window.txt_command.GetName() == "Command"
 assert window.lst_messages.GetCount() == len(main._client.messages) > 0
 focus_ok = pump(lambda: wx.Window.FindFocus() is window.txt_command, timeout=1.0)

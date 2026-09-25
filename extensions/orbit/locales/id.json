@@ -84,7 +84,7 @@
         "ignored_list": "Diabaikan: {names}.",
         "ignored_none": "Kamu tidak sedang mengabaikan siapa pun.",
 
-        "help": "Bantuan Orbit. Berjalan dengan u, s, t, b, tl, bl, tg, bd, naik, dan turun; lihat menyebut jalan keluar, dan arah ke kantin memberi langkahnya. Bantuan dari stasiun: bantuan bergerak, bantuan ngobrol, bantuan kerja, bantuan uang, bantuan toko, bantuan kapal, bantuan kasino, bantuan kemajuan. Orbit sendiri: bantuan pengaturan, sambungkan, keluar (keluar dari Orbit), status, ulangi (pesan terakhir sekali lagi). Lewat Aruna, awali dengan orbit: orbit utara, orbit bilang halo.",
+        "help": "Bantuan Orbit. Berjalan dengan u, s, t, b, tl, bl, tg, bd, naik, dan turun; lihat menyebut jalan keluar, dan arah ke kantin memberi langkahnya. Bantuan dari stasiun: bantuan bergerak, bantuan ngobrol, bantuan kerja, bantuan uang, bantuan toko, bantuan kapal, bantuan kasino, bantuan kemajuan. Orbit sendiri: ingatkan aku (pengingat Hariku sebelum acara berikutnya), bantuan pengaturan, sambungkan, keluar (keluar dari Orbit), status, ulangi (pesan terakhir sekali lagi). Lewat Aruna, awali dengan orbit: orbit utara, orbit bilang halo.",
         "help_settings": "Pengaturan Orbit, diketik di dalam game: suara pemain mati atau nyala (suara masing-masing pemain), kata-kataku mati atau nyala (kata-katamu dengan suara karaktermu), nama pemain mati atau nyala (nama pemain sebelum kata-katanya), bacakan pesan mati atau nyala, suasana mati atau nyala, volume suasana 30, suara efek mati atau nyala, volume efek 60, suara orang lain mati, abaikan Budi, dengar lagi Budi, daftar abaikan, suaraku 1 sampai 10 atau suaraku acak (suara yang orang lain dengar untukmu), pengaturan (halaman Pengaturan). Menutup jendela membuatmu tetap tersambung di latar belakang; keluar untuk keluar dari Orbit.",
 
         "window_title": "Orbit",
@@ -147,6 +147,15 @@
         "set_speak_own_on": "Kata-katamu sendiri diucapkan dengan suara karaktermu.",
         "set_speak_own_off": "Kata-katamu sendiri hanya dikonfirmasi.",
         "set_speak_names_on": "Nama pemain disebut sebelum kata-katanya.",
-        "set_speak_names_off": "Hanya kata-kata pemain yang diucapkan, tanpa namanya."
+        "set_speak_names_off": "Hanya kata-kata pemain yang diucapkan, tanpa namanya.",
+
+        "chk_read_events": "Acara khusus (hujan meteor, pesta, kembang &api)",
+        "btn_remind": "&Ingatkan aku acara berikutnya",
+        "remind_title": "Orbit: {name}",
+        "remind_set": "Pengingat Hariku dipasang pada {when}, lima menit sebelum {name}.",
+        "remind_none": "Belum ada acara yang akan datang.",
+        "remind_unknown": "Tidak ada acara mendatang bernama {name}. Ketik acara untuk mendengar yang akan datang.",
+        "remind_soon": "{name} mulai kurang dari lima menit lagi: tidak perlu pengingat!",
+        "remind_offline": "Sambungkan dulu ke Orbit, supaya Orbit bisa memberi tahu acara yang akan datang."
     }
 }

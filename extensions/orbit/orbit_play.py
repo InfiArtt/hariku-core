@@ -47,6 +47,7 @@ hash of it. A transfer code moves the character to another computer: that
 computer makes a secret of its own and sends it with the code.
 """
 
+import datetime
 import time
 
 import orbit_audio
@@ -78,6 +79,7 @@ BACKGROUND_MODES = ("all", "important", "none")
 CLOSE_ACTIONS = ("stay", "leave")
 AUTO_LOGOUT = (0, 15, 30, 60)
 AWAY_SECONDS = 300
+REMIND_BEFORE_SECONDS = 300           # a reminder of an event, five minutes before it
 TICK_SECONDS = 20
 CLOSE_HINTS = 3
 TRANSFER_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ"
@@ -114,6 +116,9 @@ class OrbitClient:
         self.clock = clock
         self.speaker = orbit_speech.Speaker(services, clock)
         self.voices_hint_said = False     # "too few voices" is said once a session
+        self.schedule = []                # the events coming, from the server's last list
+        self.pending_remind = None        # "remind me" asked before a list came
+        self.wall_clock = time.time       # the real time, for reminders
         self.messages = []
         self.listeners = []
         self.conn = None
@@ -315,6 +320,11 @@ class OrbitClient:
             self._welcome(message)
         elif kind == "ev":
             self._event(message)
+            if isinstance(message.get("schedule"), list):
+                self.schedule = [e for e in message["schedule"] if isinstance(e, dict) and e.get("at")]
+                if self.pending_remind is not None:       # "remind me" was waiting for this list
+                    name, self.pending_remind = self.pending_remind, None
+                    self.remind(name, asked=True)
         elif kind == "err":
             text = str(message.get("text") or "")
             if text:
@@ -408,7 +418,7 @@ class OrbitClient:
             delay = max(delay, wait)
         if not heard or not (settings.get("speak", True) or aruna):
             return
-        setting = READ_KINDS.get(kind)
+        setting = "read_events" if message.get("event") else READ_KINDS.get(kind)
         if setting and not aruna and not settings.get(setting, True) and (actor or kind != "emote"):
             return
         parts = self._parts(message, text, settings, aruna)
@@ -525,11 +535,39 @@ class OrbitClient:
             self.set_setting(parsed["key"], parsed["value"])
         elif what in ("ignore", "unignore"):
             self.ignore(parsed.get("name", ""), what == "ignore")
+        elif what == "remind":
+            self.remind(parsed.get("name", ""))
         elif what == "ignored":
             names = self.s.settings().get("ignored") or []
             text = _("ignored_list", names=", ".join(names)) if names else _("ignored_none")
             self.add_line(text)
             self._narrate(text, always=True)
+
+    def remind(self, name, asked=False):
+        """A Hariku reminder five minutes before a coming event (the first, or the one named)."""
+        name = str(name or "").strip()
+        if not self.schedule and not asked:
+            if self.online():
+                self.pending_remind = name
+                self.conn.send({"t": "cmd", "c": "events"})
+                return
+            text = _("remind_offline")
+        else:
+            wanted = name.casefold()
+            chosen = next((e for e in self.schedule if not wanted or wanted in str(e.get("name", "")).casefold()
+                           or wanted == str(e.get("event", "")).casefold()), None)
+            if chosen is None:
+                text = _("remind_unknown", name=name) if (name and self.schedule) else _("remind_none")
+            else:
+                at = float(chosen["at"])
+                when = datetime.datetime.fromtimestamp(at - REMIND_BEFORE_SECONDS)
+                if at - REMIND_BEFORE_SECONDS <= self.wall_clock():
+                    text = _("remind_soon", name=chosen["name"])
+                else:
+                    self.s.add_reminder(_("remind_title", name=chosen["name"]), when)
+                    text = _("remind_set", name=chosen["name"], when=when.strftime("%d-%m %H:%M"))
+        self.add_line(text)
+        self._narrate(text, always=True)
 
     def set_setting(self, key, value):
         self.s.set_setting(key, value)

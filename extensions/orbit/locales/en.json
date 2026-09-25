@@ -84,7 +84,7 @@
         "ignored_list": "Ignored: {names}.",
         "ignored_none": "You aren't ignoring anyone.",
 
-        "help": "Orbit's help. Walk with n, s, e, w, ne, nw, se, sw, up and down; look lists the exits, and way to the cantina gives the steps. Help from the station: help moving, help talking, help work, help money, help shops, help ships, help casino, help progress. Orbit itself: help settings, connect, quit (leave Orbit), status, repeat (the last message again). From Aruna, start with orbit: orbit north, orbit say hello.",
+        "help": "Orbit's help. Walk with n, s, e, w, ne, nw, se, sw, up and down; look lists the exits, and way to the cantina gives the steps. Help from the station: help moving, help talking, help work, help money, help shops, help ships, help casino, help progress. Orbit itself: remind me (a Hariku reminder before the next event), help settings, connect, quit (leave Orbit), status, repeat (the last message again). From Aruna, start with orbit: orbit north, orbit say hello.",
         "help_settings": "Orbit's settings, typed in the game: voices off or on (players' own voices), my lines off or on (your own words in your character voice), names off or on (a player's name before their words), speech off or on (reading messages aloud), ambience off or on, ambience volume 30, sounds off or on, effects volume 60, other sounds off, ignore Budi, unignore Budi, ignored (the list), my voice 1 to 10 or my voice auto (the voice others hear for you), settings (the Preferences page). Closing the window keeps you connected in the background; quit leaves Orbit.",
 
         "window_title": "Orbit",
@@ -147,6 +147,15 @@
         "set_speak_own_on": "Your own lines are spoken in your character voice.",
         "set_speak_own_off": "Your own lines are only confirmed.",
         "set_speak_names_on": "Players' names are said before their words.",
-        "set_speak_names_off": "Only players' words are said, without their names."
+        "set_speak_names_off": "Only players' words are said, without their names.",
+
+        "chk_read_events": "Special events (meteor showers, parties, &fireworks)",
+        "btn_remind": "&Remind me of the next event",
+        "remind_title": "Orbit: {name}",
+        "remind_set": "A Hariku reminder is set for {when}, five minutes before {name}.",
+        "remind_none": "No events are coming up just now.",
+        "remind_unknown": "No coming event is called {name}. Type events to hear what's coming.",
+        "remind_soon": "{name} starts in less than five minutes: no need for a reminder!",
+        "remind_offline": "Connect to Orbit first, so it can tell you what's coming."
     }
 }

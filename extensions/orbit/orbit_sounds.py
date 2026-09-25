@@ -61,7 +61,7 @@ import wave
 HERE = os.path.dirname(os.path.abspath(__file__))
 SOUNDS_DIR = os.path.join(HERE, "sounds")
 RATE = 22050                 # effects
-LOOP_RATE = 16000            # ambience: low sounds, smaller files
+LOOP_RATE = 11025            # ambience: low, soft sounds, so small files
 LOOP_SECONDS = 4.0
 LOOP_OVERLAP = 0.5
 SEED = 20260925
@@ -1487,8 +1487,109 @@ def amb_casino():
     return wav_bytes(*_seamless(left, right), LOOP_RATE, 0.42)
 
 
-# The other worlds' ambience: at a lower rate (their sounds are low and soft), so the set stays small.
-SMALL_LOOP_RATE = 11025
+# ------------------------------------------------------------
+# Events: a sting for each kind, so an event is known before its words
+# ------------------------------------------------------------
+
+def event_start():
+    """Something is happening: three bright notes climbing across, a shimmer after."""
+    left, right = _blank(1.4)
+    for i, (note, position) in enumerate(((G5, -0.6), (C6, 0.0), (E5 * 2, 0.6))):
+        _add(left, right, i * 0.11, _soft_square(note, 0.4, 6.0), position, 0.5)
+        _add(left, right, i * 0.11 + 0.02, _bell(note * 2, 0.8, 4.0), position, 0.2)
+    _echo(left, right, RATE, ((0.12, 0.3, 1), (0.23, 0.2, -1)))
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.15), RATE, 0.42)
+
+
+def event_end():
+    """It's over: two soft notes going down."""
+    left, right = _blank(1.0)
+    _add(left, right, 0.0, _bell(E5 * 2, 0.8, 4.5), 0.3, 0.5)
+    _add(left, right, 0.16, _bell(C6 / 1.0, 0.8, 4.5), -0.3, 0.5)
+    _echo(left, right, RATE, ((0.1, 0.25, 1),))
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.15), RATE, 0.36)
+
+
+def event_party():
+    """A party: a paper horn, a scatter of little bells like confetti."""
+    rng = random.Random(SEED + 600)
+    left, right = _blank(1.4)
+    horn = [v * 0.8 for v in _chirp(520, 780, 0.35, shape="arch")]
+    horn = [v + 0.3 * w for v, w in zip(horn, _chirp(1040, 1560, 0.35, shape="arch"))]
+    _add(left, right, 0.0, horn, 0.0, 0.5)
+    for k in range(14):
+        _add(left, right, 0.3 + 0.05 * k + rng.uniform(0, 0.03),
+             _bell(rng.uniform(1800, 3200), 0.25, 14.0, partials=((1, 1.0), (2.7, 0.3))), rng.uniform(-0.9, 0.9), 0.3)
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.1), RATE, 0.42)
+
+
+def event_storm():
+    """A storm: a low rumble rolling across, and electric crackles."""
+    rng = random.Random(SEED + 601)
+    left, right = _blank(1.8)
+    rumble = _low(_noise(int(1.8 * RATE), rng), 90)
+    env = _env(len(rumble), 0.25, 1.5)
+    rumble = [v * e * 6 for v, e in zip(rumble, env)]
+    for i in range(len(rumble)):
+        gl, gr = _pan(-0.8 + 1.6 * i / len(rumble))
+        left[i] += rumble[i] * gl
+        right[i] += rumble[i] * gr
+    crackle = _grains(rng, 1.2, 60, 2500, 6000)
+    _add(left, right, 0.2, crackle, 0.3, 0.6)
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.45)
+
+
+def event_boss():
+    """The runaway drone: a two-tone warning and a heavy clank."""
+    left, right = _blank(1.6)
+    for k in range(3):
+        _add(left, right, k * 0.36, _soft_square(620, 0.16, 8.0), -0.4, 0.45)
+        _add(left, right, k * 0.36 + 0.18, _soft_square(465, 0.16, 8.0), 0.4, 0.45)
+    clank = _resonator((180, 420, 910), (14, 22, 30), (1.0, 0.5, 0.3), 0.5)
+    _add(left, right, 1.08, clank, 0.0, 0.8)
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.1), RATE, 0.45)
+
+
+def event_meteor():
+    """A meteor shower: whooshes streaking across, and far-off thuds."""
+    rng = random.Random(SEED + 602)
+    left, right = _blank(1.8)
+    for k, (start, a, b) in enumerate(((0.0, -0.9, 0.6), (0.35, 0.8, -0.5), (0.7, -0.4, 0.9))):
+        n = int(0.5 * RATE)
+        whoosh = _band(_noise(n, rng), 1800 - 400 * k, 1.5)
+        for i, v in enumerate(whoosh):
+            position = a + (b - a) * i / n
+            gl, gr = _pan(position)
+            e = math.sin(math.pi * i / n)
+            j = int(start * RATE) + i
+            if j < len(left):
+                left[j] += v * e * gl * 0.5
+                right[j] += v * e * gr * 0.5
+        _add(left, right, start + 0.5, _thump(70, 0.3, 9.0), b, 0.4)
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.42)
+
+
+def fireworks():
+    """Fireworks: a whistle climbing, then a burst and a crackle, left and right."""
+    rng = random.Random(SEED + 603)
+    left, right = _blank(2.4)
+    for start, position in ((0.0, -0.6), (0.8, 0.6)):
+        _add(left, right, start, [v * 0.4 for v in _chirp(700, 2200, 0.5, shape="arch")], position * 0.5, 0.4)
+        _add(left, right, start + 0.55, _burst(rng, 0.5, 300, 0.8, 0.002, 9.0), position, 0.9)
+        _add(left, right, start + 0.65, _grains(rng, 0.8, 50, 3000, 7000), position, 0.9)
+    return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.55)
+
+
+def robot_beep():
+    """The runaway robot: two quick, cheerful beeps (placed by the mixer on its side)."""
+    samples = _zeros(0.36)
+    for start, note in ((0.0, 1760.0), (0.16, 2093.0)):
+        tone = [math.sin(TAU * note * i / RATE) * math.exp(-18 * i / RATE) for i in range(int(0.12 * RATE))]
+        _put(samples, start, tone)
+    return mono_bytes(samples, RATE, 0.4)
+
+# The other worlds' ambience (kept as a name of its own; every loop is at LOOP_RATE now).
+SMALL_LOOP_RATE = LOOP_RATE
 
 
 def _small_blank():
@@ -1885,7 +1986,8 @@ RECORDED.update({
                          ("sci-fi-sounds/doorClose_002.wav", 0.6, 0.8)]),
     "refuel.wav": (-4.5, [("rpg-audio/metalClick.wav", 0.0, 0.8), ("sci-fi-sounds/slime_000.wav", 0.15, 1.0),
                           ("rpg-audio/metalLatch.wav", 0.75, 0.7)]),
-    "customs.wav": (-8.0, [("interface-sounds/select_004.wav", 0.0, 1.0), ("interface-sounds/select_005.wav", 0.12, 1.0),
+    "customs.wav": (-8.0, [("interface-sounds/select_004.wav", 0.0, 1.0),
+                           ("interface-sounds/select_005.wav", 0.12, 1.0),
                            ("interface-sounds/question_003.wav", 0.3, 0.8)]),
     "cargo.wav": (-6.0, [("impact-sounds/impactWood_heavy_000.wav", 0.0, 1.0),
                          ("impact-sounds/impactPlank_medium_001.wav", 0.25, 0.8)]),
@@ -1979,7 +2081,10 @@ SOUNDS = (
        ("amb_mall.wav", amb_mall), ("amb_casino.wav", amb_casino),
        ("amb_gate.wav", amb_gate), ("amb_moon.wav", amb_moon), ("amb_colony.wav", amb_colony),
        ("amb_ice.wav", amb_ice), ("amb_bazaar.wav", amb_bazaar), ("amb_forest.wav", amb_forest),
-       ("amb_neon.wav", amb_neon), ("amb_arcade.wav", amb_arcade), ("creature.wav", creature)]
+       ("amb_neon.wav", amb_neon), ("amb_arcade.wav", amb_arcade), ("creature.wav", creature),
+       ("event_start.wav", event_start), ("event_end.wav", event_end), ("event_party.wav", event_party),
+       ("event_storm.wav", event_storm), ("event_boss.wav", event_boss), ("event_meteor.wav", event_meteor),
+       ("fireworks.wav", fireworks), ("robot_beep.wav", robot_beep)]
 )
 
 

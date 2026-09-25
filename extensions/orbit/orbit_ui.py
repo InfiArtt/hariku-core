@@ -36,7 +36,8 @@ HISTORY = 50
 BACKGROUND_MODES = ("all", "important", "none")
 CLOSE_ACTIONS = ("stay", "leave")
 AUTO_LOGOUT = (0, 15, 30, 60)
-READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce")
+READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce",
+                 "read_events")
 
 
 def _plain(label):
@@ -106,9 +107,11 @@ class OrbitFrame(wx.Frame):
         row = wx.BoxSizer(wx.HORIZONTAL)
         self.btn_connect = wx.Button(panel, label=_("btn_connect"))
         self.btn_help = wx.Button(panel, label=_("btn_help"))
+        self.btn_remind = wx.Button(panel, label=_("btn_remind"))
         self.btn_settings = wx.Button(panel, label=_("btn_settings"))
         row.Add(self.btn_connect, 0, wx.RIGHT, _BORDER)
         row.Add(self.btn_help, 0, wx.RIGHT, _BORDER)
+        row.Add(self.btn_remind, 0, wx.RIGHT, _BORDER)
         row.Add(self.btn_settings, 0)
         sizer.Add(row, 0, wx.ALL, _BORDER)
         self.txt_status = _labeled(panel, sizer, _("lbl_status"),
@@ -124,6 +127,7 @@ class OrbitFrame(wx.Frame):
         self.txt_command.Bind(wx.EVT_KEY_DOWN, self._on_key)
         self.btn_connect.Bind(wx.EVT_BUTTON, self._on_connect)
         self.btn_help.Bind(wx.EVT_BUTTON, lambda event: self.client.submit("help"))
+        self.btn_remind.Bind(wx.EVT_BUTTON, lambda event: self.client.remind(""))
         self.btn_settings.Bind(wx.EVT_BUTTON, self._on_settings_button)
         self.Bind(wx.EVT_CHAR_HOOK, self._on_char_hook)
         self.Bind(wx.EVT_CLOSE, self._on_close)

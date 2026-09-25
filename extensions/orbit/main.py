@@ -77,7 +77,8 @@ MAX_COMMAND = 300
 CONNECT_HOLD_SECONDS = 15
 AUTOCONNECT_SECONDS = 5
 
-READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce")
+READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce",
+                 "read_events")
 BOOL_SETTINGS = ("speak", "voices", "speak_own", "speak_names", "ambience", "sounds", "other_sounds",
                  "autoconnect") + READ_SETTINGS
 DEFAULT_SETTINGS = {"server": DEFAULT_SERVER, "name": "", "job": "pilot", "speak": True,
@@ -85,7 +86,7 @@ DEFAULT_SETTINGS = {"server": DEFAULT_SERVER, "name": "", "job": "pilot", "speak
                     "ambience": True, "ambience_volume": 25, "sounds": True,
                     "effects_volume": 100, "other_sounds": True,
                     "read_say": True, "read_whisper": True, "read_shout": True, "read_moves": True,
-                    "read_money": True, "read_announce": True,
+                    "read_money": True, "read_announce": True, "read_events": True,
                     "background": "important", "close_action": "stay", "auto_logout": 30,
                     "autoconnect": False, "ignored": [], "close_hints": 0}
 
@@ -308,6 +309,12 @@ class Services:
     def show_answer(self, text):
         if hasattr(core.commands, "show_answer"):
             core.commands.show_answer(text)
+
+    def add_reminder(self, title, when):
+        """A Hariku reminder at `when` (a local datetime): it rings even with Orbit closed."""
+        import core.reminders
+        core.reminders.add_reminder(title, when.strftime("%Y-%m-%d"), when.strftime("%H:%M"))
+        return True
 
     # --- sounds -----------------------------------------------------------------------
 

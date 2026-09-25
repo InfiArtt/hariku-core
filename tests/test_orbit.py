@@ -318,7 +318,7 @@ def test_settings_are_checked(omain):
                  "ambience": True, "ambience_volume": 100,
                  "sounds": True, "effects_volume": 0, "other_sounds": True,
                  "read_say": True, "read_whisper": True, "read_shout": False, "read_moves": True,
-                 "read_money": True, "read_announce": True, "background": "important",
+                 "read_money": True, "read_announce": True, "read_events": True, "background": "important",
                  "close_action": "leave", "auto_logout": 30, "autoconnect": False,
                  "ignored": ["Budi", "Sari"], "close_hints": 0}
     assert omain.normalize_settings("broken") == omain.DEFAULT_SETTINGS
@@ -393,7 +393,7 @@ class FakeServices:
                        "ambience": True, "ambience_volume": 25,
                        "sounds": True, "effects_volume": 100, "other_sounds": True,
                        "read_say": True, "read_whisper": True, "read_shout": True,
-                       "read_moves": True, "read_money": True, "read_announce": True,
+                       "read_moves": True, "read_money": True, "read_announce": True, "read_events": True,
                        "background": "important", "close_action": "stay", "auto_logout": 30,
                        "autoconnect": False, "ignored": [], "close_hints": 0}
         self.values.update(settings)
@@ -411,6 +411,7 @@ class FakeServices:
         self.settings_opened = 0
         self.key = "Ctrl + Shift + O"
         self.narrator = None
+        self.reminders = []
 
     def settings(self):
         return dict(self.values)
@@ -485,6 +486,10 @@ class FakeServices:
 
     def show_answer(self, text):
         self.shown.append(text)
+
+    def add_reminder(self, title, when):
+        self.reminders.append((title, when))
+        return True
 
     def play(self, name, pan=0.0, acoustics=None):
         if name not in self.FILES:
@@ -705,6 +710,42 @@ def test_new_floors_and_places_have_their_sounds():
     assert orbit_audio.timed_cues({"k": "paid", "sound": "coinflip", "outcome": "win"}) == \
         ([(0.9, "win", 0.0)], 0.9)
     assert orbit_audio.timed_cues({"k": "paid", "text": "x"}) == ([], 0.0)
+
+
+def test_event_news_can_be_left_unread(play):
+    s = play.services
+    conn = _online(play)
+    conn.event("announce", "Hujan meteor melintasi stasiun!", event="meteor_shower", sound="event_meteor")
+    assert s.spoken[-1] == ("narrator", "Hujan meteor melintasi stasiun!")
+    s.values["read_events"] = False
+    conn.event("announce", "Komet melintas!", event="comet_flyby")
+    assert s.spoken[-1][1] != "Komet melintas!" and play.client.messages[-1] == "Komet melintas!"
+    conn.event("announce", "Pengumuman dari admin.")                    # station news: still read
+    assert s.spoken[-1] == ("narrator", "Pengumuman dari admin.")
+
+
+def test_remind_me_sets_a_hariku_reminder_five_minutes_before(play):
+    import datetime
+    s, client = play.services, play.client
+    conn = _online(play)
+    now = datetime.datetime(2026, 9, 25, 12, 30, tzinfo=datetime.timezone.utc).timestamp()
+    client.wall_clock = lambda: now
+    client.submit("ingatkan aku")
+    assert conn.sent[-1] == {"t": "cmd", "c": "events"} and not s.reminders    # asks what's coming first
+    fair = now + 3600
+    conn.event("info", "Akan datang: ...", schedule=[{"event": "jackpot_night", "name": "Malam jackpot",
+                                                     "at": now + 120},
+                                                    {"event": "trading_fair", "name": "Pekan raya dagang",
+                                                     "at": fair}])
+    assert s.spoken[-1][1] == "Malam jackpot mulai kurang dari lima menit lagi: tidak perlu pengingat!"
+    client.submit("ingatkan aku pekan raya")                              # by name; the list is known now
+    title, when = s.reminders[-1]
+    assert title == "Orbit: Pekan raya dagang" and when == datetime.datetime.fromtimestamp(fair - 300)
+    assert s.spoken[-1][1].startswith("Pengingat Hariku dipasang pada ")
+    client.submit("remind me about the eclipse")
+    assert s.spoken[-1][1] == ("Tidak ada acara mendatang bernama the eclipse. Ketik acara untuk mendengar yang akan "
+                               "datang.")
+    assert orbit_parse.parse("remind me about trading fair") == {"local": "remind", "name": "trading fair"}
 
 
 def test_sounds_can_be_turned_off(play):
@@ -1647,6 +1688,8 @@ def _server_cues():
     with open(os.path.join(server, "world.json"), encoding="utf-8") as f:
         world = json.load(f)
     found.update(f"emote_{e}" for e in world["emotes"])
+    for event in world.get("events", {}).values():
+        found.update(event[k] for k in ("sound", "clue_sound") if event.get(k))
     found.update(f"step_{loc.get('floor', 'metal')}" for loc in world["locations"].values())
     return found
 

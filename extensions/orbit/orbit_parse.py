@@ -77,6 +77,9 @@ _VERBS = [
     (("setelan",), "settings"), (("options",), "settings"),
     (("abaikan",), "ignore"), (("ignore",), "ignore"), (("daftar", "abaikan"), "ignored"),
     (("ignored",), "ignored"), (("ignore", "list"), "ignored"),
+    (("ingatkan", "aku"), "remind"), (("ingatkan", "saya"), "remind"), (("remind", "me"), "remind"),
+    (("remind", "me", "of"), "remind"), (("remind", "me", "about"), "remind"), (("ingatkan", "aku", "soal"), "remind"),
+    (("pengingat", "acara"), "remind"), (("event", "reminder"), "remind"),
     (("dengar", "lagi"), "unignore"), (("unignore",), "unignore"), (("jangan", "abaikan"), "unignore"),
     (("berhenti", "abaikan"), "unignore"), (("stop", "ignoring"), "unignore"),
     # the server reads these itself: words this reader would take for something else
@@ -382,6 +385,8 @@ def parse(text):
         return {"local": meaning}
     if meaning == "raw":
         return {"c": "text", "a": text}
+    if meaning == "remind":
+        return {"local": "remind", "name": rest}
     if meaning in ("ignore", "unignore"):
         if not rest:
             return {"local": "ignored"}
