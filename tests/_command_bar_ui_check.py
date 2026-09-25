@@ -240,6 +240,9 @@ def focus_note(checked):
 bar, focus_ok = open_bar()
 assert bar.GetTitle() == "Aruna", bar.GetTitle()
 assert bar.GetWindowStyleFlag() & wx.STAY_ON_TOP
+# Nobody's owned window: an owned one would show on the main window's virtual
+# desktop and bring the hidden main window along.
+assert bar.GetWindowStyleFlag() & wx.DIALOG_NO_PARENT and bar.GetParent() is None
 children = list(bar.GetChildren())
 kinds = [type(c).__name__ for c in children]
 assert kinds == ["StaticText", "TextCtrl", "StaticText", "TextCtrl", "StaticText", "TextCtrl",
@@ -409,6 +412,23 @@ assert bar.txt_status.GetValue().startswith("Aruna answered.")
 press_escape(bar)
 assert pump(lambda: cb.current_bar() is None), "Escape did not close the bar"
 print(f"OK keep_open ({focus_note(focus_ok)})")
+
+# --- Hariku hidden in the tray: Aruna opens alone, the main window stays hidden --------------------
+frame.Show()
+pump(lambda: frame.IsShown(), timeout=2.0)
+frame.Hide()                                  # what "Minimize to tray" does
+pump(lambda: not frame.IsShown(), timeout=2.0)
+bar, _focus = open_bar()
+pump(lambda: False, timeout=0.5)
+assert bar.IsShown() and not frame.IsShown(), "opening Aruna showed the hidden main window"
+type_text(bar, "what time is it")
+press_enter(bar)
+pump(lambda: False, timeout=0.5)
+assert not frame.IsShown(), "a command showed the hidden main window"
+press_escape(bar)
+assert pump(lambda: cb.current_bar() is None)
+assert not frame.IsShown()
+print("OK hidden_main_window")
 
 # --- Nothing went wrong along the way -------------------------------------------------------------
 assert not network_attempts, f"network access attempted: {network_attempts}"
