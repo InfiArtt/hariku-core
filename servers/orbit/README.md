@@ -36,6 +36,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_travel.py` | the worlds: the Gate, the ferry, players' own ships, customs |
 | `orbit_local.py` | the other worlds' own work: Evergrove's creatures, Lumina City's courier gigs |
 | `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
+| `orbit_arcade.py` | Pixel Pier's arcade: four cabinet games, tokens, prize tickets, high scores |
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
@@ -108,22 +109,22 @@ while running).
    hunt's seasons: see below) (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
    `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`, `orbit_travel.py`, `orbit_local.py`,
-   `orbit_events.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
+   `orbit_events.py`, `orbit_arcade.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
    keys: every new setting has a default (below).
 2. `systemctl --user restart orbit`.
 3. On its first start, the server sees an older database (Orbit 1.0's is
-   schema version 0), saves a copy of it as `orbit.db.before-v5.bak` next to
-   it, and migrates it to version 5 in one transaction: new columns (voice,
+   schema version 0), saves a copy of it as `orbit.db.before-v6.bak` next to
+   it, and migrates it to version 6 in one transaction: new columns (voice,
    XP, the daily streak, what a character mined and harvested, what it won
    or lost at the casino) and new tables (companions, ships, events and who
-   took part in them, hunt progress, achievements, lottery tickets, transfer codes, old
+   took part in them, hunt progress, arcade high scores, achievements, lottery tickets, transfer codes, old
    secrets, transfers, the admins' log) are added; nothing is dropped or
    changed, and work done before 1.1 counts as XP (10 a repair, 20 a cargo
    run, 25 a mission). The log says "the database was migrated from version
-   0 to 5". If the migration fails,
+   0 to 6". If the migration fails,
    nothing is changed and the server stops with the error in the log; the
    copy is there.
 4. Every room of 1.0 still exists, so characters wake up where they were.
@@ -347,14 +348,27 @@ What 1.1 ships with:
   tickets carries the pot over. What each player won or lost is kept
   (`casino_net`) for the casino leaderboard. Credits have no real-money
   value; the menu and the help say so.
-- **Achievements** (`achievements`): 24, each for reaching a number (rooms
+- **Achievements** (`achievements`): 32, each for reaching a number (rooms
   walked, shifts worked, missions, level, crops, ore, a golden chilli, a
   quantum crystal, the daily streak, furniture, credits held, the time
-  capsule, a natural, a jackpot, the lottery, a trade), paying 0 to 2,000
+  capsule, a natural, a jackpot, the lottery, a trade, the worlds, a ship,
+  events, arcade games, a high score), paying 0 to 2,000
   credits and sometimes a title; the big ones (`station`) are news for
   everyone, and the first to earn one is named as the first on the station.
 - **Leaderboards:** richest, level, miners, farmers, daily streak and casino,
   the top 5 and your own place; admins are left out.
+- **The arcade** (`arcade` in economy.json; see `orbit_arcade.py`): a token
+  costs 5 credits (the token machine on Cabinet Row sells up to 100 at a
+  time) and plays one game. Prize tickets: Quick Draw points × 0.02 (five
+  rounds of up to 100: 100 at 0.2 seconds, none at 2), Star Beat points ×
+  0.0067 (three rhythms of 5, 6 and 7 beats, up to 100 a gap, none when a
+  gap is 40% off), Echo 2 for each tone past 3, Meteor Dodge one for every
+  two dodged (3 seconds to step away at first, 0.1 less each time, down to
+  1.5); at most 10, 10, 20 and 20 a game; a new best on a game's table 25
+  more. Prizes, for tickets only: a plush comet 40, glow stars 100, a mini
+  arcade cabinet 300, the title Arcade Ace 500, the enormous robot 2,500.
+  Tokens are spent credits; tickets and prizes can't be sold, traded or
+  pawned, so the arcade only takes money out.
 - **Worlds and travel** (`worlds` in world.json, `travel` in economy.json).
   Each world sits at a position on one long orbit (the station 0, the Belt 1,
   the Moon 2, Lumina City 3, Pixel Pier 4, Evergrove 5, Karmina 6, the Drift
@@ -408,28 +422,6 @@ What 1.1 ships with:
   hundredth day of the year (free lanterns and a 25-credit thank-you).
   Parties: a player's cabin is open to everyone for half an hour, once in
   two hours. Admins can start, stop and schedule events.
-- **Events** (world.json `events`; see `orbit_events.py`): 21 in all. Random,
-  every 30 to 60 minutes while someone is online (sooner when more are),
-  never two big ones at once, each with its own cooldown: a meteor shower
-  (collect meteorites, 5 each, at the Observation Deck, on the hull walk or
-  the Moon's Sea of Dust), a solar storm (engineers' repairs pay half
-  again), a cargo spill (8 to 20 credits a crate, 6 each), a runaway robot
-  pet and a stowaway (hidden in one of 39 station rooms; listen or search
-  says which way; 120 and 100 credits to whoever finds them, security
-  double), a market boom or crash (one world, one kind of goods, a third up
-  or down), a double XP hour, happy hour (the bar and the Food Court half
-  price), a comet flyby (watch for 20 credits), a power outage (seven rooms
-  dark), a dust storm on Karmina (join in the shelter for 30), and the
-  runaway drone at the Dock (at least two online; strength 10 + 8 for each
-  player online; each successful tug does 1 or 2; everyone who helped gets
-  40 + 15 a point, at most 300, or 10 if it gets away). Weekly: the trading
-  fair (the Mall Ring a fifth off for two hours), jackpot night (three of a
-  kind pays double), the night rush (courier gigs pay double). Seasonal:
-  the station's birthday on 25 September (100 credits and an iced coffee
-  each), New Year (watch the fireworks for 50), the Lantern Festival on the
-  hundredth day of the year (free lanterns and a 25-credit thank-you).
-  Parties: a player's cabin is open to everyone for half an hour, once in
-  two hours. Admins can start, stop and schedule events.
 - **The worlds' work:** helium-3 in the Moon's tunnels (mining, like the
   Belt); collecting in Karmina's farming domes, on its Rust Flats, in
   Glasir's ice quarry and its blue crevasse; Evergrove's creatures (a d20
@@ -446,6 +438,35 @@ missions, daily, market, finds, pawn, casino wins, lottery prizes,
 achievements, admin) and spent by sink (shops, market, fares, rescues,
 lanterns, casino bets, lottery, admin), so you can see whether money grows
 too fast and adjust these numbers.
+
+## The arcade (Pixel Pier)
+
+Cabinet Row, west of Pixel Pier's Grand Arcade Hall, has four cabinets and a
+token machine (`buy 10 tokens`); `arcade` (anywhere) lists them. `play` and
+a game's name there spends a token; every game is played by ear, with
+numbers and Enter (both clients send a number alone as `answer`), and
+`stop game` ends one early (it counts as it is). Walking away, leaving or
+losing the connection ends it too.
+
+- **Quick Draw** (reaction): five rounds; "ready", then a beep 2 to 5
+  seconds later; type any number at once. Too soon or too slow: no points.
+- **Star Beat** (rhythm): a rhythm of short (0.5 s) and long (1 s) gaps is
+  played (the 1.1 client plays the beats; the words say the gaps too); the
+  player taps it back, a number and Enter for each beat. Only the gaps
+  between their taps are compared, so the network's delay doesn't count.
+- **Echo** (memory): tones 1 to 4 (the reactor's), typed back as numbers;
+  one more every time, from 3 up to 16.
+- **Meteor Dodge** (stereo): a meteor comes from the left, the right or
+  ahead; 4 steps left, 6 right (or the words left, right, kiri, kanan). Its
+  sound is placed on its side; clients older than 1.1 are told the side.
+
+Each game's table (`arcade scores`, `skor arkade`, `high scores meteor`, or
+looking at the High Score Wall) keeps each player's best; beating the top
+of a table is announced to everyone and pays more tickets. The Prize
+Counter, east of the Hall, takes the tickets (`list`, `buy plush comet`).
+Everything is timed on the server when commands arrive; a client of one's
+own could cheat at it, as at any game played through a client, but the
+prizes are only for fun.
 
 ## The hunt (the Lost Chord)
 
@@ -589,17 +610,18 @@ was made and last seen, and whether it is banned or muted; its companions (a
 pet: kind, name, and its own stats); its ship (model, name, where it's
 docked or flying to, fuel and cargo); the events it took part in (and how
 much, for the drone's rewards); its achievements (which, and when); its
-lottery tickets (how many, for which week's draw); how far it got in each
-season of the hunt (its riddle, tries, wrong answers in a row and the wait,
-when it finished and in which place; the answers it typed are only compared,
-never kept); transfer codes (a hash, for 10 minutes); secrets that no longer
-work (a hash); the transfers log; the admins' log; and, in `meta`, the
-market's prices, each world's own prices, the economy's totals, today's
-temple lanterns, the lottery's next draw and carried-over pot, and the
-events' pacing (when the next random one may come, when each last came,
-which weekly and seasonal ones have run) and the hunt's season (the rival's
-progress, the hints released, how many have finished). Every event that runs
-or is scheduled is a row in `events`, with its state and how it ended. Trade
+lottery tickets (how many, for which week's draw); its best score and games
+played at each arcade cabinet; how far it got in each season of the hunt
+(its riddle, tries, wrong answers in a row and the wait, when it finished
+and in which place; the answers it typed are only compared, never kept);
+transfer codes (a hash, for 10 minutes); secrets that no longer work (a
+hash); the transfers log; the admins' log; and, in `meta`, the market's
+prices, each world's own prices, the economy's totals, today's temple
+lanterns, the lottery's next draw and carried-over pot, and the events'
+pacing (when the next random one may come, when each last came, which weekly
+and seasonal ones have run) and the hunt's season (the rival's progress, the
+hints released, how many have finished). Every event that runs or is
+scheduled is a row in `events`, with its state and how it ended. Trade
 offers, coin-flip challenges and a blackjack hand in progress live only in
 memory (a hand is played out, standing, if its player leaves or the server
 stops). Accounts have no password or email: the client makes a random
@@ -678,6 +700,7 @@ commands need no new client:
 | `face` (`a`: a creature), `gig` | | Evergrove's creatures, Lumina's courier gigs |
 | `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
 | `hunt`, `investigate`, `solve` (`a`: the answer), `hunt_board` | | the hunt |
+| `arcade`, `play` (`a`: a game), `stop_game`, `high_scores` (`a`: a game) | | the arcade; a game's input is `answer` (numbers alone: both clients send them so) |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
@@ -707,7 +730,12 @@ machine's three symbols, left to right) and `outcome` (`win`, `lose`,
 or the reels stop), `event` (on an announcement: the event it belongs to,
 so a client can leave events unread) and `schedule` (with the `events`
 list: `[{"event", "name", "at"}]`, the coming ones as UTC timestamps, for
-the client to show in local time and set reminders).
+the client to show in local time and set reminders), `beats` (Star Beat's
+rhythm at the arcade: the seconds after the event at which each beat
+sounds; the words wait for them). A `sound` with a `dir` is heard on that
+side (a meteor at the arcade, the runaway robot); Orbit 1.0 plays it in
+the middle, so the arcade tells a client older than 1.1 (the hello's
+`client`) the side in words.
 
 **Closing codes**: 1001 the server is restarting (reconnect), 1008 a broken
 rule (too many messages, no hello), 4000 kicked, 4001 connected from
@@ -757,12 +785,13 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
 | `creature` | one of Evergrove's creatures |
 | `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
+| `arcade_start`, `arcade_ready`, `arcade_go`, `arcade_hit`, `arcade_beat`, `arcade_meteor`, `arcade_whoosh`, `arcade_crash`, `arcade_ticket`, `arcade_over` | the arcade: a coin in, ready and go, a point, a beat, a meteor (placed on its side), dodged, hit, tickets out, game over |
 | `hunt_clue`, `hunt_found`, `hunt_rival` | the hunt: a clue (and others' progress, a hint), a note found, the rival ahead |
 | `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
 | `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 178 files, about 9.8 MB: 104 recorded (2.9 MB) and 74 synthesized;
+The set: 188 files, about 10 MB: 104 recorded (2.9 MB) and 84 synthesized;
 the ambience loops are at 11 kHz.
 
 ### Credits: recorded sounds
@@ -788,7 +817,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from

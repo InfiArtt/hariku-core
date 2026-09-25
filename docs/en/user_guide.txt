@@ -810,29 +810,29 @@ seeds, food, furniture and clothes can be traded.
 Other worlds and ships. "dunia" or "worlds" lists the worlds of the
 simulation and how far each is: the Moon (Moon Base Tranquility, with its
 helium tunnels), Karmina the red planet (farming domes and rust flats),
-Glasir the ice moon (an ice quarry), the Drift Bazaar (a market in a
-hollow asteroid, with no customs), Evergrove (a fantasy world of woods,
-a village and a castle), Lumina City (neon streets, a night market, courier
-gigs) and Pixel Pier (an arcade world whose games are coming soon). Each
-has its own small compass map, sounds and prices. Three ways to travel: the
-Gate in the Gate Hall, east of the Upper Lift Lobby ("gerbang ke Karmina" or
-"gate to Karmina"): at once, for a fee; the ferry from the Dock ("feri ke
-Karmina" or "ferry to Karmina"): slow but cheap, leaving every two minutes;
-or your own ship, bought at the Orbit Shipyard on the Mall Ring and docked
-in the Hangar, west of the Dock: "naik kapal" or "embark" to go aboard,
-"terbang ke Karmina" or "fly to Karmina", "turun kapal" or "disembark",
-"isi bahan bakar" or "refuel" at any port, "muat 20 es" or "load 20 ice"
-and "bongkar" or "unload" between your bag and the hold, "kargo" or "cargo"
-for the hold and fuel, "namai kapal" or "name ship". Invite a friend aboard
-with "undang Budi"; they type "naik kapal" and your name. On other worlds
-the Gate, the ferry and your ship all arrive at the world's port. Every
-world buys and sells at its own prices, so buying cheap on one and selling
-dear on another is a trade run; with your ship docked on the same world,
-what doesn't fit in your bag goes into its hold. Some worlds' customs
-search travellers for contraband (the Gate most often, a ship least) and
-fine them. In Evergrove, "hadapi peri lumut" or "face moss sprite" is a
-test of wits with a creature (nobody gets hurt); in Lumina City, "gig" at
-the Courier Hub gives you a parcel to carry to another room in time.
+Glasir the ice moon (an ice quarry), the Drift Bazaar (a market in a hollow
+asteroid, with no customs), Evergrove (a fantasy world of woods, a village
+and a castle), Lumina City (neon streets, a night market, courier gigs) and
+Pixel Pier (an arcade world). Each has its own small compass map, sounds and
+prices. Three ways to travel: the Gate in the Gate Hall, east of the Upper
+Lift Lobby ("gerbang ke Karmina" or "gate to Karmina"): at once, for a fee;
+the ferry from the Dock ("feri ke Karmina" or "ferry to Karmina"): slow but
+cheap, leaving every two minutes; or your own ship, bought at the Orbit
+Shipyard on the Mall Ring and docked in the Hangar, west of the Dock: "naik
+kapal" or "embark" to go aboard, "terbang ke Karmina" or "fly to Karmina",
+"turun kapal" or "disembark", "isi bahan bakar" or "refuel" at any port,
+"muat 20 es" or "load 20 ice" and "bongkar" or "unload" between your bag and
+the hold, "kargo" or "cargo" for the hold and fuel, "namai kapal" or "name
+ship". Invite a friend aboard with "undang Budi"; they type "naik kapal" and
+your name. On other worlds the Gate, the ferry and your ship all arrive at
+the world's port. Every world buys and sells at its own prices, so buying
+cheap on one and selling dear on another is a trade run; with your ship
+docked on the same world, what doesn't fit in your bag goes into its hold.
+Some worlds' customs search travellers for contraband (the Gate most often,
+a ship least) and fine them. In Evergrove, "hadapi peri lumut" or "face moss
+sprite" is a test of wits with a creature (nobody gets hurt); in Lumina
+City, "gig" at the Courier Hub gives you a parcel to carry to another room
+in time.
 
 Events. Now and then something happens to everyone, announced with a sound
 of its own: a meteor shower ("kumpulkan" or "collect" where the meteorites
@@ -865,6 +865,19 @@ answer makes you wait before trying again, longer each time. "papan
 pemburu" or "hunt board" shows who has come furthest, and how close the
 rival company is. Admins may release an official hint for a riddle that
 proves too hard.
+
+The arcade. On Pixel Pier, Cabinet Row has four games played by ear, and a
+token machine: "beli 10 token" or "buy 10 tokens" (5 credits each). Then
+"main" or "play" and a game: Quick Draw ("adu cepat": wait for the beep,
+then type any number and Enter at once), Star Beat ("irama bintang": listen
+to a rhythm, then tap it back, a number and Enter for each beat, keeping
+the same gaps), Echo ("gema": repeat the tones as numbers, one more each
+time) and Meteor Dodge ("hindari meteor": hear which side a meteor comes
+from and step away, 4 to the left or 6 to the right). "berhenti main" or
+"stop game" ends a game. Good games print prize tickets: the Prize Counter
+east of the Arcade Hall trades them for prizes ("daftar" there). "skor
+arkade" or "arcade scores" reads the high score tables (so does the High
+Score Wall); a new best on a table is announced to everyone.
 
 The casino. The Casino Corner is west of the Cantina; "kasino" or "casino"
 there lists the games. "dadu 50 tinggi" or "dice 50 high" (or low, or seven),
