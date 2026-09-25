@@ -137,6 +137,12 @@ YES_WORDS = {
     "sure", "correct", "right", "setuju", "sip", "siap", "confirm", "go", "jalankan",
     "yoi",
 }
+# A question's own verb ("..., Pasang?", "..., Set it?") answers yes too, but
+# only said alone or with a word like "aja" or "it": "pasang alarm jam 6" is a
+# new command, not a yes.
+CONFIRM_VERBS = {"pasang", "setel", "set"}
+CONFIRM_EXTRAS = {"it", "aja", "saja", "dong", "deh", "sekarang", "now", "please", "tolong",
+                  "ya"}
 NO_WORDS = {
     "tidak", "tak", "nggak", "ngga", "enggak", "engga", "gak", "ga", "kagak", "ndak",
     "no", "nope", "nah", "batal", "batalkan", "cancel", "jangan", "bukan", "salah", "stop",
@@ -255,6 +261,8 @@ _FILLERS = {normalize(w) for w in FILLERS}
 _LEADING_FILLERS = _FILLERS     # words an intent's pattern may come after
 _YES = {normalize(w) for w in YES_WORDS}
 _NO = {normalize(w) for w in NO_WORDS}
+_CONFIRM_VERBS = {normalize(w) for w in CONFIRM_VERBS}
+_CONFIRM_EXTRAS = {normalize(w) for w in CONFIRM_EXTRAS}
 
 
 def words(text, keep_all_fillers=False):
@@ -505,14 +513,18 @@ def match(text, candidates=None):
 def answer(text):
     """ "yes", "no" or None for an answer to a question: "ya", "iya, simpan",
     "yes" and "save" are yes; "tidak", "batal", "no", "cancel", "bukan" are
-    no (no wins when both are there: "tidak jadi"). More than a few words is
-    a new command, None."""
+    no (no wins when both are there: "tidak jadi"). "pasang" and "set it"
+    are yes on their own (core 2.9), not in "pasang alarm jam 6". More than a
+    few words is a new command, None."""
     tokens = normalize(text).split()
     if not tokens or len(tokens) > MAX_ANSWER_WORDS:
         return None
     if any(t in _NO for t in tokens):
         return "no"
     if any(t in _YES for t in tokens):
+        return "yes"
+    if any(t in _CONFIRM_VERBS for t in tokens) and \
+            all(t in _CONFIRM_VERBS or t in _CONFIRM_EXTRAS for t in tokens):
         return "yes"
     return None
 
