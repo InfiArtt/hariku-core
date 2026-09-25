@@ -63,16 +63,24 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: pip
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       # A failing test stops the release before anything is compiled or
-      # published. test_startup.py builds the real main window.
+      # published. The tests without windows run in parallel (pytest-xdist);
+      # the real-window checks run after them, one at a time, since windows
+      # opened together would take each other's focus. test_startup.py builds
+      # the real main window.
       - name: Run tests
+        run: python -m pytest -q -n auto -m "not window"
+
+      - name: Run the real-window checks
         env:
-          HARIKU_UI_TESTS: "1"   # include the real-window checks (skipped on dev PCs)
-        run: python -m pytest -q
+          HARIKU_UI_TESTS: "1"   # skipped on dev PCs
+        run: python -m pytest -q -m window
 
       - name: Stamp version into constants.py and file.iss
         shell: pwsh

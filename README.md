@@ -42,7 +42,9 @@ pip install -r requirements.txt
 python hariku.py
 ```
 
-Run the tests with `python -m pytest`.
+Run the tests with `python -m pytest`, or in parallel on all your cores with
+`python -m pytest -n auto` (pytest-xdist). The real-window checks only run when
+`HARIKU_UI_TESTS=1` is set, as in CI, where they run on their own (`-m window`).
 
 ## Building the installer
 
