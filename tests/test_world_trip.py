@@ -1298,7 +1298,8 @@ def test_batam_to_paris_in_english_with_hariku_voice(m, trip, lang):
     assert said[1].startswith("Welcome to Paris, Prancis. Local time 14:30, Friday afternoon, "
                               "5 hours behind Batam.")
     # No French voice: the greeting and its meaning in the user's own voice, and a hint.
-    assert said[2].startswith("Bonjour ! Bienvenue à Paris ! That means: Hello! Welcome to Paris!")
+    assert said[2].startswith("Bonjour ! Bienvenue à Paris ! That means: Good afternoon! "
+                              "Welcome to Paris!")
     assert "Edge Voices" not in said[2]               # Edge Voices is there, just no French voice
     sv.radio.emit("playing", "http://fip/")
     sv.advance(10)

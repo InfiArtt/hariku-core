@@ -428,9 +428,9 @@ LANGUAGES = {
         "latin": True,
         "voices": ("fr-FR", "fr-CA", "fr-BE", "fr-CH"),
         "greetings": {
-            "hello": P("Bonjour !"),
-            "morning": P("Bonjour !", "", "hello"),
-            "afternoon": P("Bonjour !", "", "hello"),
+            "hello": P("Bonjour !"),           # "good day": said all day until evening
+            "morning": P("Bonjour !"),
+            "afternoon": P("Bonjour !"),
             "evening": P("Bonsoir !"),
         },
         "welcome": P("Bienvenue à {city} !"),
