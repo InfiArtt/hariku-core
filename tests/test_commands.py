@@ -650,6 +650,60 @@ def test_the_most_specific_pattern_wins(no_intents):
     assert [m.intent.id for m in found] == ["Timer.start"]
 
 
+def test_a_matcher_takes_sentences_without_fixed_words(no_intents):
+    # Core 2.11: "25 x 4" has no word to make a pattern of.
+    c = no_intents
+    assert c.INTENT_MATCHERS is True
+    seen = []
+
+    def matcher(text):
+        seen.append(text)
+        return text if " x " in text else None
+
+    c.add_intent("Calc.calculate", ["hitung {text}"], _ignore, matcher=matcher)
+    c.add_intent("Timer.start", ["timer {text}"], _ignore)
+    found = c.match_intents("25  x 4")
+    assert [(m.intent.id, m.text, m.size) for m in found] == [("Calc.calculate", "25 x 4", 0)]
+    # A pattern of its own wins over the matcher, which isn't asked then.
+    seen.clear()
+    assert [(m.intent.id, m.text) for m in c.match_intents("hitung 2 x 3")] == \
+        [("Calc.calculate", "2 x 3")]
+    assert seen == []
+    # A sentence the matcher takes is asked after every pattern of every intent.
+    found = c.match_intents("timer 2 x 3")
+    assert [(m.intent.id, m.size) for m in found] == [("Timer.start", 1), ("Calc.calculate", 0)]
+    assert c.match_intents("gempa terbaru") == []
+    # Patterns may be left out when there is a matcher; the vocabulary gets nothing.
+    c.add_intent("Calc.calculate", [], _ignore, matcher=lambda text: True)
+    assert [m.text for m in c.match_intents("apa saja")] == ["apa saja"]
+    assert c.match_intents("x" * (c.MATCHER_MAX_CHARS + 1)) == []
+    with pytest.raises(TypeError):
+        c.add_intent("Calc.calculate", [], _ignore, matcher="not a function")
+
+
+def test_decide_asks_a_matcher_too(no_intents):
+    c = no_intents
+    c.add_intent("Calc.calculate", [], _ignore,
+                 matcher=lambda text: text if text.startswith("25") else None)
+    actions = c.commands(real_actions("id"))
+    decision = c.decide("25 x 4", actions, parse=parse_reminder)
+    assert decision.kind == "intent" and decision.intents[0].text == "25 x 4"
+    assert decision.fallback is not None and decision.fallback.kind != "intent"
+    assert c.decide("gempa terbaru", actions, parse=parse_reminder).kind == "run"
+
+
+def test_a_failing_matcher_is_no_match(no_intents, caplog):
+    c = no_intents
+
+    def broken(text):
+        raise RuntimeError("oops")
+
+    c.add_intent("Calc.calculate", [], _ignore, matcher=broken)
+    c.add_intent("Notes.add", [], _ignore, matcher=lambda text: "   ")
+    assert c.match_intents("25 x 4") == []
+    assert "Calc.calculate" in caplog.text
+
+
 def test_adding_again_replaces_and_removing_works(no_intents):
     c = no_intents
     c.add_intent("Notes.add", ["catat {text}"], _ignore, title="Notes")
