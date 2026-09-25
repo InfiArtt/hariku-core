@@ -708,15 +708,16 @@ your computer.
 ORBIT (EXTENSION)
 ------------------
 Orbit (it needs Hariku 2.9) is a multiplayer text game played with other
-Hariku users: a space station orbiting the Earth, the hub of a shared
-simulation. Walk its decks by compass, chat in the Cantina, look down at
+Hariku users: a shared simulation whose hub is a space station orbiting the
+Earth, with other worlds to travel to. Walk its decks by compass, chat in the Cantina, look down at
 Indonesia from the Observation Deck, work your job, grow crops in your own
 plots, mine the Asteroid Belt, shop on the Mall Ring, try your luck in the
 casino, trade with other players, and climb the ranks. The station has three
 decks (the Upper Deck: command and science; the Main Deck: the Promenade,
 shops, the Cantina, the casino and the cabins; the Lower Deck: Engineering,
 the Cargo Bay and the Dock), the Mall Ring above them, the hull outside, and
-the Asteroid Belt, about fifty rooms.
+the Asteroid Belt, about fifty rooms; eight more worlds have maps of their
+own.
 
   1. The first time, open Preferences, Orbit: type a character name (3 to 20
      letters and digits) and choose a job (pilot, engineer, trader, scientist
@@ -732,9 +733,10 @@ the Asteroid Belt, about fifty rooms.
   3. Type commands in Indonesian or English. "bantuan" or "help" lists the
      help topics: "bantuan bergerak" (moving), "bantuan ngobrol" (talking),
      "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko" (shops),
-     "bantuan kasino" (the casino), "bantuan kemajuan" (achievements and
-     leaderboards) and "bantuan pengaturan" (settings); "ulangi" or "repeat"
-     reads the last message again.
+     "bantuan kapal" (ships and travel), "bantuan kasino" (the casino),
+     "bantuan kemajuan" (achievements and leaderboards) and "bantuan
+     pengaturan" (settings); "ulangi" or "repeat" reads the last message
+     again.
 
 Walking. You walk one room at a time by compass: n, s, e, w, ne, nw, se,
 sw, up and down, or north, south and so on; in Indonesian utara, selatan,
@@ -804,6 +806,33 @@ untuk 200 kredit" or "offer Budi 3 iron for 200 credits"; Budi says "terima"
 (accept) or "tolak" (decline) within two minutes, and both sides change hands
 at once or not at all ("batalkan tawaran" takes an offer back). Goods,
 seeds, food, furniture and clothes can be traded.
+
+Other worlds and ships. "dunia" or "worlds" lists the worlds of the
+simulation and how far each is: the Moon (Moon Base Tranquility, with its
+helium tunnels), Karmina the red planet (farming domes and rust flats),
+Glasir the ice moon (an ice quarry), the Drift Bazaar (a market in a
+hollow asteroid, with no customs), Evergrove (a fantasy world of woods,
+a village and a castle), Lumina City (neon streets, a night market, courier
+gigs) and Pixel Pier (an arcade world whose games are coming soon). Each
+has its own small compass map, sounds and prices. Three ways to travel: the
+Gate in the Gate Hall, east of the Upper Lift Lobby ("gerbang ke Karmina" or
+"gate to Karmina"): at once, for a fee; the ferry from the Dock ("feri ke
+Karmina" or "ferry to Karmina"): slow but cheap, leaving every two minutes;
+or your own ship, bought at the Orbit Shipyard on the Mall Ring and docked
+in the Hangar, west of the Dock: "naik kapal" or "embark" to go aboard,
+"terbang ke Karmina" or "fly to Karmina", "turun kapal" or "disembark",
+"isi bahan bakar" or "refuel" at any port, "muat 20 es" or "load 20 ice"
+and "bongkar" or "unload" between your bag and the hold, "kargo" or "cargo"
+for the hold and fuel, "namai kapal" or "name ship". Invite a friend aboard
+with "undang Budi"; they type "naik kapal" and your name. On other worlds
+the Gate, the ferry and your ship all arrive at the world's port. Every
+world buys and sells at its own prices, so buying cheap on one and selling
+dear on another is a trade run; with your ship docked on the same world,
+what doesn't fit in your bag goes into its hold. Some worlds' customs
+search travellers for contraband (the Gate most often, a ship least) and
+fine them. In Evergrove, "hadapi peri lumut" or "face moss sprite" is a
+test of wits with a creature (nobody gets hurt); in Lumina City, "gig" at
+the Courier Hub gives you a parcel to carry to another room in time.
 
 The casino. The Casino Corner is west of the Cantina; "kasino" or "casino"
 there lists the games. "dadu 50 tinggi" or "dice 50 high" (or low, or seven),
