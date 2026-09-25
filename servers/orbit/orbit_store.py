@@ -8,28 +8,51 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
-Orbit's saved state, in SQLite: characters, bans and a few server values
-(the market's prices, the salt for secrets).
+Orbit's saved state, in SQLite: every character and everything that changes
+while playing, in one file. world.json and economy.json are only read.
 
-What is kept for a character: its name, job, credits, items, where it is, the
-short description its player wrote, cooldowns and missions (a small JSON
-"stats" field), when it was made and last seen, and whether it is banned or
-muted. Its player's secret is never stored: only a PBKDF2-SHA256 hash of it,
-with a salt made once for this server, so a leaked database can't be used to
-log in. Chat is never stored here.
+What is kept for a character: its name, job, credits, things (inventory),
+where it is, the short description its player wrote, XP, the daily streak,
+the voice others hear it in, what it mined and harvested, and a JSON "stats"
+field for the rest of its play state (cooldowns, missions, farm plots, worn
+things, the map it knows, air left outside, a shuttle ride in progress...);
+when it was made and last seen, and whether it is banned or muted. Its
+player's secret is never stored: only a PBKDF2-SHA256 hash of it, with a
+salt made once for this server, so a leaked database can't be used to log in.
+Chat is never stored here.
 
-Everything is written at once (autocommit), from the server's one thread.
+Other tables: companions (a pet, and later other companions, with its
+owners), transfer codes (only a hash, for 10 minutes), secrets that no
+longer work (moved to another computer, or revoked by an admin, so the old
+computer is told why), the transfers log, the admins' log, bans by address
+(a salted hash), and "meta" for server values (the market's prices, the
+economy's totals, the salt).
+
+The schema has a version (PRAGMA user_version). An older file is migrated
+by itself when the server starts, in one transaction, after a copy of it is
+saved next to it (orbit.db.before-v1.bak); columns and tables are only ever
+added, never dropped.
+
+Everything is written at once (autocommit, or one transaction for things
+that must change together), from the server's one thread.
 """
 
+import contextlib
 import hashlib
+import hmac
 import json
+import logging
 import os
 import sqlite3
 import time
 
+logger = logging.getLogger("orbit.store")
+
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
+SCHEMA_VERSION = 1
 
+# The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (
     key TEXT PRIMARY KEY,
@@ -57,9 +80,69 @@ CREATE TABLE IF NOT EXISTS ip_bans (
 );
 """
 
-FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
-          "inventory", "stats", "banned", "muted_until", "created", "last_seen")
+# Version 1 (Orbit 1.1): levels, the daily bonus, voices, leaderboard
+# counters; companions; moving a character to another computer; the admins' log.
+V1_COLUMNS = (
+    ("voice", "INTEGER NOT NULL DEFAULT 0"),
+    ("xp", "INTEGER NOT NULL DEFAULT 0"),
+    ("streak", "INTEGER NOT NULL DEFAULT 0"),
+    ("last_daily", "TEXT NOT NULL DEFAULT ''"),
+    ("mined", "INTEGER NOT NULL DEFAULT 0"),
+    ("harvested", "INTEGER NOT NULL DEFAULT 0"),
+)
+V1_TABLES = """
+CREATE TABLE IF NOT EXISTS companions (
+    id INTEGER PRIMARY KEY,
+    kind TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    stats TEXT NOT NULL DEFAULT '{}',
+    state TEXT NOT NULL DEFAULT '{}',
+    created REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS companion_owners (
+    companion_id INTEGER NOT NULL,
+    char_id INTEGER NOT NULL,
+    role TEXT NOT NULL DEFAULT 'owner',
+    since REAL NOT NULL,
+    PRIMARY KEY (companion_id, char_id)
+);
+CREATE INDEX IF NOT EXISTS companion_owners_char ON companion_owners (char_id);
+CREATE TABLE IF NOT EXISTS transfer_codes (
+    char_id INTEGER PRIMARY KEY,
+    code_hash TEXT NOT NULL UNIQUE,
+    expires REAL NOT NULL,
+    created REAL NOT NULL,
+    issued_by TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS old_secrets (
+    secret_hash TEXT PRIMARY KEY,
+    char_id INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    time REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS transfers (
+    id INTEGER PRIMARY KEY,
+    char_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    by TEXT NOT NULL DEFAULT '',
+    time REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS admin_log (
+    id INTEGER PRIMARY KEY,
+    time REAL NOT NULL,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT NOT NULL DEFAULT '',
+    detail TEXT NOT NULL DEFAULT ''
+);
+"""
+
+BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
+               "inventory", "stats", "banned", "muted_until", "created", "last_seen")
+FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS)
 JSON_FIELDS = ("inventory", "stats")
+INT_FIELDS = ("voice", "xp", "streak", "mined", "harvested")
 
 
 class Character(dict):
@@ -77,6 +160,7 @@ class Store:
         self.path = path
         self.clock = clock
         self.iterations = int(iterations)
+        self._depth = 0
         if path != ":memory:":
             folder = os.path.dirname(os.path.abspath(path))
             os.makedirs(folder, exist_ok=True)
@@ -85,7 +169,10 @@ class Store:
         if path != ":memory:":
             self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute(f"PRAGMA synchronous={'NORMAL' if durable else 'OFF'}")
+        had_data = self._table_exists("characters")
         self.db.executescript(SCHEMA)
+        self.migrated_from = None
+        self._migrate(had_data)
         self._salt = self.get_meta("secret_salt")
         if not self._salt:
             self._salt = os.urandom(16).hex()
@@ -93,6 +180,90 @@ class Store:
 
     def close(self):
         self.db.close()
+
+    # --- the schema's version ------------------------------------------------------------
+
+    def _table_exists(self, name):
+        return self.db.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+                               (name,)).fetchone() is not None
+
+    def version(self):
+        return self.db.execute("PRAGMA user_version").fetchone()[0]
+
+    def _columns(self, table):
+        return {row["name"] for row in self.db.execute(f"PRAGMA table_info({table})")}
+
+    def _migrate(self, had_data):
+        version = self.version()
+        if version >= SCHEMA_VERSION:
+            return
+        if had_data and self.path != ":memory:":
+            self._backup_before(version)
+        with self.transaction():
+            if version < 1:
+                self._migrate_1()
+            self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        if had_data:
+            self.migrated_from = version
+            logger.info("the database was migrated from version %s to %s", version, SCHEMA_VERSION)
+
+    def _backup_before(self, version):
+        target = f"{self.path}.before-v{SCHEMA_VERSION}.bak"
+        if os.path.exists(target):
+            target = f"{self.path}.before-v{SCHEMA_VERSION}-{int(self.clock())}.bak"
+        copy = sqlite3.connect(target)
+        try:
+            self.db.backup(copy)
+        finally:
+            copy.close()
+        logger.info("saved a copy of the version %s database as %s", version, target)
+
+    def _migrate_1(self):
+        have = self._columns("characters")
+        for name, decl in V1_COLUMNS:
+            if name not in have:
+                self.db.execute(f"ALTER TABLE characters ADD COLUMN {name} {decl}")
+        for statement in V1_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+        # Work done before levels existed counts towards them.
+        rows = self.db.execute("SELECT id, stats FROM characters").fetchall()
+        for row in rows:
+            try:
+                stats = json.loads(row["stats"] or "{}")
+            except ValueError:
+                stats = {}
+            if not isinstance(stats, dict):
+                continue
+            xp = 0
+            for field, points in (("repairs", 10), ("flights", 20), ("missions_done", 25)):
+                try:
+                    xp += max(0, int(stats.get(field, 0))) * points
+                except (TypeError, ValueError):
+                    pass
+            if xp:
+                self.db.execute("UPDATE characters SET xp = ? WHERE id = ? AND xp = 0", (xp, row["id"]))
+
+    @contextlib.contextmanager
+    def transaction(self):
+        """Everything inside happens together or not at all (nested: the outer one counts)."""
+        if self._depth:
+            self._depth += 1
+            try:
+                yield
+            finally:
+                self._depth -= 1
+            return
+        self.db.execute("BEGIN IMMEDIATE")
+        self._depth = 1
+        try:
+            yield
+        except BaseException:
+            self._depth = 0
+            self.db.execute("ROLLBACK")
+            raise
+        self._depth = 0
+        self.db.execute("COMMIT")
 
     # --- server values ----------------------------------------------------------------
 
@@ -128,19 +299,29 @@ class Store:
                                      self.iterations)
         return digest.hex()
 
+    def hash_code(self, code):
+        """The stored form of a transfer code (it lives ten minutes, and has
+        about 70 bits: a keyed hash is enough)."""
+        return hmac.new(bytes.fromhex(self._salt), f"transfer:{code}".encode("utf-8"),
+                        hashlib.sha256).hexdigest()
+
     # --- characters -------------------------------------------------------------------
 
     @staticmethod
     def _character(row):
         if row is None:
             return None
-        char = Character({name: row[name] for name in FIELDS})
+        keys = row.keys()
+        char = Character({name: row[name] for name in FIELDS if name in keys})
         for name in JSON_FIELDS:
             try:
                 value = json.loads(char[name] or "{}")
             except ValueError:
                 value = {}
             char[name] = value if isinstance(value, dict) else {}
+        for name in INT_FIELDS:
+            char[name] = int(char.get(name) or 0)
+        char["last_daily"] = str(char.get("last_daily") or "")
         return char
 
     def by_secret_hash(self, secret_hash):
@@ -151,6 +332,10 @@ class Store:
     def by_name(self, name_key):
         row = self.db.execute("SELECT * FROM characters WHERE name_key = ?",
                               (name_key,)).fetchone()
+        return self._character(row)
+
+    def by_id(self, char_id):
+        row = self.db.execute("SELECT * FROM characters WHERE id = ?", (char_id,)).fetchone()
         return self._character(row)
 
     def create(self, name, name_key, secret_hash, job, credits, location):
@@ -165,14 +350,153 @@ class Store:
         char["last_seen"] = self.clock()
         self.db.execute(
             "UPDATE characters SET job = ?, credits = ?, location = ?, description = ?, "
-            "inventory = ?, stats = ?, banned = ?, muted_until = ?, last_seen = ? WHERE id = ?",
+            "inventory = ?, stats = ?, banned = ?, muted_until = ?, last_seen = ?, voice = ?, "
+            "xp = ?, streak = ?, last_daily = ?, mined = ?, harvested = ? WHERE id = ?",
             (char["job"], int(char["credits"]), char["location"], char["description"],
              json.dumps(char["inventory"], separators=(",", ":")),
              json.dumps(char["stats"], separators=(",", ":")),
-             int(bool(char["banned"])), float(char["muted_until"]), char["last_seen"], char["id"]))
+             int(bool(char["banned"])), float(char["muted_until"]), char["last_seen"],
+             int(char.get("voice") or 0), int(char.get("xp") or 0), int(char.get("streak") or 0),
+             str(char.get("last_daily") or ""), int(char.get("mined") or 0),
+             int(char.get("harvested") or 0), char["id"]))
+
+    def save_all(self, chars):
+        """Several characters at once: all saved, or none (a trade)."""
+        with self.transaction():
+            for char in chars:
+                self.save(char)
 
     def count(self):
         return self.db.execute("SELECT COUNT(*) FROM characters").fetchone()[0]
+
+    def total_credits(self):
+        row = self.db.execute("SELECT COALESCE(SUM(credits), 0) AS total, COUNT(*) AS n, "
+                              "COALESCE(MAX(credits), 0) AS top FROM characters "
+                              "WHERE banned = 0").fetchone()
+        return int(row["total"]), int(row["n"]), int(row["top"])
+
+    def top(self, column, limit=5):
+        """[(name, value)] with the highest `column` (a leaderboard)."""
+        if column not in ("credits", "xp", "mined", "harvested", "streak"):
+            raise ValueError(column)
+        rows = self.db.execute(f"SELECT name, {column} AS value FROM characters WHERE banned = 0 "
+                               f"ORDER BY {column} DESC, name_key LIMIT ?", (int(limit),)).fetchall()
+        return [(row["name"], int(row["value"])) for row in rows]
+
+    def rank_of(self, column, char_id):
+        """1 for the highest `column`, and so on."""
+        if column not in ("credits", "xp", "mined", "harvested", "streak"):
+            raise ValueError(column)
+        row = self.db.execute(f"SELECT {column} AS value FROM characters WHERE id = ?",
+                              (char_id,)).fetchone()
+        if row is None:
+            return None
+        higher = self.db.execute(f"SELECT COUNT(*) FROM characters WHERE banned = 0 AND "
+                                 f"{column} > ?", (row["value"],)).fetchone()[0]
+        return higher + 1
+
+    # --- moving a character to another computer ---------------------------------------------
+
+    def set_transfer_code(self, char_id, code_hash, expires, by=""):
+        """The one live code of a character (a new one replaces the old)."""
+        self.db.execute("INSERT INTO transfer_codes (char_id, code_hash, expires, created, issued_by) "
+                        "VALUES (?, ?, ?, ?, ?) ON CONFLICT(char_id) DO UPDATE SET "
+                        "code_hash = excluded.code_hash, expires = excluded.expires, "
+                        "created = excluded.created, issued_by = excluded.issued_by",
+                        (char_id, code_hash, float(expires), self.clock(), by))
+
+    def take_transfer_code(self, code_hash):
+        """The character a live code belongs to (the code is used up), or None."""
+        now = self.clock()
+        self.db.execute("DELETE FROM transfer_codes WHERE expires <= ?", (now,))
+        row = self.db.execute("SELECT char_id FROM transfer_codes WHERE code_hash = ?",
+                              (code_hash,)).fetchone()
+        if row is None:
+            return None
+        self.db.execute("DELETE FROM transfer_codes WHERE char_id = ?", (row["char_id"],))
+        return row["char_id"]
+
+    def has_transfer_code(self, char_id):
+        row = self.db.execute("SELECT expires FROM transfer_codes WHERE char_id = ?",
+                              (char_id,)).fetchone()
+        return bool(row) and row["expires"] > self.clock()
+
+    def replace_secret(self, char, new_hash, reason):
+        """The character's secret changes; the old one is remembered as
+        `reason` ("moved", "revoked") so its computer can be told."""
+        old = char["secret_hash"]
+        with self.transaction():
+            if old and not old.startswith("revoked:"):
+                self.db.execute("INSERT OR REPLACE INTO old_secrets (secret_hash, char_id, reason, time) "
+                                "VALUES (?, ?, ?, ?)", (old, char["id"], reason, self.clock()))
+            self.db.execute("UPDATE characters SET secret_hash = ? WHERE id = ?", (new_hash, char["id"]))
+        char["secret_hash"] = new_hash
+
+    def revoke_secret(self, char):
+        """No computer can play the character until a transfer code is used."""
+        self.replace_secret(char, "revoked:" + os.urandom(16).hex(), "revoked")
+
+    def old_secret(self, secret_hash):
+        """(char_id, reason) for a secret that no longer works, or None."""
+        row = self.db.execute("SELECT char_id, reason FROM old_secrets WHERE secret_hash = ?",
+                              (secret_hash,)).fetchone()
+        return (row["char_id"], row["reason"]) if row else None
+
+    def log_transfer(self, char, kind, by=""):
+        self.db.execute("INSERT INTO transfers (char_id, name, kind, by, time) VALUES (?, ?, ?, ?, ?)",
+                        (char["id"], char["name"], kind, by, self.clock()))
+
+    def recent_transfers(self, limit=10):
+        rows = self.db.execute("SELECT name, kind, by, time FROM transfers ORDER BY id DESC LIMIT ?",
+                               (int(limit),)).fetchall()
+        return [dict(row) for row in rows]
+
+    # --- the admins' log ---------------------------------------------------------------
+
+    def log_admin(self, actor, action, target="", detail=""):
+        self.db.execute("INSERT INTO admin_log (time, actor, action, target, detail) VALUES (?, ?, ?, ?, ?)",
+                        (self.clock(), actor, action, target, str(detail)[:500]))
+
+    def admin_log(self, limit=20):
+        rows = self.db.execute("SELECT time, actor, action, target, detail FROM admin_log "
+                               "ORDER BY id DESC LIMIT ?", (int(limit),)).fetchall()
+        return [dict(row) for row in rows]
+
+    # --- companions (a pet today; care, growth and families later) -------------------------
+
+    @staticmethod
+    def _companion(row):
+        comp = dict(row)
+        for name in ("stats", "state"):
+            try:
+                value = json.loads(comp.get(name) or "{}")
+            except ValueError:
+                value = {}
+            comp[name] = value if isinstance(value, dict) else {}
+        return comp
+
+    def add_companion(self, kind, name, owner_ids, stats=None, state=None):
+        now = self.clock()
+        with self.transaction():
+            cursor = self.db.execute(
+                "INSERT INTO companions (kind, name, stats, state, created) VALUES (?, ?, ?, ?, ?)",
+                (kind, name, json.dumps(stats or {}), json.dumps(state or {}), now))
+            comp_id = cursor.lastrowid
+            for char_id in owner_ids:
+                self.db.execute("INSERT INTO companion_owners (companion_id, char_id, since) VALUES (?, ?, ?)",
+                                (comp_id, char_id, now))
+        return comp_id
+
+    def companions_of(self, char_id):
+        rows = self.db.execute(
+            "SELECT c.* FROM companions c JOIN companion_owners o ON o.companion_id = c.id "
+            "WHERE o.char_id = ? ORDER BY c.id", (char_id,)).fetchall()
+        return [self._companion(row) for row in rows]
+
+    def save_companion(self, comp):
+        self.db.execute("UPDATE companions SET name = ?, stats = ?, state = ? WHERE id = ?",
+                        (comp["name"], json.dumps(comp.get("stats") or {}),
+                         json.dumps(comp.get("state") or {}), comp["id"]))
 
     # --- bans by address (only a hash of it is kept) ------------------------------------
 

@@ -54,7 +54,7 @@ import orbit_store  # noqa: E402
 import orbit_world  # noqa: E402
 import orbit_ws as ws  # noqa: E402
 
-VERSION = "1.0"
+VERSION = "1.1"
 logger = logging.getLogger("orbit")
 
 DEFAULTS = {
@@ -64,6 +64,7 @@ DEFAULTS = {
     "health_paths": ["/orbit/health", "/health"],
     "database": "orbit.db",
     "world": "world.json",
+    "economy": "economy.json",
     "texts": "texts.json",
     "words": "words.json",
     "max_connections": 200,
@@ -112,7 +113,7 @@ def load_config(path=None, overrides=None):
                 config["game"].update(value)
             else:
                 config[key] = value
-    for key in ("database", "world", "texts", "words"):
+    for key in ("database", "world", "economy", "texts", "words"):
         value = config.get(key)
         if value and value != ":memory:" and not os.path.isabs(value):
             candidate = os.path.join(base, value)
@@ -285,7 +286,7 @@ class OrbitServer:
         self.config = config
         self.store = orbit_store.Store(config["database"], iterations=config["hash_iterations"])
         if game is None:
-            world = orbit_world.World.load(config["world"])
+            world = orbit_world.World.load(config["world"], config.get("economy"))
             texts = orbit_lang.Texts(config["texts"])
             words = []
             if config.get("words") and os.path.exists(config["words"]):

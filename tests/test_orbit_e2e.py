@@ -228,22 +228,23 @@ def test_two_players_on_the_station(server, indonesian):
     # Joining.
     rafli.client.connect()
     assert loop.run_until(rafli.client.online), rafli.client.status
-    rafli.wait_for("Selamat datang di Stasiun Orbit, Rafli!")
+    rafli.wait_for("Selamat datang di Orbit, Rafli!")
     assert rafli.client.status == "Tersambung ke Orbit sebagai Rafli, Pilot."
     assert rafli.heard("Tersambung ke Orbit.") and rafli.services.ambiences[-1] == "vent"
     sari.client.connect()
     assert loop.run_until(sari.client.online)
-    rafli.wait_for("Sari baru pertama kali datang ke stasiun. Sapa, yuk!")
+    rafli.wait_for("Sari baru pertama kali masuk ke stasiun. Sapa, yuk!")
     assert "arrive" in rafli.services.sounds
     secret = rafli.services.accounts[url]["secret"]
     assert len(secret) == 64 and rafli.services.accounts[url]["joined"]
 
-    # Walking: the door, both rooms told, the ambience follows.
-    rafli.do("pergi ke kantin", "Kamu berjalan lewat Promenade ke Kantin.")
-    assert rafli.services.sounds[-1] == "door" and rafli.services.ambiences[-1] == "cantina"
-    sari.wait_for("Rafli pergi ke Kantin.")
-    sari.do("ke kantin", "Kamu berjalan lewat Promenade ke Kantin.")
-    rafli.wait_for("Sari datang dari Promenade.")
+    # Walking by compass: both rooms are told which way.
+    rafli.do("t", "Kamu berjalan ke timur, ke Gudang Kargo.")
+    assert rafli.services.ambiences[-1] == "vent"
+    sari.wait_for("Rafli pergi ke timur, ke Gudang Kargo.")
+    sari.do("timur", "Kamu berjalan ke timur, ke Gudang Kargo.")
+    rafli.wait_for("Sari datang dari arah barat, dari Dermaga.")
+    assert "Kamu berjalan di stasiun satu arah demi satu arah." in sari.do("pergi ke kantin", "Arah ke Kantin:")
 
     # Talking: the others hear it in the speaker's own voice; you, briefly.
     rafli.do("bilang halo Sari, selamat datang!", "Kamu bilang: halo Sari, selamat datang!")
@@ -262,30 +263,36 @@ def test_two_players_on_the_station(server, indonesian):
     assert rafli.voice_of("Sari berbisik padamu") == [sari_voice["id"]]
     sari.do("senyum ke Rafli", "Kamu tersenyum pada Rafli.")
     rafli.wait_for("Sari tersenyum padamu.")
-    rafli.do("siapa online", "2 orang online: Rafli si pilot, di Kantin; Sari si insinyur, di Kantin.")
+    rafli.do("siapa online", "2 orang online: Rafli si pilot, di Gudang Kargo; Sari si insinyur, di Gudang Kargo.")
 
     # Work: the engineer repeats the reactor's tones...
-    sari.do("pergi ke ruang mesin", "Ruang Mesin.")
+    sari.do("t", "Kamu berjalan ke timur, ke Koridor Servis.")
+    sari.do("t", "Ruang Mesin.")
+    assert sari.services.ambiences[-1] == "engine"
     sari.do("kerja", "Dengarkan 3 nada penstabil")
     codes = re.search(r"nada penstabil: ([\d, ]+)\.", sari.client.messages[-1]).group(1)
     assert loop.run_until(lambda: sum(s.startswith("tone") for s in sari.services.sounds) == 3)
     sari.do(codes.replace(",", ""), "Kamu dibayar 40 kredit; kreditmu 140.")
     assert "success" in sari.services.sounds
     # ...and the pilot flies a cargo run to the Moon.
-    rafli.do("ke dermaga", "Kamu berjalan lewat Promenade ke Dermaga.")
+    rafli.do("b", "Kamu berjalan ke barat, ke Dermaga.")
     rafli.do("kerja", "Penjepit dilepas.")
     assert "launch" in rafli.services.sounds and rafli.services.ambiences[-1] == "engine"
     rafli.wait_for("Mendarat di Pangkalan Bulan Tranquility.")
     assert "landing" in rafli.services.sounds and rafli.services.ambiences[-1] == "vent"
+    # Things that came later work for every client: they go as plain text.
+    rafli.do("harian", "Bonus harian: 40 kredit")
 
     # Giving credits.
-    sari.do("pergi ke dermaga", "Dermaga.")
+    sari.do("b", "Kamu berjalan ke barat, ke Koridor Servis.")
+    sari.do("b", "Kamu berjalan ke barat, ke Gudang Kargo.")
+    sari.do("b", "Kamu berjalan ke barat, ke Dermaga.")
     sari.do("beri Rafli 20 kredit", "Kamu memberi Rafli 20 kredit. Sisa kreditmu 120.")
     rafli.wait_for("Sari memberimu 20 kredit.")
     assert rafli.services.sounds[-1] == "coins"
     bag = rafli.do("tas", "Pekerjaan: pilot.")
     credits = int(re.search(r"Kreditmu (\d+)\.", bag).group(1))
-    assert credits > 120
+    assert credits > 160
 
     # The connection drops: Rafli comes back by himself, as himself, and
     # nobody else notices anything.

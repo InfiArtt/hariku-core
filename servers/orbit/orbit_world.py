@@ -8,16 +8,27 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
-The station: world.json read and checked, and finding things in it by what
-players type, in either language ("kantin", "the cantina", "Kantin!").
+The station: world.json and economy.json read and checked, and finding
+things in them by what players type, in either language ("kantin", "the
+cantina", "Kantin!").
 
-  locations  where you can be: names, descriptions, ambience, exits, objects
-  jobs       pilot, engineer, trader, scientist, security
-  goods      what the Promenade's market sells (base prices)
-  items      what missions ask you to carry
-  missions   the templates the daily board picks from
-  emotes     smile, wave... and their lines
-  earth      the regions the Observation Deck names
+world.json
+  directions  n, ne, e, se, s, sw, w, nw, u, d: their names and the words for
+              them in both languages ("u" is north in Indonesian, up in English)
+  areas       the decks and places rooms belong to (Main Deck, Asteroid Belt...)
+  locations   the rooms: names, descriptions, ambience, compass exits (an exit
+              may be locked, one-way, or lead into vacuum), objects, and flags
+              (dark, airless, private, landmark, market, shop...)
+  shuttles    rooms joined by a timed shuttle ride instead of a door
+  moved       old room ids and the rooms that replaced them
+  jobs, goods (the markets' goods), items (what missions ask you to carry),
+  missions, emotes, earth (what the Observation Deck names)
+
+economy.json (the balance: levels, the daily bonus, crops, mining, the shops'
+things and their effects...). See README.md.
+
+Every thing a character can own (a good, a mission item, a device, a seed,
+a sofa...) has one id, unique across both files: World.things.
 """
 
 import collections
@@ -29,7 +40,11 @@ import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LANGS = ("en", "id")
-AMBIENCES = ("vent", "cantina", "engine", "garden", "deck")
+AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue")
+DIRECTIONS = ("n", "ne", "e", "se", "s", "sw", "w", "nw", "u", "d")
+LOCKS = ("crew", "tech", "officer", "brass")
+THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture", "outfit",
+               "title", "pet", "service")
 _ARTICLES = {"the", "a", "an", "to", "ke", "di", "my", "ku"}
 _NOT_WORD = re.compile(r"[^\w\s]")
 
@@ -52,17 +67,35 @@ class WorldError(ValueError):
     pass
 
 
+def _exit(value):
+    """An exit as {"to", "lock", "oneway", "msg"}, from "room" or {"to": "room", ...}."""
+    if isinstance(value, str):
+        return {"to": value, "lock": None, "oneway": False, "msg": None}
+    return {"to": value.get("to"), "lock": value.get("lock"), "oneway": bool(value.get("oneway")),
+            "msg": value.get("msg")}
+
+
 class World:
-    def __init__(self, data):
+    def __init__(self, data, economy=None):
         self.data = data
+        self.economy = economy or {}
         self.start = data["start"]
         self.locations = data["locations"]
+        self.areas = data.get("areas", {})
+        self.directions = data["directions"]
+        self.shuttles = data.get("shuttles", {})
+        self.moved = data.get("moved", {})
         self.jobs = data["jobs"]
         self.goods = data["goods"]
         self.items = data["items"]
         self.missions = data["missions"]
         self.emotes = data["emotes"]
         self.regions = data["earth"]["regions"]
+        self.exits = {lid: {d: _exit(v) for d, v in (loc.get("exits") or {}).items()}
+                      for lid, loc in self.locations.items()}
+        self.things = self._things()
+        self.crops = self.economy.get("crops", {})
+        self.shops = self.economy.get("shops", {})
         self._check()
         self._place_names = self._index({lid: loc.get("aliases", {}) for lid, loc in
                                          self.locations.items() if not loc.get("hidden")},
@@ -70,11 +103,38 @@ class World:
                                                            for lang in LANGS])
         self._good_names = self._index({gid: g["names"] for gid, g in self.goods.items()})
         self._item_names = self._index({iid: i["names"] for iid, i in self.items.items()})
+        self._thing_names = self._index({tid: t.get("names", {}) for tid, t in self.things.items()},
+                                        extra=lambda tid: [self.things[tid]["one"][lang]
+                                                           for lang in LANGS]
+                                        + [self.things[tid]["many"][lang] for lang in LANGS])
+        self._dir_words = {lang: {} for lang in LANGS}
+        for d, info in self.directions.items():
+            for lang in LANGS:
+                for word in info["words"][lang]:
+                    self._dir_words[lang][norm(word)] = d
 
     @classmethod
-    def load(cls, path=None):
-        with open(path or os.path.join(HERE, "world.json"), encoding="utf-8") as f:
-            return cls(json.load(f))
+    def load(cls, path=None, economy_path=None):
+        path = path or os.path.join(HERE, "world.json")
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        economy_path = economy_path or os.path.join(os.path.dirname(os.path.abspath(path)),
+                                                    "economy.json")
+        if not os.path.exists(economy_path):
+            economy_path = os.path.join(HERE, "economy.json")
+        with open(economy_path, encoding="utf-8") as f:
+            economy = json.load(f)
+        return cls(data, economy)
+
+    def _things(self):
+        things = {}
+        for gid, good in self.goods.items():
+            things[gid] = dict(good, type="good", tradeable=True)
+        for iid, item in self.items.items():
+            things[iid] = dict(item, type="cargo", tradeable=False)
+        for tid, thing in (self.economy.get("things") or {}).items():
+            things[tid] = dict(thing)
+        return things
 
     # --- checks ------------------------------------------------------------------------
 
@@ -82,29 +142,74 @@ class World:
         problems = []
         if self.start not in self.locations:
             problems.append(f"the start {self.start!r} is not a location")
+        if set(self.directions) != set(DIRECTIONS):
+            problems.append("directions must be exactly " + ", ".join(DIRECTIONS))
+        for d, info in self.directions.items():
+            if info.get("back") not in self.directions or self.directions[info["back"]].get("back") != d:
+                problems.append(f"direction {d}: its way back is wrong")
+            for lang in LANGS:
+                if not info.get("name", {}).get(lang) or not info.get("words", {}).get(lang):
+                    problems.append(f"direction {d}: needs a name and words in {lang}")
         for lid, loc in self.locations.items():
             for field in ("name", "ref", "in", "desc"):
                 if not all(isinstance(loc.get(field, {}).get(lang), str) for lang in LANGS):
                     problems.append(f"{lid}: {field} needs en and id")
             if loc.get("ambience") not in AMBIENCES:
                 problems.append(f"{lid}: unknown ambience {loc.get('ambience')!r}")
-            for exit_id in loc.get("exits", []):
-                if exit_id not in self.locations:
-                    problems.append(f"{lid}: exit to unknown {exit_id!r}")
-                elif lid not in self.locations[exit_id].get("exits", []):
-                    problems.append(f"{lid} -> {exit_id} has no way back")
+            if loc.get("area") not in self.areas:
+                problems.append(f"{lid}: unknown area {loc.get('area')!r}")
+            for d, ex in self.exits[lid].items():
+                if d not in self.directions:
+                    problems.append(f"{lid}: unknown direction {d!r}")
+                    continue
+                if ex["to"] not in self.locations:
+                    problems.append(f"{lid}: exit {d} to unknown {ex['to']!r}")
+                    continue
+                if ex["lock"] is not None and ex["lock"] not in LOCKS:
+                    problems.append(f"{lid}: exit {d} has an unknown lock {ex['lock']!r}")
+                back = self.exits[ex["to"]].get(self.directions[d]["back"])
+                if not ex["oneway"] and (back is None or back["to"] != lid):
+                    problems.append(f"{lid} -> {d} -> {ex['to']} has no way back")
             if loc.get("job") and loc["job"] not in self.jobs:
                 problems.append(f"{lid}: unknown job {loc['job']!r}")
+            if loc.get("shop") and loc["shop"] not in self.shops:
+                problems.append(f"{lid}: unknown shop {loc['shop']!r}")
+        for a, b in self.shuttles.get("links", []):
+            if a not in self.locations or b not in self.locations:
+                problems.append(f"shuttle link {a} - {b}: unknown room")
+        for old, new in self.moved.items():
+            if new not in self.locations:
+                problems.append(f"moved {old} -> unknown {new}")
         for mid, mission in self.missions.items():
             if mission["item"] not in self.items:
                 problems.append(f"mission {mid}: unknown item")
             for field in ("from", "to"):
                 if mission[field] not in self.locations:
                     problems.append(f"mission {mid}: unknown {field}")
+            if mission.get("gives") and mission["gives"] not in self.things:
+                problems.append(f"mission {mid}: gives an unknown thing")
         for eid, emote in self.emotes.items():
             for lang in LANGS:
                 if set(emote.get(lang, {})) != {"you", "they", "you_at", "they_at", "at_you"}:
                     problems.append(f"emote {eid}: {lang} lines incomplete")
+        ids = list(self.goods) + list(self.items) + list(self.economy.get("things") or {})
+        for tid in {t for t in ids if ids.count(t) > 1}:
+            problems.append(f"the id {tid!r} is used twice")
+        for tid, thing in self.things.items():
+            if thing.get("type") not in THING_TYPES:
+                problems.append(f"thing {tid}: unknown type {thing.get('type')!r}")
+            for field in ("one", "many"):
+                if not all(isinstance(thing.get(field, {}).get(lang), str) for lang in LANGS):
+                    problems.append(f"thing {tid}: {field} needs en and id")
+        for sid, shop in self.shops.items():
+            for tid in shop.get("stock", []):
+                if tid not in self.things:
+                    problems.append(f"shop {sid}: unknown thing {tid!r}")
+                elif not self.things[tid].get("price"):
+                    problems.append(f"shop {sid}: {tid} has no price")
+        for cid, crop in self.crops.items():
+            if crop.get("seed") not in self.things or crop.get("good") not in self.things:
+                problems.append(f"crop {cid}: unknown seed or good")
         if problems:
             raise WorldError("; ".join(problems))
 
@@ -153,6 +258,10 @@ class World:
     def find_item(self, text):
         return self._lookup(self._item_names, text)
 
+    def find_thing(self, text, fuzzy=True):
+        """Any thing's id (a good, a device, a seed...) for what was typed."""
+        return self._lookup(self._thing_names, text, fuzzy)
+
     def find_object(self, location_id, text):
         """(object id, object) in a location for what was typed, or (None, None)."""
         loc = self.locations.get(location_id, {})
@@ -160,39 +269,111 @@ class World:
         found = self._lookup(index, text)
         return (found, loc["objects"][found]) if found else (None, None)
 
+    def find_direction(self, text, lang="en"):
+        """A direction ("n"...) for a word, the player's own language first:
+        "u" is north (utara) in Indonesian and up in English."""
+        key = norm(text)
+        if not key:
+            return None
+        other = "en" if lang == "id" else "id"
+        for table in (self._dir_words.get(lang, {}), self._dir_words[other]):
+            if key in table:
+                return table[key]
+        return None
+
+    def dir_name(self, d):
+        return self.directions[d]["name"]
+
     # --- the map ----------------------------------------------------------------------
 
-    def route(self, start, goal):
-        """The locations walked through from `start` to `goal`, both
-        included, or None when there's no way."""
+    def neighbours(self, lid):
+        """[(direction, exit)] of a room, in compass order."""
+        exits = self.exits.get(lid, {})
+        return [(d, exits[d]) for d in DIRECTIONS if d in exits]
+
+    def shuttle_partner(self, lid):
+        for a, b in self.shuttles.get("links", []):
+            if lid == a:
+                return b
+            if lid == b:
+                return a
+        return None
+
+    def route(self, start, goal, can_pass=None):
+        """The steps from `start` to `goal`: [(direction or "shuttle", room)],
+        or None when there's no way. `can_pass(room, exit)` may refuse exits
+        (a locked door, vacuum)."""
         if start == goal:
-            return [start]
+            return []
         previous = {start: None}
         queue = collections.deque([start])
         while queue:
             here = queue.popleft()
-            for nxt in self.locations[here].get("exits", []):
+            steps = [(d, ex["to"], ex) for d, ex in self.neighbours(here)]
+            partner = self.shuttle_partner(here)
+            if partner:
+                steps.append(("shuttle", partner, None))
+            for d, nxt, ex in steps:
                 if nxt in previous:
                     continue
-                previous[nxt] = here
+                if can_pass is not None and ex is not None and not can_pass(here, ex):
+                    continue
+                previous[nxt] = (here, d)
                 if nxt == goal:
-                    path = [goal]
-                    while previous[path[-1]] is not None:
-                        path.append(previous[path[-1]])
+                    path = []
+                    node = goal
+                    while previous[node] is not None:
+                        before, how = previous[node]
+                        path.append((how, node))
+                        node = before
                     return path[::-1]
                 queue.append(nxt)
         return None
 
-    def reachable(self):
-        """Every location a player can walk to from the start."""
-        seen = {self.start}
-        queue = collections.deque([self.start])
+    def reachable(self, start=None):
+        """Every room that can be reached from the start (doors and shuttles)."""
+        start = start or self.start
+        seen = {start}
+        queue = collections.deque([start])
         while queue:
-            for nxt in self.locations[queue.popleft()].get("exits", []):
+            here = queue.popleft()
+            nexts = [ex["to"] for _d, ex in self.neighbours(here)]
+            partner = self.shuttle_partner(here)
+            if partner:
+                nexts.append(partner)
+            for nxt in nexts:
                 if nxt not in seen:
                     seen.add(nxt)
                     queue.append(nxt)
         return seen
+
+    def area_of(self, lid):
+        return self.areas.get(self.locations[lid].get("area"), {})
+
+    def at(self, lid):
+        """(x, y, z) of a room on its area's plan."""
+        at = list(self.locations[lid].get("at") or [0, 0])
+        while len(at) < 3:
+            at.append(0)
+        return tuple(at[:3])
+
+    def heading(self, from_id, to_id):
+        """The compass direction from one room to another on the same plan, or None."""
+        x1, y1, _z1 = self.at(from_id)
+        x2, y2, _z2 = self.at(to_id)
+        dx, dy = x2 - x1, y2 - y1
+        if dx == 0 and dy == 0:
+            return None
+        sx = (dx > 0) - (dx < 0)
+        sy = (dy > 0) - (dy < 0)
+        if abs(dx) > 2 * abs(dy):
+            sy = 0
+        elif abs(dy) > 2 * abs(dx):
+            sx = 0
+        for d, info in self.directions.items():
+            if info.get("dx", 0) == sx and info.get("dy", 0) == sy and not info.get("dz"):
+                return d
+        return None
 
     # --- names in sentences -------------------------------------------------------------
 
@@ -201,6 +382,9 @@ class World:
         thing = table[thing_id]
         form = thing["one"] if n == 1 else thing["many"]
         return {lang: f"{n} {form[lang]}" for lang in LANGS}
+
+    def thing_count(self, thing_id, n):
+        return self.count_of(self.things, thing_id, n)
 
     def job_name(self, job):
         return self.jobs.get(job, {}).get("name", {"en": job, "id": job})

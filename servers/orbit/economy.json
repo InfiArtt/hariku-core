@@ -1,0 +1,1202 @@
+{
+  "_note": "Orbit's balance: every number here can be changed and takes effect when the server restarts. Prices are in credits, times in seconds. See README.md.",
+  "levels": {"xp_step": 60, "max": 20, "pay_per_level": 0.03},
+  "xp": {"repair": 10, "repair_tone": 2, "flight": 20, "science": 12, "patrol": 12, "mission": 25},
+  "ranks": [
+    {"level": 1, "en": "trainee {job}", "id": "{job} magang"},
+    {"level": 3, "en": "{job}", "id": "{job}"},
+    {"level": 6, "en": "senior {job}", "id": "{job} senior"},
+    {"level": 10, "en": "chief {job}", "id": "kepala {job}"},
+    {"level": 15, "en": "master {job}", "id": "{job} ahli"},
+    {"level": 20, "en": "legendary {job}", "id": "{job} legendaris"}
+  ],
+  "grants": [
+    {"level": 2, "thing": "keycard_crew"},
+    {"level": 3, "job": "engineer", "thing": "keycard_tech"},
+    {"level": 10, "thing": "keycard_officer"}
+  ],
+  "starter": ["compass"],
+  "work": {
+    "repair": {"pay_base": 10, "pay_tone": 10, "core_bonus": 0.25},
+    "flight": {"pay_min": 70, "pay_max": 100},
+    "science": {"pay": 45, "seconds": 45},
+    "patrol": {"pay": 40, "pay_person": 5, "seconds": 45}
+  },
+  "daily": {"base": 40, "step": 15, "cap": 7, "week_bonus": {"thing": "seed_strawberry", "n": 3}},
+  "farm": {
+    "plots": 2,
+    "max_plots": 8,
+    "plot_prices": [150, 250, 400, 600, 900, 1300],
+    "water_bonus": 1,
+    "golden_chance": 0.02
+  },
+  "crops": {
+    "kangkung": {"seed": "seed_kangkung", "good": "kangkung", "grow": 600, "yield": [3, 4], "level": 1},
+    "chilli": {"seed": "seed_chilli", "good": "chilli", "grow": 1800, "yield": [3, 5], "level": 1},
+    "tomato": {"seed": "seed_tomato", "good": "tomato", "grow": 3600, "yield": [4, 5], "level": 1},
+    "strawberry": {"seed": "seed_strawberry", "good": "strawberry", "grow": 7200, "yield": [4, 6], "level": 1},
+    "vanilla": {"seed": "seed_vanilla", "good": "vanilla", "grow": 14400, "yield": [3, 5], "level": 3},
+    "dragonfruit": {"seed": "seed_dragonfruit", "good": "dragonfruit", "grow": 28800, "yield": [4, 6], "level": 5},
+    "moonmelon": {"seed": "seed_moonmelon", "good": "moonmelon", "grow": 86400, "yield": [3, 5], "level": 8}
+  },
+  "mining": {
+    "cooldown": {"1": 25, "2": 20, "3": 16},
+    "vein_chance": 0.08,
+    "key_chance": {"rim": 0.004, "cave": 0.006},
+    "tables": {
+      "platform": {
+        "1": {"iron": 55, "nickel": 28, "ice": 15, "titanium": 2},
+        "2": {"iron": 45, "nickel": 30, "ice": 14, "titanium": 10, "platinum": 1},
+        "3": {"iron": 38, "nickel": 30, "ice": 12, "titanium": 16, "platinum": 4}
+      },
+      "rim": {
+        "1": {"iron": 40, "nickel": 30, "ice": 15, "titanium": 12, "platinum": 3},
+        "2": {"iron": 32, "nickel": 28, "ice": 12, "titanium": 20, "platinum": 7, "meteorite": 1},
+        "3": {"iron": 25, "nickel": 25, "ice": 10, "titanium": 25, "platinum": 12, "meteorite": 3}
+      },
+      "cave": {
+        "1": {"iron": 30, "nickel": 25, "titanium": 25, "platinum": 15, "meteorite": 4, "quantum": 1},
+        "2": {"iron": 25, "nickel": 22, "titanium": 25, "platinum": 18, "meteorite": 6, "quantum": 4},
+        "3": {"iron": 18, "nickel": 18, "titanium": 25, "platinum": 22, "meteorite": 9, "quantum": 8}
+      }
+    }
+  },
+  "salvage": {
+    "cooldown": 20,
+    "key_chance": 0.015,
+    "tables": {"debris": {"scrap": 62, "circuit": 28, "satchip": 9, "goldfoil": 1}}
+  },
+  "kancil": {"fare": 5, "seconds": 30, "pilot_factor": 0.5, "min_seconds": 8},
+  "eva": {"warn": [60, 20], "rescue_fee": 20},
+  "capsule": {"credits": 300},
+  "patrol_people": {
+    "innocent": [
+      {
+        "en": "a grandmother knitting a scarf for her grandson on Mars",
+        "id": "seorang nenek merajut syal untuk cucunya di Mars"
+      },
+      {"en": "a student asleep on her backpack", "id": "seorang mahasiswi tertidur di atas ranselnya"},
+      {"en": "a cook carrying a crate of fresh chillies", "id": "seorang juru masak membawa peti cabai segar"},
+      {"en": "a tourist photographing every single wall", "id": "seorang turis memotret setiap dinding"},
+      {
+        "en": "a mechanic whistling, oil on his sleeves",
+        "id": "seorang montir bersiul, lengan bajunya penuh oli"
+      },
+      {"en": "a child hugging a stuffed rocket", "id": "seorang anak memeluk boneka roket"},
+      {"en": "a courier checking her list twice", "id": "seorang kurir memeriksa daftarnya dua kali"},
+      {
+        "en": "a botanist talking softly to a potted fern",
+        "id": "seorang ahli botani berbicara pelan pada tanaman pakis"
+      },
+      {"en": "a musician tuning a violin", "id": "seorang musisi menyetem biola"},
+      {
+        "en": "a pilot eating instant noodles straight from the cup",
+        "id": "seorang pilot makan mi instan langsung dari gelasnya"
+      },
+      {
+        "en": "an old man feeding a pigeon that somehow got on board",
+        "id": "seorang kakek memberi makan burung merpati yang entah bagaimana ikut naik"
+      },
+      {
+        "en": "two sisters arguing about which moon is prettier",
+        "id": "dua kakak beradik berdebat bulan mana yang paling cantik"
+      }
+    ],
+    "suspect": [
+      {
+        "en": "a man in a heavy coat although it's warm, and the coat clinks when he moves",
+        "id": "seorang pria bermantel tebal padahal udaranya hangat, dan mantelnya berdenting saat dia bergerak"
+      },
+      {
+        "en": "a woman whose crate marked 'toys' is ticking",
+        "id": "seorang wanita yang petinya bertulisan 'mainan' berdetak"
+      },
+      {
+        "en": "a trader whose badge photo shows a different face",
+        "id": "seorang pedagang yang foto di lencananya wajah orang lain"
+      },
+      {
+        "en": "a traveller who keeps glancing at the camera and wiping sweat off his lip",
+        "id": "seorang pelancong yang terus melirik kamera sambil menyeka keringat di bibirnya"
+      },
+      {
+        "en": "a man carrying a sack of coffee that squeaks",
+        "id": "seorang pria membawa karung kopi yang mencicit"
+      },
+      {
+        "en": "someone whose suitcase is far too heavy for its size, and who won't put it down",
+        "id": "seseorang yang kopernya terlalu berat untuk ukurannya, dan tidak mau meletakkannya"
+      },
+      {
+        "en": "a courier with no name on her uniform and three different delivery lists",
+        "id": "seorang kurir tanpa nama di seragamnya dan tiga daftar kiriman yang berbeda"
+      },
+      {
+        "en": "a tourist whose camera has no lens but a great many wires",
+        "id": "seorang turis yang kameranya tidak punya lensa tapi banyak sekali kabel"
+      }
+    ]
+  },
+  "shops": {
+    "general": {
+      "name": {"en": "Star Supply", "id": "Toko Bintang"},
+      "stock": [
+        "mapper",
+        "holomapper",
+        "scanner",
+        "headlamp",
+        "beacon",
+        "communicator",
+        "keycard_crew",
+        "keycard_tech",
+        "keycard_officer",
+        "eva_suit",
+        "oxygen_tank",
+        "drill_steel",
+        "drill_plasma",
+        "thruster",
+        "sprinkler",
+        "grow_lamp",
+        "bag_big",
+        "bag_cargo",
+        "wrench",
+        "diagkit",
+        "navcomp",
+        "autopilot",
+        "terminal",
+        "ledger",
+        "microscope",
+        "spectrometer",
+        "bodyscanner",
+        "drone",
+        "plot",
+        "seed_kangkung",
+        "seed_chilli",
+        "seed_tomato",
+        "seed_strawberry",
+        "seed_vanilla",
+        "seed_dragonfruit",
+        "seed_moonmelon",
+        "lava_lamp",
+        "monstera",
+        "batik_rug",
+        "bookshelf",
+        "hammock",
+        "aquarium",
+        "sofa",
+        "star_projector",
+        "earth_hologram",
+        "bomber_jacket",
+        "batik_shirt",
+        "coveralls",
+        "star_cloak",
+        "gold_suit",
+        "title_coffee",
+        "title_explorer",
+        "title_golden",
+        "title_legend",
+        "robot_pet",
+        "cat_pet"
+      ]
+    },
+    "bar": {"name": {"en": "the Cantina bar", "id": "bar Kantin"}, "stock": ["iced_coffee", "martabak", "kerupuk"]},
+    "seeds": {
+      "name": {"en": "the seed rack", "id": "rak bibit"},
+      "stock": [
+        "seed_kangkung",
+        "seed_chilli",
+        "seed_tomato",
+        "seed_strawberry",
+        "seed_vanilla",
+        "seed_dragonfruit",
+        "seed_moonmelon",
+        "plot"
+      ]
+    }
+  },
+  "things": {
+    "compass": {
+      "type": "gear",
+      "one": {"en": "compass", "id": "kompas"},
+      "many": {"en": "compasses", "id": "kompas"},
+      "names": {"en": ["compass"], "id": ["kompas"]},
+      "desc": {
+        "en": "A brass pocket compass that also knows which deck you're on. Type compass any time.",
+        "id": "Kompas saku kuningan yang juga tahu kamu sedang di dek mana. Ketik kompas kapan saja."
+      },
+      "unique": true,
+      "effects": {"compass": true}
+    },
+    "mapper": {
+      "type": "gear",
+      "one": {"en": "pocket mapper", "id": "pemeta saku"},
+      "many": {"en": "pocket mappers", "id": "pemeta saku"},
+      "names": {"en": ["mapper", "pocket mapper", "map device"], "id": ["pemeta", "pemeta saku", "alat peta"]},
+      "desc": {
+        "en": "A palm-sized device that remembers every room you've walked through. With it, way to finds the way to any place you've been, and map lists what you know of the deck.",
+        "id": "Alat seukuran telapak tangan yang mengingat setiap ruangan yang pernah kamu lewati. Dengannya, arah ke bisa menunjukkan jalan ke tempat mana pun yang pernah kamu datangi, dan peta menyebutkan yang kamu tahu tentang dek ini."
+      },
+      "price": 250,
+      "unique": true,
+      "effects": {"mapper": 1}
+    },
+    "holomapper": {
+      "type": "gear",
+      "one": {"en": "holo mapper", "id": "pemeta holo"},
+      "many": {"en": "holo mappers", "id": "pemeta holo"},
+      "names": {
+        "en": ["holo mapper", "holomapper", "advanced mapper", "hologram mapper"],
+        "id": ["pemeta holo", "pemeta hologram", "pemeta canggih"]
+      },
+      "desc": {
+        "en": "A mapper that downloads the station's full plans: the way to every public place, visited or not, and a fuller map of each deck.",
+        "id": "Pemeta yang mengunduh denah lengkap stasiun: jalan ke setiap tempat umum, pernah didatangi atau belum, dan peta yang lebih lengkap untuk tiap dek."
+      },
+      "price": 1200,
+      "unique": true,
+      "level": 4,
+      "effects": {"mapper": 2}
+    },
+    "scanner": {
+      "type": "gear",
+      "one": {"en": "crew scanner", "id": "pemindai kru"},
+      "many": {"en": "crew scanners", "id": "pemindai kru"},
+      "names": {"en": ["scanner", "crew scanner"], "id": ["pemindai", "pemindai kru", "scanner"]},
+      "desc": {
+        "en": "Sweeps the rooms around you and tells you who is in each, and in which direction. Type scan.",
+        "id": "Memindai ruangan di sekitarmu dan memberi tahu siapa ada di mana, dan ke arah mana. Ketik pindai."
+      },
+      "price": 400,
+      "unique": true,
+      "effects": {"scanner": true}
+    },
+    "headlamp": {
+      "type": "gear",
+      "one": {"en": "headlamp", "id": "senter kepala"},
+      "many": {"en": "headlamps", "id": "senter kepala"},
+      "names": {
+        "en": ["headlamp", "head lamp", "flashlight", "torch", "lamp"],
+        "id": ["senter kepala", "senter", "lampu kepala"]
+      },
+      "desc": {
+        "en": "A bright lamp on an elastic band. Wear it, and dark tunnels and caves show their rooms and their ways out.",
+        "id": "Lampu terang dengan tali elastis. Pakai di kepala, maka terowongan dan gua yang gelap memperlihatkan isinya dan jalan keluarnya."
+      },
+      "price": 120,
+      "unique": true,
+      "slot": "head",
+      "effects": {"light": true}
+    },
+    "beacon": {
+      "type": "gear",
+      "one": {"en": "beacon", "id": "suar"},
+      "many": {"en": "beacons", "id": "suar"},
+      "names": {"en": ["beacon", "marker"], "id": ["suar", "penanda"]},
+      "desc": {
+        "en": "A little blinking marker. Type place beacon to leave it in a room, and way to beacon to walk back to it from anywhere.",
+        "id": "Penanda kecil yang berkedip. Ketik pasang suar untuk meninggalkannya di sebuah ruangan, dan arah ke suar untuk kembali ke sana dari mana saja."
+      },
+      "price": 150,
+      "unique": true,
+      "effects": {"beacon": true}
+    },
+    "communicator": {
+      "type": "gear",
+      "one": {"en": "communicator", "id": "komunikator"},
+      "many": {"en": "communicators", "id": "komunikator"},
+      "names": {"en": ["communicator", "comm", "comms badge", "radio badge"], "id": ["komunikator", "lencana radio"]},
+      "desc": {
+        "en": "A badge radio. It tells you when friends log in, and locate finds where a player is and the way there.",
+        "id": "Radio berbentuk lencana. Memberi tahu kalau teman-temanmu masuk, dan lacak menemukan di mana seorang pemain berada dan jalan ke sana."
+      },
+      "price": 500,
+      "unique": true,
+      "effects": {"comm": true}
+    },
+    "keycard_crew": {
+      "type": "gear",
+      "one": {"en": "crew keycard", "id": "kartu kru"},
+      "many": {"en": "crew keycards", "id": "kartu kru"},
+      "names": {
+        "en": ["crew keycard", "crew card", "blue keycard"],
+        "id": ["kartu kru", "kartu akses kru", "kartu biru"]
+      },
+      "desc": {
+        "en": "A blue card that opens the maintenance tunnels. Every crew member gets one at level 2.",
+        "id": "Kartu biru yang membuka terowongan perawatan. Setiap kru mendapatkannya di level 2."
+      },
+      "price": 100,
+      "unique": true,
+      "effects": {"access": ["crew"]}
+    },
+    "keycard_tech": {
+      "type": "gear",
+      "one": {"en": "technician keycard", "id": "kartu teknisi"},
+      "many": {"en": "technician keycards", "id": "kartu teknisi"},
+      "names": {
+        "en": ["technician keycard", "tech keycard", "tech card", "yellow keycard"],
+        "id": ["kartu teknisi", "kartu kuning"]
+      },
+      "desc": {
+        "en": "A yellow card for the Reactor Core and everything the crew card opens. Engineers get one at level 3.",
+        "id": "Kartu kuning untuk Inti Reaktor dan semua yang dibuka kartu kru. Insinyur mendapatkannya di level 3."
+      },
+      "price": 1500,
+      "unique": true,
+      "level": 3,
+      "effects": {"access": ["crew", "tech"]}
+    },
+    "keycard_officer": {
+      "type": "gear",
+      "one": {"en": "officer keycard", "id": "kartu perwira"},
+      "many": {"en": "officer keycards", "id": "kartu perwira"},
+      "names": {"en": ["officer keycard", "officer card", "red keycard"], "id": ["kartu perwira", "kartu merah"]},
+      "desc": {
+        "en": "A red card that opens the Captain's Quarters, and every door the other cards open. Given to everyone at level 10.",
+        "id": "Kartu merah yang membuka Kabin Kapten, dan semua pintu yang dibuka kartu lainnya. Diberikan kepada semua orang di level 10."
+      },
+      "price": 5000,
+      "unique": true,
+      "level": 6,
+      "effects": {"access": ["crew", "tech", "officer"]}
+    },
+    "brass_key": {
+      "type": "gear",
+      "one": {"en": "brass key", "id": "kunci kuningan"},
+      "many": {"en": "brass keys", "id": "kunci kuningan"},
+      "names": {"en": ["brass key", "old key", "key"], "id": ["kunci kuningan", "kunci tua", "kunci"]},
+      "desc": {
+        "en": "A heavy old key, warm to the touch. Somewhere on the station there must be a door old enough for it.",
+        "id": "Kunci tua yang berat, terasa hangat. Pasti ada pintu di stasiun ini yang cukup tua untuknya."
+      },
+      "unique": true,
+      "tradeable": true,
+      "effects": {"access": ["brass"]}
+    },
+    "eva_suit": {
+      "type": "gear",
+      "one": {"en": "EVA suit", "id": "pakaian EVA"},
+      "many": {"en": "EVA suits", "id": "pakaian EVA"},
+      "names": {
+        "en": ["eva suit", "eva", "spacesuit", "space suit", "suit"],
+        "id": ["pakaian eva", "baju eva", "pakaian antariksa", "baju antariksa"]
+      },
+      "desc": {
+        "en": "A white spacesuit with three minutes of air. Wear it to go out through an airlock; the station tows you back if the air runs out.",
+        "id": "Pakaian antariksa putih dengan udara tiga menit. Pakai untuk keluar lewat airlock; stasiun akan menarikmu pulang kalau udaranya habis."
+      },
+      "price": 800,
+      "unique": true,
+      "level": 2,
+      "slot": "suit",
+      "effects": {"eva": true, "air": 180}
+    },
+    "oxygen_tank": {
+      "type": "gear",
+      "one": {"en": "oxygen tank", "id": "tabung oksigen"},
+      "many": {"en": "oxygen tanks", "id": "tabung oksigen"},
+      "names": {
+        "en": ["oxygen tank", "oxygen", "air tank", "tank"],
+        "id": ["tabung oksigen", "oksigen", "tabung udara"]
+      },
+      "desc": {
+        "en": "A spare tank that clips onto an EVA suit: three more minutes of air outside.",
+        "id": "Tabung cadangan yang dipasang di pakaian EVA: tiga menit udara lagi di luar."
+      },
+      "price": 300,
+      "unique": true,
+      "effects": {"air": 180}
+    },
+    "drill_steel": {
+      "type": "tool",
+      "one": {"en": "steel drill", "id": "bor baja"},
+      "many": {"en": "steel drills", "id": "bor baja"},
+      "names": {"en": ["steel drill", "drill", "better drill"], "id": ["bor baja", "bor"]},
+      "desc": {
+        "en": "A hardened mining drill: faster than the platform's loaner, and it finds titanium and platinum more often.",
+        "id": "Bor tambang yang dikeraskan: lebih cepat dari bor pinjaman platform, dan lebih sering menemukan titanium dan platina."
+      },
+      "price": 500,
+      "unique": true,
+      "level": 3,
+      "effects": {"drill": 2}
+    },
+    "drill_plasma": {
+      "type": "tool",
+      "one": {"en": "plasma drill", "id": "bor plasma"},
+      "many": {"en": "plasma drills", "id": "bor plasma"},
+      "names": {"en": ["plasma drill"], "id": ["bor plasma"]},
+      "desc": {
+        "en": "A drill that melts rock instead of breaking it. The fastest, and the best at finding rare ore.",
+        "id": "Bor yang melelehkan batu, bukan menghancurkannya. Paling cepat, dan paling jago menemukan bijih langka."
+      },
+      "price": 2000,
+      "unique": true,
+      "level": 8,
+      "effects": {"drill": 3}
+    },
+    "thruster": {
+      "type": "tool",
+      "one": {"en": "turbo thruster", "id": "pendorong turbo"},
+      "many": {"en": "turbo thrusters", "id": "pendorong turbo"},
+      "names": {"en": ["turbo thruster", "thruster", "turbo"], "id": ["pendorong turbo", "turbo"]},
+      "desc": {
+        "en": "A booster you clip onto the Kancil for your rides: the trip to the Asteroid Belt takes half the time.",
+        "id": "Pendorong yang kamu pasang di Kancil setiap kamu menumpang: perjalanan ke Sabuk Asteroid jadi setengah waktunya."
+      },
+      "price": 350,
+      "unique": true,
+      "effects": {"shuttle": 0.5}
+    },
+    "sprinkler": {
+      "type": "tool",
+      "one": {"en": "auto-sprinkler", "id": "penyiram otomatis"},
+      "many": {"en": "auto-sprinklers", "id": "penyiram otomatis"},
+      "names": {
+        "en": ["auto-sprinkler", "sprinkler", "auto sprinkler"],
+        "id": ["penyiram otomatis", "penyiram", "sprinkler"]
+      },
+      "desc": {
+        "en": "Waters every seed you plant, as soon as it's in: each plot gives its watering bonus without a visit.",
+        "id": "Menyiram setiap bibit yang kamu tanam begitu masuk tanah: setiap petak dapat bonus siramnya tanpa kamu datang."
+      },
+      "price": 600,
+      "unique": true,
+      "effects": {"sprinkler": true}
+    },
+    "grow_lamp": {
+      "type": "tool",
+      "one": {"en": "grow lamp", "id": "lampu tumbuh"},
+      "many": {"en": "grow lamps", "id": "lampu tumbuh"},
+      "names": {"en": ["grow lamp", "lamp for plants"], "id": ["lampu tumbuh", "lampu tanaman"]},
+      "desc": {
+        "en": "A pink lamp for your plots: crops ripen in four fifths of the time.",
+        "id": "Lampu merah muda untuk petakmu: tanaman matang dalam empat perlima waktunya."
+      },
+      "price": 900,
+      "unique": true,
+      "level": 4,
+      "effects": {"grow": 0.8}
+    },
+    "bag_big": {
+      "type": "tool",
+      "one": {"en": "big bag", "id": "tas besar"},
+      "many": {"en": "big bags", "id": "tas besar"},
+      "names": {"en": ["big bag", "bigger bag"], "id": ["tas besar"]},
+      "desc": {
+        "en": "A roomy canvas bag: it holds 30 goods instead of 20.",
+        "id": "Tas kanvas yang lega: muat 30 barang dagangan, bukan 20."
+      },
+      "price": 250,
+      "unique": true,
+      "effects": {"bag": 30}
+    },
+    "bag_cargo": {
+      "type": "tool",
+      "one": {"en": "cargo pack", "id": "ransel kargo"},
+      "many": {"en": "cargo packs", "id": "ransel kargo"},
+      "names": {"en": ["cargo pack", "backpack"], "id": ["ransel kargo", "ransel"]},
+      "desc": {
+        "en": "A framed pack with straps everywhere: 45 goods.",
+        "id": "Ransel berangka dengan tali di mana-mana: muat 45 barang dagangan."
+      },
+      "price": 900,
+      "unique": true,
+      "level": 4,
+      "effects": {"bag": 45}
+    },
+    "wrench": {
+      "type": "tool",
+      "one": {"en": "torque wrench", "id": "kunci torsi"},
+      "many": {"en": "torque wrenches", "id": "kunci torsi"},
+      "names": {"en": ["torque wrench", "wrench"], "id": ["kunci torsi"]},
+      "desc": {
+        "en": "A digital torque wrench. Engineers are paid a tenth more for every repair.",
+        "id": "Kunci torsi digital. Insinyur dibayar sepersepuluh lebih banyak untuk setiap perbaikan."
+      },
+      "price": 300,
+      "unique": true,
+      "level": 2,
+      "job": "engineer",
+      "effects": {"pay": 0.1}
+    },
+    "diagkit": {
+      "type": "tool",
+      "one": {"en": "quantum diagnostic kit", "id": "kit diagnostik kuantum"},
+      "many": {"en": "quantum diagnostic kits", "id": "kit diagnostik kuantum"},
+      "names": {
+        "en": ["quantum diagnostic kit", "diagnostic kit", "diag kit"],
+        "id": ["kit diagnostik kuantum", "kit diagnostik"]
+      },
+      "desc": {
+        "en": "The kit the Reactor Core's own crew use. Engineers are paid a fifth more.",
+        "id": "Kit yang dipakai kru Inti Reaktor sendiri. Insinyur dibayar seperlima lebih banyak."
+      },
+      "price": 1200,
+      "unique": true,
+      "level": 6,
+      "job": "engineer",
+      "effects": {"pay": 0.2}
+    },
+    "navcomp": {
+      "type": "tool",
+      "one": {"en": "nav computer", "id": "komputer navigasi"},
+      "many": {"en": "nav computers", "id": "komputer navigasi"},
+      "names": {"en": ["nav computer", "navigation computer"], "id": ["komputer navigasi"]},
+      "desc": {
+        "en": "Plots cleaner routes to the Moon. Pilots are paid a tenth more per cargo run.",
+        "id": "Menghitung rute yang lebih rapi ke Bulan. Pilot dibayar sepersepuluh lebih banyak per penerbangan kargo."
+      },
+      "price": 300,
+      "unique": true,
+      "level": 2,
+      "job": "pilot",
+      "effects": {"pay": 0.1}
+    },
+    "autopilot": {
+      "type": "tool",
+      "one": {"en": "smart autopilot", "id": "autopilot pintar"},
+      "many": {"en": "smart autopilots", "id": "autopilot pintar"},
+      "names": {"en": ["smart autopilot", "autopilot"], "id": ["autopilot pintar", "autopilot"]},
+      "desc": {
+        "en": "An autopilot that even lands gently. Pilots are paid a fifth more.",
+        "id": "Autopilot yang bahkan mendarat dengan lembut. Pilot dibayar seperlima lebih banyak."
+      },
+      "price": 1200,
+      "unique": true,
+      "level": 6,
+      "job": "pilot",
+      "effects": {"pay": 0.2}
+    },
+    "terminal": {
+      "type": "tool",
+      "one": {"en": "market terminal", "id": "terminal pasar"},
+      "many": {"en": "market terminals", "id": "terminal pasar"},
+      "names": {"en": ["market terminal", "terminal"], "id": ["terminal pasar", "terminal"]},
+      "desc": {
+        "en": "A trader's terminal with live order books: lower fees when you buy and sell.",
+        "id": "Terminal pedagang dengan buku pesanan langsung: biaya lebih rendah saat membeli dan menjual."
+      },
+      "price": 300,
+      "unique": true,
+      "level": 2,
+      "job": "trader",
+      "effects": {"fees": [0.015, 0.03]}
+    },
+    "ledger": {
+      "type": "tool",
+      "one": {"en": "ledger assistant", "id": "asisten pembukuan"},
+      "many": {"en": "ledger assistants", "id": "asisten pembukuan"},
+      "names": {"en": ["ledger assistant", "ledger", "assistant"], "id": ["asisten pembukuan", "pembukuan"]},
+      "desc": {
+        "en": "A tiny accounting robot that haggles for you: the lowest fees on the station.",
+        "id": "Robot akuntan mungil yang menawar untukmu: biaya terendah di stasiun."
+      },
+      "price": 1200,
+      "unique": true,
+      "level": 6,
+      "job": "trader",
+      "effects": {"fees": [0.01, 0.02]}
+    },
+    "microscope": {
+      "type": "tool",
+      "one": {"en": "electron microscope", "id": "mikroskop elektron"},
+      "many": {"en": "electron microscopes", "id": "mikroskop elektron"},
+      "names": {"en": ["electron microscope", "microscope"], "id": ["mikroskop elektron", "mikroskop"]},
+      "desc": {
+        "en": "A portable electron microscope. Scientists are paid a tenth more for each analysis.",
+        "id": "Mikroskop elektron portabel. Ilmuwan dibayar sepersepuluh lebih banyak untuk setiap analisis."
+      },
+      "price": 300,
+      "unique": true,
+      "level": 2,
+      "job": "scientist",
+      "effects": {"pay": 0.1}
+    },
+    "spectrometer": {
+      "type": "tool",
+      "one": {"en": "spectrometer", "id": "spektrometer"},
+      "many": {"en": "spectrometers", "id": "spektrometer"},
+      "names": {"en": ["spectrometer"], "id": ["spektrometer"]},
+      "desc": {
+        "en": "Splits light into every colour it hides. Scientists are paid a fifth more.",
+        "id": "Memecah cahaya menjadi semua warna yang disembunyikannya. Ilmuwan dibayar seperlima lebih banyak."
+      },
+      "price": 1200,
+      "unique": true,
+      "level": 6,
+      "job": "scientist",
+      "effects": {"pay": 0.2}
+    },
+    "bodyscanner": {
+      "type": "tool",
+      "one": {"en": "body scanner", "id": "pemindai tubuh"},
+      "many": {"en": "body scanners", "id": "pemindai tubuh"},
+      "names": {"en": ["body scanner"], "id": ["pemindai tubuh"]},
+      "desc": {
+        "en": "A wand that beeps at anything hidden. Security officers are paid a tenth more per patrol.",
+        "id": "Tongkat yang berbunyi bip pada apa pun yang disembunyikan. Petugas keamanan dibayar sepersepuluh lebih banyak per patroli."
+      },
+      "price": 300,
+      "unique": true,
+      "level": 2,
+      "job": "security",
+      "effects": {"pay": 0.1}
+    },
+    "drone": {
+      "type": "tool",
+      "one": {"en": "patrol drone", "id": "drone patroli"},
+      "many": {"en": "patrol drones", "id": "drone patroli"},
+      "names": {"en": ["patrol drone", "drone"], "id": ["drone patroli", "drone"]},
+      "desc": {
+        "en": "A quiet drone that watches the crowds with you. Security officers are paid a fifth more.",
+        "id": "Drone senyap yang ikut mengawasi keramaian. Petugas keamanan dibayar seperlima lebih banyak."
+      },
+      "price": 1200,
+      "unique": true,
+      "level": 6,
+      "job": "security",
+      "effects": {"pay": 0.2}
+    },
+    "iced_coffee": {
+      "type": "consumable",
+      "one": {"en": "iced coffee", "id": "es kopi susu"},
+      "many": {"en": "iced coffees", "id": "es kopi susu"},
+      "names": {"en": ["iced coffee", "coffee drink", "ice coffee"], "id": ["es kopi susu", "es kopi", "kopi susu"]},
+      "desc": {
+        "en": "The Cantina's famous iced coffee with palm sugar. Drink it for half as much again XP for ten minutes.",
+        "id": "Es kopi susu gula aren andalan Kantin. Minum, dan XP-mu bertambah setengahnya lagi selama sepuluh menit."
+      },
+      "price": 15,
+      "tradeable": true,
+      "effects": {"xp_boost": 1.5, "seconds": 600}
+    },
+    "martabak": {
+      "type": "consumable",
+      "one": {"en": "sweet martabak", "id": "martabak manis"},
+      "many": {"en": "sweet martabaks", "id": "martabak manis"},
+      "names": {"en": ["martabak", "sweet martabak", "pancake"], "id": ["martabak", "martabak manis", "terang bulan"]},
+      "desc": {
+        "en": "Thick, sweet and full of chocolate and cheese. Eat it, and the break after your next shift is halved.",
+        "id": "Tebal, manis, penuh cokelat dan keju. Makan, dan istirahat setelah shift berikutnya jadi setengah."
+      },
+      "price": 20,
+      "tradeable": true,
+      "effects": {"cooldown_cut": 0.5}
+    },
+    "kerupuk": {
+      "type": "consumable",
+      "one": {"en": "bag of prawn crackers", "id": "bungkus kerupuk udang"},
+      "many": {"en": "bags of prawn crackers", "id": "bungkus kerupuk udang"},
+      "names": {
+        "en": ["kerupuk", "crackers", "prawn crackers", "snack"],
+        "id": ["kerupuk", "kerupuk udang", "camilan"]
+      },
+      "desc": {
+        "en": "Very crunchy. Everybody in the room will know you're eating them.",
+        "id": "Sangat renyah. Semua orang di ruangan pasti tahu kamu sedang makan kerupuk."
+      },
+      "price": 3,
+      "tradeable": true,
+      "effects": {"snack": true}
+    },
+    "plot": {
+      "type": "service",
+      "one": {"en": "farm plot", "id": "petak kebun"},
+      "many": {"en": "farm plots", "id": "petak kebun"},
+      "names": {"en": ["plot", "farm plot", "extra plot"], "id": ["petak", "petak kebun", "lahan", "petak tambahan"]},
+      "desc": {
+        "en": "One more plot of your own in Hydroponics. Each plot costs more than the last.",
+        "id": "Satu petak lagi milikmu di Kebun Hidroponik. Setiap petak lebih mahal dari sebelumnya."
+      },
+      "price": 150,
+      "service": "plot"
+    },
+    "seed_kangkung": {
+      "type": "seed",
+      "one": {"en": "packet of kangkung seeds", "id": "bungkus bibit kangkung"},
+      "many": {"en": "packets of kangkung seeds", "id": "bungkus bibit kangkung"},
+      "names": {
+        "en": ["kangkung seeds", "kangkung seed", "seed kangkung", "kangkung seed packet"],
+        "id": ["bibit kangkung", "benih kangkung", "biji kangkung"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of kangkung. It ripens in 10 minutes in Hydroponics.",
+        "id": "Bibit untuk satu petak kangkung. Matang dalam 10 menit di Kebun Hidroponik."
+      },
+      "price": 5,
+      "tradeable": true,
+      "crop": "kangkung"
+    },
+    "seed_chilli": {
+      "type": "seed",
+      "one": {"en": "packet of chilli seeds", "id": "bungkus bibit cabai"},
+      "many": {"en": "packets of chilli seeds", "id": "bungkus bibit cabai"},
+      "names": {
+        "en": ["chilli seeds", "chilli seed", "seed chilli", "chilli seed packet"],
+        "id": ["bibit cabai", "benih cabai", "biji cabai"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of chilli. It ripens in 30 minutes in Hydroponics.",
+        "id": "Bibit untuk satu petak cabai. Matang dalam 30 menit di Kebun Hidroponik."
+      },
+      "price": 10,
+      "tradeable": true,
+      "crop": "chilli"
+    },
+    "seed_tomato": {
+      "type": "seed",
+      "one": {"en": "packet of tomato seeds", "id": "bungkus bibit tomat"},
+      "many": {"en": "packets of tomato seeds", "id": "bungkus bibit tomat"},
+      "names": {
+        "en": ["tomato seeds", "tomato seed", "seed tomato", "tomato seed packet"],
+        "id": ["bibit tomat", "benih tomat", "biji tomat"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of tomato. It ripens in 1 hour in Hydroponics.",
+        "id": "Bibit untuk satu petak tomat. Matang dalam 1 jam di Kebun Hidroponik."
+      },
+      "price": 15,
+      "tradeable": true,
+      "crop": "tomato"
+    },
+    "seed_strawberry": {
+      "type": "seed",
+      "one": {"en": "packet of strawberry seeds", "id": "bungkus bibit stroberi"},
+      "many": {"en": "packets of strawberry seeds", "id": "bungkus bibit stroberi"},
+      "names": {
+        "en": ["strawberry seeds", "strawberry seed", "seed strawberry", "strawberry seed packet"],
+        "id": ["bibit stroberi", "benih stroberi", "biji stroberi"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of strawberry. It ripens in 2 hours in Hydroponics.",
+        "id": "Bibit untuk satu petak stroberi. Matang dalam 2 jam di Kebun Hidroponik."
+      },
+      "price": 30,
+      "tradeable": true,
+      "crop": "strawberry"
+    },
+    "seed_vanilla": {
+      "type": "seed",
+      "one": {"en": "packet of vanilla seeds", "id": "bungkus bibit vanili"},
+      "many": {"en": "packets of vanilla seeds", "id": "bungkus bibit vanili"},
+      "names": {
+        "en": ["vanilla seeds", "vanilla seed", "seed vanilla", "vanilla seed packet"],
+        "id": ["bibit vanili", "benih vanili", "biji vanili"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of vanilla. It ripens in 4 hours in Hydroponics.",
+        "id": "Bibit untuk satu petak vanili. Matang dalam 4 jam di Kebun Hidroponik."
+      },
+      "price": 60,
+      "tradeable": true,
+      "crop": "vanilla",
+      "level": 3
+    },
+    "seed_dragonfruit": {
+      "type": "seed",
+      "one": {"en": "packet of dragon fruit seeds", "id": "bungkus bibit buah naga"},
+      "many": {"en": "packets of dragon fruit seeds", "id": "bungkus bibit buah naga"},
+      "names": {
+        "en": ["dragon fruit seeds", "dragon fruit seed", "seed dragon fruit", "dragon fruit seed packet"],
+        "id": ["bibit buah naga", "benih buah naga", "biji buah naga"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of dragon fruit. It ripens in 8 hours in Hydroponics.",
+        "id": "Bibit untuk satu petak buah naga. Matang dalam 8 jam di Kebun Hidroponik."
+      },
+      "price": 100,
+      "tradeable": true,
+      "crop": "dragonfruit",
+      "level": 5
+    },
+    "seed_moonmelon": {
+      "type": "seed",
+      "one": {"en": "packet of moon melon seeds", "id": "bungkus bibit melon bulan"},
+      "many": {"en": "packets of moon melon seeds", "id": "bungkus bibit melon bulan"},
+      "names": {
+        "en": ["moon melon seeds", "moon melon seed", "seed moon melon", "moon melon seed packet"],
+        "id": ["bibit melon bulan", "benih melon bulan", "biji melon bulan"]
+      },
+      "desc": {
+        "en": "Seeds for one plot of moon melon. It ripens in 24 hours in Hydroponics.",
+        "id": "Bibit untuk satu petak melon bulan. Matang dalam 24 jam di Kebun Hidroponik."
+      },
+      "price": 180,
+      "tradeable": true,
+      "crop": "moonmelon",
+      "level": 8
+    },
+    "lava_lamp": {
+      "type": "furniture",
+      "one": {"en": "lava lamp", "id": "lampu lava"},
+      "many": {"en": "lava lamps", "id": "lampu lava"},
+      "names": {"en": ["lava lamp"], "id": ["lampu lava"]},
+      "desc": {
+        "en": "Slow orange blobs rise and fall. In low gravity they mostly just drift.",
+        "id": "Gumpalan oranye naik turun pelan. Di gravitasi rendah kebanyakan cuma melayang."
+      },
+      "price": 80,
+      "unique": true,
+      "effects": {"cabin": {"en": "A lava lamp glows orange on the shelf.", "id": "Lampu lava menyala oranye di rak."}}
+    },
+    "monstera": {
+      "type": "furniture",
+      "one": {"en": "potted monstera", "id": "pot monstera"},
+      "many": {"en": "potted monsteras", "id": "pot monstera"},
+      "names": {
+        "en": ["monstera", "potted monstera", "plant", "potted plant"],
+        "id": ["monstera", "pot monstera", "tanaman pot"]
+      },
+      "desc": {
+        "en": "A glossy monstera in a clay pot. It leans towards the window.",
+        "id": "Monstera mengilap dalam pot tanah liat. Condong ke arah jendela."
+      },
+      "price": 60,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A monstera leans towards the window, glossy and green.",
+          "id": "Monstera condong ke arah jendela, hijau mengilap."
+        }
+      }
+    },
+    "batik_rug": {
+      "type": "furniture",
+      "one": {"en": "batik rug", "id": "karpet batik"},
+      "many": {"en": "batik rugs", "id": "karpet batik"},
+      "names": {"en": ["rug", "batik rug", "carpet"], "id": ["karpet", "karpet batik", "permadani"]},
+      "desc": {
+        "en": "A soft rug in a parang pattern, deep brown and gold.",
+        "id": "Karpet lembut bermotif parang, cokelat tua dan emas."
+      },
+      "price": 120,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A batik rug in brown and gold covers the floor.",
+          "id": "Karpet batik cokelat dan emas menutupi lantai."
+        }
+      }
+    },
+    "bookshelf": {
+      "type": "furniture",
+      "one": {"en": "bookshelf", "id": "rak buku"},
+      "many": {"en": "bookshelfs", "id": "rak buku"},
+      "names": {"en": ["bookshelf", "books", "shelf of books"], "id": ["rak buku", "buku"]},
+      "desc": {
+        "en": "Paper books, strapped in, including three copies of the same cookbook.",
+        "id": "Buku kertas yang diikat, termasuk tiga salinan buku resep yang sama."
+      },
+      "price": 150,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A bookshelf full of strapped-in paper books.",
+          "id": "Rak buku penuh buku kertas yang diikat supaya tidak melayang."
+        }
+      }
+    },
+    "hammock": {
+      "type": "furniture",
+      "one": {"en": "hammock", "id": "hammock"},
+      "many": {"en": "hammocks", "id": "hammock"},
+      "names": {"en": ["hammock"], "id": ["hammock", "ayunan jaring"]},
+      "desc": {
+        "en": "A striped hammock. In zero gravity, it hugs you back.",
+        "id": "Hammock bergaris. Di gravitasi nol, dia memelukmu balik."
+      },
+      "price": 200,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A striped hammock is strung across a corner.",
+          "id": "Hammock bergaris terbentang di satu sudut."
+        }
+      }
+    },
+    "aquarium": {
+      "type": "furniture",
+      "one": {"en": "floating aquarium", "id": "akuarium melayang"},
+      "many": {"en": "floating aquariums", "id": "akuarium melayang"},
+      "names": {"en": ["aquarium", "fish", "floating aquarium"], "id": ["akuarium", "ikan", "akuarium melayang"]},
+      "desc": {
+        "en": "A ball of water held by a thin membrane, with two small guppies who seem unbothered by space.",
+        "id": "Bola air yang ditahan selaput tipis, berisi dua ikan gupi kecil yang santai saja di luar angkasa."
+      },
+      "price": 300,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A floating ball of water hangs in the air, two guppies circling inside.",
+          "id": "Bola air melayang di udara, dua ikan gupi berputar di dalamnya."
+        }
+      }
+    },
+    "sofa": {
+      "type": "furniture",
+      "one": {"en": "rattan sofa", "id": "sofa rotan"},
+      "many": {"en": "rattan sofas", "id": "sofa rotan"},
+      "names": {"en": ["sofa", "couch", "rattan sofa"], "id": ["sofa", "sofa rotan", "kursi rotan"]},
+      "desc": {
+        "en": "A two-seat rattan sofa with cushions. Strapped down, of course.",
+        "id": "Sofa rotan dua dudukan dengan bantal. Diikat, tentu saja."
+      },
+      "price": 400,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A rattan sofa with plump cushions invites you to sit.",
+          "id": "Sofa rotan dengan bantal empuk mengajakmu duduk."
+        }
+      }
+    },
+    "star_projector": {
+      "type": "furniture",
+      "one": {"en": "star projector", "id": "proyektor bintang"},
+      "many": {"en": "star projectors", "id": "proyektor bintang"},
+      "names": {"en": ["star projector", "projector"], "id": ["proyektor bintang", "proyektor"]},
+      "desc": {
+        "en": "Throws the night sky of Yogyakarta onto the ceiling, as it was the night you were born.",
+        "id": "Memancarkan langit malam Yogyakarta ke langit-langit, persis seperti malam kamu lahir."
+      },
+      "price": 700,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A star projector paints a slow night sky across the ceiling.",
+          "id": "Proyektor bintang melukis langit malam yang berputar pelan di langit-langit."
+        }
+      },
+      "level": 3
+    },
+    "earth_hologram": {
+      "type": "furniture",
+      "one": {"en": "Earth hologram", "id": "hologram Bumi"},
+      "many": {"en": "Earth holograms", "id": "hologram Bumi"},
+      "names": {"en": ["earth hologram", "hologram", "globe"], "id": ["hologram bumi", "hologram", "bola dunia"]},
+      "desc": {
+        "en": "A live hologram of Earth, lit and dark exactly as it is right now.",
+        "id": "Hologram Bumi yang hidup, terang dan gelapnya persis seperti saat ini."
+      },
+      "price": 1500,
+      "unique": true,
+      "effects": {
+        "cabin": {
+          "en": "A hologram of Earth turns in the middle of the room, day and night sliding across it.",
+          "id": "Hologram Bumi berputar di tengah ruangan, siang dan malam bergeser di permukaannya."
+        }
+      },
+      "level": 5
+    },
+    "bomber_jacket": {
+      "type": "outfit",
+      "one": {"en": "bomber jacket", "id": "jaket bomber"},
+      "many": {"en": "bomber jackets", "id": "jaket bomber"},
+      "names": {"en": ["bomber jacket", "jacket"], "id": ["jaket bomber", "jaket"]},
+      "desc": {
+        "en": "A green bomber jacket with a patch of the station on the sleeve.",
+        "id": "Jaket bomber hijau dengan emblem stasiun di lengannya."
+      },
+      "price": 150,
+      "unique": true,
+      "slot": "body",
+      "effects": {"look": {"en": "a green bomber jacket", "id": "jaket bomber hijau"}}
+    },
+    "batik_shirt": {
+      "type": "outfit",
+      "one": {"en": "batik shirt", "id": "kemeja batik"},
+      "many": {"en": "batik shirts", "id": "kemeja batik"},
+      "names": {"en": ["batik shirt", "batik", "shirt"], "id": ["kemeja batik", "batik", "baju batik", "kemeja"]},
+      "desc": {
+        "en": "A long-sleeved batik shirt with a pattern of tiny rockets, if you look closely.",
+        "id": "Kemeja batik lengan panjang dengan motif roket-roket kecil, kalau dilihat dari dekat."
+      },
+      "price": 200,
+      "unique": true,
+      "slot": "body",
+      "effects": {
+        "look": {"en": "a batik shirt with tiny rockets in its pattern", "id": "kemeja batik bermotif roket kecil"}
+      }
+    },
+    "coveralls": {
+      "type": "outfit",
+      "one": {"en": "retro coveralls", "id": "baju terusan retro"},
+      "many": {"en": "retro coverallss", "id": "baju terusan retro"},
+      "names": {
+        "en": ["coveralls", "retro coveralls", "overalls"],
+        "id": ["baju terusan", "baju terusan retro", "wearpack"]
+      },
+      "desc": {
+        "en": "Orange coveralls with patches from missions that never happened.",
+        "id": "Baju terusan oranye dengan emblem misi-misi yang tidak pernah terjadi."
+      },
+      "price": 300,
+      "unique": true,
+      "slot": "body",
+      "effects": {
+        "look": {"en": "orange retro coveralls covered in patches", "id": "baju terusan oranye retro penuh emblem"}
+      }
+    },
+    "star_cloak": {
+      "type": "outfit",
+      "one": {"en": "starry cloak", "id": "jubah bintang"},
+      "many": {"en": "starry cloaks", "id": "jubah bintang"},
+      "names": {"en": ["starry cloak", "cloak", "star cloak"], "id": ["jubah bintang", "jubah"]},
+      "desc": {
+        "en": "A midnight-blue cloak with tiny lights woven in, like a clear sky over the sea.",
+        "id": "Jubah biru tengah malam dengan lampu-lampu mungil tertenun, seperti langit cerah di atas laut."
+      },
+      "price": 1200,
+      "unique": true,
+      "slot": "body",
+      "effects": {
+        "look": {
+          "en": "a midnight-blue cloak that glitters with stars",
+          "id": "jubah biru tengah malam yang berkilau bintang"
+        }
+      },
+      "level": 5
+    },
+    "gold_suit": {
+      "type": "outfit",
+      "one": {"en": "golden flight suit", "id": "baju terbang emas"},
+      "many": {"en": "golden flight suits", "id": "baju terbang emas"},
+      "names": {"en": ["golden flight suit", "gold suit", "flight suit"], "id": ["baju terbang emas", "baju emas"]},
+      "desc": {
+        "en": "A flight suit of gold fabric. Very shiny. Possibly too shiny.",
+        "id": "Baju terbang dari kain emas. Sangat berkilau. Mungkin terlalu berkilau."
+      },
+      "price": 2500,
+      "unique": true,
+      "slot": "body",
+      "effects": {"look": {"en": "a gleaming golden flight suit", "id": "baju terbang emas yang berkilauan"}},
+      "level": 10
+    },
+    "title_coffee": {
+      "type": "title",
+      "one": {"en": "title 'Coffee Lover'", "id": "gelar 'Pecinta Kopi'"},
+      "many": {"en": "titles 'Coffee Lover'", "id": "gelar 'Pecinta Kopi'"},
+      "names": {"en": ["coffee lover", "title coffee lover"], "id": ["pecinta kopi", "gelar pecinta kopi"]},
+      "desc": {
+        "en": "A title others see when they look at you: 'Coffee Lover'. Wear it to show it.",
+        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Pecinta Kopi'. Pakai untuk menampilkannya."
+      },
+      "price": 200,
+      "unique": true,
+      "slot": "title",
+      "effects": {"title": {"en": "Coffee Lover", "id": "Pecinta Kopi"}}
+    },
+    "title_explorer": {
+      "type": "title",
+      "one": {"en": "title 'Explorer'", "id": "gelar 'Penjelajah'"},
+      "many": {"en": "titles 'Explorer'", "id": "gelar 'Penjelajah'"},
+      "names": {"en": ["explorer", "title explorer"], "id": ["penjelajah", "gelar penjelajah"]},
+      "desc": {
+        "en": "A title others see when they look at you: 'Explorer'. Wear it to show it.",
+        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Penjelajah'. Pakai untuk menampilkannya."
+      },
+      "price": 400,
+      "unique": true,
+      "slot": "title",
+      "effects": {"title": {"en": "Explorer", "id": "Penjelajah"}}
+    },
+    "title_golden": {
+      "type": "title",
+      "one": {"en": "title 'Golden Hands'", "id": "gelar 'Si Tangan Emas'"},
+      "many": {"en": "titles 'Golden Hands'", "id": "gelar 'Si Tangan Emas'"},
+      "names": {"en": ["golden hands", "title golden hands"], "id": ["si tangan emas", "gelar si tangan emas"]},
+      "desc": {
+        "en": "A title others see when they look at you: 'Golden Hands'. Wear it to show it.",
+        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Si Tangan Emas'. Pakai untuk menampilkannya."
+      },
+      "price": 800,
+      "unique": true,
+      "slot": "title",
+      "effects": {"title": {"en": "Golden Hands", "id": "Si Tangan Emas"}},
+      "level": 5
+    },
+    "title_legend": {
+      "type": "title",
+      "one": {"en": "title 'Station Legend'", "id": "gelar 'Legenda Stasiun'"},
+      "many": {"en": "titles 'Station Legend'", "id": "gelar 'Legenda Stasiun'"},
+      "names": {"en": ["station legend", "title station legend"], "id": ["legenda stasiun", "gelar legenda stasiun"]},
+      "desc": {
+        "en": "A title others see when they look at you: 'Station Legend'. Wear it to show it.",
+        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Legenda Stasiun'. Pakai untuk menampilkannya."
+      },
+      "price": 5000,
+      "unique": true,
+      "slot": "title",
+      "effects": {"title": {"en": "Station Legend", "id": "Legenda Stasiun"}},
+      "level": 15
+    },
+    "robot_pet": {
+      "type": "pet",
+      "one": {"en": "little robot", "id": "robot kecil"},
+      "many": {"en": "little robots", "id": "robot kecil"},
+      "names": {
+        "en": ["little robot", "robot", "pet robot", "robot pet"],
+        "id": ["robot kecil", "robot", "robot peliharaan"]
+      },
+      "desc": {
+        "en": "A round robot the size of a melon that follows you around, beeping its opinions. Pat it with pat, name it with name pet.",
+        "id": "Robot bulat seukuran melon yang mengikutimu ke mana-mana sambil berbunyi bip menyampaikan pendapatnya. Elus dengan elus, beri nama dengan namai."
+      },
+      "price": 600,
+      "unique": true,
+      "effects": {
+        "pet": {
+          "name": "Bip",
+          "kind": {"en": "little robot", "id": "robot kecil"},
+          "reactions": {
+            "en": [
+              "{pet} beeps happily and spins in a circle.",
+              "{pet} blinks its lights in a little rainbow.",
+              "{pet} bumps gently against {owner}'s leg."
+            ],
+            "id": [
+              "{pet} berbunyi bip riang dan berputar-putar.",
+              "{pet} mengedipkan lampunya membentuk pelangi kecil.",
+              "{pet} menyundul pelan kaki {owner}."
+            ]
+          }
+        }
+      }
+    },
+    "cat_pet": {
+      "type": "pet",
+      "one": {"en": "orange space cat", "id": "kucing oren antariksa"},
+      "many": {"en": "orange space cats", "id": "kucing oren antariksa"},
+      "names": {
+        "en": ["space cat", "cat", "orange cat", "kitty"],
+        "id": ["kucing oren", "kucing", "kucing antariksa", "oyen"]
+      },
+      "desc": {
+        "en": "A chubby orange cat in a tiny magnetic harness. It has opinions about everyone, and naps on all of them.",
+        "id": "Kucing oren gembul dengan tali magnet mungil. Dia punya pendapat tentang semua orang, dan tidur di atas mereka semua."
+      },
+      "price": 900,
+      "unique": true,
+      "effects": {
+        "pet": {
+          "name": "Oyen",
+          "kind": {"en": "orange space cat", "id": "kucing oren antariksa"},
+          "reactions": {
+            "en": [
+              "{pet} purrs and floats a slow somersault.",
+              "{pet} headbutts {owner}'s hand, demanding more.",
+              "{pet} yawns hugely, unimpressed by space."
+            ],
+            "id": [
+              "{pet} mendengkur dan berjungkir balik pelan di udara.",
+              "{pet} menyundul tangan {owner}, minta dielus lagi.",
+              "{pet} menguap lebar, tidak terkesan dengan luar angkasa."
+            ]
+          }
+        }
+      }
+    }
+  },
+  "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10}
+}
