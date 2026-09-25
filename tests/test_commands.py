@@ -686,3 +686,52 @@ def test_reply_of(no_intents):
     assert isinstance(reply, c.Reply) and reply.say == "Dicatat." and not reply.wait
     same = c.Reply("x", wait=True)
     assert c.Reply.of(same) is same
+
+
+# ------------------------------------------------------------
+# Core 2.9: answers told in steps (hold_answer, show_answer)
+# ------------------------------------------------------------
+
+@pytest.fixture
+def no_hold(monkeypatch):
+    import core.commands
+    monkeypatch.setattr(core.commands, "_hold", {"until": 0.0})
+    monkeypatch.setattr(core.commands, "_answer_sink", None)
+    return core.commands
+
+
+def test_hold_answer_is_bounded(no_hold):
+    c = no_hold
+    assert c.answer_hold_left() == 0
+    assert c.hold_answer(20) == 20 and 19 < c.answer_hold_left() <= 20
+    assert c.hold_answer(10_000) == c.MAX_HOLD_SECONDS
+    assert c.hold_answer("nonsense") == 0 and c.answer_hold_left() == 0
+    assert c.hold_answer(-5) == 0 and c.answer_hold_left() == 0
+
+
+def test_show_answer_needs_the_bar(no_hold):
+    c = no_hold
+    assert c.show_answer("こんばんは") is False            # no Aruna: nothing shows it
+    shown = []
+
+    def sink(text):
+        shown.append(text)
+        return True
+
+    c.set_answer_sink(sink)
+    assert c.show_answer("  Konbanwa!\n Tōkyō e yōkoso! ") is True
+    assert c.show_answer("   ") is False
+    assert shown == ["Konbanwa! Tōkyō e yōkoso!"]
+    assert c.remove_answer_sink(lambda text: True) is False   # another bar's: kept
+    assert c.remove_answer_sink(sink) is True
+    assert c.show_answer("later") is False
+
+
+def test_a_failing_sink_is_no_answer(no_hold):
+    c = no_hold
+
+    def boom(text):
+        raise RuntimeError("closed")
+
+    c.set_answer_sink(boom)
+    assert c.show_answer("x") is False

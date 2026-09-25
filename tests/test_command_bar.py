@@ -773,6 +773,64 @@ def test_a_spoken_intent_says_where_it_came_from(cb, intents):
 
 
 # ------------------------------------------------------------
+# Core 2.9: answers told in steps (hold_answer, show_answer)
+# ------------------------------------------------------------
+
+@pytest.fixture
+def hold(cb, monkeypatch):
+    import core.commands
+    monkeypatch.setattr(core.commands, "_hold", {"until": 0.0})
+    monkeypatch.setattr(core.commands, "_answer_sink", None)
+    return core.commands
+
+
+def test_a_held_answer_keeps_growing_across_its_pauses(cb, intents, hold):
+    intents(["terbang ke {text}"], hold.Reply(wait=True), intent_id="Trip.go")
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "terbang ke Tokyo")
+    answer = bar._awaiting
+    hold.hold_answer(30)
+    speak_as_the_action("Penerbangan dari Batam ke Tokyo.")
+    bar._gathered(answer, 1)                         # the engines roar: a long pause
+    assert bar._awaiting is answer
+    bar._answer_timeout(answer)
+    assert bar._awaiting is answer
+    speak_as_the_action("Selamat datang di Tokyo, Jepang.")
+    assert bar.txt_result.value == ("Penerbangan dari Batam ke Tokyo.\n"
+                                    "Selamat datang di Tokyo, Jepang.")
+    hold.hold_answer(0)
+    bar._gathered(answer, 2)
+    assert bar._awaiting is None                    # the hold is over: the answer ends
+    bar.close()
+
+
+def test_held_speech_starts_an_answer_quietly(cb, hold, sounds):
+    bar = make_bar(cb, keep_open=True, sounds=True)
+    speak_as_the_action("Not held: not shown.")
+    assert bar._awaiting is None and bar.txt_result.value == ""
+    hold.hold_answer(30)
+    speak_as_the_action("Kamu mendengarkan J-Wave dari Tokyo.")
+    assert bar._awaiting is not None and bar._awaiting.passive
+    assert bar.txt_result.value == "Kamu mendengarkan J-Wave dari Tokyo."
+    assert sounds == []                              # nobody asked: no "answered" sound
+    type_and_enter(bar, "gempa terbaru")             # a new command starts a new answer
+    assert bar._awaiting is not None and not bar._awaiting.passive
+    bar.close()
+
+
+def test_show_answer_adds_an_unspoken_line(cb, intents, hold):
+    intents(["terbang ke {text}"], hold.Reply(wait=True), intent_id="Trip.go")
+    bar = make_bar(cb, keep_open=True)
+    assert hold.show_answer("Konbanwa!") is False    # no answer waiting, none held
+    type_and_enter(bar, "terbang ke Tokyo")
+    assert hold.show_answer("Konbanwa! (こんばんは！)") is True
+    assert bar.txt_result.value == "Konbanwa! (こんばんは！)"
+    assert bar.said == []                            # shown, never spoken
+    bar.close()
+    assert hold.show_answer("After closing.") is False
+
+
+# ------------------------------------------------------------
 # The hotkey: RegisterHotKey through core.hotkeys, no hook, no clash
 # ------------------------------------------------------------
 
