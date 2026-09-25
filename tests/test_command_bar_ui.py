@@ -33,7 +33,7 @@ def test_command_bar_window(tmp_path):
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK action", "OK bar", "OK command", "OK did_you_mean",
                   "OK reminder", "OK dialog_action", "OK no_voice_control", "OK voice",
-                  "OK escape", "OK time", "OK keep_open", "OK hidden_main_window", "OK no_errors", "OK shutdown"):
+                  "OK escape", "OK time", "OK keep_open", "OK hidden_main_window", "OK intents", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
     assert "Traceback" not in result.stderr, output

@@ -661,6 +661,118 @@ def test_arunas_sounds_ship_with_hariku():
 
 
 # ------------------------------------------------------------
+# Core 2.9: commands with content (intents)
+# ------------------------------------------------------------
+
+@pytest.fixture
+def intents(cb, monkeypatch):
+    import core.commands
+    monkeypatch.setattr(core.commands, "_intents", {})
+    got = []
+
+    def add(patterns, reply, intent_id="Notes.add"):
+        def handler(request):
+            got.append(request)
+            return reply(request) if callable(reply) else reply
+        core.commands.add_intent(intent_id, patterns, handler, title="Notes")
+    add.got = got
+    return add
+
+
+def test_an_intent_says_its_answer(cb, intents):
+    intents(["catat {text}"], lambda r: f"Dicatat: {r.text}.")
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "Catat: beli Gula Aren.")
+    request = intents.got[0]
+    assert (request.text, request.full_text, request.source, request.intent_id) == (
+        "beli Gula Aren", "Catat: beli Gula Aren.", "typed", "Notes.add")
+    assert bar.said == ["Dicatat: beli Gula Aren."] and not bar._closed
+    assert bar.txt_status.value.startswith("Aruna sudah menjawab.")
+    assert cb.routes == ["command"]              # what it says later comes in Hariku Voice
+    bar.close()
+
+
+def test_an_intent_answer_closes_the_bar_without_keep_open(cb, intents):
+    intents(["catat {text}"], "Dicatat.")
+    bar = make_bar(cb, keep_open=False)
+    type_and_enter(bar, "catat beli gula")
+    assert bar.said == ["Dicatat."] and bar._closed and cb.focus == [4242]
+
+
+def test_an_intent_asks_first(cb, intents):
+    done, dropped = [], []
+    import core.commands
+    intents(["catat {text}"], lambda r: core.commands.Reply(
+        f"Catat \"{r.text}\"?", confirm=lambda: done.append(r.text) or "Sudah dicatat.",
+        cancel=lambda: dropped.append(r.text)))
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "catat beli gula")
+    assert bar.said == ['Catat "beli gula"?'] and bar._pending.kind == "intent"
+    assert bar.txt_status.value.startswith("Aruna bertanya")
+    assert done == []
+    bar._on_enter(None)                            # Enter again: yes
+    assert done == ["beli gula"] and bar.said[-1] == "Sudah dicatat."
+    assert bar.txt_input.value == "" and not bar._closed
+    type_and_enter(bar, "catat beli kopi")
+    bar.submit("tidak", source="voice")
+    assert dropped == ["beli kopi"] and bar.said[-1] == "Oke, batal."
+    bar.close()
+
+
+def test_an_intent_answers_later(cb, intents):
+    import core.commands
+    intents(["putar {text}"], core.commands.Reply("Mencari Elshinta...", wait=True),
+            intent_id="Radio.play")
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "putar Elshinta")
+    assert bar.said == ["Mencari Elshinta..."] and bar._awaiting is not None
+    assert bar.txt_status.value == "Aruna sedang berpikir..."
+    speak_as_the_action("Elshinta FM diputar.")
+    assert bar.txt_result.value == "Elshinta FM diputar."
+    assert bar.txt_status.value.startswith("Aruna sudah menjawab.")
+    bar.close()
+
+
+def test_an_intent_acts_after_the_bar_closed(cb, intents, monkeypatch):
+    import core.commands
+    order = []
+    monkeypatch.setattr(cb, "set_foreground", lambda hwnd: order.append(("focus", hwnd)) or True)
+    intents(["ketik {text}"], lambda r: core.commands.Reply(
+        then=lambda: order.append(("type", r.text))), intent_id="Dictation.type")
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "ketik Halo, apa kabar?")
+    assert bar._closed and order == [("focus", 4242), ("type", "Halo, apa kabar?")]
+
+
+def test_an_intent_can_turn_the_text_down(cb, intents):
+    # "gempa terbaru" matches "gempa {text}", but the handler doesn't want it:
+    # the command runs as before.
+    intents(["gempa {text}"], None, intent_id="Quakes.near")
+    bar = make_bar(cb)
+    type_and_enter(bar, "gempa terbaru")
+    assert [r.text for r in intents.got] == ["terbaru"]
+    assert bar.ran == ["Earthquakes.speak_latest"] and bar._closed
+
+
+def test_a_failing_intent_says_so(cb, intents):
+    def boom(request):
+        raise RuntimeError("no notes file")
+    intents(["catat {text}"], boom)
+    bar = make_bar(cb, keep_open=True)
+    type_and_enter(bar, "catat beli gula")
+    assert bar.said == ["Perintah itu tidak berhasil."] and not bar._closed
+    bar.close()
+
+
+def test_a_spoken_intent_says_where_it_came_from(cb, intents):
+    intents(["catat {text}"], "Dicatat.")
+    bar = make_bar(cb, keep_open=True)
+    bar.submit("Catat beli gula.", source="voice")
+    assert intents.got[0].source == "voice" and intents.got[0].text == "beli gula"
+    bar.close()
+
+
+# ------------------------------------------------------------
 # The hotkey: RegisterHotKey through core.hotkeys, no hook, no clash
 # ------------------------------------------------------------
 

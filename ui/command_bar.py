@@ -25,6 +25,10 @@ decides what it means):
     a window after all, the bar steps aside. A saved reminder keeps the bar
     open too;
   * a close call asks "Did you mean …?" (Enter or "ya" runs it);
+  * a command with content an extension added (core.commands.add_intent,
+    core 2.9: "catat beli gula", "timer mie 3 menit") goes to its handler,
+    which answers with a Reply: something to say, a question to confirm,
+    "the answer comes later", or something to do once the bar has closed;
   * anything else: "I didn't understand".
 
 Status says "Aruna is thinking..." from the moment a message is sent until
@@ -195,10 +199,11 @@ def run_command(action_id):
 
 
 class _Awaited:
-    """An action running with the bar open, whose answer the bar waits for."""
+    """An action (or a command with content) running with the bar open, whose
+    answer the bar waits for."""
 
-    def __init__(self, command, windows):
-        self.command = command
+    def __init__(self, title, windows):
+        self.title = title
         self.windows = windows          # the top-level windows before it ran
         self.lines = []
         self.timers = []
@@ -206,14 +211,18 @@ class _Awaited:
 
 class _Pending:
     """A question the bar asked and waits for: "action" (Did you mean …?),
-    "reminder" (… Save?) or "offer" (open it as a quick reminder?)."""
+    "reminder" (… Save?), "offer" (open it as a quick reminder?) or
+    "intent" (an extension's own question, core 2.9)."""
 
-    def __init__(self, kind, text, command=None, result=None, alternative=None):
+    def __init__(self, kind, text, command=None, result=None, alternative=None, reply=None,
+                 request=None):
         self.kind = kind
         self.text = text
         self.command = command
         self.result = result
         self.alternative = alternative
+        self.reply = reply
+        self.request = request
 
 
 # ------------------------------------------------------------
@@ -416,10 +425,62 @@ class CommandBar(wx.Dialog):
         elif kind == "offer_reminder":
             self._ask(_Pending("offer", decision.text, result=decision.result),
                       _("cmd_offer_reminder"))
+        elif kind == "intent":
+            self._try_intents(decision)
         elif kind == "empty":
             self.say(_("cmd_empty"))
         else:
             self._not_understood(decision.text)
+
+    # --- commands with content (core 2.9) --------------------------------------------
+
+    def _try_intents(self, decision):
+        """Ask each matched intent's handler in turn; the first Reply wins.
+        When all turn the text down, it is handled as it was before intents."""
+        core.voice.route_speech("command")     # what a handler says later comes in Hariku Voice
+        source = "voice" if self._voice_turn else "typed"
+        for found in decision.intents:
+            request = core.commands.Request(found.text, decision.text, source, found.intent.id)
+            try:
+                reply = core.commands.Reply.of(found.intent.handler(request))
+            except Exception:
+                logger.exception(f"Command bar: the intent {found.intent.id} failed")
+                self.say(_("cmd_action_failed"))
+                return
+            if reply is not None:
+                self._reply(reply, request, found.intent.title)
+                return
+        if decision.fallback is not None:
+            self._handle(decision.fallback)
+        else:
+            self._not_understood(decision.text)
+
+    def _reply(self, reply, request, title):
+        """Do what an intent's Reply says."""
+        if reply.confirm is not None:
+            self._ask(_Pending("intent", request.full_text, reply=reply, request=request),
+                      reply.say or _("cmd_intent_confirm"))
+        elif reply.then is not None:
+            if reply.say:
+                self.say(reply.say)
+            self._busy = True
+            self._pending = None
+            self.stop_listening(discard=True)
+            then = reply.then
+            self._after_keys_released(lambda: self.close(then=then))
+        elif reply.wait:
+            if reply.say:
+                self.say(reply.say)
+            if self._keep_open:
+                self._await(title, None)
+            else:                               # the answer is spoken after the bar closed
+                self._busy = True
+                self._after_keys_released(self.close)
+        else:
+            self.say(reply.say)
+            if not self._keep_open:
+                self._busy = True
+                self._after_keys_released(self.close)
 
     def _not_understood(self, text):
         if core.commands.get_fallback() is None:
@@ -464,7 +525,14 @@ class CommandBar(wx.Dialog):
                 self._save(pending.result)
             elif pending.kind == "offer":
                 self._open_quick_reminder(pending.text)
+            elif pending.kind == "intent":
+                self._confirmed(pending)
             return None
+        if pending.kind == "intent" and pending.reply.cancel is not None:
+            try:
+                pending.reply.cancel()
+            except Exception:
+                logger.exception("Command bar: an intent's cancel() failed")
         if pending.kind == "action" and pending.alternative is not None:
             # Not that command: then perhaps the reminder the sentence also was.
             self._reminder(pending.alternative, pending.text)
@@ -472,6 +540,20 @@ class CommandBar(wx.Dialog):
         self.say(_("cmd_cancelled"))
         self.txt_input.SelectAll()
         return None
+
+    def _confirmed(self, pending):
+        core.voice.route_speech("command")
+        try:
+            reply = core.commands.Reply.of(pending.reply.confirm())
+        except Exception:
+            logger.exception(f"Command bar: confirming {pending.request.intent_id} failed")
+            self.say(_("cmd_action_failed"))
+            return
+        self.txt_input.ChangeValue("")
+        if reply is None:
+            self._responded()
+            return
+        self._reply(reply, pending.request, pending.request.intent_id)
 
     def _reminder(self, result, text):
         message = quick.readback(result)
@@ -529,14 +611,19 @@ class CommandBar(wx.Dialog):
     def _run_in_place(self, command):
         """Run an action that only says something while the bar stays open;
         what it says (on_before_speak) shows in Last result."""
+        self.txt_result.ChangeValue(_("cmd_running", name=command.title))
+        run = self._run
+        self._await(command.title, lambda: run(command.id))
+
+    def _await(self, title, start_it):
+        """Wait, with the bar open, for an answer that will be spoken (after
+        start_it() runs, if given): it shows in Last result."""
         self._pending = None
         self.stop_listening(discard=True)
-        self._responding = False               # the action answers, not the bar
+        self._responding = False               # the answer comes from elsewhere, not the bar
         self._set_status(_("cmd_status_thinking"))
-        self.txt_result.ChangeValue(_("cmd_running", name=command.title))
         self.txt_input.SelectAll()             # typing replaces the last command
-        answer = self._awaiting = _Awaited(command, self._top_windows())
-        run = self._run
+        answer = self._awaiting = _Awaited(title, self._top_windows())
 
         def start():
             if answer is not self._awaiting or not self._alive():
@@ -544,7 +631,8 @@ class CommandBar(wx.Dialog):
             answer.timers = [wx.CallLater(ms, self._check_windows, answer)
                              for ms in WINDOW_CHECKS_MS]
             answer.timers.append(wx.CallLater(ANSWER_WAIT_MS, self._answer_timeout, answer))
-            run(command.id)
+            if start_it is not None:
+                start_it()
             self._check_windows(answer)
 
         wx.CallAfter(start)
@@ -595,7 +683,7 @@ class CommandBar(wx.Dialog):
         if answer is not self._awaiting or not self._alive():
             return
         if not answer.lines:
-            self.last_said = _("cmd_done", name=answer.command.title)
+            self.last_said = _("cmd_done", name=answer.title)
             self.txt_result.ChangeValue(self.last_said)
             self._set_status(self._idle_status())
         self._end_answer()

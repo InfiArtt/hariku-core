@@ -1,3 +1,14 @@
+Version 2.9.0 (Core Update)
+================================================================================
+- For extension developers: commands with content. An extension can now teach
+  Aruna commands that carry words of their own, such as "catat beli gula",
+  "timer mie 3 menit" or "tambahkan kopi ke daftar belanja": Aruna hands the
+  words to the extension, which answers, asks you to confirm first, answers a
+  little later, or does something once Aruna has closed (such as typing into
+  the window you were in). See core.commands.add_intent in DEVELOPERS.md.
+  Extensions built on it need Hariku 2.9; the Extension Manager says so.
+
+
 Version 2.8.0 (Core Update - September 25, 2026)
 ================================================================================
 - Places: Preferences has a new Places page, right after Profile. Name the
