@@ -347,7 +347,7 @@ assert pump(lambda: main._frame is not None and main._frame.IsShown())
 window = main._frame
 panel = window.GetChildren()[0]
 kinds = check_labels(panel, "the Orbit window")
-assert kinds == ["StaticText", "ListBox", "StaticText", "TextCtrl", "Button", "Button", "Button", "Button",
+assert kinds == ["StaticText", "TextCtrl", "StaticText", "TextCtrl", "Button", "Button", "Button", "Button",
                  "StaticText", "TextCtrl"], kinds
 assert window.GetTitle() == "Orbit: Connected", window.GetTitle()
 fire(window.btn_settings, wx.EVT_BUTTON)
