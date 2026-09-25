@@ -38,8 +38,9 @@ import urllib.request
 # URIs, and paste its App key here. There is no App secret on purpose: Hariku
 # is open source, so it signs in with PKCE, which needs none. While this is
 # empty, the Preferences page and every command say Dropbox isn't set up in
-# this build of Hariku.
-APP_KEY = ""
+# this build of Hariku. An App key is public (it names the app, like a client
+# id), so it can be in the source.
+APP_KEY = "ezrs49oocx7dday"
 # ----------------------------------------------------------------------------
 
 # Dropbox only redirects to URIs registered in the App Console, exactly,
