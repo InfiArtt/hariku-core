@@ -1,6 +1,27 @@
-Panduan Pengguna Hariku V2
+================================================================================
+PANDUAN PENGGUNA HARIKU V2
+================================================================================
 
-Selamat datang di Hariku! Gunakan tombol panah untuk menavigasi kalender. Tekan Enter untuk mengelola pengingat. Tekan P untuk membuka Pengaturan.
+Selamat datang di Hariku! Gunakan tombol panah untuk menavigasi kalender. Tekan Enter untuk mengelola pengingat. Tekan Ctrl+P untuk membuka Pengaturan.
 
-Pertama kali menyala
+================================================================================
+1. PERTAMA KALI MENYALA
+================================================================================
+
 Saat pertama kali menyala, sebelum jendela utama, Hariku mengajak kenalan lewat delapan halaman: bahasamu, namamu dan mau dipanggil apa, kotamu (lalu jam dan cuaca di sana), ulang tahunmu, berkenalan dengan Aruna (coba ketik "jam berapa"), ekstensi yang disarankan dari Toko, menyala bersama Windows dan sapaan saat Hariku menyala, lalu ringkasannya. Pertanyaan tiap halaman dibacakan bersama kolom pertamanya. Enter untuk lanjut, Alt+K untuk kembali, Escape untuk berhenti. Semua halaman boleh dilewati dengan menekan Lanjut. Ekstensi yang kamu centang baru diunduh setelah kamu menekan Selesai. Batal tidak menyimpan apa pun; pada saat pertama kali, Hariku tetap menyala seperti biasa dan sambutan tidak muncul lagi. Buka lagi kapan saja lewat Bantuan, Dialog Selamat Datang.
+
+================================================================================
+2. EKSTENSI
+================================================================================
+
+SETIAP EKSTENSI PUNYA PANDUANNYA SENDIRI
+----------------------------------------
+Cara memakai sebuah ekstensi (Orbit, Dropbox, Kalkulator & Konversi, Timer & Alarm, Keliling Dunia, Voice Control, Cuaca, dan lainnya) tidak ada di panduan ini: tiap ekstensi membawa panduannya sendiri, yang ikut terpasang, diperbarui, dan dihapus bersamanya. Panduan dibuka dalam bahasamu kalau ekstensinya punya, kalau tidak dalam bahasa Inggris. Ada tiga cara membukanya:
+
+  - Bantuan, Panduan ekstensi...: daftar ekstensi terpasang yang punya panduan. Pilih dengan tombol panah lalu tekan Enter; daftarnya tetap terbuka untuk panduan berikutnya, dan Escape menutupnya.
+  - Pengelola Ekstensi (Ctrl+X), tab Terpasang: pilih ekstensinya, lalu tekan Panduan. Tombol ini bisa ditekan kalau ekstensi itu punya panduan.
+  - Aruna: "panduan orbit", "cara pakai dropbox", "bantuan kalkulator", "guide for orbit", atau "how to use dropbox". Kalau Aruna ragu ekstensi mana yang kamu maksud, dia bertanya dulu. "panduan ekstensi" membuka daftarnya.
+
+Panduan terbuka sebagai halaman di browser web-mu, begitu juga Panduan Pengguna ini (Bantuan, Panduan Pengguna). Dengan NVDA, halamannya dalam mode jelajah: H dan Shift+H pindah dari judul ke judul, 1, 2, dan 3 menurut tingkatnya, dan NVDA+F7 menampilkan semua judul. Tutup halamannya dengan Ctrl+W atau Alt+F4. Kalau browser tidak bisa dibuka, panduannya tampil sebagai teks di sebuah jendela.
+
+Bantuan di dalam permainan Orbit itu lain lagi: di dalam game, atau dengan "orbit bantuan" di Aruna, "bantuan" dan "help" menampilkan topik bantuan game-nya.

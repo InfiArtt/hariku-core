@@ -14,6 +14,7 @@ from core.speech import speak
 from core.i18n import get_translator, format_date
 import core.api
 import core.commands
+import core.guides
 import core.hotkeys
 import core.sounds
 import core.ui_scale
@@ -119,6 +120,8 @@ class MainWindow(wx.Frame):
         helpMenu = wx.Menu()
         
         item_guide   = helpMenu.Append(wx.ID_ANY, _("menu_help_guide"))
+        # Core 2.11: every extension's own guide.
+        item_guides  = helpMenu.Append(wx.ID_ANY, _("menu_help_ext_guides"))
         item_whats   = helpMenu.Append(wx.ID_ANY, _("menu_help_whats_new"))
         helpMenu.AppendSeparator()
         
@@ -137,6 +140,7 @@ class MainWindow(wx.Frame):
         
         # Help Menu Binds
         self.Bind(wx.EVT_MENU, self.OnShowUserGuide, item_guide)
+        self.Bind(wx.EVT_MENU, self.OnShowExtensionGuides, item_guides)
         self.Bind(wx.EVT_MENU, self.OnShowWhatsNew, item_whats)
         self.Bind(wx.EVT_MENU, self.OnOpenSupport, item_support)
         self.Bind(wx.EVT_MENU, self.OnOpenReport, item_report)
@@ -254,6 +258,14 @@ class MainWindow(wx.Frame):
         register_hotkey(self.OnCommandBar)
         core.hotkeys.register_action("Hariku Core", "speak_time", _("nav_speak_time"), None, False, core.commands.say_time)
         core.hotkeys.register_action("Hariku Core", "speak_date", _("nav_speak_date"), None, False, core.commands.say_date)
+        # Guides (core 2.11), no key: Help, User Guide and Extension guides,
+        # and Aruna's "panduan orbit" / "how to use dropbox".
+        core.hotkeys.register_action("Hariku Core", "user_guide", _("nav_user_guide"), None, False,
+                                     lambda: self.OnShowUserGuide(None))
+        core.hotkeys.register_action("Hariku Core", "extension_guides", _("nav_ext_guides"), None,
+                                     False, lambda: self.OnShowExtensionGuides(None))
+        from ui.guides_dialog import show_guide
+        core.guides.register_intent(opener=lambda ext_id: show_guide(None, ext_id))
 
     def OnCommandBar(self):
         from ui.command_bar import toggle_command_bar
@@ -491,8 +503,14 @@ class MainWindow(wx.Frame):
 
     # --- Help Menu Handlers ---
     def OnShowUserGuide(self, event):
-        from ui.document_viewer import show_document
-        show_document(self, _("menu_help_guide"), "user_guide.txt")
+        # Core 2.11: a web page with headings, like every extension's guide
+        # (core.guides says why); as plain text when the browser won't open.
+        from ui.guides_dialog import show_guide
+        show_guide(self, core.guides.CORE_ID)
+
+    def OnShowExtensionGuides(self, event):
+        from ui.guides_dialog import show_guides
+        show_guides(self)
 
     def OnShowWhatsNew(self, event):
         from ui.document_viewer import show_document

@@ -14,7 +14,7 @@ TABLE OF CONTENTS
   3.  Reminders
   4.  Sound & Speech Feedback
   5.  Preferences
-  6.  The Extension System
+  6.  Extensions
   7.  The Extension Manager
   8.  Input Gestures (Keyboard Shortcuts)
   9.  System Tray & Close Behaviour
@@ -341,7 +341,7 @@ extensions.
 
 
 ================================================================================
-6. THE EXTENSION SYSTEM
+6. EXTENSIONS
 ================================================================================
 
 Hariku V2's most important feature is its extension system. Instead of a
@@ -364,38 +364,40 @@ Extensions can also exist as unpacked folders during development, which
 allows "hot-reloading" — the ability to reload an extension's code on the
 fly without restarting Hariku.
 
-WHAT COMES PRE-INSTALLED?
---------------------------
-The following extensions ship with Hariku V2 in this early testing phase:
-  date_calculator
-      Provides date arithmetic — calculating the number of days between
-      two dates or adding/subtracting days from a given date.
+WHERE EXTENSIONS COME FROM
+---------------------------
+You choose your extensions. The welcome (Section 1) suggests a few, and the
+Extension Manager (Section 7) lists the rest of the Extension Store on its
+Available tab. Install one there, restart Hariku, and it's ready.
 
-  developer_news
-      Displays the latest developer news and announcements from the Hariku
-      team inside the application.
+EVERY EXTENSION HAS ITS OWN GUIDE
+----------------------------------
+How to use an extension (Orbit, Dropbox, the Calculator & Converter, Timer &
+Alarm, World Trip, Voice Control, Weather and the others) isn't in this
+guide: each extension brings its own guide, which is installed, updated and
+removed with it. It opens in your language when the extension has one, else
+in English. Three ways to open one:
 
-  developer_toolkit
-      Tools and utilities aimed at extension developers. Allows hot-reloading
-      of unpacked extensions for rapid iteration.
+  - Help, Extension guides...: the installed extensions that have a guide.
+    Choose one with the arrow keys and press Enter; the list stays open for
+    the next one, and Escape closes it.
+  - The Extension Manager (Ctrl+X), Installed tab: select the extension and
+    press Guide. The button works when that extension has a guide.
+  - Aruna: "panduan orbit", "cara pakai dropbox", "bantuan kalkulator",
+    "guide for orbit" or "how to use dropbox". When Aruna isn't sure which
+    extension you mean, it asks first. "panduan ekstensi" or "extension
+    guides" opens the list.
 
-  diary
-      A private, encrypted diary with mood tracking. Lets you write personal
-      entries linked to specific dates.
+A guide opens as a page in your web browser, and so does this User Guide
+(Help, User Guide). With NVDA, the page is in browse mode: H and Shift+H go
+from heading to heading, 1, 2 and 3 go by level, and NVDA+F7 lists every
+heading. Close the page with Ctrl+W, or Alt+F4. If the browser can't be
+opened, the guide shows as text in a window instead.
 
-  ghost_taskbar
-      Utility that cleans up orphaned taskbar entries from crashed processes.
+Orbit's in-game help is different: in the game, or with "orbit bantuan" in
+Aruna, "bantuan" and "help" list the game's help topics.
 
-  quotes
-      Displays a random motivational quote. Can be configured to show a
-      new quote on startup.
-
-  wikipedia_reader
-      Lets you look up and read Wikipedia articles from within Hariku.
-
-Note: Many extensions from Hariku V1 are still being ported and are not
-yet available in this early testing phase. They will appear in the
-extension store as they are completed.
+Writing an extension? DEVELOPERS.md says how to add a guide to yours.
 
 
 ================================================================================
@@ -432,6 +434,9 @@ Every installed extension that can run on this Hariku.
       that come with Hariku can be disabled but not removed.
   Update
       When the store has a newer version, its Status says so.
+  Guide
+      Opens the extension's own guide (Section 6). It works when the
+      selected extension has one.
 The Status also says when an extension isn't running: it needs a newer
 Hariku, its manifest is broken, or it stopped with an error when Hariku
 started. Details says which, and what to do.
@@ -572,634 +577,9 @@ way, then "Aruna answered". Escape closes the bar. A soft sound plays when you
 send a typed command and another when Aruna answers; turn them off in
 Preferences, Aruna, "Play Aruna's sounds" (a sound theme can replace them). The answers are spoken with your Hariku
 Voice when you have set one up (Preferences, Hariku Voice, "Read answers to
-commands"). With the Voice Control extension, press Ctrl + Alt + Backspace again
-while the bar is open, and speak after the tone instead of typing.
-
-Voice Control 1.1 can also open Aruna when you say a wake phrase, "Hey Aruna"
-or one you choose, so you don't have to press a key. In Preferences, Voice
-Control:
-
-  1. In the list at the top, select "Wake phrase listener" and press
-     Download (42.4 MB from GitHub: sherpa-onnx and an English keyword model).
-  2. Tick "Listen for a wake phrase", and type your phrase in "Wake phrase".
-     "About this phrase" tells you when a phrase is one word, very short or
-     common (easily heard by mistake). English words work best with this
-     model; names like Aruna may need the High sensitivity.
-  3. Press "Test the wake phrase...", and after the tone say the phrase a few
-     times in 20 seconds. Hariku says "Heard it" each time it hears you, then
-     how many times it heard you. If it missed you, choose High in "Wake
-     phrase sensitivity" and test again; if it wakes up by mistake, choose
-     Low. Press OK to save.
-
-Say the phrase, and Aruna opens with the tone and listens to your command.
-With Voice Control 1.2 and Hariku 2.9 you choose what the phrase does in
-"When you say the wake phrase": "Open Aruna" (the window opens and gets the
-focus) or "Listen without opening a window" (the window you're in keeps the
-focus and your screen reader stays there; you talk, Aruna answers aloud,
-asks and hears "yes" or "no" by voice, and closes by itself when it's done).
-The Status line on the page says whether Hariku is listening for your phrase.
-It doesn't listen while Hariku or your screen reader speaks through Hariku,
-while Voice Control listens to a command, or, if you tick "Pause the wake
-phrase during quiet hours", during quiet hours. The command "Pause or resume
-the wake phrase" (no key by default: give it one in Input Gestures, or ask
-Aruna for it) pauses it until you resume it or restart Hariku. The microphone
-stays on your computer: nothing is saved or sent anywhere. A headset stops
-your screen reader's voice from reaching the microphone.
-
-TIMER & ALARM (EXTENSION)
---------------------------
-With the Timer & Alarm extension (from the Extension Store; it needs Hariku
-2.9), you set alarms and timers by typing or saying them to Aruna, in English
-or Indonesian.
-
-Alarms. Say for example "alarm tomorrow at 6 AM", "set alarm tomorrow at 2
-for football", "wake me up at 5", "alarm besok jam 5 pagi" or "alarm setiap
-hari jam 5 sholat subuh". Aruna reads the alarm back with its day, its date
-and its time with AM or PM (in Indonesian: dini hari, pagi, siang, sore or
-malam), for example: Alarm "football", tomorrow, Saturday 26 September, at
-2:00 AM. Set it? Press Enter or say "yes" to set it. An hour said alone, such
-as "at 2", is read like this:
-
-  - With a day ("tomorrow at 2") or a repeat ("every day at 5"): the first
-    such hour on that day, 2:00 AM or 5:00 AM.
-  - With no day ("at 2"): the next 2 o'clock to come.
-  - "Wake me up" is always the morning.
-
-If that is not what you meant, say "no", then just the time again, for
-example "at 2 PM" or "jam 2 siang", and Aruna asks again. When you give no
-time ("alarm tomorrow"), Aruna asks for it instead of guessing. A time that
-has already passed today, said without a day, is set for tomorrow, and Aruna
-says so.
-
-Timers start at once: "timer 10 minutes", "timer tea 3 minutes", "set a timer
-for an hour and a half", "timer setengah jam", "hitung mundur 90 detik".
-Several can run at the same time.
-
-You can also say: "cancel the tea timer", "cancel all timers", "delete the
-football alarm" (Aruna asks first), "how long is left", "list my alarms".
-
-When an alarm or timer is due, it rings even when Hariku is hidden in the tray
-and during quiet hours: a sound, then what it is ("Alarm: football"), again
-every 10 seconds. It opens no window and doesn't move your focus. To stop it,
-press any key, or tell Aruna "stop". To snooze it, tell Aruna "snooze" or
-"snooze 10 minutes", even right after a key stopped it. If nobody stops it,
-it rings for 3 minutes (you can change this), and Hariku tells you what you
-missed when you next press a key. An alarm that came due while Hariku was
-closed is mentioned once when Hariku starts again. The Morning Briefing says
-today's alarms. If you use Hariku Voice for reminders, alarms are spoken with
-that voice too.
-
-In Preferences, Timer & Alarm, you find your alarms and timers (Delete or
-Remove deletes one, after asking), "Stop ringing", the alarm and timer sounds
-(Windows' own alarm sounds, with a Test button that plays 3 seconds), how long
-a ring lasts and how long a snooze is. The commands "Stop the ringing alarm or
-timer", "Snooze the alarm" and the others have no key by default; give them
-one in Input Gestures if you like. Everything stays on your computer.
-
-WORLD TRIP (EXTENSION)
------------------------
-With the World Trip extension (from the Extension Store; it needs Hariku 2.9;
-"Keliling Dunia" in Indonesian), you fly anywhere by asking Aruna: "take me to
-Tokyo", "fly to Seoul", "visit New York", "bawa aku ke Tokyo", "terbang ke
-Paris", "jalan-jalan ke Istanbul". A country lands in its capital or its
-best-known city ("take me to Japan" flies to Tokyo), and "take me anywhere"
-("bawa aku ke mana saja") picks a surprise city.
-
-  1. Departure: a cabin chime, then the captain's announcement, for example
-     "Flight from Batam to Tokyo, about 5,300 kilometres, roughly 7 hours.
-     Please fasten your seat belt." (the distance from your main place in
-     Preferences, Places), then the engines. Press any key, or say "skip", to
-     skip straight to the arrival.
-  2. Arrival: a chime, then the city, its local time, how far ahead of or
-     behind home it is, and the weather: "Welcome to Tokyo, Japan. Local time
-     21:30, Friday night, 2 hours ahead of Batam. 18 degrees, drizzle."
-  3. A greeting in the local language for the time of day, with "welcome to
-     Tokyo", spoken by a voice of that language ("Konbanwa! Tōkyō e
-     yōkoso!"), then what it means. Native voices come from Hariku Voice's
-     sources: Edge Voices (from the Extension Store) has one for nearly every
-     language; Piper and Windows voices are used when they have one. Without
-     one, the greeting is read in your own voice, spelled out.
-  4. Local radio: a live station from that city or country (from the Radio
-     Browser directory) plays quietly, and turns itself down while Hariku
-     speaks.
-
-During the trip, ask Aruna:
-  - "tell me about this city" / "ceritakan tentang kota ini": a few sentences
-    from Wikipedia, in your language when it has them, else in English.
-  - "teach me a phrase" / "ajari aku satu kalimat": an everyday phrase (thank
-    you, excuse me, how much is this, delicious, where is the toilet, nice to
-    meet you, goodbye, cheers) in the native voice, then how to say it and what
-    it means; a different one each time. About 30 languages are included.
-  - "next station" / "ganti stasiun", "radio louder" or "keraskan", "radio
-    quieter" or "kecilkan", "which station is this".
-  - "what time is it there" / "jam berapa di sana", "where am I" / "di mana
-    aku".
-  - "go home" / "pulang": the radio stops and you land back home.
-
-Everything the trip says shows in Aruna's "Last result", and the trip goes on
-when you close Aruna. A new trip replaces the one you are on. The radio stops
-when Hariku closes. In Preferences, World Trip, you can turn off the departure
-announcement, the engine sound, the radio or native voices, set the radio's
-volume, and see which voice each language would use. The commands have no key
-by default; give them one in Input Gestures if you like. Only the destination
-is sent to Open-Meteo, Wikipedia and Radio Browser; your own place stays on
-your computer.
-
-ORBIT (EXTENSION)
-------------------
-Orbit (it needs Hariku 2.9) is a multiplayer text game played with other
-Hariku users: a shared simulation whose hub is a space station orbiting the
-Earth, with other worlds to travel to. Walk its decks by compass, chat in the Cantina, look down at
-Indonesia from the Observation Deck, work your job, grow crops in your own
-plots, mine the Asteroid Belt, shop on the Mall Ring, try your luck in the
-casino, trade with other players, and climb the ranks. The station has three
-decks (the Upper Deck: command and science; the Main Deck: the Promenade,
-shops, the Cantina, the casino and the cabins; the Lower Deck: Engineering,
-the Cargo Bay and the Dock), the Mall Ring above them, the hull outside, and
-the Asteroid Belt, about fifty rooms; eight more worlds have maps of their
-own.
-
-  1. The first time, open Preferences, Orbit: type a character name (3 to 20
-     letters and digits) and choose a job (pilot, engineer, trader, scientist
-     or security officer), then press Connect. Your character is kept on the
-     server; the name and job boxes are only used for that first visit.
-  2. Open the Orbit window with "Open Orbit" (no key by default; give it one
-     in Input Gestures) or by telling Aruna "orbit" or "buka orbit". It has
-     the Messages box (read-only text, newest line last; read it with the
-     arrow keys like any text; a new line never moves your focus, nor your
-     reading place while you're in it), the Command field (Enter sends; Up and
-     Down bring back earlier commands), Connect or Leave Orbit, Help,
-     Settings (this Preferences page) and the status. The title says whether
-     you're connected.
-  3. Type commands in Indonesian or English. "bantuan" or "help" lists the
-     help topics, by group. The station: "bantuan bergerak" (moving),
-     "bantuan ngobrol" (talking), "bantuan penduduk" (people). Making a
-     living: "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko"
-     (shops), "bantuan kapal" (ships and travel). Fun: "bantuan kasino",
-     "bantuan arkade", "bantuan acara" (events), "bantuan perburuan" (the
-     hunt), "bantuan kru", "bantuan duel", "bantuan kemajuan" (achievements
-     and leaderboards). Life: "bantuan hewan" (pets), "bantuan keluarga"
-     (family), "bantuan pernikahan" (weddings). Also "bantuan pengaturan"
-     (settings); "ulangi" or "repeat" reads the last message again.
-
-Walking. You walk one room at a time by compass: n, s, e, w, ne, nw, se,
-sw, up and down, or north, south and so on; in Indonesian utara, selatan,
-timur, barat, timur laut, barat laut, tenggara, barat daya, naik and turun
-(short: u, s, t, b, tl, bl, tg, bd). "u" means north (utara) when Hariku
-speaks Indonesian and up when it speaks English. "lihat" or "look" describes
-the room and ends with its exits: "Jalan keluar: utara, barat daya, turun."
-Walking into a wall says which exits there are. "arah ke kantin" or "way to
-the cantina" gives the steps from where you are ("timur, timur, selatan,
-naik, utara, barat, barat"); "pergi ke kantin" or "go to the cantina" walks
-there only when it's next door, and otherwise tells you the way. You can
-always ask the way to the Dock, the Promenade, the Cantina, Star Supply, the
-lift lobbies, your workplace and your cabin; a pocket mapper (from Star
-Supply) knows every room you've been to, and a holo mapper every public
-room. "peta" or "map" describes the deck around you, "di mana aku" or "where
-am I" names the room and the deck, "kompas" your heading, and "lihat utara"
-peeks into the next room. Some doors need a keycard (you get one as you
-level up), the maintenance tunnels are dark (wear a headlamp), and outside
-the hull there's no air: wear an EVA suit ("pasang pakaian eva"), listen for
-the warnings, and if the air runs out the station's tow drone brings you
-back to the airlock for a small fee. "naik kancil" or "ride the Kancil" at
-the Dock flies the little shuttle to the Asteroid Belt.
-
-Talking. "bilang halo" or "say hi" (or start with a quote mark), "bisik
-Sari ketemu di dek" (to anyone, anywhere), "teriak halo semua", and gestures
-("senyum", "lambai", "tertawa", "tepuk tangan", "peluk Sari", "smile",
-"wave"). "siapa" or "who", "lihat Sari", "profil Sari". Your cabin is south
-of the Crew Quarters: "undang Sari" invites her, and she types "kunjungi"
-and your name from the Crew Quarters.
-
-People. The simulation has residents who aren't players, each with a voice
-and a story of their own: Bang Jali behind the Cantina's bar, Pak Harsa in
-Engineering, Kapten Bayu at the Dock, the shopkeepers, a traveller who
-comes to the Observation Deck only at night, and a few who walk the station
-on their daily rounds. They're never counted as players: "siapa" or "who"
-doesn't list them, and "lihat" or "look" names them apart, under
-"Penduduk di sini" (Residents here). "penduduk" or "residents" says where
-each one is now. "bicara dengan Jali" or "talk to Jali" greets them and
-says what you can ask about; "tanya Jali tentang gosip" or "ask Jali about
-gossip" asks; "sapa Jali" or "greet Jali", or a gesture ("lambai Jali"),
-says hello. Some of what they tell you is live: the gossip, the market,
-events, who's online, the time, your own progress. They remember you:
-talking each day, asking about new things, a small gift they like ("beri
-Jali 3 cabai") and the favours they ask for ("tanya Harsa tentang kerja",
-then bring what he needs) make them fonder of you, which opens new topics,
-special errands and, in their shop, a small discount.
-
-Work and progress. Type "kerja" or "work" at your workplace: engineers
-repeat the reactor's tones in Engineering (the Reactor Core pays more),
-pilots fly cargo to the Moon from the Dock, traders get a market report
-anywhere, scientists find the next number in a row of readings in the
-Science Lab, and security officers spot the smuggler among the travellers in
-the Cargo Bay. Answer with the numbers ("3 1 4 2", "18", "2"). Work and the
-daily missions ("misi", "ambil misi 1", "ambil peti", "selesaikan misi") give
-XP; levels raise your pay, give you a rank ("senior pilot") and keycards;
-"peringkat" or "rank" shows how far you are. "harian" or "daily" gives a
-bonus once a day, bigger for each day in a row.
-
-Money. The market is on the Promenade: "harga" or "prices" (also "harga
-panen", "harga bijih"), "beli 2 kopi", "jual semua bijih". In Hydroponics you
-have your own plots: buy seeds ("daftar", then "beli bibit tomat"), "tanam
-tomat", "siram" (water once for a bigger crop), and "panen" when it's ripe;
-crops grow in real time, from ten minutes to a day, and Orbit tells you when
-they're ripe. At the Asteroid Belt, "tambang" or "mine" (richer out on the
-Asteroid Surface and in the Crystal Cave); outside the hull, "kumpulkan" or
-"collect" in the Debris Field. Credits are only for playing: they have no
-real-money value, and can't be bought or cashed out.
-
-Shops and trading. Star Supply on the East Promenade sells the basics (a
-pocket mapper, a headlamp, a beacon, a big bag, seeds and snacks). The Mall
-Ring, up the lift from the Upper Deck's lift lobby, has the rest: Gearworks
-(devices such as the holo mapper, the scanner, the communicator, keycards
-and the EVA suit; better drills; job tools that raise your pay), Orbit
-Outfitters (clothes and titles), Cosy Corner (furniture for your cabin),
-Whiskers & Widgets (pets), Starglint Jewellers (rings, and weddings), the
-Food Court, and Second Orbit, a secondhand
-shop that buys your things back for part of their price ("daftar" there says
-what it would pay, "jual senter" sells). Prices move a little each day, and
-each shop has one special. The Cantina's bar sells iced coffee (more XP for
-ten minutes) and snacks. "daftar" or "list" shows what's for sale, "pakai X"
-or "use X" uses a thing, "pasang X" or "wear X" puts it on, "lepas X" or
-"remove X" takes it off, "periksa X" or "examine X" says what it does. To
-trade with another player, anywhere on the station: "tawarkan Budi 3 besi
-untuk 200 kredit" or "offer Budi 3 iron for 200 credits"; Budi says "terima"
-(accept) or "tolak" (decline) within two minutes, and both sides change hands
-at once or not at all ("batalkan tawaran" takes an offer back). Goods,
-seeds, food, furniture and clothes can be traded.
-
-Other worlds and ships. "dunia" or "worlds" lists the worlds of the
-simulation and how far each is: the Moon (Moon Base Tranquility, with its
-helium tunnels), Karmina the red planet (farming domes and rust flats),
-Glasir the ice moon (an ice quarry), the Drift Bazaar (a market in a hollow
-asteroid, with no customs), Evergrove (a fantasy world of woods, a village
-and a castle), Lumina City (neon streets, a night market, courier gigs) and
-Pixel Pier (an arcade world). Each has its own small compass map, sounds and
-prices. Three ways to travel: the Gate in the Gate Hall, east of the Upper
-Lift Lobby ("gerbang ke Karmina" or "gate to Karmina"): at once, for a fee;
-the ferry from the Dock ("feri ke Karmina" or "ferry to Karmina"): slow but
-cheap, leaving every two minutes; or your own ship, bought at the Orbit
-Shipyard on the Mall Ring and docked in the Hangar, west of the Dock: "naik
-kapal" or "embark" to go aboard, "terbang ke Karmina" or "fly to Karmina",
-"turun kapal" or "disembark", "isi bahan bakar" or "refuel" at any port,
-"muat 20 es" or "load 20 ice" and "bongkar" or "unload" between your bag and
-the hold, "kargo" or "cargo" for the hold and fuel, "namai kapal" or "name
-ship". Invite a friend aboard with "undang Budi"; they type "naik kapal" and
-your name. On other worlds the Gate, the ferry and your ship all arrive at
-the world's port. Every world buys and sells at its own prices, so buying
-cheap on one and selling dear on another is a trade run; with your ship
-docked on the same world, what doesn't fit in your bag goes into its hold.
-Some worlds' customs search travellers for contraband (the Gate most often,
-a ship least) and fine them. In Evergrove, "hadapi peri lumut" or "face moss
-sprite" is a test of wits with a creature (nobody gets hurt); in Lumina
-City, "gig" at the Courier Hub gives you a parcel to carry to another room
-in time.
-
-Events. Now and then something happens to everyone, announced with a sound
-of its own: a meteor shower ("kumpulkan" or "collect" where the meteorites
-fall), a solar storm, a runaway robot pet ("dengar" or "listen" says which
-way its beeps come from; "tangkap" or "catch" in the right room), a
-stowaway ("geledah" or "search"), a comet ("tonton" or "watch" from the
-Observation Deck), a market boom on one world, a double XP hour, happy
-hour at the Cantina, a power cut, and a runaway maintenance drone at the
-Dock that everyone fixes together ("perbaiki drone" or "fix drone"; the
-more you help, the bigger your reward). Every week there's a trading fair
-on the Mall Ring, a jackpot night, a night rush in Lumina City and a duel
-tournament on Pixel Pier; every year the station's birthday on 25
-September, New Year and the Lantern Festival, when every lantern lit in the
-Star Dome Hall counts towards a goal, and reaching it brings everyone a
-gift. "acara" or "events" says what's on and what's coming; "ikut" or
-"join" takes part where needed. In your own cabin, "adakan pesta" or
-"host party" invites everyone for half an hour. "ingatkan aku" or "remind
-me" (and an event's name), or the "Remind me of the next event" button in
-the Orbit window, sets an ordinary Hariku reminder five minutes before it
-starts, so it rings even with Orbit closed.
-
-The hunt. The simulation's founder hid a prize behind a chain of hard
-riddles, the Lost Chord, and the first player to solve them all wins it
-(later finishers win smaller prizes). "perburuan" or "hunt" tells you your
-riddle. Clues are hidden in rooms around the worlds: when one for your
-riddle is where you are, looking there says something invites a closer
-look, and "selidiki" or "investigate" finds it. Some clues show only with
-the right thing in your bag or on your head, some only at certain hours of
-the station's clock (UTC), and some are tones to listen to, like the
-reactor's. "pecahkan" or "solve" and your answer answers the riddle; a wrong
-answer makes you wait before trying again, longer each time. "papan
-pemburu" or "hunt board" shows who has come furthest, and how close the
-rival company is. Admins may release an official hint for a riddle that
-proves too hard.
-
-Crews. Band together with friends: "buat kru" or "crew create" and a name
-founds a crew (500 credits, from level 3), and you're its captain. "kru
-undang Budi" or "crew invite Budi" asks someone in; they answer "terima"
-(accept) or "tolak" (decline). "kru bilang" or "crew say" and your words
-reach every member online, wherever they are (heard as whispers are, and
-read under the same setting). "kru" or "crew" shows your crew; "keluar kru"
-or "crew leave", "kru keluarkan Budi" or "crew kick Budi", "jadikan kapten
-Budi" or "crew captain Budi", and "moto kru" or "crew motto" and a line. Every
-XP your crew's members earn is a point for the crew; "papan kru" or "crews"
-shows the board. North of the Hangar, the Crew Hangar is your crew's own
-room: only its members get in, and its board shows your crew's points and
-place.
-
-Duels. In the Zero-G Gym or on Pixel Pier's Tournament Stage, challenge
-someone there to a quick-draw duel: "duel Budi", or "duel Budi 20" for a
-stake of up to 100 credits each; they answer "terima" (accept) or "tolak"
-(decline). When you hear "draw", type any number and Enter: the first wins
-the round, best of three, but typing before it loses the round. The winner
-takes both stakes. "duels" shows your record; "matikan duel" or "duels off"
-refuses every challenge ("duels on" takes them again). "papan skor duel" or
-"leaderboard duels" shows who has won the most. Every Sunday at 15:00 UTC
-the duel tournament runs for two hours on the Tournament Stage: the most
-duels won there take prizes, and the champion a title (ask Ciko, the
-stage's host, who leads).
-
-Pets. Whiskers & Widgets on the Mall Ring has a little robot, an orange
-space cat, a robot cat, a mini drone, a space fox and a glow jellyfish, and
-pet food and treats; the rarer ones sometimes choose a player out on the
-worlds. "status hewan" or "pet status" says how your pet is. "beri makan
-Kiki" or "feed Kiki", "main dengan Kiki" or "play with Kiki", "istirahatkan
-Kiki" or "rest Kiki", "elus" or "pat". A pet gets hungry, bored and tired
-slowly, in real time; left alone it grows sad and quiet, but it never comes
-to harm, and a little care always cheers it up. Looking after it helps it
-grow up, from little to young to grown. A young pet can learn tricks: "ajari
-trik duduk" or "teach trick sit" a few times when it's happy and rested,
-then "trik duduk" or "trick sit" shows it off. Your pet follows you, joins
-in your gestures and has its own sound. "namai Kiki" or "name pet Kiki",
-and "ganti nama Kiki jadi Momo" or "rename Kiki to Momo".
-
-Family. "ajak berpasangan Budi" or "partner with Budi" asks Budi to be your
-partner; Budi answers "terima" or "tolak". "pasangan" or "partner" shows
-your partnership. To end one, type "akhiri kemitraan" or "end partnership",
-then "konfirmasi akhiri" or "confirm end" within a minute; your partner is
-told kindly. At the family desk in the Medbay, "adopsi" or "adopt" gives a
-baby a home (from level 3): partners decide together, and you may also
-adopt on your own. A baby needs food (baby porridge from the Food Court:
-"beri makan Mira"), play ("main dengan Mira"), rest ("tidurkan Mira") and
-stories ("bacakan cerita untuk Mira"); with care it grows over real days,
-from baby to toddler to child, and says more as it grows. A child left
-alone gets quiet and asks for you, but is never harmed. "bawa Mira" or
-"bring Mira" takes your child along; a happy child at your side helps a
-little with work, and once a day "minta tolong Mira" or "ask Mira for help"
-brings you something small. Give your baby its name in the naming rite at
-the Star Dome Hall, with Ibu Sekar there: "upacara nama Mira" or "naming
-rite Mira". "keluarga" or "family" shows your family.
-
-Weddings. Buy a ring at Starglint Jewellers on the Mall Ring, then "lamar
-Budi" or "propose to Budi" in the same room; a yes makes you engaged. At
-the jeweller's wedding desk, book the day: a hall (the Star Dome Hall, the
-Jasmine Pavilion, or the castle's Great Hall in Evergrove), a tier (simple,
-grand or luxurious: more guests, music, and at the top fireworks for the
-whole station), a ceremony (the Way of Starlight's rite, or a neutral one)
-and a time, in station time (UTC): "pesan pernikahan paviliun megah netral
-14:00" or "book wedding pavilion grand neutral 14:00". "pernikahan" or
-"wedding" shows yours; "undang Budi ke pernikahan" or "invite Budi to the
-wedding" sends an invitation, and guests answer "hadir" or "tidak hadir"
-(rsvp yes, rsvp no). Be at the hall on time, both of you. In the Starlight
-rite, each of you lights a lantern ("nyalakan lentera"), the two lights are
-joined into one ("satukan cahaya"), there's a moment of silence, you each
-say your own vows ("ikrar" and your words), and the star bell rings three
-times; the neutral ceremony has your vows, each partner's "ya" or "yes",
-and your signatures ("tanda tangan" or "sign"). Guests can "lempar bunga"
-or "throw flowers", cheer and clap. Afterwards the station hears the news,
-you get a title and a keepsake, and "baca kenangan" or "read memory" brings
-the day back (guests can read it too). Your vows are kept in that memory.
-"batalkan pernikahan" or "cancel wedding" gives the money back if it's early
-enough; "jadwal pernikahan" or "wedding schedule" lists the weddings to
-come.
-
-The arcade. On Pixel Pier, Cabinet Row has four games played by ear, and a
-token machine: "beli 10 token" or "buy 10 tokens" (5 credits each). Then
-"main" or "play" and a game: Quick Draw ("adu cepat": wait for the beep,
-then type any number and Enter at once), Star Beat ("irama bintang": listen
-to a rhythm, then tap it back, a number and Enter for each beat, keeping
-the same gaps), Echo ("gema": repeat the tones as numbers, one more each
-time) and Meteor Dodge ("hindari meteor": hear which side a meteor comes
-from and step away, 4 to the left or 6 to the right). "berhenti main" or
-"stop game" ends a game. Good games print prize tickets: the Prize Counter
-east of the Arcade Hall trades them for prizes ("daftar" there). "skor
-arkade" or "arcade scores" reads the high score tables (so does the High
-Score Wall); a new best on a table is announced to everyone.
-
-The casino. The Casino Corner is west of the Cantina; "kasino" or "casino"
-there lists the games. "dadu 50 tinggi" or "dice 50 high" (or low, or seven),
-"slot 20" or "slots 20" (three reels, heard stopping from left to right),
-"blackjack 50" and then "tambah kartu" or "hit", "cukup" or "stand",
-"tantang Budi 50" or "challenge Budi 50" for a coin flip with another player,
-and "lotre" or "lottery" for the weekly draw (on Sunday at 12:00 UTC; "beli
-tiket" or "buy ticket"). Bets are from 5 to 500 credits, at most 5,000 an
-hour, and the house always keeps a small edge. The casino only takes and
-pays game credits.
-
-Achievements and leaderboards. Reaching a mark (ten rooms walked, a level, a
-first harvest, 500 lumps of ore, a week of daily bonuses...) earns an
-achievement, some credits and sometimes a title; the big ones are news for
-the whole station. "prestasi" or "achievements" lists yours and the closest
-ones; "papan skor" or "leaderboard" shows the leaders, and "papan skor
-penambang" or "leaderboard miners" (or terkaya/richest, level,
-petani/farmers, beruntun/streak, kasino/casino, duel/duels) one board and
-your place.
-
-From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
-"orbit utara", "orbit bilang halo", "orbit bisik Sari nanti ya", "orbit
-siapa online", "orbit harian", "orbit panen", "orbit profil", "orbit status",
-"orbit keluar". The answer shows in Aruna's Last result.
-
-What you hear. What happens is read aloud as it comes, in your language.
-"Read with" (Preferences, Orbit, or typed: "pembaca campuran", "pembaca
-nvda", "pembaca suara" / "reader mixed", "reader nvda", "reader
-voices") chooses who reads it. Mixed, the default: what people say, whisper
-and shout, crew chat and announcements in Hariku Voice, everything else
-(rooms, exits, what your commands do) by your screen reader at once, at
-its own speed, like any MUD client. NVDA only: the screen reader reads
-everything, the fastest way to play. Hariku Voice for everything: all of it
-in Hariku Voice. When Hariku Voice reads, what players say comes in two voices: the name first,
-briefly, in the usual voice ("Budi:", "Budi berbisik:"), then the words in
-Budi's own voice. Each player has a voice of their own when Hariku Voice has
-at least two voices of your language (Edge Voices or Piper Voices, from the
-Extension Store, add more): the voice they chose ("suaraku 3" or "my voice
-3", 1 to 10; the same number is always the same voice on your computer) or
-one picked from their name. The residents have voices of their own too.
-Your own words are spoken in your own voice too
-(a whisper says who it's to first: "Ke Sari:"), and your gestures in the
-usual voice ("Kamu tersenyum."). With fewer than two voices, Orbit says so
-once and reads everyone in the usual voice. The Messages box keeps every
-whole line. Your own words are only turned into speech on your computer:
-nothing you say leaves it as sound, only as the text you typed. Sounds come from
-where things happen: your steps (metal, carpet, grass, stone, wood, rock...)
-on the side you walk to, someone arriving from the west on your left, the
-lift humming up, an airlock hissing, each gesture, coins, a harvest, the
-pick on rock, the dice, cards and reels, the temple's bell, with the room's
-echo. Many of them are recordings from Kenney's free (CC0) sound packs. While
-the window is open, a quiet sound of the place plays and goes quiet while
-Hariku speaks.
-
-Settings. In Preferences, Orbit, or typed in the game: speaking messages
-("bacakan pesan mati" or "speech off"), the players' voices ("suara pemain
-mati" or "voices off"), your own words in your voice ("kata-kataku mati" or
-"my lines off": then they're only confirmed, "Terkirim."), the players'
-names before their words ("nama pemain mati" or "names off"), the ambience
-("suasana mati", "volume suasana 30"),
-the sounds ("suara efek mati", "volume efek 60") and other players' sounds
-("suara orang lain mati"). Preferences also chooses what is read aloud
-(chat and gestures, whispers, shouts, arrivals and departures, work and
-money, announcements, special events; what isn't read still goes to the
-Messages box),
-what is read while the window is closed (everything; only whispers, your
-name and station news; or nothing), what closing the window does, when you
-are logged out while away, and whether Orbit connects when Hariku starts.
-"abaikan Budi" or "ignore Budi" hides a player's words and gestures on your
-computer ("dengar lagi Budi" or "unignore Budi" to hear them again).
-Commands from Aruna are always answered aloud.
-
-Staying and leaving. Closing the window (Escape or the close button) keeps
-you connected in the background, and Orbit says how to come back; or, if you
-choose so in Preferences, it leaves Orbit. "keluar" or "quit", the Leave
-Orbit button, "orbit keluar" and quitting Hariku log you out at once, and
-the others hear that you left. With the window closed and nothing typed for
-five minutes, others see you as away; after 30 minutes (or 15, 60, or never)
-Orbit logs you out. If the connection drops, Orbit reconnects by itself and
-says "Reconnected".
-
-Moving your character to another computer. Your character lives on the
-computer that made it. To move it (a second laptop, a new Windows), press
-"Move my character to another computer" in Preferences, Orbit, while
-connected (or type "kode pindah"). Orbit shows and reads a code of 16
-letters; on the other computer, type it in "Have a transfer code?" and press
-"Use the code" within 10 minutes. The character moves, it isn't copied: the
-first computer can't play it any more. If you lose your computer, an admin
-can make a code for you.
-
-Orbit connects only when you open it, press Connect or give it a command (or
-when Hariku starts, if you ask it to). See PRIVACY.md for what the server
-keeps.
-
-DROPBOX (EXTENSION)
---------------------
-With the Dropbox extension (from the Extension Store; it needs Hariku 2.9),
-Hariku tells you what Dropbox is doing and copies links for you, in English
-or Indonesian.
-
-  1. Open Preferences, Dropbox, and press "Connect Dropbox". Your browser
-     opens Dropbox's sign-in page; sign in and choose Allow. The browser comes
-     back to Hariku by itself (the page says you can close the tab), and the
-     Dropbox account field shows your name and email. If another program is
-     using the port Hariku listens on, Dropbox shows a code instead: copy it
-     into the "Code from Dropbox" field that appears on the page and press
-     "Use the code". "Disconnect Dropbox" signs Hariku out again.
-  2. The news about your own files needs the Dropbox desktop app on this
-     computer. The page shows its folder ("Dropbox folder on this computer");
-     if the app isn't installed, or its folder belongs to another Dropbox
-     account, that news is off and the rest still works.
-
-Your files. When you save or add a file in the Dropbox folder, Hariku waits a
-moment and asks Dropbox whether it has that version yet: "Syncing
-laporan.pdf to Dropbox..." while it uploads, "laporan.pdf is synced." when it
-is done, or "Syncing 3 files to Dropbox..." and later "Your Dropbox is up to
-date." for several. Files the desktop app downloads, Office's temporary files,
-desktop.ini and online-only files are left alone. A file that still hasn't
-synced a few minutes after you saved it is mentioned once: "laporan.pdf
-hasn't synced yet; check the Dropbox app."
-
-Other people. "Budi added catatan.txt to the Kelas folder." when someone
-changes a file in a folder you share, and "Budi shared tugas.docx with you."
-when someone shares a file or folder with you (checked every few minutes;
-what was already shared when you connected isn't announced). These two stay
-silent during quiet hours. A soft sound plays with "synced" and with news
-from other people.
-
-Links. In File Explorer, on a file in your Dropbox folder, open Aruna and say
-or type "salin link" or "copy link" (also "salin link ini", "bagikan link
-ini", "copy this link"). Aruna closes, goes back to File Explorer, copies the
-file's shared link to the clipboard and says "Link to laporan.pdf copied." It
-uses the file you're on (the focused one if it is selected, otherwise the
-first selected one); with nothing selected, the folder you're in. A file
-that already has a shared link keeps it; otherwise a new link is made with
-your account's usual link settings. Outside the Dropbox folder Hariku says
-"This file isn't in your Dropbox folder." You can also give "Copy the Dropbox
-link of the file selected in File Explorer" a key in Input Gestures (it has
-none by default); make it global so it works while File Explorer has the
-focus.
-
-To copy the link of a file you're not on, say its name: "salin link
-laporan" or "copy link to the budget". Dropbox looks it up by name; one clear
-match is copied at once, a likely one is asked about first ("Do you mean
-laporan final.pdf in the Kelas folder? Copy its link?"), and when several
-fit, Aruna reads them so you can say the full name. "Dropbox status" (or
-"status dropbox", or just "dropbox") says whether everything has synced.
-
-In Preferences, Dropbox, you can turn off each kind of news (files syncing
-and synced, "up to date", other people's changes, what's shared with you)
-and the sounds. See PRIVACY.md for what is sent to Dropbox.
-
-CALCULATOR & CONVERTER (EXTENSION)
------------------------------------
-With the Calculator & Converter extension (from the Extension Store; it needs
-Hariku 2.9; "Kalkulator & Konversi" in Indonesian), you calculate and convert
-by typing or saying it to Aruna, in English or Indonesian. The answer is
-spoken and shows in Aruna's Last result, with numbers written your
-language's way: "33,33" and "1.250.000" in Indonesian, "33.33" and
-"1,250,000" in English.
-
-Sums. "25 x 4", "berapa 25 kali 4", "(3 + 4) * 2", "100 dibagi 3", "2 pangkat
-10", "akar 144", "akar pangkat tiga 27", "sisa bagi 17 dan 5", "7 factorial",
-"what's 15% of 80", "square root of 2". Aruna says the sum back in words, so
-you hear if a number was misheard: "25 kali 4 = 100." Numbers can be digits
-or words, as Voice Control writes them: "dua puluh lima", "seratus dua
-belas", "setengah", "satu koma lima", "minus tiga", "twenty-five", "one and a
-half", "3.5 million", "2 juta", "1,5 miliar", "350 ribu". Percent works as on
-a pocket calculator: "12 persen dari 350" is 42, "350 ditambah 12%" is 392.
-"20 itu berapa persen dari 80" says 25%. A result that had to be rounded says
-so ("100 dibagi 3 = kira-kira 33,33").
-
-Go on from the last result for five minutes: "tambah 5", "kali dua",
-"hasilnya dibagi 3", "plus 5", "times two". "berapa hasilnya" says it again,
-and "salin hasilnya" or "copy the result" copies it to the clipboard (just
-the number).
-
-Units. "2 kaki berapa inci", "2 feet in inches", "5 km ke mil", "100
-fahrenheit ke celsius", "30 derajat celsius berapa fahrenheit", "1 galon
-berapa liter", "70 kg dalam pon", "60 mph ke km per jam", "3 jam berapa
-menit", "1 hektar berapa meter persegi", "how many ml in a cup", "5 kaki 11
-inci ke cm", "170 cm ke kaki dan inci". Length, weight, volume, cooking (a
-cup is 240 ml, a tablespoon 15 ml, a teaspoon 5 ml), temperature (Celsius,
-Fahrenheit, Kelvin, Reaumur), speed, area, time, data sizes, pressure,
-energy, fuel economy (km/l, mpg, l/100 km) and angles. Indonesian units: ons
-(100 grams), kuintal, are and tumbak (14 square metres). A word with two
-meanings is settled by the other unit: "kilo" is kilograms, or kilometres
-next to miles; "derajat" alone is Celsius. Aruna adds a short note where an
-answer could be misread, for example which KB, MB and GB it used.
-
-Money. "100 dolar berapa rupiah", "50 euro ke yen", "1 juta rupiah dalam
-dolar", "Rp 1,5 juta ke dolar singapura", "kurs dolar", "100 dollars to
-rupiah". The answer says the date of the rates: "100 dolar AS = 1.790.855
-rupiah, kurs 25 September." Without a second currency ("100 dolar berapa"),
-it converts to your home currency. The rates are the central banks'
-daily reference rates, fetched when you first ask and kept for a few hours;
-when you're offline, rates up to a week old are used, and without any Aruna
-says it can't get them.
-
-Extras. "lempar koin" / "flip a coin", "lempar dadu", "lempar 2 dadu", "roll
-a d20", "angka acak 1 sampai 100" / "random number between 1 and 6", "bagi
-tagihan 350 ribu untuk 4 orang" (add "tip 10%" for a tip), "split 120
-dollars 3 ways", "diskon 30% dari 250 ribu", "30% off 250".
-
-With Hariku 2.9 and 2.10, start with a word such as "berapa", "hitung",
-"what's", "calculate", "convert", "how many" or "konversi" ("berapa 25 kali
-4", "convert 2 feet to inches", "berapa inci 2 kaki"), or end with "berapa"
-("100 dolar berapa"). From Hariku 2.11 Aruna also understands bare sentences
-such as "25 x 4", "2 foot in inches" and "tambah 5".
-
-In Preferences, Calculator & Converter, choose your home currency
-(automatically rupiah when Hariku speaks Indonesian, else US dollar), how
-many decimals to say (automatic: exact values as they are, rounded ones with
-2), whether KB, MB and GB count 1024 per step as Windows does (the default)
-or 1000 as drive makers do, and whether every result is copied to the
-clipboard. The commands "Copy the last calculator result", "Say the last
-calculator result", "Say a random number from 1 to 100", "Flip a coin" and
-"Roll a die" have no key by default; give them one in Input Gestures if you
-like. See PRIVACY.md for the exchange rates.
+commands"). With the Voice Control extension you can also speak to Aruna instead
+of typing, and open it by saying a wake phrase such as "Hey Aruna": see Voice
+Control's own guide (Section 6).
 
 CLOSE BEHAVIOUR
 ----------------
@@ -1244,7 +624,10 @@ EXTENSIONS MENU
 
 HELP MENU
 ----------
-  User Guide                  Open this document.
+  User Guide                  Open this document, as a page in your web
+                              browser.
+  Extension guides...         The guides of your installed extensions
+                              (Section 6).
   What's New                  View the release notes for the current version.
   Get Support                 Opens the Hariku community discussion page.
   Report a Bug                Opens the Hariku issue tracker on GitHub.

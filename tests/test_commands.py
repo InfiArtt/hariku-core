@@ -79,6 +79,8 @@ CORE_ACTIONS = {
     "Hariku Core.speak_time": "nav_speak_time",
     "Hariku Core.speak_date": "nav_speak_date",
     "Hariku Core.command_bar": "nav_command_bar",
+    "Hariku Core.user_guide": "nav_user_guide",
+    "Hariku Core.extension_guides": "nav_ext_guides",
 }
 # Actions registered with English names only, whatever the language.
 ENGLISH_ONLY = {
