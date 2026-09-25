@@ -712,6 +712,34 @@ def test_new_floors_and_places_have_their_sounds():
     assert orbit_audio.timed_cues({"k": "paid", "text": "x"}) == ([], 0.0)
 
 
+def test_the_arcade_places_meteors_and_plays_rhythms(play):
+    cues = orbit_audio.cues_for
+    assert cues({"k": "task", "sound": "arcade_meteor", "dir": "w"}) == [("arcade_meteor", -0.75, None, "task")]
+    assert cues({"k": "task", "sound": "arcade_meteor", "dir": "e"})[0][1] == 0.75
+    assert cues({"k": "task", "sound": "arcade_meteor", "dir": "n"})[0][1] == 0.0
+    assert cues({"k": "info", "sound": "robot_beep", "dir": "sw"})[0][:2] == ("robot_beep", -0.5)
+    beats = orbit_audio.timed_cues({"k": "task", "beats": [1.2, 1.7, 2.7]})
+    assert beats == ([(1.2, "arcade_beat", 0.0), (1.7, "arcade_beat", 0.0), (2.7, "arcade_beat", 0.0)], 2.7)
+    assert orbit_audio.timed_cues({"k": "task", "beats": [1, "x", -2, True, 99]}) == ([(1.0, "arcade_beat", 0.0)], 1.0)
+    assert orbit_audio.timed_cues({"k": "task", "beats": list(range(40))}) == ([], 0.0)
+    assert orbit_audio.timed_cues({"k": "task", "beats": "1,2"}) == ([], 0.0)
+    # the rhythm first, then the words
+    s = play.services
+    s.FILES = FakeServices.FILES | {"task", "arcade_beat", "arcade_meteor"}
+    conn = _online(play)
+    s.spoken.clear()
+    s.placed.clear()
+    s.timers = []
+    conn.event("task", "Irama 1 dari 3: 3 ketukan.", beats=[1.2, 1.7, 2.7])
+    assert s.placed == [("task", 0.0, None)] and s.spoken == []
+    assert sorted(round(t.seconds, 2) for t in s.timers) == [1.2, 1.7, 2.7, 2.7]
+    s.run_timers()
+    assert [p[0] for p in s.placed[1:]] == ["arcade_beat"] * 3
+    assert s.spoken == [("narrator", "Irama 1 dari 3: 3 ketukan.")]
+    conn.event("task", "Meteor!", sound="arcade_meteor", dir="e")
+    assert s.placed[-1] == ("arcade_meteor", 0.75, None)
+
+
 def test_event_news_can_be_left_unread(play):
     s = play.services
     conn = _online(play)

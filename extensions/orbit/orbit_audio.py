@@ -20,8 +20,11 @@ the event's kind is the fallback. orbit_mix finds and shapes the files.
 
 Some cues come a moment later (timed_cues): the three reels of a slot
 machine stopping one by one, left, middle, right, and then whether you won;
-the dice landing; the dealer turning the cards. The words wait for them, so
-the result isn't read before the dice have stopped rolling.
+the dice landing; the dealer turning the cards; the beats of a Star Beat
+rhythm at the arcade ("beats": the seconds at which each sounds). The words
+wait for them, so the result isn't read before the dice have stopped
+rolling. A cue the server names ("sound") with a side ("dir") is heard on
+that side: the runaway robot's beeps, a meteor coming at you.
 
 The ambience is a quiet loop for the kind of place you're in: the vents'
 hum in corridors, the Cantina's murmur, the reactor's thrum in Engineering,
@@ -69,6 +72,8 @@ TONE_GAP_SECONDS = 0.45
 REEL_STOPS = ((0.9, -0.75), (1.3, 0.0), (1.7, 0.75))
 OUTCOME_AT = {"reels": 2.0, "dice": 1.2, "coinflip": 0.9, "cards": 0.35, "deal": 0.35}
 OUTCOME_CUES = {"win": "win", "lose": "lose", "push": "push", "jackpot": "jackpot"}
+# Star Beat (Pixel Pier's arcade): a rhythm of at most this many beats, within this many seconds.
+MAX_BEATS, MAX_BEAT_SECONDS = 16, 20.0
 
 POLL_SECONDS = 0.05
 FADE_PER_SECOND = 900.0       # MCI volume units (0-1000) a second
@@ -109,14 +114,26 @@ def cues_for(message, acoustics=None):
         cue = f"emote_{eid}" if isinstance(eid, str) and eid.isalpha() else "emote"
         return [(sound or cue, 0.0, room, "emote")]
     if sound:
-        return [(sound, 0.0, None, kind_cue)]
+        return [(sound, pan, None, kind_cue)]           # placed on its side: a robot's beeps, a meteor
     return [(kind_cue, 0.0, None, None)] if kind_cue else []
+
+
+def _beats(message):
+    """Star Beat's rhythm: the seconds (after the event) at which each beat sounds."""
+    beats = message.get("beats")
+    if not isinstance(beats, list) or len(beats) > MAX_BEATS:
+        return []
+    times = []
+    for at in beats:
+        if isinstance(at, (int, float)) and not isinstance(at, bool) and 0 <= at <= MAX_BEAT_SECONDS:
+            times.append(float(at))
+    return times
 
 
 def timed_cues(message):
     """Cues that come a moment after the event's own: ([(seconds, cue, pan)], and how
     many seconds the words should wait for them)."""
-    cues = []
+    cues = [(at, "arcade_beat", 0.0) for at in _beats(message)]
     if isinstance(message.get("reels"), list):
         cues.extend((at, "reel_stop", pan) for at, pan in REEL_STOPS)
     outcome = OUTCOME_CUES.get(message.get("outcome"))

@@ -1620,6 +1620,91 @@ def hunt_rival():
     return wav_bytes(*_fade(left, right, RATE, fade_out=0.2), RATE, 0.4)
 
 
+# Pixel Pier's cabinets: short and mono (Orbit places them), chip-tune squares.
+
+def _chip(notes, gap, length, decay, gain=1.0):
+    out = _zeros(gap * (len(notes) - 1) + length)
+    for i, note in enumerate(notes):
+        _put(out, i * gap, _soft_square(note, length, decay), gain)
+    return out
+
+
+def arcade_start():
+    """A coin drops in and the cabinet wakes: a clink, then a quick rising arpeggio."""
+    rng = random.Random(SEED + 900)
+    out = _zeros(0.7)
+    _put(out, 0.0, _burst(rng, 0.08, 4200, 3.0, 0.0005, 45), 0.6)
+    _put(out, 0.16, _chip((C5, E5, G5, C6), 0.07, 0.16, 16.0), 0.7)
+    return mono_bytes(out, RATE, 0.45)
+
+
+def arcade_ready():
+    """Ready: two low blips."""
+    return mono_bytes(_chip((G5 / 2, G5 / 2), 0.1, 0.08, 30.0), RATE, 0.35)
+
+
+def arcade_go():
+    """Go: one bright, sharp beep."""
+    return mono_bytes(_soft_square(C6 * 1.5, 0.15, 12.0), RATE, 0.45)
+
+
+def arcade_hit():
+    """A point scored: a quick two-note ping up."""
+    return mono_bytes(_chip((E5 * 2, G5 * 2), 0.06, 0.18, 22.0), RATE, 0.35)
+
+
+def arcade_beat():
+    """One beat of Star Beat: a short, round knock."""
+    out = _thump(180, 0.1, 30.0, drop=0.5)
+    _put(out, 0.0, _soft_square(880.0, 0.03, 90.0), 0.25)
+    return mono_bytes(out, RATE, 0.45)
+
+
+def arcade_meteor():
+    """A meteor rushing in: rising noise and a falling whistle (placed on its side)."""
+    rng = random.Random(SEED + 910)
+    n = int(0.8 * RATE)
+    rush = _band(_noise(n, rng), lambda t: 500 + 2500 * t / 0.8, 1.5)
+    env = [min(1.0, (i / n) * 1.6) ** 2 * (1.0 if i < n * 0.9 else (n - i) / (n * 0.1)) for i in range(n)]
+    out = [v * e for v, e in zip(rush, env)]
+    _put(out, 0.0, [v * 0.3 for v in _chirp(1800, 700, 0.8, shape="arch")], 1.0)
+    return mono_bytes(out, RATE, 0.45, fade_out=0.03)
+
+
+def arcade_whoosh():
+    """Dodged: the meteor whooshes past."""
+    rng = random.Random(SEED + 920)
+    n = int(0.35 * RATE)
+    out = _band(_noise(n, rng), lambda t: 3000 - 2400 * t / 0.35, 1.2)
+    out = [v * math.sin(math.pi * i / n) for i, v in enumerate(out)]
+    return mono_bytes(out, RATE, 0.35)
+
+
+def arcade_crash():
+    """Hit: a crunchy boom."""
+    rng = random.Random(SEED + 930)
+    out = _zeros(0.5)
+    _put(out, 0.0, _thump(70, 0.45, 8.0), 1.0)
+    _put(out, 0.0, _burst(rng, 0.4, 900, 0.7, 0.001, 10.0), 0.8)
+    _put(out, 0.02, _grains(rng, 0.3, 30, 1500, 5000, env=lambda a: math.exp(-5 * a)), 0.5)
+    return mono_bytes(out, RATE, 0.45)
+
+
+def arcade_ticket():
+    """Prize tickets feeding out of the cabinet: a quick ratchet, then a ding."""
+    rng = random.Random(SEED + 940)
+    out = _zeros(0.5)
+    for k in range(7):
+        _put(out, 0.035 * k, _burst(rng, 0.02, 2600, 2.0, 0.0005, 150), 0.7)
+    _put(out, 0.28, _bell(C6 * 2, 0.22, 12.0), 0.5)
+    return mono_bytes(out, RATE, 0.55)
+
+
+def arcade_over():
+    """Game over: three notes falling."""
+    return mono_bytes(_chip((G5, E5, C5), 0.16, 0.3, 7.0), RATE, 0.38)
+
+
 # The other worlds' ambience (kept as a name of its own; every loop is at LOOP_RATE now).
 SMALL_LOOP_RATE = LOOP_RATE
 
@@ -2117,7 +2202,11 @@ SOUNDS = (
        ("event_start.wav", event_start), ("event_end.wav", event_end), ("event_party.wav", event_party),
        ("event_storm.wav", event_storm), ("event_boss.wav", event_boss), ("event_meteor.wav", event_meteor),
        ("fireworks.wav", fireworks), ("robot_beep.wav", robot_beep),
-       ("hunt_clue.wav", hunt_clue), ("hunt_found.wav", hunt_found), ("hunt_rival.wav", hunt_rival)]
+       ("hunt_clue.wav", hunt_clue), ("hunt_found.wav", hunt_found), ("hunt_rival.wav", hunt_rival),
+       ("arcade_start.wav", arcade_start), ("arcade_ready.wav", arcade_ready), ("arcade_go.wav", arcade_go),
+       ("arcade_hit.wav", arcade_hit), ("arcade_beat.wav", arcade_beat), ("arcade_meteor.wav", arcade_meteor),
+       ("arcade_whoosh.wav", arcade_whoosh), ("arcade_crash.wav", arcade_crash),
+       ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over)]
 )
 
 
