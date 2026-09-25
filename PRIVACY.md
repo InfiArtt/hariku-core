@@ -286,7 +286,8 @@ which, like any web host, sees your IP address; see the
   write, credits, things, where it is, its progress (XP and level, the daily
   streak, what it mined and harvested, its farm plots, the rooms it has
   visited, its friends list and its beacon), cooldowns and missions, the
-  voice number you chose for others to hear, its pet (a name and a kind),
+  voice number you chose for others to hear, its pet (a name, a kind, and
+  how fed, played with and rested it is, how grown, and its tricks),
   its ship (model, name, where it's docked or flying, fuel and cargo), the
   events it took part in (and how much it helped), its achievements, its
   lottery tickets for the week's draw, its best score and how many games it
@@ -299,8 +300,30 @@ which, like any web host, sees your IP address; see the
   was made and last seen, and whether an admin muted or banned it. There is
   no password and no email. If an admin bans you, a salted hash of your IP
   address is kept for 7 days. Trade offers, coin-flip challenges, crew
-  invitations and duel challenges are kept only in the server's memory,
-  until they are answered or run out.
+  invitations, duel challenges, and partnership, adoption and ring proposals
+  are kept only in the server's memory, until they are answered or run out.
+- The residents (the game's characters who aren't players) remember your
+  character: for each resident it has met, the server keeps how fond the
+  resident is of it (a number), how many times they talked, the gifts and
+  favours, when they first and last met, which topics it has asked about,
+  and the favour it's doing. Nothing you type to a resident is kept beyond
+  that: a question is only matched to a topic.
+- Families: a partnership keeps the two characters, whether they are
+  partners, engaged or married, since when, and, when one ends, when and
+  who ended it (so the other can be told, and for a short wait before a new
+  one). An adopted child is kept with its parents: its name, the voice it
+  speaks in, how it's growing and cared for. Others see your partner and the
+  child with you when they look at you.
+- Weddings: the couple, the hall, the kind of ceremony, the time, what was
+  paid and given back, the guests invited, their answers and who came.
+  Afterwards the memory of the day is kept: who came, the flowers and
+  cheers, and **the vows the two wrote**. Vows are asked for as words to be
+  kept (the game says so when it asks), and only the couple and the guests
+  who came can read them back ("read memory"). A wedding's news (the two
+  names and the hall) is announced to everyone online, and residents may
+  mention it for a week. A coming wedding (the two names, the hall, the
+  time) is in the wedding schedule, which any player can read; an
+  invitation is told only to the guest.
 - Moving your character to another computer: the server keeps only a keyed
   hash of the transfer code, for 10 minutes or until it is used. After a
   move, the hash of the old computer's secret is kept so that computer can be
@@ -316,7 +339,9 @@ which, like any web host, sees your IP address; see the
   and rank, where it is, what you say and do, what it wears, its pet, its
   public progress (level, what it mined and harvested, its achievements, and
   its place on the leaderboards: credits, level, ore, crops, the daily
-  streak and casino winnings), its crew and its description. Big casino
+  streak, casino winnings and duels won), its crew, its partner, its title
+  and its description; the residents may mention the richest player, the
+  top miner, the leading crew and recent weddings. Big casino
   wins, the lottery's winner, new arcade high scores (the tables show
   everyone's best), how far players got in the hunt (and its board) and some
   achievements are announced to everyone online. Admins are left off the
