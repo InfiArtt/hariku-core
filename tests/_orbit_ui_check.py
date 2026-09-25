@@ -445,7 +445,10 @@ press_key(window.txt_command, wx.WXK_ESCAPE, hook=True)
 assert pump(lambda: not window.IsShown()), "Escape did not hide the window"
 assert pump(lambda: ambiences[-1] == (None, None)), ambiences[-3:]
 assert main._client.online()
-assert any(line.startswith("Orbit stays connected.") for line in spoken), spoken[-3:]
+# The hint waits its turn: Orbit says one line after another, and the answer
+# to "who" from Aruna may still be being said.
+assert pump(lambda: any(line.startswith("Orbit stays connected.") for line in spoken), 10), \
+    spoken[-3:]
 print("OK escape")
 
 # --------------------------------------------------------------------------- #
