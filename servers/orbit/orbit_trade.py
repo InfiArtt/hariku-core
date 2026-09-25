@@ -167,16 +167,25 @@ class TradeMixin:
                    extra={"actor": session.name, "ask": True, "sound": "offer"})
         self._info(session, "offer_sent", name=target.name, give=self._side_text(give), get=self._side_text(get))
 
+    def _asks(self, session):
+        """What waits for `session`'s yes or no, newest last: [(when, accept, decline)]."""
+        waiting = []
+        for table, accept, decline in ((self.offers, self.accept_offer, self._decline_offer),
+                                       (self.challenges, self.accept_challenge, self.decline_challenge),
+                                       (self.crew_invites, self.accept_crew_invite, self.decline_crew_invite)):
+            entry = table.get(session.key)
+            if entry:
+                waiting.append((entry["at"], accept, decline))
+        waiting.sort(key=lambda w: w[0])
+        return waiting
+
     def accept_pending(self, session):
-        """ "accept" with no number: the newest offer or challenge waiting for you."""
-        offer = self.offers.get(session.key)
-        challenge = self.challenges.get(session.key)
-        if offer and (not challenge or offer["at"] >= challenge["at"]):
-            self.accept_offer(session)
-            return True
-        if challenge:
-            return self.accept_challenge(session)
-        return False
+        """ "accept" with no number: the newest offer, challenge or invitation waiting for you."""
+        waiting = self._asks(session)
+        if not waiting:
+            return False
+        done = waiting[-1][1](session)
+        return True if done is None else done
 
     def accept_offer(self, session):
         offer = self.offers.pop(session.key, None)
@@ -219,16 +228,20 @@ class TradeMixin:
         return True
 
     def cmd_decline(self, session, message):
-        offer = self.offers.pop(session.key, None)
-        if offer is not None:
-            other = self.sessions.get(offer["from"])
-            if other is not None:
-                self._send(other, "system", "offer_declined", name=session.name)
-            self._info(session, "offer_you_declined", name=offer["from_name"])
-            return
-        if self.decline_challenge(session):
+        waiting = self._asks(session)
+        if waiting and waiting[-1][2](session):
             return
         self._error(session, "nothing_to_decline")
+
+    def _decline_offer(self, session):
+        offer = self.offers.pop(session.key, None)
+        if offer is None:
+            return False
+        other = self.sessions.get(offer["from"])
+        if other is not None:
+            self._send(other, "system", "offer_declined", name=session.name)
+        self._info(session, "offer_you_declined", name=offer["from_name"])
+        return True
 
     def cmd_cancel_offer(self, session, message):
         for key, offer in list(self.offers.items()):

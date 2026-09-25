@@ -56,6 +56,7 @@ from orbit_econ import EconomyMixin
 from orbit_events import EventsMixin
 from orbit_hunt import HuntMixin
 from orbit_arcade import ArcadeMixin, client_version
+from orbit_crews import CrewsMixin
 from orbit_items import ItemsMixin
 from orbit_lang import pick
 from orbit_local import LocalMixin
@@ -139,11 +140,11 @@ class Session:
 
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-          TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, AdminMixin)
+          TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, AdminMixin):
+           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -171,6 +172,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.init_events()
         self.market.event_factor = self.event_price_factor
         self.init_hunt()
+        self.init_crews()
 
     # ------------------------------------------------------------------ helpers
 
@@ -465,6 +467,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.leave_casino(session)
         self.arcade_finish(session, "left")
         self.forget_offers(session)
+        self.forget_crew_invites(session)
         self.sessions.pop(session.key, None)
         self._save(session)
         if not self._loc(session.char).get("private") and not session.invisible:
@@ -680,6 +683,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
     def cmd_whisper(self, session, message):
         name = self._arg(message, "to", 40)
         target = self._find_session(name) if name else None
+        if target is None and orbit_safety.name_key(name) in ("crew", "kru") and self.crew_of(session.char)[0]:
+            self.cmd_crew_say(session, message)             # "tell crew ..." / "bisik kru ...": the crew
+            return
         if target is None or (target.invisible and not self.is_admin(session)):
             self._error(session, "no_player", name=name or "?")
             return
@@ -961,6 +967,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                      "papan", "skor", "score", "scores"),
         "events": ("events", "event", "acara", "peristiwa", "pesta", "party", "parties"),
         "hunt": ("hunt", "perburuan", "berburu", "riddles", "teka-teki", "tekateki", "nada", "chord"),
+        "crews": ("crews", "crew", "kru", "awak", "team", "tim", "guild", "clan"),
         "arcade": ("arcade", "arkade", "games", "permainan", "tokens", "token", "tickets", "prizes", "hadiah",
                    "pixel pier", "dermaga piksel", "high scores", "skor tertinggi"),
         "admin": ("admin",),
@@ -1006,6 +1013,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_ships(now)
         self.tick_events(now)
         self.tick_hunt(now)
+        self.tick_crews(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):

@@ -89,6 +89,7 @@ class WorkMixin:
         amount = int(round(amount * self.xp_factor()))
         before = self.level_of(int(char.get("xp") or 0))
         char["xp"] = int(char.get("xp") or 0) + amount
+        self.crew_points(char, amount)
         after = self.level_of(char["xp"])
         if after > before:
             self._send(session, "paid", "level_up", level=after, rank=self.rank_name(char),

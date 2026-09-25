@@ -121,6 +121,14 @@ PHRASEBOOK = [
     ("berhenti main", "id", "stop_game"), ("stop game", "en", "stop_game"), ("skor arkade", "id", "high_scores"),
     ("arcade scores", "en", "high_scores"), ("high scores meteor", "en", "leaderboard"),
     ("beli 10 token", "id", "buy"), ("buy 5 tokens", "en", "buy"),
+    # crews
+    ("kru", "id", "crew"), ("crew", "en", "crew"), ("buat kru Bintang", "id", "crew_create"),
+    ("crew create Bintang", "en", "crew_create"), ("kru undang Budi", "id", "crew_invite"),
+    ("undang Budi ke kru", "id", "crew_invite"), ("invite Budi to the crew", "en", "crew_invite"),
+    ("kru bilang halo", "id", "crew_say"), ("crew say hi all", "en", "crew_say"), ("tell crew hello", "en", "whisper"),
+    ("keluar kru", "id", "crew_leave"), ("leave crew", "en", "crew_leave"), ("kru keluarkan Budi", "id", "crew_kick"),
+    ("jadikan kapten Budi", "id", "crew_captain"), ("moto kru ke bintang", "id", "crew_motto"),
+    ("papan kru", "id", "crews"), ("crews", "en", "crews"), ("bubarkan kru Bintang", "id", "admin"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

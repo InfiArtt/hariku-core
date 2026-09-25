@@ -215,6 +215,26 @@ VERBS = [
     (("skor", "arkade"), "high_scores"), (("rekor", "arkade"), "high_scores"),
     (("papan", "skor", "arkade"), "high_scores"), (("skor", "tertinggi"), "high_scores"),
     (("arcade", "scores"), "high_scores"), (("arcade", "high", "scores"), "high_scores"),
+    # crews
+    (("kru",), "crew"), (("crew",), "crew"), (("my", "crew"), "crew"), (("kruku",), "crew"),
+    (("info", "kru"), "crew"), (("crew", "info"), "crew"),
+    (("buat", "kru"), "crew_create"), (("bentuk", "kru"), "crew_create"), (("dirikan", "kru"), "crew_create"),
+    (("crew", "create"), "crew_create"), (("create", "crew"), "crew_create"), (("found", "a", "crew"), "crew_create"),
+    (("start", "a", "crew"), "crew_create"), (("kru", "buat"), "crew_create"),
+    (("undang", "ke", "kru"), "crew_invite"), (("kru", "undang"), "crew_invite"), (("crew", "invite"), "crew_invite"),
+    (("invite", "to", "crew"), "crew_invite"), (("ajak", "ke", "kru"), "crew_invite"),
+    (("kru", "bilang"), "crew_say"), (("bilang", "ke", "kru"), "crew_say"), (("bilang", "kru"), "crew_say"),
+    (("crew", "say"), "crew_say"), (("say", "to", "crew"), "crew_say"), (("cs",), "crew_say"),
+    (("keluar", "kru"), "crew_leave"), (("keluar", "dari", "kru"), "crew_leave"), (("kru", "keluar"), "crew_leave"),
+    (("crew", "leave"), "crew_leave"), (("leave", "crew"), "crew_leave"), (("leave", "the", "crew"), "crew_leave"),
+    (("keluarkan", "dari", "kru"), "crew_kick"), (("kru", "keluarkan"), "crew_kick"), (("crew", "kick"), "crew_kick"),
+    (("crew", "remove"), "crew_kick"), (("kick", "from", "crew"), "crew_kick"),
+    (("jadikan", "kapten"), "crew_captain"), (("kru", "kapten"), "crew_captain"),
+    (("crew", "captain"), "crew_captain"), (("make", "captain"), "crew_captain"),
+    (("moto", "kru"), "crew_motto"), (("kru", "moto"), "crew_motto"), (("crew", "motto"), "crew_motto"),
+    (("daftar", "kru"), "crews"), (("papan", "kru"), "crews"), (("crews",), "crews"), (("crew", "board"), "crews"),
+    (("top", "crews"), "crews"), (("peringkat", "kru"), "crews"),
+    (("bubarkan", "kru"), "crew_disband"), (("disband", "crew"), "crew_disband"),
     # trading (and anything waiting for a yes)
     (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
     (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
@@ -259,7 +279,7 @@ VERBS.sort(key=lambda entry: -len(entry[0]))
 
 ADMIN_OPS = {"grant", "take_credits", "give_item", "economy", "set_price", "reset_streak", "goto",
              "invisible", "transfers", "revoke", "transfer_for", "admin_log", "event_start", "event_stop",
-             "event_schedule", "hunt_status", "new_season", "release_hint", "hunt_test"}
+             "event_schedule", "hunt_status", "new_season", "release_hint", "hunt_test", "crew_disband"}
 BOARD_WORDS = {"kancil", "shuttle", "pesawat", "ulang-alik"}
 _ALL_WORDS = {"all", "semua", "semuanya", "everything"}
 
@@ -356,9 +376,11 @@ def parse(text, lang="en", find_direction=None):
         name, _more = _name_and_rest(text, tokens, used)
         return {"c": "friends", "op": "add" if meaning == "friend_add" else "remove", "to": name}
     if meaning in ("invite", "uninvite", "visit"):
-        name, _more = _name_and_rest(text, tokens, used)
+        name, more = _name_and_rest(text, tokens, used)
         if meaning == "visit":
             return {"c": "visit", "to": name}
+        if meaning == "invite" and {"kru", "crew", "kruku"} & set(more.lower().split()):
+            return {"c": "crew_invite", "to": name}          # "undang Budi ke kru"
         return {"c": "invite", "op": "remove" if meaning == "uninvite" else "add", "to": name}
     if meaning == "pat":
         return {"c": "pet", "op": "pat"}
@@ -422,8 +444,13 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "play", "a": rest, "raw": text}       # "main street" is a place, not a game
     if meaning == "high_scores":
         return {"c": "high_scores", "a": rest}
-    if meaning in ("arcade", "stop_game"):
+    if meaning in ("arcade", "stop_game", "crew", "crew_leave", "crews"):
         return {"c": meaning}
+    if meaning in ("crew_create", "crew_say", "crew_motto"):
+        return {"c": meaning, "a": rest}
+    if meaning in ("crew_invite", "crew_kick", "crew_captain"):
+        name, _more = _name_and_rest(text, tokens, used)
+        return {"c": meaning, "to": name}
     if meaning == "embark":
         name, _more = _name_and_rest(text, tokens, used)
         return {"c": "embark", "to": name} if name else {"c": "embark"}
@@ -454,7 +481,7 @@ def _admin(op, text, tokens, used):
         if numbers:
             message["n"] = numbers[0]
         return message
-    if op in ("goto", "event_start", "event_stop", "event_schedule"):
+    if op in ("goto", "event_start", "event_stop", "event_schedule", "crew_disband"):
         message["a"] = _rest(text, tokens, used)
         return message
     if op == "set_price":

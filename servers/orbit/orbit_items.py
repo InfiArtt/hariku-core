@@ -152,6 +152,9 @@ class ItemsMixin:
         for comp in self.store.companions_of(char["id"]):
             kind = self.world.things.get(comp["kind"], {}).get("effects", {}).get("pet", {})
             lines.append(self.render(lang, "look_pet", pet=comp["name"], species=kind.get("kind", comp["kind"])))
+        crew = self.crew_line(lang, char)
+        if crew:
+            lines.append(crew)
         return lines
 
     def cabin_lines(self, session):

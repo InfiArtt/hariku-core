@@ -75,6 +75,8 @@ class ProgressMixin:
             return 1 if stats.get("capsule") else 0
         if stat == "worlds":
             return len({self.world.world_of(lid) for lid in stats.get("map") or []} & set(self.world.worlds))
+        if stat == "crew":
+            return 1 if self.store.crew_of(char["id"]) else 0
         if stat == "ship":
             return 1 if stats.get("ship") else 0
         return int(stats.get(stat) or 0)

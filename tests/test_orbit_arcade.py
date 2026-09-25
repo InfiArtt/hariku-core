@@ -412,7 +412,7 @@ def test_a_version_5_database_gets_the_arcade_table(tmp_path, clock, monkeypatch
     assert not db.execute("SELECT name FROM sqlite_master WHERE name = 'arcade_scores'").fetchall()
     db.close()
     store = orbit_store.Store(path, clock=clock, iterations=1000, durable=False)
-    assert store.version() == orbit_store.SCHEMA_VERSION == 6 and store.migrated_from == 5
+    assert store.version() == orbit_store.SCHEMA_VERSION and store.migrated_from == 5
     quila = store.by_name("quilafly")
     assert quila["credits"] == 1234
     store.save_arcade_score("echo", quila["id"], 9, 1.0)

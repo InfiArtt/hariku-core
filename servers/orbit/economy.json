@@ -1861,6 +1861,14 @@
         "en": "set a new best on one of the arcade's tables",
         "id": "cetak rekor baru di salah satu papan skor arkade"
       }
+    },
+    "crewmate": {
+      "en": "Crewmate",
+      "id": "Awak Kru",
+      "stat": "crew",
+      "at": 1,
+      "credits": 25,
+      "desc": {"en": "join or found a crew", "id": "bergabung dengan atau mendirikan kru"}
     }
   },
   "travel": {
@@ -2049,5 +2057,16 @@
         "tickets": {"from": 0, "rate": 0.5, "max": 20}
       }
     }
+  },
+  "crews": {
+    "_note": "Crews (orbit_crews.py): founding costs create_price credits from create_level; names are name_min to name_max characters; invitations wait invite_seconds; every XP a member earns is a point.",
+    "create_price": 500,
+    "create_level": 3,
+    "max_members": 12,
+    "name_min": 3,
+    "name_max": 24,
+    "invite_seconds": 120,
+    "motto_max": 80,
+    "board_size": 5
   }
 }

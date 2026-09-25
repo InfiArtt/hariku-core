@@ -55,7 +55,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -229,6 +229,24 @@ CREATE TABLE IF NOT EXISTS arcade_scores (
 CREATE INDEX IF NOT EXISTS arcade_scores_best ON arcade_scores (game, best DESC, best_at);
 """
 
+V7_TABLES = """
+CREATE TABLE IF NOT EXISTS crews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    name_key TEXT NOT NULL UNIQUE,
+    motto TEXT NOT NULL DEFAULT '',
+    founded REAL NOT NULL DEFAULT 0,
+    points INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS crew_members (
+    char_id INTEGER PRIMARY KEY,
+    crew_id INTEGER NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member',
+    joined REAL NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS crew_members_crew ON crew_members (crew_id);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
 FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
@@ -304,6 +322,8 @@ class Store:
                 self._migrate_5()
             if version < 6:
                 self._migrate_6()
+            if version < 7:
+                self._migrate_7()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -372,6 +392,11 @@ class Store:
 
     def _migrate_6(self):
         for statement in V6_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+
+    def _migrate_7(self):
+        for statement in V7_TABLES.split(";"):
             if statement.strip():
                 self.db.execute(statement)
 
@@ -821,6 +846,68 @@ class Store:
             "WHERE a.game = ? AND a.best > 0 AND c.banned = 0 ORDER BY a.best DESC, a.best_at, c.name_key LIMIT ?",
             (game, int(limit))).fetchall()
         return [(row["name"], int(row["best"])) for row in rows]
+
+    # --- crews ------------------------------------------------------------------------------
+
+    def create_crew(self, name, name_key, captain_id, when):
+        with self.transaction():
+            cur = self.db.execute("INSERT INTO crews (name, name_key, founded) VALUES (?, ?, ?)",
+                                  (name, name_key, float(when)))
+            self.add_crew_member(cur.lastrowid, captain_id, "captain", when)
+        return cur.lastrowid
+
+    def crew_by_id(self, crew_id):
+        row = self.db.execute("SELECT * FROM crews WHERE id = ?", (crew_id,)).fetchone()
+        return dict(row) if row else None
+
+    def crew_by_key(self, name_key):
+        row = self.db.execute("SELECT * FROM crews WHERE name_key = ?", (name_key,)).fetchone()
+        return dict(row) if row else None
+
+    def crew_of(self, char_id):
+        """(the crew, the character's role in it), or None."""
+        row = self.db.execute("SELECT c.*, m.role FROM crew_members m JOIN crews c ON c.id = m.crew_id "
+                              "WHERE m.char_id = ?", (char_id,)).fetchone()
+        if row is None:
+            return None
+        crew = dict(row)
+        return crew, crew.pop("role")
+
+    def crew_members(self, crew_id):
+        """[{name, char_id, role, joined}], the captain first, then by when they joined."""
+        rows = self.db.execute(
+            "SELECT c.name, m.char_id, m.role, m.joined FROM crew_members m JOIN characters c ON c.id = m.char_id "
+            "WHERE m.crew_id = ? ORDER BY m.role = 'captain' DESC, m.joined, m.char_id", (crew_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+    def add_crew_member(self, crew_id, char_id, role, when):
+        self.db.execute("INSERT INTO crew_members (char_id, crew_id, role, joined) VALUES (?, ?, ?, ?)",
+                        (char_id, crew_id, role, float(when)))
+
+    def remove_crew_member(self, char_id):
+        self.db.execute("DELETE FROM crew_members WHERE char_id = ?", (char_id,))
+
+    def set_crew_role(self, char_id, role):
+        self.db.execute("UPDATE crew_members SET role = ? WHERE char_id = ?", (role, char_id))
+
+    def set_crew_motto(self, crew_id, motto):
+        self.db.execute("UPDATE crews SET motto = ? WHERE id = ?", (motto, crew_id))
+
+    def add_crew_points(self, crew_id, points):
+        self.db.execute("UPDATE crews SET points = points + ? WHERE id = ?", (int(points), crew_id))
+
+    def delete_crew(self, crew_id):
+        """A crew that ended (its last member left, or an admin disbanded it)."""
+        with self.transaction():
+            self.db.execute("DELETE FROM crew_members WHERE crew_id = ?", (crew_id,))
+            self.db.execute("DELETE FROM crews WHERE id = ?", (crew_id,))
+
+    def top_crews(self, limit=5):
+        rows = self.db.execute(
+            "SELECT c.name, c.points, COUNT(m.char_id) AS members FROM crews c "
+            "JOIN crew_members m ON m.crew_id = c.id GROUP BY c.id "
+            "ORDER BY c.points DESC, members DESC, c.founded LIMIT ?", (int(limit),)).fetchall()
+        return [dict(row) for row in rows]
 
     # --- bans by address (only a hash of it is kept) ------------------------------------
 
