@@ -1078,7 +1078,7 @@ def teardown():
 
 A handler that raises makes Aruna say "That command didn't work" (and it is logged). Everything your handler and `confirm()` speak with `core.speech.speak()` comes in Hariku Voice, like an action's answer.
 
-The Timer & Alarm extension (`extensions/timer_alarm`) is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead.
+The Timer & Alarm extension (`extensions/timer_alarm`) is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead. The Calculator & Converter extension (`extensions/calculator`) uses a matcher with no patterns where the core has one ("25 x 4", "5 km ke mil", "berapa 25 kali 4"), and a short list of lead-word patterns ("berapa {text}", "hitung {text}") on cores 2.9 and 2.10, so it runs on both. Keep patterns few and their words distinctive: every pattern's words also go into Voice Control's vocabulary prompt, where short words push out other commands' names.
 
 **Answers told in steps** *(core 2.9)*. Aruna's Last result collects what is spoken within a moment of the answer's last line. An answer with pauses between its steps (World Trip: the captain's announcement, the engines, the arrival, a phrase in another voice) keeps it open:
 
