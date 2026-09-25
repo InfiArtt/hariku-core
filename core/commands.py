@@ -21,7 +21,9 @@ spoken command. No wx here; the window is ui/command_bar.py.
                                      Aruna stays open and shows their answer
     add_intent(id, [...], handler) -> commands with content (core 2.9): "catat
                                      {text}", "timer {text}"; handler(request)
-                                     returns a Reply (say, confirm, wait, then)
+                                     returns a Reply (say, confirm, wait, then);
+                                     with matcher= (core 2.11) also sentences
+                                     no pattern has words for ("25 x 4")
     hold_answer(seconds)          -> an answer told in steps stays in Last
                                      result across its pauses (core 2.9)
     show_answer(text)             -> a line in Last result that isn't spoken
@@ -540,6 +542,9 @@ def answer(text):
 
 INTENT_SCORE = 0.80     # the pattern's own words must match this well on average
 SLOT = "{text}"
+# add_intent(..., matcher=) exists (core 2.11): extensions check this flag.
+INTENT_MATCHERS = True
+MATCHER_MAX_CHARS = 300  # longer texts aren't shown to matchers
 _TOKEN_RE = re.compile(r"\S+")
 _SLOT_EDGE = " \t:;,.-–—\"'“”"
 
@@ -624,16 +629,19 @@ class _Pattern:
 class Intent:
     """A command with content, from add_intent()."""
 
-    def __init__(self, intent_id, patterns, handler, title=None):
+    def __init__(self, intent_id, patterns, handler, title=None, matcher=None):
         if not callable(handler):
             raise TypeError("handler must be callable")
+        if matcher is not None and not callable(matcher):
+            raise TypeError("matcher must be callable or None")
         if isinstance(patterns, str):
             patterns = [patterns]
         self.id = str(intent_id)
-        self.patterns = [_Pattern(p) for p in patterns]
-        if not self.patterns:
+        self.patterns = [_Pattern(p) for p in patterns or ()]
+        if not self.patterns and matcher is None:
             raise ValueError("an intent needs at least one pattern")
         self.handler = handler
+        self.matcher = matcher
         self.title = title or self.id
 
     def __repr__(self):
@@ -653,15 +661,25 @@ class IntentMatch:
         return f"IntentMatch({self.intent.id!r}, {self.text!r}, {self.score:.2f})"
 
 
-def add_intent(intent_id, patterns, handler, title=None):
+def add_intent(intent_id, patterns, handler, title=None, matcher=None):
     """Teach Aruna a command with content (core 2.9): `patterns` are phrases
     with one {text} in any language, such as "catat {text}", "note {text}" or
     "tambahkan {text} ke daftar belanja". When a sentence matches one, Aruna
     calls handler(request) (a Request; request.text is what {text} held) on
     the UI thread, and does what its Reply says. Keep it quick: start slow
     work on a thread and return Reply(wait=True). A new call with the same id
-    replaces the intent. Call it in register(); remove_intent() in teardown()."""
-    intent = Intent(intent_id, patterns, handler, title)
+    replaces the intent. Call it in register(); remove_intent() in teardown().
+
+    `matcher` (core 2.11, optional) is for sentences that have no fixed words
+    to make a pattern of, such as "25 x 4" or "2 feet in inches":
+    matcher(text) gets every sentence none of the intent's patterns matched
+    and returns what the handler's request.text should hold (usually the
+    text itself) when the sentence is for this intent, else None. It runs on
+    the UI thread for everything typed or said to Aruna, so it must be quick
+    and strict: no network, no files, and None for anything that isn't
+    clearly its own. A sentence it takes is asked last, after every pattern
+    of every intent. `patterns` may be empty when there is a matcher."""
+    intent = Intent(intent_id, patterns, handler, title, matcher)
     with _lock:
         _intents.pop(intent.id, None)
         _intents[intent.id] = intent
@@ -734,9 +752,28 @@ def _match_pattern(text, tokens, pattern):
     return best
 
 
+def _matched_by(intent, text):
+    """What an intent's own matcher (core 2.11) takes from `text`, or None.
+    A matcher that fails is logged and counts as None."""
+    matcher = getattr(intent, "matcher", None)
+    if matcher is None or len(text) > MATCHER_MAX_CHARS:
+        return None
+    try:
+        slot = matcher(text)
+    except Exception:
+        logger.exception(f"Command bar: the matcher of {intent.id} failed")
+        return None
+    if slot is True:
+        slot = text
+    if not isinstance(slot, str) or not slot.strip():
+        return None
+    return slot.strip()
+
+
 def match_intents(text, candidates=None):
     """The intents `text` matches, most specific first (the pattern with
-    more words of its own), then the best matched: [IntentMatch]."""
+    more words of its own), then the best matched: [IntentMatch]. Sentences
+    an intent's matcher took (core 2.11) come last, with size 0."""
     text = " ".join(str(text or "").split())
     tokens = _tokens(text)
     if not tokens:
@@ -748,6 +785,10 @@ def match_intents(text, candidates=None):
             m = _match_pattern(text, tokens, pattern)
             if m is not None and (best is None or (pattern.size, m[0]) > (best.size, best.score)):
                 best = IntentMatch(intent, m[1], m[0], pattern.size)
+        if best is None:
+            slot = _matched_by(intent, text)
+            if slot is not None:
+                best = IntentMatch(intent, slot, 1.0, 0)
         if best is not None:
             found.append(best)
     found.sort(key=lambda m: (-m.size, -m.score))
