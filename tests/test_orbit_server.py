@@ -693,12 +693,14 @@ def test_talking_in_each_listeners_language(make_game):
     sari = join(game, "Sari", lang="en")
     said = cmd(game, rafli, "say", a="halo Sari, apa kabar?")
     assert said == {"t": "ev", "k": "said", "text": "Kamu bilang: halo Sari, apa kabar?",
-                    "brief": "Terkirim."}
-    assert sari.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Rafli",
+                    "brief": "Terkirim.", "words": "halo Sari, apa kabar?"}
+    assert sari.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Rafli", "words": "halo Sari, apa kabar?",
                                       "text": "Rafli says: halo Sari, apa kabar?"}
     cmd(game, sari, "whisper", to="rafli", a="meet me on the deck")
     assert rafli.events("whisper")[-1]["text"] == "Sari berbisik padamu: meet me on the deck"
     assert sari.last()["brief"] == "Whispered to Rafli."
+    assert (sari.last()["words"], sari.last()["to"]) == ("meet me on the deck", "Rafli")
+    assert rafli.events("whisper")[-1]["words"] == "meet me on the deck"
     cmd(game, sari, "whisper", to="Sari", a="hmm")
     assert sari.last()["k"] == "error"
     cmd(game, rafli, "shout", a="ada yang mau ke Bulan?")
@@ -925,9 +927,10 @@ def test_missions_from_the_board(make_game, clock):
     if mission["to"] != mission["from"]:
         assert cmd(game, rafli, "complete")["text"].startswith("Deliver it to")
     walk(game, rafli, mission["to"])
+    before = game.sessions["rafli"].char["credits"]       # (walking far earns an achievement's credits)
     done = cmd(game, rafli, "complete")
     assert done["k"] == "paid" and f"You're paid {mission['reward']} credits" in done["text"]
-    assert game.sessions["rafli"].char["credits"] == 100 + mission["reward"]
+    assert game.sessions["rafli"].char["credits"] == before + mission["reward"]
     assert game.sessions["rafli"].char["xp"] == 25
     assert "(done)" in cmd(game, rafli, "missions")["text"]
     assert cmd(game, rafli, "accept", n=1)["text"] == "You've done that one today. Try another."

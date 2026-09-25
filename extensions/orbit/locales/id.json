@@ -85,7 +85,7 @@
         "ignored_none": "Kamu tidak sedang mengabaikan siapa pun.",
 
         "help": "Bantuan Orbit. Berjalan dengan u, s, t, b, tl, bl, tg, bd, naik, dan turun; lihat menyebut jalan keluar, dan arah ke kantin memberi langkahnya. Bantuan dari stasiun: bantuan bergerak, bantuan ngobrol, bantuan kerja, bantuan uang, bantuan toko, bantuan kasino, bantuan kemajuan. Orbit sendiri: bantuan pengaturan, sambungkan, keluar (keluar dari Orbit), status, ulangi (pesan terakhir sekali lagi). Lewat Aruna, awali dengan orbit: orbit utara, orbit bilang halo.",
-        "help_settings": "Pengaturan Orbit, diketik di dalam game: suara pemain mati atau nyala (suara masing-masing pemain), bacakan pesan mati atau nyala, suasana mati atau nyala, volume suasana 30, suara efek mati atau nyala, volume efek 60, suara orang lain mati, abaikan Budi, dengar lagi Budi, daftar abaikan, suaraku 1 sampai 10 atau suaraku acak (suara yang orang lain dengar untukmu), pengaturan (halaman Pengaturan). Menutup jendela membuatmu tetap tersambung di latar belakang; keluar untuk keluar dari Orbit.",
+        "help_settings": "Pengaturan Orbit, diketik di dalam game: suara pemain mati atau nyala (suara masing-masing pemain), kata-kataku mati atau nyala (kata-katamu dengan suara karaktermu), nama pemain mati atau nyala (nama pemain sebelum kata-katanya), bacakan pesan mati atau nyala, suasana mati atau nyala, volume suasana 30, suara efek mati atau nyala, volume efek 60, suara orang lain mati, abaikan Budi, dengar lagi Budi, daftar abaikan, suaraku 1 sampai 10 atau suaraku acak (suara yang orang lain dengar untukmu), pengaturan (halaman Pengaturan). Menutup jendela membuatmu tetap tersambung di latar belakang; keluar untuk keluar dari Orbit.",
 
         "window_title": "Orbit",
         "lbl_messages": "Pesan:",
@@ -134,7 +134,19 @@
         "note_character": "Karaktermu di server ini: {name}, {job}. Kotak nama dan pekerjaan hanya dipakai saat pertama kali masuk ke sebuah server.",
         "note_first": "Nama (3 sampai 20 huruf dan angka) dan pekerjaan dipakai saat pertama kali kamu masuk; setelah itu server mengingat karaktermu.",
         "note_quick": "Di dalam game kamu juga bisa mengetik: suara pemain mati, bacakan pesan mati, suasana mati, suara efek mati, volume efek 50, abaikan Budi, dengar lagi Budi, suaraku 3, pengaturan, status, keluar.",
-        "note_voices": "Kata-kata tiap pemain dibacakan oleh salah satu suara Hariku Voice dalam bahasamu: yang dia pilih (suaraku 1 sampai 10: nomor yang sama selalu suara yang sama di komputer ini) atau yang dipilih dari namanya. Kalau suaranya kurang dari dua, semuanya dibacakan suaramu yang biasa. Edge Voices dari Toko Ekstensi menambah dua suara Indonesia dan banyak suara Inggris (teksnya dikirim ke Microsoft).",
-        "note_privacy": "Orbit hanya tersambung saat kamu membukanya, menekan Sambungkan, atau memberinya perintah (atau saat Hariku menyala, kalau kamu minta). Server menyimpan karaktermu (nama, pekerjaan, deskripsi, kredit, barang, kemajuan) dan hash dari sebuah rahasia yang dibuat di komputer ini (tanpa kata sandi, tanpa email). Obrolan diteruskan ke pemain yang mendengarnya dan tidak disimpan. Pengaturan dan daftar pemain yang kamu abaikan tetap di komputer ini."
+        "note_voices": "Kata-kata tiap pemain dibacakan oleh salah satu suara Hariku Voice dalam bahasamu: yang dia pilih (suaraku 1 sampai 10: nomor yang sama selalu suara yang sama di komputer ini) atau yang dipilih dari namanya. Kata-katamu sendiri juga diucapkan dengan suaramu, dan nama pemain disebut dulu dengan suara Hariku Voice yang biasa (\"Budi:\"). Pesan-pesan stasiun dibacakan suara Hariku Voice yang biasa. Kalau suaranya kurang dari dua, semuanya dibacakan suaramu yang biasa. Edge Voices dari Toko Ekstensi menambah dua suara Indonesia dan banyak suara Inggris (teksnya dikirim ke Microsoft).",
+        "note_privacy": "Orbit hanya tersambung saat kamu membukanya, menekan Sambungkan, atau memberinya perintah (atau saat Hariku menyala, kalau kamu minta). Server menyimpan karaktermu (nama, pekerjaan, deskripsi, kredit, barang, kemajuan) dan hash dari sebuah rahasia yang dibuat di komputer ini (tanpa kata sandi, tanpa email). Obrolan diteruskan ke pemain yang mendengarnya dan tidak disimpan. Pengaturan dan daftar pemain yang kamu abaikan tetap di komputer ini.",
+
+        "line_say": "{name}:",
+        "line_whisper": "{name} berbisik:",
+        "line_shout": "{name} berteriak:",
+        "line_whispered": "Ke {name}:",
+        "voices_few": "Hariku Voice punya kurang dari dua suara bahasamu, jadi semua pemain terdengar sama. Agar tiap pemain punya suara sendiri, pasang Edge Voices atau Piper Voices dari Toko Ekstensi.",
+        "chk_speak_own": "U&capkan kata-kataku dengan suara karakterku",
+        "chk_speak_names": "Sebutkan nama &pembicara sebelum kata-katanya",
+        "set_speak_own_on": "Kata-katamu sendiri diucapkan dengan suara karaktermu.",
+        "set_speak_own_off": "Kata-katamu sendiri hanya dikonfirmasi.",
+        "set_speak_names_on": "Nama pemain disebut sebelum kata-katanya.",
+        "set_speak_names_off": "Hanya kata-kata pemain yang diucapkan, tanpa namanya."
     }
 }

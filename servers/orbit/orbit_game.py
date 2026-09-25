@@ -601,10 +601,15 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
 
     # --- talking --------------------------------------------------------------------
 
-    def _voice_extra(self, session):
-        extra = {"actor": session.name}
+    def _voice_extra(self, session, words=None, actor=True):
+        """The optional fields of a line someone says: who ("actor"), the voice
+        they chose, and the words alone (so a client can read the name in one
+        voice and the words in another)."""
+        extra = {"actor": session.name} if actor else {}
         if int(session.char.get("voice") or 0) > 0:
             extra["voice"] = int(session.char["voice"])
+        if words is not None:
+            extra["words"] = words
         return extra
 
     def cmd_say(self, session, message):
@@ -614,12 +619,13 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         room = self.room_of(session.char)
         others = self._in_room(room, exclude=(session,))
         for other in others:
-            self._send(other, "say", "say_other", extra=self._voice_extra(session), actor=session.name,
+            self._send(other, "say", "say_other", extra=self._voice_extra(session, words), actor=session.name,
                        words=words)
+        mine = self._voice_extra(session, words, actor=False)
         if [o for o in others if not o.invisible]:
-            self._send(session, "said", "say_self", brief="brief_said", words=words)
+            self._send(session, "said", "say_self", brief="brief_said", words=words, extra=mine)
         else:
-            self._send(session, "said", "say_alone", brief="brief_said_alone", words=words)
+            self._send(session, "said", "say_alone", brief="brief_said_alone", words=words, extra=mine)
 
     def cmd_whisper(self, session, message):
         name = self._arg(message, "to", 40)
@@ -636,10 +642,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         words = self._chat_text(session, self._arg(message))
         if words is None:
             return
-        self._send(target, "whisper", "whisper_other", extra=self._voice_extra(session),
+        self._send(target, "whisper", "whisper_other", extra=self._voice_extra(session, words),
                    actor=session.name, words=words)
         self._send(session, "whispered", "whisper_self", brief="brief_whispered", name=target.name,
-                   words=words)
+                   words=words, extra=dict(self._voice_extra(session, words, actor=False), to=target.name))
 
     def cmd_shout(self, session, message):
         if self._muted(session):
@@ -655,9 +661,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         words = self.filter.clean(text)
         for other in list(self.sessions.values()):
             if other is not session:
-                self._send(other, "shout", "shout_other", extra=self._voice_extra(session),
+                self._send(other, "shout", "shout_other", extra=self._voice_extra(session, words),
                            actor=session.name, words=words)
-        self._send(session, "shouted", "shout_self", brief="brief_shouted", words=words)
+        self._send(session, "shouted", "shout_self", brief="brief_shouted", words=words,
+                   extra=self._voice_extra(session, words, actor=False))
 
     def cmd_emote(self, session, message):
         emote = self.world.emotes.get(self._arg(message, "e", 20))

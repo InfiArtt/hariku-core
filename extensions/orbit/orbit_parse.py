@@ -196,6 +196,10 @@ _SETTINGS = sorted([
     (("suasana", "latar"), "ambience"),
     (("suara", "efek"), "sounds"), (("efek", "suara"), "sounds"), (("bunyi",), "sounds"),
     (("sounds",), "sounds"), (("sound", "effects"), "sounds"), (("effects",), "sounds"),
+    (("kata-kataku",), "speak_own"), (("kata", "kataku"), "speak_own"), (("suaraku", "sendiri"), "speak_own"),
+    (("my", "lines"), "speak_own"), (("own", "lines"), "speak_own"), (("my", "own", "voice"), "speak_own"),
+    (("nama", "pemain"), "speak_names"), (("sebut", "nama"), "speak_names"), (("names",), "speak_names"),
+    (("player", "names"), "speak_names"), (("speaker", "names"), "speak_names"),
     (("suara", "orang", "lain"), "other_sounds"), (("other", "sounds"), "other_sounds"),
     (("other", "players", "sounds"), "other_sounds"), (("others", "sounds"), "other_sounds"),
 ], key=lambda e: -len(e[0]))

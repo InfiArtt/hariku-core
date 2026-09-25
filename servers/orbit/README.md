@@ -494,8 +494,11 @@ action), `room`, `amb` (`vent`, `cantina`, `engine`, `garden`, `deck`,
 `dir` (the way you walked, or the side someone came from or left by), `via`
 (`lift`, `ladder`, `slide`, `airlock`, `door`), `codes` (the reactor's
 tones, 1 to 4), `sound` (a cue more specific than the kind's), `emote`
-(which gesture), `voice` (the voice number a speaker chose), `preview` (read
-this line in `voice`), `ask` (an invitation, an offer, a challenge: answer
+(which gesture), `voice` (the voice number a speaker chose; on your own
+lines, yours), `words` (on a line said, whispered or shouted, yours or
+another player's: the words alone, so a client can read the name in one
+voice and the words in the speaker's), `to` (who you whispered to),
+`preview` (read this line in `voice`), `ask` (an invitation, an offer, a challenge: answer
 with accept or decline), `transfer_code` and `expires`, `reels` (a slot
 machine's three symbols, left to right) and `outcome` (`win`, `lose`,
 `push`, `jackpot`: the client plays it after the dice land, the cards turn

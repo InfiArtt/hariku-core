@@ -356,7 +356,9 @@ def test_a_chosen_voice_goes_with_your_words(make_game):
     chosen = cmd(game, ani, "voice", a="3")
     assert chosen["voice"] == 3 and chosen["preview"] and chosen["text"].startswith("Beres: orang lain sekarang")
     cmd(game, ani, "say", a="halo")
-    assert budi.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Ani", "voice": 3, "text": "Ani says: halo"}
+    assert budi.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Ani", "voice": 3, "words": "halo",
+                                      "text": "Ani says: halo"}
+    assert ani.events("said")[-1]["voice"] == 3 and "actor" not in ani.events("said")[-1]
     cmd(game, ani, "whisper", to="Budi", a="psst")
     assert budi.events("whisper")[-1]["voice"] == 3
     assert cmd(game, ani, "voice", a="11")["text"] == "Pilih suara 1 sampai 10, atau acak."

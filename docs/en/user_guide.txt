@@ -828,13 +828,20 @@ From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
 siapa online", "orbit harian", "orbit panen", "orbit profil", "orbit status",
 "orbit keluar". The answer shows in Aruna's Last result.
 
-What you hear. What happens is read aloud as it comes, in your language.
-Other players' words are read in a voice of their own when Hariku Voice has
-at least two voices of your language (Edge Voices, from the Extension Store,
-adds two Indonesian voices): the voice they chose ("suaraku 3" or "my voice
+What you hear. What happens is read aloud as it comes, in your language,
+by Hariku Voice's usual voice (the screen reader only reads it when Hariku
+Voice can't speak). What players say comes in two voices: the name first,
+briefly, in the usual voice ("Budi:", "Budi berbisik:"), then the words in
+Budi's own voice. Each player has a voice of their own when Hariku Voice has
+at least two voices of your language (Edge Voices or Piper Voices, from the
+Extension Store, add more): the voice they chose ("suaraku 3" or "my voice
 3", 1 to 10; the same number is always the same voice on your computer) or
-one picked from their name. Your own actions are only confirmed briefly
-("Terkirim."), and the Messages list keeps the whole line. Sounds come from
+one picked from their name. Your own words are spoken in your own voice too
+(a whisper says who it's to first: "Ke Sari:"), and your gestures in the
+usual voice ("Kamu tersenyum."). With fewer than two voices, Orbit says so
+once and reads everyone in the usual voice. The Messages list keeps every
+whole line. Your own words are only turned into speech on your computer:
+nothing you say leaves it as sound, only as the text you typed. Sounds come from
 where things happen: your steps (metal, carpet, grass, stone, wood, rock...)
 on the side you walk to, someone arriving from the west on your left, the
 lift humming up, an airlock hissing, each gesture, coins, a harvest, the
@@ -845,7 +852,10 @@ Hariku speaks.
 
 Settings. In Preferences, Orbit, or typed in the game: speaking messages
 ("bacakan pesan mati" or "speech off"), the players' voices ("suara pemain
-mati" or "voices off"), the ambience ("suasana mati", "volume suasana 30"),
+mati" or "voices off"), your own words in your voice ("kata-kataku mati" or
+"my lines off": then they're only confirmed, "Terkirim."), the players'
+names before their words ("nama pemain mati" or "names off"), the ambience
+("suasana mati", "volume suasana 30"),
 the sounds ("suara efek mati", "volume efek 60") and other players' sounds
 ("suara orang lain mati"). Preferences also chooses what is read aloud
 (chat and gestures, whispers, shouts, arrivals and departures, work and

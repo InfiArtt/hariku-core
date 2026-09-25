@@ -62,6 +62,7 @@ TRIM_MESSAGES = 50
 MAX_LINE = 2000
 ARUNA_SECONDS = 8.0
 TALK_KINDS = ("say", "whisper", "shout")
+OWN_TALK_KINDS = ("said", "whispered", "shouted")
 JOBS = ("pilot", "engineer", "trader", "scientist", "security")
 LANGUAGES = ("id", "en")
 FAILURES = {"kicked": "fail_kicked", "replaced": "fail_replaced", "banned": "fail_banned"}
@@ -112,6 +113,7 @@ class OrbitClient:
         self.s = services
         self.clock = clock
         self.speaker = orbit_speech.Speaker(services, clock)
+        self.voices_hint_said = False     # "too few voices" is said once a session
         self.messages = []
         self.listeners = []
         self.conn = None
@@ -409,18 +411,60 @@ class OrbitClient:
         setting = READ_KINDS.get(kind)
         if setting and not aruna and not settings.get(setting, True) and (actor or kind != "emote"):
             return
-        line = str(message.get("brief") or text)
-        voice = None
-        if kind in TALK_KINDS and actor and actor != self.me and settings.get("voices", True):
-            voice = self.s.voice_for(actor, message.get("voice"))
-        elif message.get("preview") and settings.get("voices", True):
-            voice = self.s.voice_for(self.me or "", message.get("voice") or None)
-        if voice is not None and aruna:
-            self.s.show_answer(line)
+        parts = self._parts(message, text, settings, aruna)
         if delay:
-            self.s.call_later(delay, lambda: self.speaker.say(line, voice))
+            self.s.call_later(delay, lambda: self.speaker.say_parts(parts))
         else:
-            self.speaker.say(line, voice)
+            self.speaker.say_parts(parts)
+
+    def _parts(self, message, text, settings, aruna):
+        """What to say for an event, in parts: [(text, voice or None for the narrator)].
+        Another player's line: their name in the narrator's voice ("Budi:"), then
+        their words in their own voice. Your own line: your words in your voice
+        (a whisper says who to first). Without enough voices, or with the words
+        missing (an older server), the whole line in one voice."""
+        kind = message.get("k")
+        actor = message.get("actor")
+        line = str(message.get("brief") or text)
+        words = message.get("words")
+        words = words.strip() if isinstance(words, str) else ""
+        voices = settings.get("voices", True)
+        names = settings.get("speak_names", True)
+        if kind in TALK_KINDS and actor and actor != self.me:
+            voice = self.s.voice_for(actor, message.get("voice")) if voices else None
+            self._voices_hint(voices)
+            if voice is None:
+                return [(text, None)]
+            if aruna:
+                self.s.show_answer(text)
+            if not words:
+                return [(text, voice)]
+            name = [(_(f"line_{kind}", name=actor), None)] if names else []
+            return name + [(words, voice)]
+        if kind in OWN_TALK_KINDS and words and settings.get("speak_own", True):
+            if aruna:
+                self.s.show_answer(line)          # Aruna's Last result: "Sent."
+            voice = self.s.voice_for(self.me or "", message.get("voice") or None) if voices else None
+            self._voices_hint(voices)
+            to = message.get("to")
+            first = [(_("line_whispered", name=to), None)] if kind == "whispered" and to and names else []
+            return first + [(words, voice)]
+        if message.get("preview") and voices:
+            voice = self.s.voice_for(self.me or "", message.get("voice") or None)
+            if voice is not None:
+                return [(line, voice)]
+        return [(line, None)]
+
+    def _voices_hint(self, voices_on):
+        """Once a session: Hariku Voice has too few voices to give players their own."""
+        if not voices_on or self.voices_hint_said:
+            return
+        count = self.s.voice_count()
+        if count is not None and count < 2:
+            self.voices_hint_said = True
+            text = _("voices_few")
+            self.add_line(text)
+            self.speaker.say(text)
 
     # --- what the player asks --------------------------------------------------------
 

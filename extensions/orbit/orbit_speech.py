@@ -8,10 +8,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
-Who says what in Orbit: the narrator (Hariku Voice for commands, or the
-screen reader) for the station and your own actions, and a voice of their
-own for each other player, when Hariku Voice has several voices of your
-language.
+Who says what in Orbit: the narrator (Hariku Voice's own voice; the screen
+reader only when Hariku Voice can't speak) for the station and your own
+actions, and a character voice for each player, you included, when Hariku
+Voice has several voices of your language. A line can come in parts: the
+speaker's name in the narrator's voice ("Budi:"), then the words in Budi's.
 
 A player's voice is chosen from their name, so Sari always sounds like Sari
 (on this computer, with these voices): the voices of the language, sorted,
@@ -19,11 +20,12 @@ and the name's SHA-256 picks one. Your own Hariku Voice is left out when
 there are enough others. With fewer than two voices everyone is read by the
 narrator.
 
-Speaker says lines one after another: a player's voice (core.voice.preview,
-which would cut off whatever Hariku Voice was saying) only starts once the
-narrator is quiet, and the narrator waits for a player's voice to finish, so
-nobody talks over anybody. A voice that fails reads its line with the
-narrator instead. No wx; main.py's services do the speaking.
+Speaker says lines one after another, and the parts of a line together:
+a voice (core.voice.preview, which would cut off whatever Hariku Voice was
+saying) only starts once the one before is quiet, so nobody talks over
+anybody, and a busy room drops whole old lines, never half of one. A voice
+that fails reads its part with the narrator instead. No wx; main.py's
+services do the speaking.
 """
 
 import collections
@@ -65,6 +67,11 @@ def _pool(voices, exclude):
     if exclude and len(pool) > 2:
         pool = [v for v in pool if (v["provider"], v["id"]) != tuple(exclude)] or pool
     return pool
+
+
+def pool_size(voices, exclude=None):
+    """How many voices players are given voices from (pick_voice needs two)."""
+    return len(_pool(voices, exclude))
 
 
 def pick_voice(name, voices, exclude=None, number=None):
@@ -142,10 +149,11 @@ class VoiceBook:
 
 
 class Speaker:
-    """Says lines in order. `services` gives say(text) -> bool (the narrator;
-    True when Hariku Voice speaks it), speak_voice(text, voice, on_done) ->
-    bool (a player's voice; on_done(error) from any thread), voice_busy(),
-    call_later(seconds, fn) and call_after(fn, *args)."""
+    """Says lines in order. `services` gives narrator_voice() (Hariku Voice's
+    own voice, or None when it can't speak), say(text) -> bool (the fallback
+    narrator: True when Hariku Voice speaks it, False when the screen reader
+    does), speak_voice(text, voice, on_done) -> bool (on_done(error) from any
+    thread), voice_busy(), call_later(seconds, fn) and call_after(fn, *args)."""
 
     def __init__(self, services, clock=time.monotonic):
         self.services = services
@@ -156,12 +164,18 @@ class Speaker:
         self._timer = None
 
     def say(self, text, voice=None):
-        text = str(text or "").strip()
-        if not text:
+        self.say_parts([(text, voice)])
+
+    def say_parts(self, parts):
+        """One line in parts, said one right after another: [(text, voice or None)]
+        (None: the narrator)."""
+        parts = collections.deque((str(text or "").strip(), voice) for text, voice in parts
+                                  if str(text or "").strip())
+        if not parts:
             return
         if len(self.waiting) >= MAX_WAITING:
             self.waiting.popleft()
-        self.waiting.append((text, voice))
+        self.waiting.append(parts)
         self._pump()
 
     def clear(self):
@@ -192,20 +206,35 @@ class Speaker:
             start = max(self.clock(), self.reader_until)
             self.reader_until = start + reader_seconds(text)
 
+    def _narrator(self):
+        try:
+            return self.services.narrator_voice()
+        except Exception:
+            return None
+
+    def _next(self):
+        parts = self.waiting[0]
+        part = parts.popleft()
+        if not parts:
+            self.waiting.popleft()
+        return part
+
     def _pump(self):
         while self.waiting:
             if self.current is not None:
-                self._later()             # a player's voice is still speaking
+                self._later()             # a voice is still speaking
                 return
-            text, voice = self.waiting[0]
+            text, voice = self.waiting[0][0]
             if voice is None:
-                self.waiting.popleft()
-                self._narrate(text)
+                voice = self._narrator()
+            if voice is None:
+                self._next()
+                self._narrate(text)       # the screen reader, when Hariku Voice can't
                 continue
             if self.services.voice_busy() or self.clock() < self.reader_until:
-                self._later()             # let the narrator finish first
+                self._later()             # let the one before finish first
                 return
-            self.waiting.popleft()
+            self._next()
             self.current = (text, voice)
             try:
                 started = self.services.speak_voice(text, voice, self._voice_done)

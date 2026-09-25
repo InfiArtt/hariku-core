@@ -78,9 +78,11 @@ CONNECT_HOLD_SECONDS = 15
 AUTOCONNECT_SECONDS = 5
 
 READ_SETTINGS = ("read_say", "read_whisper", "read_shout", "read_moves", "read_money", "read_announce")
-BOOL_SETTINGS = ("speak", "voices", "ambience", "sounds", "other_sounds", "autoconnect") + READ_SETTINGS
+BOOL_SETTINGS = ("speak", "voices", "speak_own", "speak_names", "ambience", "sounds", "other_sounds",
+                 "autoconnect") + READ_SETTINGS
 DEFAULT_SETTINGS = {"server": DEFAULT_SERVER, "name": "", "job": "pilot", "speak": True,
-                    "voices": True, "ambience": True, "ambience_volume": 25, "sounds": True,
+                    "voices": True, "speak_own": True, "speak_names": True,
+                    "ambience": True, "ambience_volume": 25, "sounds": True,
                     "effects_volume": 100, "other_sounds": True,
                     "read_say": True, "read_whisper": True, "read_shout": True, "read_moves": True,
                     "read_money": True, "read_announce": True,
@@ -259,7 +261,30 @@ class Services:
     # --- speech -----------------------------------------------------------------------
 
     def say(self, text):
+        """The narrator when Hariku Voice can't speak (narrator_voice() is None)."""
         return core.voice.announce(text, "command", interrupt=False)
+
+    def narrator_voice(self):
+        """Hariku Voice's own voice (Preferences, Hariku Voice), when it can speak now;
+        else its Windows fallback voice; else None (the screen reader reads)."""
+        settings = core.voice.get_settings()
+        provider = settings.get("provider")
+        if provider and core.voice.is_provider_available(provider):
+            return {"provider": provider, "id": settings.get("voice") or ""}
+        fallback = settings.get("fallback")
+        if fallback and core.voice.is_provider_available(core.voice.WINDOWS):
+            return {"provider": core.voice.WINDOWS, "id": fallback}
+        return None
+
+    def voice_count(self):
+        """How many voices players can be given (None while they're being listed)."""
+        cached = self.voices.cached()
+        if cached is None:
+            self.voices.refresh_in_background()
+            return None
+        settings = core.voice.get_settings()
+        narrator = (settings["provider"], settings["voice"]) if settings.get("voice") else None
+        return orbit_speech.pool_size(orbit_speech.voices_of(cached, self.language()), narrator)
 
     def speak_voice(self, text, voice, on_done):
         settings = core.voice.get_settings()

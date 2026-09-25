@@ -314,7 +314,8 @@ def test_settings_are_checked(omain):
                                   "close_action": "leave", "auto_logout": 45, "effects_volume": -5,
                                   "ignored": ["Budi", " budi ", "", 7, "Sari"]})
     assert s == {"server": "wss://example.org/orbit/ws", "name": "Rafli", "job": "pilot",
-                 "speak": True, "voices": False, "ambience": True, "ambience_volume": 100,
+                 "speak": True, "voices": False, "speak_own": True, "speak_names": True,
+                 "ambience": True, "ambience_volume": 100,
                  "sounds": True, "effects_volume": 0, "other_sounds": True,
                  "read_say": True, "read_whisper": True, "read_shout": False, "read_moves": True,
                  "read_money": True, "read_announce": True, "background": "important",
@@ -388,7 +389,8 @@ class FakeServices:
 
     def __init__(self, **settings):
         self.values = {"server": "wss://infiartt.com/orbit/ws", "name": "Rafli", "job": "pilot",
-                       "speak": True, "voices": True, "ambience": True, "ambience_volume": 25,
+                       "speak": True, "voices": True, "speak_own": True, "speak_names": True,
+                       "ambience": True, "ambience_volume": 25,
                        "sounds": True, "effects_volume": 100, "other_sounds": True,
                        "read_say": True, "read_whisper": True, "read_shout": True,
                        "read_moves": True, "read_money": True, "read_announce": True,
@@ -408,6 +410,7 @@ class FakeServices:
         self.secrets = 0
         self.settings_opened = 0
         self.key = "Ctrl + Shift + O"
+        self.narrator = None
 
     def settings(self):
         return dict(self.values)
@@ -466,6 +469,14 @@ class FakeServices:
 
     def voice_busy(self):
         return False
+
+    def narrator_voice(self):
+        return self.narrator                     # None: the narrator is say() above
+
+    def voice_count(self):
+        if not self.voices_on:
+            return 1
+        return orbit_speech.pool_size(orbit_speech.voices_of(self.VOICES, "id"))
 
     def voice_for(self, name, number=None):
         if not self.voices_on:
@@ -903,7 +914,7 @@ def test_a_busy_room_drops_the_oldest_waiting_lines():
     for i in range(orbit_speech.MAX_WAITING + 5):
         speaker.say(f"line {i}")
     assert len(speaker.waiting) == orbit_speech.MAX_WAITING
-    assert speaker.waiting[0][0] == "line 5"
+    assert speaker.waiting[0][0] == ("line 5", None)
 
 
 # ------------------------------------------------------------
@@ -1301,6 +1312,103 @@ def test_a_chosen_voice_and_its_preview(play):
     assert s.spoken[-1] == (voices[(5 - 1) % 3]["id"], "Budi bilang: halo")
     conn.event("info", "Beres: orang lain sekarang mendengarmu dengan suara 3.", voice=3, preview=True)
     assert s.spoken[-1] == (voices[2]["id"], "Beres: orang lain sekarang mendengarmu dengan suara 3.")
+
+
+def test_a_players_name_and_their_words_come_in_two_voices(play):
+    s = play.services
+    conn = _online(play, name="Rafli")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    sari = orbit_speech.pick_voice("Sari", voices)["id"]
+    s.spoken.clear()
+    conn.event("say", "Sari bilang: halo semua", actor="Sari", words="halo semua")
+    assert s.spoken == [("narrator", "Sari:"), (sari, "halo semua")]
+    conn.event("whisper", "Sari berbisik padamu: nanti ya", actor="Sari", words="nanti ya", voice=2)
+    assert s.spoken[-2:] == [("narrator", "Sari berbisik:"), (voices[1]["id"], "nanti ya")]
+    conn.event("shout", "Sari berteriak ke seluruh stasiun: ke Bulan!", actor="Sari", words="ke Bulan!")
+    assert s.spoken[-2:] == [("narrator", "Sari berteriak:"), (sari, "ke Bulan!")]
+    assert play.client.messages[-1] == "Sari berteriak ke seluruh stasiun: ke Bulan!"   # the whole line
+    s.values["speak_names"] = False
+    conn.event("say", "Sari bilang: tanpa nama", actor="Sari", words="tanpa nama")
+    assert s.spoken[-1] == (sari, "tanpa nama") and s.spoken[-2] != ("narrator", "Sari:")
+    # an older server (no "words"): the whole line in the speaker's voice, as before
+    conn.event("say", "Sari bilang: server lama", actor="Sari")
+    assert s.spoken[-1] == (sari, "Sari bilang: server lama")
+
+
+def test_your_own_lines_are_spoken_in_your_character_voice(play):
+    s = play.services
+    conn = _online(play, name="Rafli")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    s.spoken.clear()
+    conn.event("said", "Kamu bilang: halo Sari", brief="Terkirim.", words="halo Sari", voice=3)
+    assert s.spoken == [(voices[2]["id"], "halo Sari")]
+    conn.event("said", "Kamu bilang: tanpa nomor", brief="Terkirim.", words="tanpa nomor")
+    assert s.spoken[-1] == (orbit_speech.pick_voice("Rafli", voices)["id"], "tanpa nomor")
+    conn.event("whispered", "Kamu berbisik ke Sari: nanti ya", brief="Dibisikkan ke Sari.", words="nanti ya",
+               to="Sari", voice=3)
+    assert s.spoken[-2:] == [("narrator", "Ke Sari:"), (voices[2]["id"], "nanti ya")]
+    conn.event("shouted", "Kamu berteriak: halo!", brief="Diteriakkan.", words="halo!", voice=3)
+    assert s.spoken[-1] == (voices[2]["id"], "halo!")
+    conn.event("emote", "Kamu tersenyum.", emote="smile")
+    assert s.spoken[-1] == ("narrator", "Kamu tersenyum.")                  # gestures: the narrator
+    play.client.aruna_until = float("inf")                                  # said through Aruna
+    conn.event("said", "Kamu bilang: dari Aruna", brief="Terkirim.", words="dari Aruna", voice=3)
+    assert s.spoken[-1] == (voices[2]["id"], "dari Aruna") and s.shown[-1] == "Terkirim."
+    play.client.aruna_until = 0
+    # the setting off: only the short confirmation, as before
+    play.client.submit("kata-kataku mati")
+    assert s.values["speak_own"] is False and s.spoken[-1] == ("narrator", "Kata-katamu sendiri hanya dikonfirmasi.")
+    conn.event("said", "Kamu bilang: halo lagi", brief="Terkirim.", words="halo lagi", voice=3)
+    assert s.spoken[-1] == ("narrator", "Terkirim.")
+    play.client.submit("my lines on")
+    assert s.values["speak_own"] is True
+    play.client.submit("nama pemain mati")
+    assert s.values["speak_names"] is False and s.spoken[-1][1] == "Hanya kata-kata pemain yang diucapkan, tanpa namanya."
+
+
+def test_with_too_few_voices_everyone_is_read_by_the_narrator_and_you_are_told_once(play):
+    s = play.services
+    s.voices_on = False                          # Hariku Voice has only one voice of this language
+    conn = _online(play, name="Rafli")
+    s.spoken.clear()
+    conn.event("say", "Sari bilang: halo", actor="Sari", words="halo")
+    hint = ("narrator", "Hariku Voice punya kurang dari dua suara bahasamu, jadi semua pemain terdengar sama. "
+                        "Agar tiap pemain punya suara sendiri, pasang Edge Voices atau Piper Voices dari Toko Ekstensi.")
+    assert s.spoken == [hint, ("narrator", "Sari bilang: halo")]
+    assert hint[1] in play.client.messages
+    conn.event("said", "Kamu bilang: hai", brief="Terkirim.", words="hai")
+    conn.event("say", "Sari bilang: lagi", actor="Sari", words="lagi")
+    assert s.spoken[2:] == [("narrator", "hai"), ("narrator", "Sari bilang: lagi")]      # told once
+    # players' voices turned off: no hint needed, the narrator reads
+    s.values["voices"] = False
+    play.client.voices_hint_said = False
+    conn.event("say", "Sari bilang: tanpa suara", actor="Sari", words="tanpa suara")
+    assert s.spoken[-1] == ("narrator", "Sari bilang: tanpa suara") and hint not in s.spoken[4:]
+
+
+def test_the_narrator_is_hariku_voice_when_it_can_speak(play):
+    s = play.services
+    s.narrator = {"provider": "windows", "id": "andika"}
+    conn = _online(play, name="Rafli")
+    s.spoken.clear()
+    conn.event("room", "Kantin. Meja-meja bundar.")
+    conn.event("say", "Sari bilang: halo", actor="Sari", words="halo")
+    sari = orbit_speech.pick_voice("Sari", orbit_speech.voices_of(FakeServices.VOICES, "id"))["id"]
+    assert s.spoken == [("andika", "Kantin. Meja-meja bundar."), ("andika", "Sari:"), (sari, "halo")]
+
+
+def test_a_busy_room_drops_whole_lines_never_half_of_one():
+    services = SpeakerServices()
+    speaker = orbit_speech.Speaker(services)
+    speaker.say("first", voice="gadis")                  # still speaking
+    for i in range(orbit_speech.MAX_WAITING + 3):
+        speaker.say_parts([("Sari:", None), (f"line {i}", "gadis")])
+    assert len(speaker.waiting) == orbit_speech.MAX_WAITING
+    assert list(speaker.waiting[0]) == [("Sari:", None), ("line 3", "gadis")]
+    while services.pending:
+        services.pending.pop(0)(None)
+    spoken = [text for _who, text in services.log]
+    assert spoken[:3] == ["first", "Sari:", "line 3"] and spoken[-2:] == ["Sari:", f"line {orbit_speech.MAX_WAITING + 2}"]
 
 
 def test_numbered_voices_are_the_same_on_every_turn():

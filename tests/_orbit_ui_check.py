@@ -196,7 +196,9 @@ services.voice_busy = lambda: False
 VOICES = [{"id": "en-US-AvaNeural", "name": "Ava", "language": "en-US", "provider": "edge"},
           {"id": "en-GB-RyanNeural", "name": "Ryan", "language": "en-GB", "provider": "edge"}]
 voice_module = sys.modules["orbit_speech"]
-services.voice_for = lambda name: voice_module.pick_voice(name, VOICES)
+services.voice_for = lambda name, number=None: voice_module.pick_voice(name, VOICES, number=number)
+services.voice_count = lambda: len(VOICES)
+services.narrator_voice = lambda: None             # the narrator: core.voice.announce, captured below
 services.voices = types.SimpleNamespace(refresh_in_background=lambda: None, forget=lambda: None,
                                         cached=lambda: {})
 voice_module.READER_SECONDS_PER_CHAR = 0.001      # a quick "screen reader"
@@ -274,7 +276,8 @@ page = main._panel
 assert page is not None and page.IsShown(), "the page was not created"
 kinds = check_labels(page, "Preferences")
 assert kinds == (["StaticText", "TextCtrl", "StaticText", "TextCtrl", "StaticText", "Choice",
-                  "StaticText", "Button", "StaticText", "TextCtrl", "CheckBox", "CheckBox", "StaticText"]
+                  "StaticText", "Button", "StaticText", "TextCtrl", "CheckBox", "CheckBox", "CheckBox",
+                  "CheckBox", "StaticText"]
                  + ["CheckBox"] * 6
                  + ["StaticText", "Choice", "StaticText", "Choice", "StaticText", "Choice", "CheckBox",
                     "CheckBox", "StaticText", "Slider", "CheckBox", "StaticText", "Slider", "CheckBox",
@@ -300,8 +303,13 @@ assert pump(lambda: len(page.txt_transfer.GetValue()) == 19, 10), page.txt_trans
 page.chk_speak.SetValue(False)
 fire(page.chk_speak, wx.EVT_CHECKBOX)
 assert not page.chk_read["read_say"].IsEnabled() and not page.chk_voices.IsEnabled()
+assert not page.chk_speak_own.IsEnabled() and not page.chk_speak_names.IsEnabled()
 page.chk_speak.SetValue(True)
 fire(page.chk_speak, wx.EVT_CHECKBOX)
+assert page.chk_speak_own.IsEnabled() and page.chk_speak_own.GetValue() and page.chk_speak_names.GetValue()
+assert page.chk_speak_own.GetLabel() == "Spea&k my own lines in my character voice"
+assert page.chk_speak_names.GetLabel() == "Say the speaker's name &before their words"
+page.chk_speak_names.SetValue(False)
 page.chk_read["read_moves"].SetValue(False)
 page.txt_ignored.ChangeValue("Budi, Tono")
 assert any(s == "Connected to Orbit." for s in spoken), spoken[-5:]
@@ -319,6 +327,7 @@ assert (saved["server"], saved["name"], saved["ambience_volume"], saved["ambienc
     (URL, "Rafli", 40, True), saved
 assert (saved["read_moves"], saved["ignored"], saved["background"], saved["close_action"]) == \
     (False, ["Budi", "Tono"], "important", "stay"), saved
+assert (saved["speak_own"], saved["speak_names"]) == (True, False), saved
 account = core.api.load_data("OrbitAccounts")[URL]
 assert account["joined"] and account["name"] == "Rafli" and len(account["secret"]) == 64
 prefs.Destroy()
@@ -383,9 +392,9 @@ assert pump(lambda: window.lst_messages.GetString(window.lst_messages.GetCount()
 assert window.lst_messages.GetSelection() == 0, "a message moved the selection"
 if focus_ok:
     assert wx.Window.FindFocus() is window.txt_command, "a message moved the focus"
-assert pump(lambda: voiced and voiced[-1][1] == "Sari says: hello Rafli!", 15), voiced[-3:]
+assert pump(lambda: voiced and voiced[-1][1] == "hello Rafli!", 15), voiced[-3:]    # the words alone
 assert voiced[-1][0] == voice_module.pick_voice("Sari", VOICES)["id"]
-assert "chat" in sounds and "arrive" in sounds
+assert "say" in sounds and "arrive" in sounds
 print("OK other_player")
 
 # --------------------------------------------------------------------------- #

@@ -280,6 +280,8 @@ class OrbitPanel(_PageBase):
         # Reading aloud
         self.chk_speak = _check(self, sizer, _("chk_speak"), settings["speak"])
         self.chk_voices = _check(self, sizer, _("chk_voices"), settings["voices"])
+        self.chk_speak_own = _check(self, sizer, _("chk_speak_own"), settings.get("speak_own", True))
+        self.chk_speak_names = _check(self, sizer, _("chk_speak_names"), settings.get("speak_names", True))
         _note(self, sizer, _("lbl_read"))
         self.chk_read = {}
         for key in READ_SETTINGS:
@@ -353,6 +355,8 @@ class OrbitPanel(_PageBase):
         """Voices and what is read belong to speaking, the volumes to their sounds."""
         speak = self.chk_speak.GetValue()
         self.chk_voices.Enable(speak)
+        self.chk_speak_own.Enable(speak)
+        self.chk_speak_names.Enable(speak)
         for box in self.chk_read.values():
             box.Enable(speak)
         self.sld_volume.Enable(self.chk_ambience.GetValue())
@@ -366,6 +370,7 @@ class OrbitPanel(_PageBase):
         if self._closed or not _alive(self):
             raise RuntimeError("the page is gone")
         for key, box in (("speak", self.chk_speak), ("voices", self.chk_voices),
+                         ("speak_own", self.chk_speak_own), ("speak_names", self.chk_speak_names),
                          ("ambience", self.chk_ambience), ("sounds", self.chk_sounds),
                          ("other_sounds", self.chk_other_sounds)):
             box.SetValue(bool(settings.get(key)))
@@ -416,6 +421,8 @@ class OrbitPanel(_PageBase):
                     "job": self.JOBS[index] if 0 <= index < len(self.JOBS) else "pilot",
                     "speak": self.chk_speak.GetValue(),
                     "voices": self.chk_voices.GetValue(),
+                    "speak_own": self.chk_speak_own.GetValue(),
+                    "speak_names": self.chk_speak_names.GetValue(),
                     "ambience": self.chk_ambience.GetValue(),
                     "ambience_volume": int(self.sld_volume.GetValue()),
                     "sounds": self.chk_sounds.GetValue(),

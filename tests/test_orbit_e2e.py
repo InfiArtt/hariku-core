@@ -182,6 +182,12 @@ class Services:
     def voice_busy(self):
         return False
 
+    def narrator_voice(self):
+        return None                                  # the narrator: say() above
+
+    def voice_count(self):
+        return orbit_speech.pool_size(orbit_speech.voices_of({"edge": VOICES}, self.lang))
+
     def voice_for(self, name, number=None):
         return orbit_speech.pick_voice(name, orbit_speech.voices_of({"edge": VOICES}, self.lang), number=number)
 
@@ -262,21 +268,27 @@ def test_two_players_on_the_station(server, indonesian):
     rafli.wait_for("Sari datang dari arah barat, dari Dermaga.")
     assert "Kamu berjalan di stasiun satu arah demi satu arah." in sari.do("pergi ke kantin", "Arah ke Kantin:")
 
-    # Talking: the others hear it in the speaker's own voice; you, briefly.
+    # Talking: the others hear the speaker's name, then the words in the speaker's own
+    # voice; you hear your own words in your voice.
     rafli.do("bilang halo Sari, selamat datang!", "Kamu bilang: halo Sari, selamat datang!")
     sari.wait_for("Rafli bilang: halo Sari, selamat datang!")
     rafli_voice = orbit_speech.pick_voice("Rafli", orbit_speech.voices_of({"edge": VOICES}, "id"))
-    assert loop.run_until(lambda: sari.voice_of("Rafli bilang: halo Sari"))
-    assert sari.voice_of("Rafli bilang: halo Sari") == [rafli_voice["id"]]
-    assert rafli.heard("Terkirim.") and not rafli.heard("Kamu bilang: halo Sari")
+    assert loop.run_until(lambda: sari.voice_of("halo Sari, selamat datang!"))
+    assert sari.voice_of("halo Sari, selamat datang!") == [rafli_voice["id"]]
+    assert ("narrator", "Rafli:") in sari.services.spoken
+    assert loop.run_until(lambda: rafli.voice_of("halo Sari, selamat datang!"))
+    assert rafli.voice_of("halo Sari, selamat datang!") == [rafli_voice["id"]]
+    assert not rafli.heard("Terkirim.") and not rafli.heard("Kamu bilang: halo Sari")
     assert "sent" in rafli.services.sounds and "say" in sari.services.sounds
 
     sari.do("bisik Rafli ketemu di dek observasi ya", "Kamu berbisik ke Rafli: ketemu di dek")
     rafli.wait_for("Sari berbisik padamu: ketemu di dek observasi ya")
     assert "whisper" in rafli.services.sounds
     sari_voice = orbit_speech.pick_voice("Sari", orbit_speech.voices_of({"edge": VOICES}, "id"))
-    assert loop.run_until(lambda: rafli.voice_of("Sari berbisik padamu"))
-    assert rafli.voice_of("Sari berbisik padamu") == [sari_voice["id"]]
+    assert loop.run_until(lambda: rafli.voice_of("ketemu di dek observasi ya"))
+    assert rafli.voice_of("ketemu di dek observasi ya") == [sari_voice["id"]]
+    assert ("narrator", "Sari berbisik:") in rafli.services.spoken
+    assert loop.run_until(lambda: ("narrator", "Ke Rafli:") in sari.services.spoken)
     sari.do("senyum ke Rafli", "Kamu tersenyum pada Rafli.")
     rafli.wait_for("Sari tersenyum padamu.")
     rafli.do("siapa online", "2 orang online: Rafli si pilot, di Gudang Kargo; Sari si insinyur, di Gudang Kargo.")
