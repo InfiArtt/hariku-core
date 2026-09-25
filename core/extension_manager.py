@@ -76,6 +76,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "piper_voices",
     "cockpit",
     "voice_control",
+    "world_trip",
 ])
 
 
