@@ -385,7 +385,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 return self._refuse(conn, "bad_job")
             char = self.store.create(name, key, secret_hash, job, self.config["start_credits"],
                                      self.world.start)
-            char["stats"]["seen_version"] = "1.1"
+            char["stats"]["seen_version"] = "1.2"
             new = True
             logger.info("new character %s (%s)", name, job)
         if char["banned"]:
@@ -444,9 +444,13 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         notes.append(self.settle_air(session, on_join=True))
         notes.append(self.settle_travel(session))
         char["stats"].pop("visit", None)          # guests wake up at home
-        if not new and char["stats"].get("seen_version") != "1.1":
-            char["stats"]["seen_version"] = "1.1"
-            notes.insert(0, self.render(lang, "whats_new"))
+        seen = char["stats"].get("seen_version")
+        if not new and seen != "1.2":
+            char["stats"]["seen_version"] = "1.2"
+            news = [self.render(lang, "whats_new_12")]
+            if seen != "1.1":
+                news.insert(0, self.render(lang, "whats_new"))      # from Orbit 1.0: both
+            notes[0:0] = news
         self.give_starter(char)
         notes.extend(self.grant_by_level(session, quiet=True))
         ripe = self.ripe_plots(char)

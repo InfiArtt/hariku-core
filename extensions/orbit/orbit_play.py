@@ -57,7 +57,7 @@ import orbit_ws
 from orbit_text import _
 
 PROTOCOL_VERSION = 1
-CLIENT_NAME = "Hariku Orbit 1.1"
+CLIENT_NAME = "Hariku Orbit 1.2"
 MAX_MESSAGES = 500
 TRIM_MESSAGES = 50
 MAX_LINE = 2000

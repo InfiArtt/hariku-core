@@ -445,6 +445,19 @@ def test_a_resident_who_knows_you_says_hello_when_you_walk_in(make_game, clock):
     assert not said_by(tono, "Bang Jali")                  # not again so soon
 
 
+def test_returning_players_hear_what_is_new_once(make_game):
+    game = make_game()
+    ani = join(game, "Ani")
+    assert "New in Orbit" not in ani.sent[1]["text"]                   # new characters start knowing
+    ani.session.char["stats"]["seen_version"] = "1.1"
+    cmd(game, ani, "bye")
+    back = join(game, "Ani")
+    assert "New in Orbit 1.2: the simulation has residents who aren't players" in back.sent[1]["text"]
+    assert "it's a whole simulation now" not in back.sent[1]["text"]
+    cmd(game, back, "bye")
+    assert "New in Orbit" not in join(game, "Ani").sent[1]["text"]
+
+
 # ------------------------------------------------------------
 # The database
 # ------------------------------------------------------------

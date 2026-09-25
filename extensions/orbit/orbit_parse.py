@@ -91,6 +91,9 @@ _VERBS = [
     (("terbang", "ke"), "raw"), (("fly", "to"), "raw"), (("board", "ship"), "raw"), (("board", "my", "ship"), "raw"),
     (("get", "off"), "raw"), (("take", "the", "ferry"), "raw"), (("take", "a", "gig"), "raw"),
     (("ambil", "gig"), "raw"), (("cek", "kapal"), "raw"), (("lihat", "dunia"), "raw"),
+    (("bicara", "dengan"), "raw"), (("bicara", "sama"), "raw"), (("beri", "makan"), "raw"),
+    (("kasih", "makan"), "raw"), (("beri", "pakan"), "raw"), (("say", "hi", "to"), "raw"),
+    (("say", "hello", "to"), "raw"),
     (("repeat",), "repeat"), (("again",), "repeat"), (("ulangi",), "repeat"), (("ulang",), "repeat"),
     (("apa", "tadi"), "repeat"),
     # missions, before "look" and "take"

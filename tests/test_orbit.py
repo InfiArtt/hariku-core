@@ -159,6 +159,13 @@ def lang(monkeypatch):
     ("board the Kancil", {"c": "text", "a": "board the Kancil"}),
     ("transfer code", {"c": "text", "a": "transfer code"}),
     ("nyalakan lentera", {"c": "text", "a": "nyalakan lentera"}),
+    ("bicara dengan Bayu", {"c": "text", "a": "bicara dengan Bayu"}),
+    ("beri makan Kiki", {"c": "text", "a": "beri makan Kiki"}),
+    ("say hi to Jali", {"c": "text", "a": "say hi to Jali"}),
+    ("tanya Jali tentang gosip", {"c": "text", "a": "tanya Jali tentang gosip"}),
+    ("lamar Budi", {"c": "text", "a": "lamar Budi"}),
+    ("status hewan", {"c": "text", "a": "status hewan"}),
+    ("peluk Mira", {"c": "emote", "e": "hug", "to": "Mira"}),
     ("", None), ("   ", None),
 ])
 def test_reading_commands_in_both_languages(text, expected):
@@ -524,7 +531,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.1", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.2", "lang": "id",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -1627,7 +1634,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert other.connections == []
     assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
     hello = other.connections[-1].hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.1", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.2", "lang": "id",
                      "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
     other.connections[-1].welcome(name="Rafli")
     account = other.accounts["wss://infiartt.com/orbit/ws"]

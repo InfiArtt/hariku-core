@@ -1256,7 +1256,9 @@
     "festival_counted": "Your lanterns already count for the festival (a few from each of us): {n} of {goal} glow now. Bring a friend!",
     "festival_half": "The Lantern Festival is half way there: {n} of {goal} lanterns glow in the Star Dome Hall.",
     "festival_goal": "The Star Dome Hall glows with {n} lanterns: the Lantern Festival's goal is reached! Everyone on the station receives {credits} credits and a festival lantern charm.",
-    "festival_gift": "Your share of the festival's gift: {n} credits and a {thing}. You have {credits} credits."
+    "festival_gift": "Your share of the festival's gift: {n} credits and a {thing}. You have {credits} credits.",
+
+    "whats_new_12": "New in Orbit 1.2: the simulation has residents who aren't players, with their own voices and stories: talk to them (talk to Jali, in the Cantina; residents lists them all), and they'll remember you. Pets to feed, play with, raise and teach tricks (help pets); families, with partners and a baby to adopt at the Medbay (help family); and weddings, from a ring at Starglint Jewellers on the Mall Ring to the Starlight rite (help weddings). The Lantern Festival now lights a gift for everyone."
   },
 
   "id": {
@@ -2516,6 +2518,8 @@
     "festival_counted": "Lentera-lenteramu sudah dihitung untuk festival (beberapa dari tiap orang): {n} dari {goal} sudah menyala. Ajak teman!",
     "festival_half": "Festival Lentera sudah separuh jalan: {n} dari {goal} lentera menyala di Aula Kubah Bintang.",
     "festival_goal": "Aula Kubah Bintang bercahaya dengan {n} lentera: tujuan Festival Lentera tercapai! Semua orang di stasiun menerima {credits} kredit dan jimat lentera festival.",
-    "festival_gift": "Bagianmu dari hadiah festival: {n} kredit dan {thing}. Kreditmu {credits}."
+    "festival_gift": "Bagianmu dari hadiah festival: {n} kredit dan {thing}. Kreditmu {credits}.",
+
+    "whats_new_12": "Baru di Orbit 1.2: simulasi ini punya penduduk yang bukan pemain, dengan suara dan kisah mereka sendiri: ajak mereka bicara (bicara dengan Jali, di Kantin; penduduk menyebutkan semuanya), dan mereka akan mengingatmu. Peliharaan untuk diberi makan, diajak bermain, dibesarkan, dan diajari trik (bantuan hewan); keluarga, dengan pasangan dan bayi untuk diadopsi di Klinik (bantuan keluarga); dan pernikahan, dari cincin di Perhiasan Kilau Bintang di Cincin Mal sampai upacara Cahaya Bintang (bantuan pernikahan). Festival Lentera kini menyalakan hadiah untuk semua."
   }
 }
