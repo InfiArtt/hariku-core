@@ -65,6 +65,7 @@ DEFAULTS = {
     "database": "orbit.db",
     "world": "world.json",
     "economy": "economy.json",
+    "npcs": "npcs.json",          # the residents who aren't players
     "texts": "texts.json",
     "words": "words.json",
     "hunt": "",                   # the hunt's season file (private: never in the repository)
@@ -115,7 +116,7 @@ def load_config(path=None, overrides=None):
                 config["game"].update(value)
             else:
                 config[key] = value
-    for key in ("database", "world", "economy", "texts", "words", "hunt"):
+    for key in ("database", "world", "economy", "npcs", "texts", "words", "hunt"):
         value = config.get(key)
         if value and value != ":memory:" and not os.path.isabs(value):
             candidate = os.path.join(base, value)
@@ -360,7 +361,7 @@ class OrbitServer:
         self.config = config
         self.store = orbit_store.Store(config["database"], iterations=config["hash_iterations"])
         if game is None:
-            world = orbit_world.World.load(config["world"], config.get("economy"))
+            world = orbit_world.World.load(config["world"], config.get("economy"), config.get("npcs"))
             texts = orbit_lang.Texts(config["texts"])
             words = []
             if config.get("words") and os.path.exists(config["words"]):

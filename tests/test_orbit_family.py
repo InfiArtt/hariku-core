@@ -81,6 +81,17 @@ def test_both_must_say_yes(make_game, clock):
     assert text(game, ani, "pasangan")["text"].startswith("Your partner is Budi, since 25-09-2026.")
 
 
+def test_a_plain_yes_or_no_answers_what_waits(make_game, clock):
+    game = make_game()
+    ani, budi = join(game, "Ani"), join(game, "Budi", lang="id")
+    text(game, ani, "partner with Budi")
+    assert text(game, budi, "tidak")["text"] == "Kamu dengan baik hati menolak Ani."
+    clock.advance(601)
+    text(game, ani, "partner with Budi")
+    assert text(game, budi, "ya")["text"] == "Kamu dan Ani sekarang berpasangan."
+    assert text(game, ani, "yes")["text"] == "That's for the couple, at the right moment of their ceremony."
+
+
 def test_a_proposal_runs_out(make_game, clock):
     game = make_game()
     ani, budi = join(game, "Ani"), join(game, "Budi")

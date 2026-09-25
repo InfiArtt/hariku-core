@@ -39,7 +39,7 @@ afterwards) and their guests (invited, answered, came).
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is
-saved next to it (orbit.db.before-v5.bak); columns and tables are only ever
+saved next to it (orbit.db.before-v8.bak); columns and tables are only ever
 added, never dropped.
 
 Everything is written at once (autocommit, or one transaction for things

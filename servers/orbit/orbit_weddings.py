@@ -879,6 +879,8 @@ class WeddingsMixin:
         wedding = self._my_ceremony(session, "consent")
         state = wedding["state"] if wedding else {}
         if wedding is None or state.get("asking") != session.char["id"]:
+            if wedding is None and self.accept_pending(session):     # a plain "yes" to what waits for you
+                return
             self._error(session, "wedding_not_now")
             return
         state["yes"].append(session.char["id"])
@@ -890,6 +892,9 @@ class WeddingsMixin:
     def _wedding_no(self, session, message):
         wedding = self._my_ceremony(session, "consent")
         if wedding is None or wedding["state"].get("asking") != session.char["id"]:
+            waiting = self._asks(session) if wedding is None else []
+            if waiting and waiting[-1][2](session):                  # a plain "no" to what waits for you
+                return
             self._error(session, "wedding_not_now")
             return
         self._say(wedding, "nt_no")

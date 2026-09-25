@@ -89,6 +89,16 @@ def test_the_weekly_tournament(make_game, clock):
     assert "title_champion" not in budi.session.char["inventory"]
 
 
+def test_admins_start_a_tournament_by_its_name(make_game):
+    game = make_game()
+    rafli = join(game, "Rafli", lang="id")
+    cmd(game, rafli, "text", a="mulai acara turnamen")
+    assert game.active_of("tournament")
+    game.end_event(game.active_of("tournament"))
+    cmd(game, rafli, "text", a="start event tournament")
+    assert game.active_of("tournament")
+
+
 def test_a_tournament_without_winners(make_game, clock):
     game = make_game()
     ani = join(game, "Ani")

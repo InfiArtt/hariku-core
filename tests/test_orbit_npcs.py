@@ -518,3 +518,23 @@ def test_a_version_7_database_gets_the_new_tables(tmp_path, clock, monkeypatch):
     backup = sqlite3.connect(path + ".before-v8.bak")
     assert backup.execute("PRAGMA user_version").fetchone()[0] == 7
     backup.close()
+
+
+def test_the_configuration_names_the_residents_file(tmp_path):
+    import orbit_server
+    bundled = os.path.join(SERVER_DIR, "npcs.json")
+    assert os.path.normpath(orbit_server.load_config(None)["npcs"]) == os.path.normpath(bundled)
+    with open(bundled, encoding="utf-8") as f:
+        data = json.load(f)
+    data["npcs"]["jali"]["role"]["en"] = "the night bartender"
+    (tmp_path / "residents.json").write_text(json.dumps(data), encoding="utf-8")
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"database": ":memory:", "npcs": "residents.json",
+                                "game": {"events_enabled": False}}), encoding="utf-8")
+    config = orbit_server.load_config(str(path))
+    assert os.path.normpath(config["npcs"]) == str(tmp_path / "residents.json")
+    server = orbit_server.OrbitServer(config)
+    try:
+        assert server.game.world.npcs["npcs"]["jali"]["role"]["en"] == "the night bartender"
+    finally:
+        server.store.close()
