@@ -55,7 +55,7 @@ FLOORS = ("metal", "carpet", "grass", "stone", "rock", "suit", "wet", "sand", "s
 ACOUSTICS = ("room", "small", "hall", "hangar", "outside", "cave", "open")
 VIAS = ("walk", "lift", "ladder", "slide", "airlock", "door", "gate")
 THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture", "outfit",
-               "title", "pet", "service", "ship")
+               "title", "pet", "service", "ship", "arcade")
 GOOD_KINDS = ("trade", "crop", "ore", "salvage", "contraband")
 _ARTICLES = {"the", "a", "an", "to", "ke", "di", "my", "ku"}
 _NOT_WORD = re.compile(r"[^\w\s]")
@@ -226,10 +226,13 @@ class World:
                 if not all(isinstance(thing.get(field, {}).get(lang), str) for lang in LANGS):
                     problems.append(f"thing {tid}: {field} needs en and id")
         for sid, shop in self.shops.items():
+            currency = shop.get("currency")
+            if currency and currency not in self.things:
+                problems.append(f"shop {sid}: unknown currency {currency!r}")
             for tid in shop.get("stock", []):
                 if tid not in self.things:
                     problems.append(f"shop {sid}: unknown thing {tid!r}")
-                elif not self.things[tid].get("price"):
+                elif not self.things[tid].get("tickets" if currency else "price"):
                     problems.append(f"shop {sid}: {tid} has no price")
         for cid, crop in self.crops.items():
             if crop.get("seed") not in self.things or crop.get("good") not in self.things:

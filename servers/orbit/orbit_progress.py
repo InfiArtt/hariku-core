@@ -207,6 +207,11 @@ class ProgressMixin:
         lang, char = session.lang, session.char
         text = self._arg(message, "a", 40)
         board = self.board_for(text) if text else None
+        if text and board is None and (self.find_arcade_game(text) or
+                                       orbit_safety.name_key(text) in ("arcade", "arkade")):
+            self.cmd_high_scores(session, {"a": "" if orbit_safety.name_key(text) in ("arcade", "arkade")
+                                           else text})       # "high scores meteor": the arcade's table
+            return
         if text and board is None:
             self._error(session, "board_unknown", boards=[self.render(lang, f"board_{b}") for b in BOARDS])
             return

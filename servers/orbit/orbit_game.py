@@ -55,6 +55,7 @@ from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
 from orbit_events import EventsMixin
 from orbit_hunt import HuntMixin
+from orbit_arcade import ArcadeMixin, client_version
 from orbit_items import ItemsMixin
 from orbit_lang import pick
 from orbit_local import LocalMixin
@@ -122,6 +123,8 @@ class Session:
         self.blackjack = None     # a hand at the casino's card table
         self.earned = None        # the achievements they have (read when first needed)
         self.hunt_test = False    # an admin playing the hunt without it counting
+        self.arcade = None        # a game at one of Pixel Pier's cabinets
+        self.client = (0, 0)      # the client's version ("Hariku Orbit 1.1": (1, 1))
         self.chat = orbit_safety.TokenBucket(config["chat_rate"], config["chat_burst"], clock)
         self.shout = orbit_safety.TokenBucket(1.0 / max(1, config["shout_seconds"]), 1, clock)
         self.econ = orbit_safety.TokenBucket(config["econ_rate"], config["econ_burst"], clock)
@@ -136,11 +139,11 @@ class Session:
 
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-          TravelMixin, LocalMixin, EventsMixin, HuntMixin, AdminMixin)
+          TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-           TravelMixin, LocalMixin, EventsMixin, HuntMixin, AdminMixin):
+           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -391,6 +394,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             session.dropped_at = None
             session.char["secret_hash"] = char["secret_hash"]
         session.lang = lang
+        session.client = client_version(message.get("client"))
         conn.session = session
         char = session.char
         conn.send({"t": "welcome", "v": PROTOCOL_VERSION, "name": char["name"], "job": char["job"],
@@ -454,10 +458,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         session.conn = None
         session.dropped_at = self.now()
         session.task = None
+        self.arcade_finish(session, "left")
         self._save(session)
 
     def _remove(self, session, key="leave_quit"):
         self.leave_casino(session)
+        self.arcade_finish(session, "left")
         self.forget_offers(session)
         self.sessions.pop(session.key, None)
         self._save(session)
@@ -600,6 +606,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 return
             if obj.get("worlds"):
                 self.cmd_worlds(session, {})
+                return
+            if obj.get("arcade"):
+                (self.cmd_high_scores if obj["arcade"] == "scores" else self.cmd_arcade)(session, {})
                 return
             if obj.get("earth"):
                 text = self._earth(lang)
@@ -920,6 +929,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if not text:
             self._error(session, "unknown_command")
             return
+        if session.arcade and self.arcade_side(session, text):
+            return                              # "kiri!" while dodging meteors
         parsed = orbit_verbs.parse(text, session.lang, self.world.find_direction)
         if parsed is not None:
             self.run(session, parsed)
@@ -950,6 +961,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                      "papan", "skor", "score", "scores"),
         "events": ("events", "event", "acara", "peristiwa", "pesta", "party", "parties"),
         "hunt": ("hunt", "perburuan", "berburu", "riddles", "teka-teki", "tekateki", "nada", "chord"),
+        "arcade": ("arcade", "arkade", "games", "permainan", "tokens", "token", "tickets", "prizes", "hadiah",
+                   "pixel pier", "dermaga piksel", "high scores", "skor tertinggi"),
         "admin": ("admin",),
     }
 
@@ -1004,12 +1017,14 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_casino(session, now)
         self.tick_ferry(session, now)
         self.tick_gig(session, now)
+        self.tick_arcade(session, now)
 
     def shutdown(self):
         """The server is stopping: say so, and save everyone."""
         for session in list(self.sessions.values()):
             self._send(session, "system", "server_restart")
             self.leave_casino(session)
+            self.arcade_finish(session, "stopped")
             self._save(session)
         self.market.save()
         self.save_economy()

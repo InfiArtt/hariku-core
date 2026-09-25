@@ -253,6 +253,13 @@
     "shipyard": {
       "name": {"en": "the Orbit Shipyard", "id": "Galangan Kapal Orbit"},
       "stock": ["ship_swiftlet", "ship_heron", "ship_buffalo", "ship_hornbill"]
+    },
+    "tokens": {"name": {"en": "the token machine", "id": "mesin token"}, "stock": ["arcade_token"], "fixed": true},
+    "prizes": {
+      "name": {"en": "the Prize Counter", "id": "Loket Hadiah"},
+      "currency": "arcade_ticket",
+      "stock": ["plush_comet", "glow_stars", "mini_cabinet", "title_arcade_ace", "giant_robot"],
+      "fixed": true
     }
   },
   "things": {
@@ -1423,6 +1430,130 @@
       "slot": "title",
       "pawn": false,
       "effects": {"title": {"en": "Keeper of the Lost Chord", "id": "Penjaga Nada yang Hilang"}}
+    },
+    "arcade_token": {
+      "type": "arcade",
+      "one": {"en": "arcade token", "id": "token arkade"},
+      "many": {"en": "arcade tokens", "id": "token arkade"},
+      "names": {
+        "en": ["arcade token", "arcade tokens", "token", "tokens"],
+        "id": ["token arkade", "token", "koin arkade"]
+      },
+      "desc": {
+        "en": "A brass token with a pixel star on it. One plays a game on Cabinet Row.",
+        "id": "Token kuningan bergambar bintang piksel. Satu token untuk satu permainan di Lorong Mesin."
+      },
+      "price": 5,
+      "pawn": false,
+      "max_buy": 100
+    },
+    "arcade_ticket": {
+      "type": "arcade",
+      "one": {"en": "prize ticket", "id": "tiket hadiah"},
+      "many": {"en": "prize tickets", "id": "tiket hadiah"},
+      "names": {
+        "en": ["prize ticket", "prize tickets", "arcade ticket", "arcade tickets"],
+        "id": ["tiket hadiah", "karcis hadiah", "tiket arkade"]
+      },
+      "desc": {
+        "en": "A paper ticket from the cabinets. The Prize Counter takes them.",
+        "id": "Tiket kertas dari mesin-mesin permainan. Loket Hadiah menerimanya."
+      },
+      "pawn": false
+    },
+    "plush_comet": {
+      "type": "furniture",
+      "one": {"en": "plush comet", "id": "boneka komet"},
+      "many": {"en": "plush comets", "id": "boneka komet"},
+      "names": {"en": ["plush comet", "comet"], "id": ["boneka komet", "komet"]},
+      "desc": {
+        "en": "A soft comet with a sparkly tail, to hug or to throw.",
+        "id": "Komet lembut berekor berkilau, untuk dipeluk atau dilempar."
+      },
+      "tickets": 40,
+      "unique": true,
+      "pawn": false,
+      "effects": {
+        "cabin": {
+          "en": "A plush comet with a sparkly tail sits on your pillow.",
+          "id": "Boneka komet berekor berkilau duduk di atas bantalmu."
+        }
+      }
+    },
+    "glow_stars": {
+      "type": "furniture",
+      "one": {"en": "glow stars", "id": "bintang berpendar"},
+      "many": {"en": "glow stars", "id": "bintang berpendar"},
+      "names": {"en": ["glow stars", "glow in the dark stars", "stars"], "id": ["bintang berpendar", "bintang glow"]},
+      "desc": {
+        "en": "Stick-on stars that glow softly in the dark.",
+        "id": "Stiker bintang yang berpendar lembut dalam gelap."
+      },
+      "tickets": 100,
+      "unique": true,
+      "pawn": false,
+      "effects": {
+        "cabin": {
+          "en": "Glow stars on the ceiling make a little sky of their own.",
+          "id": "Bintang-bintang berpendar di langit-langit membentuk langit kecil sendiri."
+        }
+      }
+    },
+    "mini_cabinet": {
+      "type": "furniture",
+      "one": {"en": "mini arcade cabinet", "id": "mesin arkade mini"},
+      "many": {"en": "mini arcade cabinets", "id": "mesin arkade mini"},
+      "names": {
+        "en": ["mini arcade cabinet", "mini cabinet", "arcade cabinet"],
+        "id": ["mesin arkade mini", "mesin mini"]
+      },
+      "desc": {
+        "en": "A little arcade cabinet that plays its tune to itself.",
+        "id": "Mesin arkade kecil yang memainkan lagunya sendiri."
+      },
+      "tickets": 300,
+      "unique": true,
+      "pawn": false,
+      "effects": {
+        "cabin": {
+          "en": "A little arcade cabinet in the corner plays its tune to itself.",
+          "id": "Mesin arkade kecil di sudut memainkan lagunya sendiri."
+        }
+      }
+    },
+    "giant_robot": {
+      "type": "furniture",
+      "one": {"en": "enormous robot", "id": "robot raksasa"},
+      "many": {"en": "enormous robots", "id": "robot raksasa"},
+      "names": {"en": ["enormous robot", "giant robot", "robot"], "id": ["robot raksasa", "robot"]},
+      "desc": {
+        "en": "The enormous robot from Pixel Pier's prize counter, that nobody had ever won.",
+        "id": "Robot raksasa dari loket hadiah Dermaga Piksel, yang belum pernah dimenangkan siapa pun."
+      },
+      "tickets": 2500,
+      "unique": true,
+      "pawn": false,
+      "effects": {
+        "cabin": {
+          "en": "The enormous robot from Pixel Pier stands in your cabin, waving.",
+          "id": "Robot raksasa dari Dermaga Piksel berdiri di kabinmu, melambai."
+        }
+      }
+    },
+    "title_arcade_ace": {
+      "type": "title",
+      "one": {"en": "title 'Arcade Ace'", "id": "gelar 'Jagoan Arkade'"},
+      "many": {"en": "titles 'Arcade Ace'", "id": "gelar 'Jagoan Arkade'"},
+      "names": {"en": ["arcade ace", "title arcade ace"], "id": ["jagoan arkade", "gelar jagoan arkade"]},
+      "desc": {
+        "en": "A title others see when they look at you: 'Arcade Ace'. Wear it to show it.",
+        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Jagoan Arkade'. Pakai untuk menampilkannya."
+      },
+      "tickets": 500,
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Arcade Ace", "id": "Jagoan Arkade"}}
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
@@ -1702,6 +1833,34 @@
       "at": 10,
       "credits": 150,
       "desc": {"en": "take part in 10 events", "id": "ikut dalam 10 acara"}
+    },
+    "player_one": {
+      "en": "Player One",
+      "id": "Pemain Satu",
+      "stat": "arcade_games",
+      "at": 1,
+      "credits": 20,
+      "desc": {"en": "play a game at Pixel Pier's arcade", "id": "main satu permainan di arkade Dermaga Piksel"}
+    },
+    "arcade_regular": {
+      "en": "Arcade Regular",
+      "id": "Langganan Arkade",
+      "stat": "arcade_games",
+      "at": 50,
+      "credits": 150,
+      "desc": {"en": "play 50 arcade games", "id": "main 50 permainan arkade"}
+    },
+    "high_scorer": {
+      "en": "High Scorer",
+      "id": "Pencetak Rekor",
+      "stat": "arcade_records",
+      "at": 1,
+      "credits": 100,
+      "station": true,
+      "desc": {
+        "en": "set a new best on one of the arcade's tables",
+        "id": "cetak rekor baru di salah satu papan skor arkade"
+      }
     }
   },
   "travel": {
@@ -1818,5 +1977,77 @@
       "lumina_tower",
       "lumina_port"
     ]
+  },
+  "arcade": {
+    "_note": "Pixel Pier's cabinets (orbit_arcade.py). Tokens are bought for credits (the arcade_token thing's price); games pay prize tickets, (score - from) * rate, at most max; a new best on a game's table pays record_bonus tickets more. Prizes cost tickets (their 'tickets'), and neither tickets nor prizes can be sold or traded, so the arcade only takes credits out.",
+    "record_bonus": 25,
+    "table_size": 5,
+    "games": {
+      "quickdraw": {
+        "name": {"en": "Quick Draw", "id": "Adu Cepat"},
+        "names": {
+          "en": ["quick draw", "quickdraw", "reaction", "reflex", "reflexes"],
+          "id": ["adu cepat", "refleks", "reaksi"]
+        },
+        "desc": {
+          "en": "reaction: wait for the beep, then type any number at once",
+          "id": "reaksi: tunggu bunyi bip, lalu segera ketik angka apa saja"
+        },
+        "tokens": 1,
+        "rounds": 5,
+        "wait": [2, 5],
+        "best_ms": 200,
+        "worst_ms": 2000,
+        "tickets": {"from": 0, "rate": 0.02, "max": 10}
+      },
+      "starbeat": {
+        "name": {"en": "Star Beat", "id": "Irama Bintang"},
+        "names": {"en": ["star beat", "starbeat", "rhythm", "beat"], "id": ["irama bintang", "irama", "ritme"]},
+        "desc": {
+          "en": "rhythm: listen, then tap the beats back in time, a number and Enter for each",
+          "id": "irama: dengarkan, lalu ketuk ulang ketukannya tepat waktu, satu angka dan Enter untuk setiap ketukan"
+        },
+        "tokens": 1,
+        "rounds": [5, 6, 7],
+        "short": 0.5,
+        "long": 1.0,
+        "lead": 1.2,
+        "tolerance": 0.4,
+        "tap_seconds": 20,
+        "tickets": {"from": 0, "rate": 0.0067, "max": 10}
+      },
+      "echo": {
+        "name": {"en": "Echo", "id": "Gema"},
+        "names": {"en": ["echo", "memory", "simon"], "id": ["gema", "memori", "ingatan"]},
+        "desc": {
+          "en": "memory: repeat the tones as numbers, one more each time",
+          "id": "ingatan: ulangi nada-nadanya sebagai angka, bertambah satu setiap kali"
+        },
+        "tokens": 1,
+        "start": 3,
+        "max": 16,
+        "seconds": 10,
+        "per_tone": 1.5,
+        "tickets": {"from": 3, "rate": 2, "max": 20}
+      },
+      "meteor": {
+        "name": {"en": "Meteor Dodge", "id": "Hindari Meteor"},
+        "names": {
+          "en": ["meteor dodge", "meteors", "dodge", "meteor"],
+          "id": ["hindari meteor", "meteor", "menghindar"]
+        },
+        "desc": {
+          "en": "stereo: hear where the meteor comes from and step away, 4 left or 6 right",
+          "id": "stereo: dengar dari mana meteor datang lalu menghindar, 4 ke kiri atau 6 ke kanan"
+        },
+        "tokens": 1,
+        "lives": 3,
+        "limit": 3.0,
+        "faster": 0.1,
+        "fastest": 1.5,
+        "pause": [1, 2],
+        "tickets": {"from": 0, "rate": 0.5, "max": 20}
+      }
+    }
   }
 }

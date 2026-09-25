@@ -472,7 +472,7 @@ def test_prices_move_a_little_each_day_and_each_shop_has_a_special(make_game, cl
         for sid, shop in game.world.shops.items():
             special = game.special_of(sid)
             for tid in shop["stock"]:
-                base = int(game.world.things[tid].get("price") or 0)
+                base = int(game.world.things[tid].get("tickets" if shop.get("currency") else "price") or 0)
                 price = game.price_of(char, tid, sid)
                 if shop.get("fixed") or game.world.things[tid].get("service"):
                     assert tid == "plot" or price == base, (sid, tid)

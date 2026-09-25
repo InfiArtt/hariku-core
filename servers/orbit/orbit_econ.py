@@ -332,7 +332,8 @@ class EconomyMixin:
             tid = self.world.find_thing(text)
             if tid in shop.get("stock", []):
                 ticket = self.world.things[tid].get("service") == "ticket"
-                n = self._count(message, high=int(self.econ["casino"]["lottery"]["max_tickets"]) if ticket else 20)
+                most = int(self.world.things[tid].get("max_buy", 20))
+                n = self._count(message, high=int(self.econ["casino"]["lottery"]["max_tickets"]) if ticket else most)
                 if n is None:
                     self._error(session, "bad_number")
                     return

@@ -229,6 +229,7 @@ class NavMixin:
         self._send(session, "moved", text=f"{line} {self.look_text(session, full=first)}", extra=extra)
         self.pet_follows(session)
         self.gig_arrived(session)
+        self.arcade_left(session)
 
     def _announce_leave(self, session, old_room, old_loc, new_loc, d, host):
         name = session.name

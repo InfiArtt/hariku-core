@@ -207,6 +207,14 @@ VERBS = [
     (("adu", "koin"), "challenge"),
     (("lotre",), "lottery"), (("lottery",), "lottery"), (("undian",), "lottery"), (("lotere",), "lottery"),
     (("lotre", "mingguan"), "lottery"), (("weekly", "lottery"), "lottery"),
+    # the arcade (after the casino's "main dadu": longer phrases are matched first)
+    (("arkade",), "arcade"), (("arcade",), "arcade"), (("the", "arcade"), "arcade"),
+    (("main",), "play"), (("play",), "play"), (("mainkan",), "play"),
+    (("berhenti", "main"), "stop_game"), (("stop", "game"), "stop_game"), (("stop", "playing"), "stop_game"),
+    (("stop", "the", "game"), "stop_game"), (("quit", "game"), "stop_game"), (("udahan", "main"), "stop_game"),
+    (("skor", "arkade"), "high_scores"), (("rekor", "arkade"), "high_scores"),
+    (("papan", "skor", "arkade"), "high_scores"), (("skor", "tertinggi"), "high_scores"),
+    (("arcade", "scores"), "high_scores"), (("arcade", "high", "scores"), "high_scores"),
     # trading (and anything waiting for a yes)
     (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
     (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
@@ -410,6 +418,12 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "work"}
     if meaning == "solve":
         return {"c": "solve", "a": rest}
+    if meaning == "play":
+        return {"c": "play", "a": rest, "raw": text}       # "main street" is a place, not a game
+    if meaning == "high_scores":
+        return {"c": "high_scores", "a": rest}
+    if meaning in ("arcade", "stop_game"):
+        return {"c": meaning}
     if meaning == "embark":
         name, _more = _name_and_rest(text, tokens, used)
         return {"c": "embark", "to": name} if name else {"c": "embark"}

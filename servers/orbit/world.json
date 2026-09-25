@@ -3740,20 +3740,23 @@
       "ambience": "arcade",
       "exits": {"e": "pixel_hall"},
       "desc": {
-        "en": "A long row of game cabinets under dust sheets, with a sign: new games being installed, come back soon. One cabinet has been left uncovered and plays a little tune to itself.",
-        "id": "Deretan panjang mesin permainan di bawah kain penutup, dengan papan: permainan baru sedang dipasang, datanglah lagi nanti. Satu mesin dibiarkan terbuka dan memainkan lagu kecil untuk dirinya sendiri."
+        "en": "A long row of game cabinets humming and blinking. Four of them are lit and waiting: Quick Draw, Star Beat, Echo and Meteor Dodge. A token machine by the wall sells tokens, and each cabinet prints prize tickets when you do well.",
+        "id": "Deretan panjang mesin permainan yang berdengung dan berkedip. Empat di antaranya menyala dan menunggu: Adu Cepat, Irama Bintang, Gema, dan Hindari Meteor. Mesin token di dinding menjual token, dan setiap mesin mencetak tiket hadiah kalau kamu bermain bagus."
       },
       "floor": "carpet",
       "acoustics": "room",
       "objects": {
         "cabinet": {
-          "names": {"en": ["cabinet", "dust sheets", "sign"], "id": ["mesin", "kain penutup", "papan"]},
-          "desc": {
-            "en": "The uncovered cabinet hums a tune and shows the words: coming soon.",
-            "id": "Mesin yang terbuka itu menyenandungkan lagu dan menampilkan tulisan: segera hadir."
-          }
+          "names": {
+            "en": ["cabinet", "cabinets", "games", "quick draw", "star beat", "echo", "meteor dodge"],
+            "id": ["mesin", "mesin permainan", "permainan", "adu cepat", "irama bintang", "gema", "hindari meteor"]
+          },
+          "desc": {"en": "Four lit cabinets.", "id": "Empat mesin yang menyala."},
+          "arcade": "cabinets"
         }
-      }
+      },
+      "arcade": true,
+      "shop": "tokens"
     },
     "pixel_prizes": {
       "name": {"en": "Prize Counter", "id": "Loket Hadiah"},
@@ -3765,8 +3768,8 @@
       "ambience": "arcade",
       "exits": {"w": "pixel_hall"},
       "desc": {
-        "en": "Shelves of plush comets, glow-in-the-dark rings and a single enormous robot that nobody has ever won. The counter is closed until the new games are ready.",
-        "id": "Rak-rak berisi boneka komet, cincin berpendar dalam gelap, dan satu robot raksasa yang belum pernah dimenangkan siapa pun. Loketnya tutup sampai permainan barunya siap."
+        "en": "Shelves of plush comets, glow stars and little arcade cabinets, and a single enormous robot that nobody has ever won. The counter takes prize tickets: list shows what they buy.",
+        "id": "Rak-rak berisi boneka komet, bintang berpendar, dan mesin arkade kecil, serta satu robot raksasa yang belum pernah dimenangkan siapa pun. Loketnya menerima tiket hadiah: daftar menunjukkan apa yang bisa ditukar."
       },
       "floor": "carpet",
       "acoustics": "small",
@@ -3778,7 +3781,8 @@
             "id": "Robot hadiah raksasa itu melambai padamu. Belum pernah ada yang memenangkannya."
           }
         }
-      }
+      },
+      "shop": "prizes"
     },
     "pixel_stage": {
       "name": {"en": "Tournament Stage", "id": "Panggung Turnamen"},
@@ -3815,8 +3819,8 @@
       "ambience": "arcade",
       "exits": {"w": "pixel_stage"},
       "desc": {
-        "en": "A wall of glowing initials and numbers, every one of them a boast. The top lines are still empty.",
-        "id": "Dinding berisi inisial dan angka yang bercahaya, masing-masing sebuah kebanggaan. Baris-baris teratas masih kosong."
+        "en": "A wall of glowing initials and numbers, every one of them a boast: the best at each cabinet. Look at the wall to read it.",
+        "id": "Dinding berisi inisial dan angka yang bercahaya, masing-masing sebuah kebanggaan: yang terbaik di setiap mesin. Lihat dinding untuk membacanya."
       },
       "floor": "carpet",
       "acoustics": "room",
@@ -3826,7 +3830,8 @@
           "desc": {
             "en": "Empty lines at the top, waiting for someone's initials.",
             "id": "Baris-baris kosong di atas, menunggu inisial seseorang."
-          }
+          },
+          "arcade": "scores"
         }
       }
     },
@@ -4751,7 +4756,10 @@
       "name": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
       "ref": {"en": "Pixel Pier", "id": "Dermaga Piksel"},
       "in": {"en": "on Pixel Pier", "id": "di Dermaga Piksel"},
-      "about": {"en": "the arcade world (its games are coming soon)", "id": "dunia arkade (permainannya segera hadir)"},
+      "about": {
+        "en": "the arcade world: four cabinet games, prizes and high scores",
+        "id": "dunia arkade: empat permainan, hadiah, dan skor tertinggi"
+      },
       "aliases": {
         "en": ["pixel pier", "pixel", "arcade world", "the arcade"],
         "id": ["dermaga piksel", "piksel", "arkade"]

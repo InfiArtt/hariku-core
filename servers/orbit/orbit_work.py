@@ -201,6 +201,9 @@ class WorkMixin:
                    extra={"codes": codes})
 
     def cmd_answer(self, session, message):
+        if session.arcade:
+            self.arcade_answer(session, self._arg(message, "a", 60))
+            return
         task = session.task
         if not task:
             self._error(session, "answer_nothing")

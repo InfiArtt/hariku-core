@@ -38,13 +38,16 @@ booth keep fixed prices, and so do farm plots.
 """
 
 import hashlib
+import logging
 
 import orbit_safety
 from orbit_lang import pick
 
+logger = logging.getLogger("orbit.game")
+
 TYPE_GROUPS = {"gear": "devices", "tool": "tools", "seed": "seeds", "furniture": "furniture",
                "outfit": "clothes", "title": "titles", "pet": "pets", "consumable": "food",
-               "service": "tools", "ship": "ships"}
+               "service": "tools", "ship": "ships", "arcade": "tools"}
 GROUP_WORDS = {
     "devices": ("devices", "device", "gadgets", "perangkat", "alat elektronik", "gawai"),
     "tools": ("tools", "tool", "alat", "perkakas", "upgrades"),
@@ -195,9 +198,16 @@ class ItemsMixin:
             return None
         return stock[int(self._day_fraction("special", sid) * len(stock)) % len(stock)]
 
+    def shop_currency(self, sid):
+        """The thing a shop takes instead of credits (the Prize Counter: prize tickets), or None."""
+        shop = self.world.shops.get(sid) if sid else None
+        return shop.get("currency") if shop else None
+
     def price_of(self, char, tid, sid=None):
-        """What `tid` costs `char` (in shop `sid`, today)."""
+        """What `tid` costs `char` (in shop `sid`, today): credits, or the shop's currency."""
         thing = self.world.things[tid]
+        if self.shop_currency(sid):
+            return int(thing.get("tickets") or 0)
         if thing.get("service") == "plot":
             prices = self.econ["farm"]["plot_prices"]
             bought = max(0, self.plot_count(char) - int(self.econ["farm"]["plots"]))
@@ -226,6 +236,10 @@ class ItemsMixin:
             notes.append(self.render(lang, "shop_job", job=self.world.job_name(thing["job"])))
         if thing.get("service") == "plot" and self.plot_count(char) >= int(self.econ["farm"]["max_plots"]):
             notes = [self.render(lang, "shop_max")]
+        currency = self.shop_currency(sid)
+        if currency:
+            return self.render(lang, "shop_entry_in", thing=thing["one"],
+                               price=self._count_of(currency, self.price_of(char, tid, sid)), notes="".join(notes))
         return self.render(lang, "shop_entry", thing=thing["one"], price=self.price_of(char, tid, sid),
                            notes="".join(notes))
 
@@ -258,6 +272,11 @@ class ItemsMixin:
             self._error(session, "shop_nothing")
             return
         entries = [self.entry_text(lang, char, tid, sid) for tid in stock]
+        currency = self.shop_currency(sid)
+        if currency:
+            self._info(session, "shop_list_in", shop=shop["name"], entries="; ".join(entries),
+                       have=self._count_of(currency, int(char["inventory"].get(currency) or 0)))
+            return
         self._info(session, "shop_list", shop=shop["name"], entries="; ".join(entries))
 
     def where_sold(self, tid):
@@ -292,6 +311,10 @@ class ItemsMixin:
             return
         sid, _shop = self.shop_here(char)
         total = self.price_of(char, tid, sid) * n
+        currency = self.shop_currency(sid)
+        if currency:
+            self._buy_with(session, tid, n, currency, total)
+            return
         if total > char["credits"]:
             self._error(session, "buy_poor", total=total, credits=char["credits"])
             return
@@ -316,6 +339,24 @@ class ItemsMixin:
         self._save(session)
         self._send(session, "trade", key, things=self._count_of(tid, n), thing=thing["one"], total=total,
                    credits=char["credits"], extra=extra)
+
+    def _buy_with(self, session, tid, n, currency, total):
+        """Buying with something other than credits (prizes for prize tickets)."""
+        char = session.char
+        thing = self.world.things[tid]
+        have = int(char["inventory"].get(currency) or 0)
+        if total > have:
+            self._error(session, "buy_short", total=self._count_of(currency, total),
+                        have=self._count_of(currency, have))
+            return
+        self._take_away(char, currency, total)
+        self.give_thing(char, tid, n)
+        self._save(session)
+        logger.info("%s got %s for %s %s", session.name, tid, total, currency)
+        self._send(session, "trade", "bought_with", things=self._count_of(tid, n), thing=thing["one"],
+                   total=self._count_of(currency, total),
+                   left=self._count_of(currency, int(char["inventory"].get(currency) or 0)),
+                   extra={"sound": "arcade_ticket"})
 
     # --- using things ------------------------------------------------------------------------
 
@@ -352,7 +393,12 @@ class ItemsMixin:
         elif self.owns(char, tid) and char["inventory"][tid] > 1:
             parts.append(self.render(lang, "examine_count", n=char["inventory"][tid]))
         if shop is not None and tid in shop.get("stock", []):
-            parts.append(self.render(lang, "examine_price", price=self.price_of(char, tid, sid)))
+            currency = self.shop_currency(sid)
+            if currency:
+                parts.append(self.render(lang, "examine_price_in",
+                                         price=self._count_of(currency, self.price_of(char, tid, sid))))
+            else:
+                parts.append(self.render(lang, "examine_price", price=self.price_of(char, tid, sid)))
         self._info(session, text=" ".join(parts))
         return True
 

@@ -115,6 +115,12 @@ PHRASEBOOK = [
     ("papan pemburu", "id", "hunt_board"), ("hunt board", "en", "hunt_board"),
     ("status perburuan", "id", "admin"), ("hunt status", "en", "admin"), ("musim baru", "id", "admin"),
     ("umumkan petunjuk 2", "id", "admin"), ("release hint 2", "en", "admin"), ("uji perburuan", "id", "admin"),
+    # the arcade
+    ("arkade", "id", "arcade"), ("arcade", "en", "arcade"), ("main gema", "id", "play"),
+    ("main adu cepat", "id", "play"), ("play meteor dodge", "en", "play"), ("play star beat", "en", "play"),
+    ("berhenti main", "id", "stop_game"), ("stop game", "en", "stop_game"), ("skor arkade", "id", "high_scores"),
+    ("arcade scores", "en", "high_scores"), ("high scores meteor", "en", "leaderboard"),
+    ("beli 10 token", "id", "buy"), ("buy 5 tokens", "en", "buy"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

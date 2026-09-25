@@ -55,7 +55,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -216,6 +216,19 @@ CREATE TABLE IF NOT EXISTS hunt_progress (
 );
 """
 
+V6_TABLES = """
+CREATE TABLE IF NOT EXISTS arcade_scores (
+    game TEXT NOT NULL,
+    char_id INTEGER NOT NULL,
+    best INTEGER NOT NULL DEFAULT 0,
+    plays INTEGER NOT NULL DEFAULT 0,
+    last REAL NOT NULL DEFAULT 0,
+    best_at REAL NOT NULL DEFAULT 0,
+    PRIMARY KEY (game, char_id)
+);
+CREATE INDEX IF NOT EXISTS arcade_scores_best ON arcade_scores (game, best DESC, best_at);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
 FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
@@ -289,6 +302,8 @@ class Store:
                 self._migrate_4()
             if version < 5:
                 self._migrate_5()
+            if version < 6:
+                self._migrate_6()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -352,6 +367,11 @@ class Store:
 
     def _migrate_5(self):
         for statement in V5_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+
+    def _migrate_6(self):
+        for statement in V6_TABLES.split(";"):
             if statement.strip():
                 self.db.execute(statement)
 
@@ -776,6 +796,31 @@ class Store:
             "SELECT c.name, h.* FROM hunt_progress h JOIN characters c ON c.id = h.char_id WHERE h.season = ? "
             "ORDER BY h.stage DESC, c.name_key", (str(season),)).fetchall()
         return [dict(row) for row in rows]
+
+    # --- the arcade's high scores ---------------------------------------------------------
+
+    def arcade_best(self, game, char_id):
+        """A character's best score at a game, or None if they never played it."""
+        row = self.db.execute("SELECT best FROM arcade_scores WHERE game = ? AND char_id = ?",
+                              (game, char_id)).fetchone()
+        return int(row["best"]) if row else None
+
+    def save_arcade_score(self, game, char_id, score, when):
+        """One more game played; the best kept (and when it was first reached)."""
+        self.db.execute(
+            "INSERT INTO arcade_scores (game, char_id, best, plays, last, best_at) VALUES (?, ?, ?, 1, ?, ?) "
+            "ON CONFLICT(game, char_id) DO UPDATE SET plays = plays + 1, last = excluded.last, "
+            "best_at = CASE WHEN excluded.best > best THEN excluded.best_at ELSE best_at END, "
+            "best = MAX(best, excluded.best)",
+            (game, char_id, int(score), float(when), float(when)))
+
+    def arcade_top(self, game, limit=5):
+        """[(name, best)]: the game's table, the earliest to reach a score first."""
+        rows = self.db.execute(
+            "SELECT c.name, a.best FROM arcade_scores a JOIN characters c ON c.id = a.char_id "
+            "WHERE a.game = ? AND a.best > 0 AND c.banned = 0 ORDER BY a.best DESC, a.best_at, c.name_key LIMIT ?",
+            (game, int(limit))).fetchall()
+        return [(row["name"], int(row["best"])) for row in rows]
 
     # --- bans by address (only a hash of it is kept) ------------------------------------
 
