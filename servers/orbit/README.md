@@ -352,11 +352,11 @@ What 1.1 ships with:
   tickets carries the pot over. What each player won or lost is kept
   (`casino_net`) for the casino leaderboard. Credits have no real-money
   value; the menu and the help say so.
-- **Achievements** (`achievements`): 32, each for reaching a number (rooms
+- **Achievements** (`achievements`): 35, each for reaching a number (rooms
   walked, shifts worked, missions, level, crops, ore, a golden chilli, a
   quantum crystal, the daily streak, furniture, credits held, the time
   capsule, a natural, a jackpot, the lottery, a trade, the worlds, a ship,
-  events, arcade games, a high score), paying 0 to 2,000
+  events, arcade games, a high score, a crew, duels won), paying 0 to 2,000
   credits and sometimes a title; the big ones (`station`) are news for
   everyone, and the first to earn one is named as the first on the station.
 - **Leaderboards:** richest, level, miners, farmers, daily streak and casino,
