@@ -7,9 +7,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Uses the Extension Manager with real wxPython in a separate process
-# (conftest.py mocks wx here). The store, downloads and installed extensions
-# are fakes; settings go to a temporary APPDATA.
+# Opens Help, Extension guides... with real wxPython in a separate process
+# (conftest.py mocks wx here). No browser opens: opening a guide is a fake.
+# Settings go to a temporary APPDATA.
 
 import os
 import subprocess
@@ -23,17 +23,16 @@ pytestmark = pytest.mark.window
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def test_extension_manager_window(tmp_path):
+def test_extension_guides_window(tmp_path):
     env = dict(os.environ, APPDATA=str(tmp_path), PYTHONIOENCODING="utf-8")
     result = subprocess.run(
-        [sys.executable, os.path.join(ROOT, "tests", "_extension_manager_ui_check.py")],
+        [sys.executable, os.path.join(ROOT, "tests", "_guides_ui_check.py")],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
-        timeout=200, env=env,
+        timeout=150, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK tabs", "OK loading", "OK store", "OK toggle", "OK guide", "OK search",
-                  "OK needs_core", "OK install", "OK update_all", "OK incompatible",
-                  "OK refresh", "OK open_on_updates", "OK no_errors", "OK shutdown"):
+    for stage in ("OK labels", "OK enter", "OK open_button", "OK empty", "OK real_list",
+                  "OK indonesian", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
     assert "Traceback" not in result.stderr, output
