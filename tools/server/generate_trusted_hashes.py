@@ -93,6 +93,7 @@ OFFICIAL_EXTENSION_IDS = {
     "piper_voices",
     "cockpit",
     "voice_control",
+    "world_trip",
     # add new official extension IDs here
 }
 

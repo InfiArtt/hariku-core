@@ -1,0 +1,10 @@
+{
+    "id": "world_trip",
+    "name": "World Trip",
+    "version": "1.0",
+    "description": "Fly anywhere from Aruna: say \"take me to Tokyo\", \"bawa aku ke Paris\" or \"take me anywhere\". A cabin chime and the captain's announcement (the distance and flight time from your main place), the engines, then the local time and weather, a greeting in the local language spoken by a native voice, and live local radio playing quietly. Ask about the city (from Wikipedia), learn everyday phrases in 31 languages, change the station, or fly home. Radio stations from Radio Browser (radio-browser.info), weather and city search from Open-Meteo; only the destination is sent, never your own place. Native voices come from Hariku Voice: Edge Voices has one for nearly every language.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.9"
+}
