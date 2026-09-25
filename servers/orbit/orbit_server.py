@@ -75,6 +75,7 @@ DEFAULTS = {
     "handshake_timeout": 10,
     "hello_timeout": 20,
     "idle_timeout": 120,
+    "linger_seconds": 2.0,        # after the server closes: reading what the client still sends
     "tick_seconds": 1.0,
     "rate": 5.0,                  # messages a second from one connection...
     "burst": 15,                  # ...with this many in a quick row
@@ -143,6 +144,9 @@ class Connection:
         self.queue = asyncio.Queue()
         self.pending = 0
         self.closing = False
+        self.closing_at = None        # when the server started closing (time.monotonic)
+        self.close_queued = False     # a close frame is on its way: end politely
+        self.read_done = asyncio.Event()      # nothing more will be read (see _half_close)
         self.bucket = orbit_safety.TokenBucket(config["rate"], config["burst"])
         self.dropped_messages = 0
         self.warned_at = 0.0
@@ -157,28 +161,39 @@ class Connection:
         self._queue(ws.encode_frame(ws.OP_TEXT, data))
 
     def close(self, code=ws.CLOSE_NORMAL, reason=""):
+        """Every close the server starts (a policy, kick, ban, a login from
+        elsewhere, bad data, a message too big, restarting) comes here: the
+        close frame goes after everything already queued, then _half_close."""
         if self.closing:
             return
-        self.closing = True
+        self._start_closing()
+        self.close_queued = True
         self.queue.put_nowait(ws.encode_frame(ws.OP_CLOSE, ws.close_payload(code, reason)))
         self.queue.put_nowait(None)
 
     # --- inside ---------------------------------------------------------------------
 
+    def _start_closing(self):
+        self.closing = True
+        if self.closing_at is None:
+            self.closing_at = time.monotonic()
+
     def _queue(self, frame):
         self.pending += len(frame)
         if self.pending > self.server.config["max_pending_bytes"]:
             # A client that doesn't read: let it go rather than hold its backlog.
-            self.closing = True
+            self._start_closing()
             self.queue.put_nowait(None)
             return
         self.queue.put_nowait(frame)
 
     async def _write_loop(self):
+        polite = False
         try:
             while True:
                 frame = await self.queue.get()
                 if frame is None:
+                    polite = self.close_queued
                     break
                 self.pending -= len(frame)
                 self.writer.write(frame)
@@ -186,16 +201,65 @@ class Connection:
         except (ConnectionError, OSError, asyncio.TimeoutError):
             pass
         finally:
-            self.closing = True
+            self._start_closing()
+            if polite:
+                await self._half_close()
             try:
                 self.writer.close()
             except Exception:
                 pass
 
+    async def _half_close(self):
+        """After our close frame: end our side only (a FIN), and give run() a
+        moment to read what the client still sends before the socket closes.
+        A socket closed with unread data in it sends a reset instead of a FIN
+        (Windows and Linux alike), and a reset can make the client lose the
+        last lines and the close frame still on their way to it, which a
+        player on a bad connection would hear as a dropped line."""
+        try:
+            if self.writer.can_write_eof():
+                self.writer.write_eof()         # after what is still buffered
+        except (OSError, RuntimeError):
+            return
+        try:
+            await asyncio.wait_for(self.read_done.wait(), timeout=self._linger_seconds())
+        except asyncio.TimeoutError:
+            pass
+
+    def _linger_seconds(self):
+        return max(0.0, float(self.server.config.get("linger_seconds", 2.0)))
+
+    async def _linger(self, pending=b""):
+        """Reads and drops what the client sends after the server started
+        closing, until its close frame, the end of its data, or
+        linger_seconds after closing began: bounded, and never blocking the
+        loop."""
+        decoder = self.decoder
+        deadline = (self.closing_at or time.monotonic()) + self._linger_seconds()
+        data = pending
+        while True:
+            if data and decoder is not None:
+                try:
+                    if any(opcode == ws.OP_CLOSE for opcode, _payload in decoder.feed(data)):
+                        return
+                except ws.ProtocolError:
+                    decoder = None              # past the rules: just drop the rest
+            left = deadline - time.monotonic()
+            if left <= 0:
+                return
+            try:
+                data = await asyncio.wait_for(self.reader.read(65536), timeout=left)
+            except (asyncio.TimeoutError, ConnectionError, OSError):
+                return
+            if not data:
+                return
+
     async def run(self, leftover=b""):
         config = self.server.config
         writer_task = asyncio.ensure_future(self._write_loop())
         started = time.monotonic()
+        ended = False               # the client's data ended (or its connection broke)
+        pending = b""               # read after the server began closing: not handled
         try:
             data = leftover
             while not self.closing:
@@ -216,11 +280,14 @@ class Connection:
                                "no hello" if not self.joined else "idle")
                     break
                 if not data:
+                    ended = True
                     break
+                if self.closing:
+                    pending = data          # closed meanwhile (a kick, a login elsewhere)
         except ws.ProtocolError as e:
             self.close(e.code, str(e)[:100])
         except (ConnectionError, OSError):
-            pass
+            ended = True
         except Exception:
             logger.exception("a connection failed")
             self.close(ws.CLOSE_INTERNAL, "server error")
@@ -228,10 +295,16 @@ class Connection:
             if self.session is not None:
                 self.server.game.dropped(self)
             if not self.closing:
-                self.closing = True
+                self._start_closing()
                 self.queue.put_nowait(None)
+            if self.close_queued and not ended:
+                try:
+                    await self._linger(pending)
+                except Exception:
+                    logger.exception("closing a connection failed")
+            self.read_done.set()
             try:
-                await asyncio.wait_for(writer_task, timeout=5)
+                await asyncio.wait_for(writer_task, timeout=5 + self._linger_seconds())
             except (asyncio.TimeoutError, Exception):
                 writer_task.cancel()
 

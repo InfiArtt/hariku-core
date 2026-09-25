@@ -412,26 +412,84 @@ def test_the_server_refuses_browsers_and_broken_clients(server):
 
 
 def test_flooding_is_slowed_then_cut_off(tmp_path):
+    # Almost no refill (a token every 100 seconds): however slowly a busy
+    # computer reads the 30 commands, the burst of 4 is all there is, so the
+    # hello and 3 commands are answered, the 4th is warned about, and the
+    # 11th dropped closes the connection. The server then ends its side
+    # politely (see Connection._half_close), so the warning and the close
+    # frame always arrive, never a reset.
     config = orbit_server.load_config(None, {
         "port": 0, "database": str(tmp_path / "flood.db"), "hash_iterations": 1000,
-        "rate": 2.0, "burst": 4, "abuse_limit": 10})
+        "rate": 0.01, "burst": 4, "abuse_limit": 10})
     with orbit_server.ServerThread(config) as srv:
         client = ws.WebSocketClient.connect(f"ws://127.0.0.1:{srv.port}/orbit/ws")
         client.send_json({"t": "hello", "v": 1, "lang": "en", "name": "Spammy", "job": "pilot",
                           "secret": "5" * 64})
         for _i in range(30):
             client.send_json({"t": "cmd", "c": "who"})
-        texts, closed = [], None
+        messages, closed = [], None
         try:
             while True:
-                message = client.recv_json(timeout=5)
+                message = client.recv_json(timeout=30)
                 if message is None:
                     break
-                texts.append(message.get("text", ""))
+                messages.append(message)
         except ws.ConnectionClosed as e:
             closed = e.code
+        texts = [m.get("text", "") for m in messages]
         assert "Easy, not so fast! Wait a moment." in texts
+        assert len([m for m in messages if m.get("k") == "who"]) == 3
         assert closed == ws.CLOSE_POLICY
+
+
+def test_a_client_still_sending_when_it_is_closed_hears_why(tmp_path):
+    """The server closes while the client is still sending (a slow or busy
+    client). Closing a socket with unread data would send a reset, and the
+    client would lose the warning and the close frame, or fail to send; the
+    server ends its side first and reads on for a moment instead."""
+    config = orbit_server.load_config(None, {
+        "port": 0, "database": str(tmp_path / "late.db"), "hash_iterations": 1000,
+        "rate": 0.01, "burst": 4, "abuse_limit": 10})
+    with orbit_server.ServerThread(config) as srv:
+        client = ws.WebSocketClient.connect(f"ws://127.0.0.1:{srv.port}/orbit/ws")
+        client.send_json({"t": "hello", "v": 1, "lang": "en", "name": "Slowpoke", "job": "pilot",
+                          "secret": "6" * 64})
+        for _i in range(30):
+            client.send_json({"t": "cmd", "c": "who"})        # never refused: no reset
+            time.sleep(0.02)                                  # the close comes halfway
+        messages, closed = [], None
+        try:
+            while True:
+                message = client.recv_json(timeout=30)
+                if message is None:
+                    break
+                messages.append(message)
+        except ws.ConnectionClosed as e:
+            closed = e.code
+        assert "Easy, not so fast! Wait a moment." in [m.get("text") for m in messages]
+        assert closed == ws.CLOSE_POLICY
+
+
+def test_a_client_that_never_answers_the_close_is_let_go(tmp_path):
+    """Reading on after closing is bounded: a client that neither reads nor
+    answers is closed after linger_seconds."""
+    config = orbit_server.load_config(None, {
+        "port": 0, "database": str(tmp_path / "mute.db"), "hash_iterations": 1000,
+        "rate": 0.01, "burst": 2, "abuse_limit": 3, "linger_seconds": 0.5})
+    with orbit_server.ServerThread(config) as srv:
+        client = ws.WebSocketClient.connect(f"ws://127.0.0.1:{srv.port}/orbit/ws")
+        try:
+            client.send_json({"t": "hello", "v": 1, "lang": "en", "name": "Mute", "job": "pilot",
+                              "secret": "7" * 64})
+            for _i in range(10):
+                client.send_json({"t": "cmd", "c": "who"})
+            # ...and then nothing: it neither reads the close nor answers it.
+            end = time.monotonic() + 5
+            while srv.call(lambda: len(srv.server.connections)) and time.monotonic() < end:
+                time.sleep(0.05)
+            assert srv.call(lambda: len(srv.server.connections)) == 0
+        finally:
+            client.close(wait=0)
 
 
 def test_the_server_runs_as_a_program(tmp_path):

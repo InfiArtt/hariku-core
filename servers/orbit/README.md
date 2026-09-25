@@ -248,6 +248,7 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 | `max_message` | 4096 | the largest message a client may send, in bytes |
 | `rate`, `burst`, `abuse_limit` | 5, 15, 40 | messages a second from one connection, a quick burst, and how many dropped messages before it is closed |
 | `idle_timeout`, `hello_timeout` | 120, 20 | seconds of silence before a connection is closed; seconds to say hello |
+| `linger_seconds` | 2 | after the server closes a connection, how long it reads on what the client still sends (see Closing codes) |
 | `proxy_ip_header` | `X-Real-IP` | where a local proxy puts the visitor's address (`""`: ignore it) |
 | `allowed_origins` | `[]` | browsers send an Origin header; they are refused unless listed |
 | `log_level` | `INFO` | |
@@ -711,7 +712,12 @@ the client to show in local time and set reminders).
 **Closing codes**: 1001 the server is restarting (reconnect), 1008 a broken
 rule (too many messages, no hello), 4000 kicked, 4001 connected from
 somewhere else, moved to another computer or revoked, 4003 banned (don't
-reconnect after these three); 1000 after `bye`.
+reconnect after these three); 1000 after `bye`. When the server closes, it
+sends everything queued and the close frame, ends its side of the
+connection (a TCP FIN), and reads and drops whatever the client still sends
+until the client's close frame, the end of its data, or `linger_seconds`,
+and only then closes the socket: a socket closed with unread data would
+send a reset, which can make the client lose the last lines and the reason.
 
 Pings: the client pings every 25 seconds; the server answers pings and
 closes a connection that says nothing for `idle_timeout` seconds.
