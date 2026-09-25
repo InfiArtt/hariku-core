@@ -289,7 +289,8 @@ which, like any web host, sees your IP address; see the
   voice number you chose for others to hear, its pet (a name and a kind),
   its ship (model, name, where it's docked or flying, fuel and cargo), the
   events it took part in (and how much it helped), its achievements, its
-  lottery tickets for the week's draw, how far it got in each season of
+  lottery tickets for the week's draw, its best score and how many games
+  it played at each arcade cabinet, how far it got in each season of
   the hunt (its riddle, how many tries and wrong answers, when it may try
   again, when it finished and in which place; the answers you type are
   only checked, never kept), what it won or
@@ -314,8 +315,9 @@ which, like any web host, sees your IP address; see the
   wears, its pet, its public progress (level, what it mined and harvested,
   its achievements, and its place on the leaderboards: credits, level, ore,
   crops, the daily streak and casino winnings) and its description. Big
-  casino wins, the lottery's winner, how far players got in the hunt (and
-  its board) and some achievements are announced to everyone online.
+  casino wins, the lottery's winner, new arcade high scores (the tables
+  show everyone's best), how far players got in the hunt (and its board)
+  and some achievements are announced to everyone online.
   Admins are left off the leaderboards and the hunt's board.
 - "Remind me" makes an ordinary Hariku reminder on your computer; the server
   isn't told.
