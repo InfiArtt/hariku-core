@@ -306,6 +306,23 @@ assert spoken == ["Finance enabled. Restart Hariku to finish."], spoken
 assert dlg.requires_restart and installed_tab.list.HasFocus()
 print("OK toggle")
 
+# --- The Guide button (core 2.11): the extension's own guide ------------------------------------
+import ui.guides_dialog as guides_dialog
+guides_opened = []
+guides_dialog.show_guide = lambda parent, ext_id, **kw: guides_opened.append(ext_id) or True
+select(installed_tab, "Crashy")                           # a .hrk that isn't there: no guide
+assert not installed_tab.buttons["guide"].IsEnabled()
+select(installed_tab, "Weather")                          # extensions/weather/docs has one
+assert installed_tab.buttons["guide"].IsEnabled()
+assert installed_tab.buttons["guide"].GetLabel() == "&Guide"
+assert list(installed_tab.buttons).index("guide") == list(installed_tab.buttons).index("update") + 1
+installed_tab.list.SetFocus()
+pump(lambda: installed_tab.list.HasFocus(), 2)
+press(installed_tab.buttons["guide"])
+assert guides_opened == ["weather"], guides_opened
+assert installed_tab.list.HasFocus()                      # nothing moved
+print("OK guide")
+
 # --- Search -------------------------------------------------------------------------------------
 available = show_tab(dlg, "available")
 assert cells(available) == [("Aurora", "1.0", "Needs Hariku 3.0"),
