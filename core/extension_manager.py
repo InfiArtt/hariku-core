@@ -78,6 +78,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "voice_control",
     "timer_alarm",
     "world_trip",
+    "orbit",
 ])
 
 

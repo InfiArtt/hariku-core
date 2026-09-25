@@ -701,6 +701,68 @@ by default; give them one in Input Gestures if you like. Only the destination
 is sent to Open-Meteo, Wikipedia and Radio Browser; your own place stays on
 your computer.
 
+ORBIT (EXTENSION)
+------------------
+Orbit (it needs Hariku 2.9) is a small multiplayer text game on a space
+station orbiting the Earth, played with other Hariku users: hang out and chat
+in the Cantina, look down at Indonesia from the Observation Deck, repair the
+reactor, fly cargo to the Moon, trade on the Promenade and take small
+missions. The station has ten places: the Dock, the Promenade, the Cantina,
+the Observation Deck, Engineering, Hydroponics, the Medbay, the Bridge, the
+Cargo Bay and your own cabin, where nobody else can come.
+
+  1. The first time, open Preferences, Orbit: type a character name (3 to 20
+     letters and digits) and choose a job (pilot, engineer, trader, scientist
+     or security officer), then press Connect. Your character is kept on the
+     server; the name and job boxes are only used for that first visit.
+  2. Open the Orbit window with "Open Orbit" (no key by default; give it one
+     in Input Gestures) or by telling Aruna "orbit" or "buka orbit". It has
+     the Messages list (newest last; read it with the arrow keys; a new
+     message never moves your focus), the Command field (Enter sends; Up and
+     Down bring back earlier commands), Connect or Disconnect, Help and the
+     status. Escape hides the window; the game goes on.
+  3. Type commands in Indonesian or English: "pergi ke kantin" or "go to the
+     cantina", "lihat" or "look", "lihat Sari", "bilang halo" or "say hi"
+     (or start with a quote mark), "bisik Sari ketemu di dek", "teriak halo
+     semua", gestures ("senyum", "lambai", "tertawa", "peluk Sari", "smile",
+     "wave"), "siapa" or "who", "tas" or "inventory", "beri Sari 50 kredit",
+     "deskripsi aku" followed by a few words. "bantuan" or "help" lists them
+     all; "ulangi" or "repeat" reads the last message again.
+
+Work: engineers type "kerja" in Engineering and repeat the reactor's tones by
+typing their numbers ("3 1 4 2"); pilots type "kerja" at the Dock for a cargo
+run to the Moon (about a minute, and you can still whisper and shout while
+you fly); traders get a market report anywhere, then buy low and sell high on
+the Promenade ("harga", "beli 2 kopi", "jual semua kopi"), where prices move
+every few minutes. Everyone can do missions: "misi" reads today's board,
+"ambil misi 1" takes one, "ambil peti" picks up what it needs, and
+"selesaikan misi" delivers it. Work pays credits, with a short break before
+the next shift.
+
+From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
+"orbit pergi ke kantin", "orbit bilang halo", "orbit bisik Sari nanti ya",
+"orbit siapa online", "orbit lihat sekitar", "orbit cek kredit". The answer
+shows in Aruna's Last result.
+
+What happens is read aloud as it comes, in your language. Other players'
+words are read in a voice of their own (always the same one for the same
+player) when Hariku Voice has at least two voices of your language: Edge
+Voices, from the Extension Store, adds two Indonesian voices; otherwise your
+usual voice reads everything. Your own actions are only confirmed briefly
+("Terkirim."), and the Messages list keeps the whole line. Sounds tell what
+happened: a door when you move, a chime when someone arrives or leaves, a
+soft sound in your right ear for a whisper, the reactor's tones from left to
+right. While the window is open, a quiet sound of the place plays (the vents,
+the Cantina's murmur, the reactor's thrum, the garden's water) and goes quiet
+while Hariku speaks. In Preferences, Orbit, you can change the server
+address, turn off speaking messages, the players' voices, the ambience (and
+set its volume) or the sounds. Commands from Aruna are always answered aloud.
+
+Orbit connects only when you open it, press Connect or give it a command, and
+reconnects by itself if the connection drops. "sambungkan" or "putuskan"
+("connect", "disconnect") connects or disconnects. See PRIVACY.md for what the
+server keeps.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on
