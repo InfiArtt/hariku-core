@@ -583,7 +583,7 @@ def test_command_bar_strings_exist_in_both_languages():
         assert not sorted(used - set(messages)), f"locales/{code}.json lacks some keys"
     # Spoken replies may say "kamu"/"aku", like the quick reminder's read-back.
     indonesian = _messages("locales", "id")
-    assert indonesian["cmd_not_understood"] == "Maaf, aku tidak paham."
+    assert indonesian["cmd_not_understood"] == "Maaf, itu belum ada di kamusku. Coba dengan kata lain?"
 
 
 # ------------------------------------------------------------

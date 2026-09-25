@@ -345,7 +345,8 @@ check_labels(dlg)
 assert core.i18n.get_current_language() == "id"
 assert dlg.choice_language.GetStringSelection() == "Bahasa Indonesia"
 assert dlg.btn_next.GetLabel() == "&Lanjut" and not dlg.btn_back.IsEnabled()
-hello = "Halo! Aku Hariku. Boleh kenalan dulu? Pertama, pilih bahasamu"
+hello = ("Halo. Aku Hariku, pendamping barumu di komputer ini. Pertama-tama, bahasa apa yang "
+         "kita pakai?")
 assert question_label(dlg) == hello, question_label(dlg)
 assert hello in reader_name(dlg.choice_language), reader_name(dlg.choice_language)
 assert pump(lambda: said(_("onb_hello_intro")), timeout=3), spoken
@@ -358,10 +359,12 @@ dlg.choice_language.SetSelection(codes.index("en"))
 fire(dlg.choice_language, wx.EVT_CHOICE)
 assert core.i18n.get_current_language() == "en"
 assert dlg.GetTitle() == "Welcome to Hariku (1 of 8)" and dlg.btn_next.GetLabel() == "&Next"
-english = "Hi! I'm Hariku. Shall we get to know each other? First, choose your language"
+english = ("Hello. I'm Hariku, your new companion on this computer. First things first: which "
+           "language shall we speak?")
 assert question_label(dlg) == english and english in reader_name(dlg.choice_language)
 assert dlg.choice_month.GetString(5) == "May"
-assert pump(lambda: any(s.startswith("Hi! I'm Hariku.") and s.endswith("Escape to stop.")
+assert pump(lambda: any(s.startswith("My first task is")
+                        and s.endswith("not ready for introductions yet.")
                         for s in spoken), timeout=3), spoken
 dlg.choice_language.SetSelection(codes.index("id"))
 fire(dlg.choice_language, wx.EVT_CHOICE)
@@ -386,8 +389,8 @@ print("OK name")
 
 # --- Where: typed, not searched: Next searches first ------------------------------------------------
 next_page(dlg, "where", focus_checked)
-where = ("Senang kenalan, Rafli! Kamu tinggal di mana, Rafli? Ketik nama kotamu, lalu tekan "
-         "Enter")
+where = ("Senang berkenalan denganmu, Rafli. Sekarang aku perlu tahu kamu tinggal di mana, "
+         "Rafli, supaya jamku tidak meleset. Ketik nama kotamu, lalu tekan Enter")
 assert question_label(dlg) == where, question_label(dlg)
 assert where in reader_name(dlg.txt_city), reader_name(dlg.txt_city)
 assert dlg.txt_chosen.GetValue() == _("onb_where_chosen_none")
@@ -422,7 +425,8 @@ print(f"OK where ({focus_note(list_focus)})")
 # --- Birthday: the time now, the weather when it comes; a mistake first -----------------------------
 next_page(dlg, "birthday", focus_checked)
 opening = question_label(dlg)
-assert re.fullmatch(r"Di Batam sekarang jam \d\d:\d\d\. Kapan ulang tahunmu, Rafli\? Tanggal",
+assert re.fullmatch(r"Di Batam sekarang jam \d\d:\d\d\. Pertanyaan berikutnya, untuk keperluan "
+                    r"perayaan: kapan ulang tahunmu, Rafli\? Tanggal",
                     opening), opening
 weather_gate.set()
 assert pump(lambda: said("Cuaca di Batam: cerah berawan, 31 derajat."), timeout=5), spoken
@@ -443,7 +447,7 @@ next_page(dlg, "aruna", focus_checked)
 print("OK birthday")
 
 # --- Aruna: the reply, the key, "Try it" ---------------------------------------------------------------
-aruna = ("Oke, 12 Mei. Nanti aku ucapkan selamat. Sekarang kenalan dengan Aruna, asistenmu, "
+aruna = ("12 Mei, tercatat. Aku tidak akan lupa. Sekarang kenalan dengan Aruna, asistenmu, "
          "Rafli. Coba ketik jam berapa, lalu tekan Enter")
 assert question_label(dlg) == aruna, question_label(dlg)
 assert aruna in reader_name(dlg.txt_try)
@@ -497,7 +501,7 @@ print(f"OK extensions ({focus_note(ext_focus)})")
 
 # --- Start-up ------------------------------------------------------------------------------------------
 next_page(dlg, "startup", focus_checked)
-startup = "Satu lagi, Rafli: mau aku ikut menyala bersama komputermu?"
+startup = "Pertanyaan terakhir, Rafli: boleh aku ikut bangun setiap kali komputermu menyala?"
 assert startup in reader_name(dlg.chk_autostart), reader_name(dlg.chk_autostart)
 assert not dlg.chk_autostart.GetValue() and dlg.chk_greet.GetValue()
 assert pump(lambda: any(s.startswith("Kalau keduanya dicentang") and "Rafli" in s
@@ -507,13 +511,13 @@ print("OK startup")
 
 # --- Done: the summary; Back and Next again ----------------------------------------------------------
 next_page(dlg, "done", focus_checked)
-summary = ["Semua siap, Rafli!", "Rumahmu di Batam.",
+summary = ["Perkenalan selesai, Rafli.", "Rumahmu di Batam.",
            "Tanggal 12 Mei nanti aku ucapkan selamat ulang tahun.",
            "Setiap kali komputermu menyala, aku menyapamu.",
            "Setelah kamu tekan Selesai, aku pasang Weather, Morning Briefing, Timer & Alarm dan "
            "Voice Control.",
            "Tekan Ctrl + Alt + Backspace untuk memanggil Aruna.",
-           "Selamat datang di Hariku!"]
+           "Mulai sekarang, aku ada di sini kapan pun kamu butuh. Selamat datang di Hariku."]
 assert dlg.txt_summary.GetValue().split("\n") == summary, dlg.txt_summary.GetValue()
 assert dlg.btn_next.GetLabel() == "&Selesai" and sounds[-1] == "confirm.wav", sounds
 assert pump(lambda: said(" ".join(summary)), timeout=3), spoken
@@ -580,7 +584,8 @@ for page in PAGES[1:]:
     next_page(dlg, page, focus_checked)
     if page == "birthday":
         assert re.fullmatch(r"Di Batam sekarang jam \d\d:\d\d, cerah berawan, 31 derajat\. "
-                            r"Kapan ulang tahunmu, Rafli\? Tanggal", question_label(dlg)), \
+                            r"Pertanyaan berikutnya, untuk keperluan perayaan: kapan ulang tahunmu, "
+                            r"Rafli\? Tanggal", question_label(dlg)), \
             question_label(dlg)
     if page == "extensions":
         assert pump(lambda: dlg.list_ext.GetCount() == 3, timeout=5)
@@ -588,10 +593,10 @@ for page in PAGES[1:]:
             "Voice Control", "World Trip", "Earthquakes & Tsunami"]
         assert not any(dlg.list_ext.IsChecked(i) for i in range(3))
 assert dlg.txt_summary.GetValue().split("\n") == [
-    "Semua siap, Rafli!", "Rumahmu di Batam.",
+    "Perkenalan selesai, Rafli.", "Rumahmu di Batam.",
     "Tanggal 12 Mei nanti aku ucapkan selamat ulang tahun.",
     "Setiap kali komputermu menyala, aku menyapamu.",
-    "Tekan Ctrl + Shift + Backspace untuk memanggil Aruna.", "Selamat datang di Hariku!"]
+    "Tekan Ctrl + Shift + Backspace untuk memanggil Aruna.", "Mulai sekarang, aku ada di sini kapan pun kamu butuh. Selamat datang di Hariku."]
 fire(dlg.btn_next, wx.EVT_BUTTON)
 assert not dlg.IsShown() and dlg.outcome.finished and not dlg.outcome.language_changed
 assert core.api.load_data("Core") == core_before, "passing through changed the settings"
