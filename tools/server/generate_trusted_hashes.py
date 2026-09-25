@@ -97,6 +97,7 @@ OFFICIAL_EXTENSION_IDS = {
     "world_trip",
     "orbit",
     "dropbox",
+    "calculator",
     # add new official extension IDs here
 }
 

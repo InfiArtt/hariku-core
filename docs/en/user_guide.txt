@@ -1009,6 +1009,74 @@ In Preferences, Dropbox, you can turn off each kind of news (files syncing
 and synced, "up to date", other people's changes, what's shared with you)
 and the sounds. See PRIVACY.md for what is sent to Dropbox.
 
+CALCULATOR & CONVERTER (EXTENSION)
+-----------------------------------
+With the Calculator & Converter extension (from the Extension Store; it needs
+Hariku 2.9; "Kalkulator & Konversi" in Indonesian), you calculate and convert
+by typing or saying it to Aruna, in English or Indonesian. The answer is
+spoken and shows in Aruna's Last result, with numbers written your
+language's way: "33,33" and "1.250.000" in Indonesian, "33.33" and
+"1,250,000" in English.
+
+Sums. "25 x 4", "berapa 25 kali 4", "(3 + 4) * 2", "100 dibagi 3", "2 pangkat
+10", "akar 144", "akar pangkat tiga 27", "sisa bagi 17 dan 5", "7 factorial",
+"what's 15% of 80", "square root of 2". Aruna says the sum back in words, so
+you hear if a number was misheard: "25 kali 4 = 100." Numbers can be digits
+or words, as Voice Control writes them: "dua puluh lima", "seratus dua
+belas", "setengah", "satu koma lima", "minus tiga", "twenty-five", "one and a
+half", "3.5 million", "2 juta", "1,5 miliar", "350 ribu". Percent works as on
+a pocket calculator: "12 persen dari 350" is 42, "350 ditambah 12%" is 392.
+"20 itu berapa persen dari 80" says 25%. A result that had to be rounded says
+so ("100 dibagi 3 = kira-kira 33,33").
+
+Go on from the last result for five minutes: "tambah 5", "kali dua",
+"hasilnya dibagi 3", "plus 5", "times two". "berapa hasilnya" says it again,
+and "salin hasilnya" or "copy the result" copies it to the clipboard (just
+the number).
+
+Units. "2 kaki berapa inci", "2 feet in inches", "5 km ke mil", "100
+fahrenheit ke celsius", "30 derajat celsius berapa fahrenheit", "1 galon
+berapa liter", "70 kg dalam pon", "60 mph ke km per jam", "3 jam berapa
+menit", "1 hektar berapa meter persegi", "how many ml in a cup", "5 kaki 11
+inci ke cm", "170 cm ke kaki dan inci". Length, weight, volume, cooking (a
+cup is 240 ml, a tablespoon 15 ml, a teaspoon 5 ml), temperature (Celsius,
+Fahrenheit, Kelvin, Reaumur), speed, area, time, data sizes, pressure,
+energy, fuel economy (km/l, mpg, l/100 km) and angles. Indonesian units: ons
+(100 grams), kuintal, are and tumbak (14 square metres). A word with two
+meanings is settled by the other unit: "kilo" is kilograms, or kilometres
+next to miles; "derajat" alone is Celsius. Aruna adds a short note where an
+answer could be misread, for example which KB, MB and GB it used.
+
+Money. "100 dolar berapa rupiah", "50 euro ke yen", "1 juta rupiah dalam
+dolar", "Rp 1,5 juta ke dolar singapura", "kurs dolar", "100 dollars to
+rupiah". The answer says the date of the rates: "100 dolar AS = 1.790.855
+rupiah, kurs 25 September." Without a second currency ("100 dolar berapa"),
+it converts to your home currency. The rates are the central banks'
+daily reference rates, fetched when you first ask and kept for a few hours;
+when you're offline, rates up to a week old are used, and without any Aruna
+says it can't get them.
+
+Extras. "lempar koin" / "flip a coin", "lempar dadu", "lempar 2 dadu", "roll
+a d20", "angka acak 1 sampai 100" / "random number between 1 and 6", "bagi
+tagihan 350 ribu untuk 4 orang" (add "tip 10%" for a tip), "split 120
+dollars 3 ways", "diskon 30% dari 250 ribu", "30% off 250".
+
+With Hariku 2.9 and 2.10, start with a word such as "berapa", "hitung",
+"what's", "calculate", "convert", "how many" or "konversi" ("berapa 25 kali
+4", "convert 2 feet to inches", "berapa inci 2 kaki"), or end with "berapa"
+("100 dolar berapa"). From Hariku 2.11 Aruna also understands bare sentences
+such as "25 x 4", "2 foot in inches" and "tambah 5".
+
+In Preferences, Calculator & Converter, choose your home currency
+(automatically rupiah when Hariku speaks Indonesian, else US dollar), how
+many decimals to say (automatic: exact values as they are, rounded ones with
+2), whether KB, MB and GB count 1024 per step as Windows does (the default)
+or 1000 as drive makers do, and whether every result is copied to the
+clipboard. The commands "Copy the last calculator result", "Say the last
+calculator result", "Say a random number from 1 to 100", "Flip a coin" and
+"Roll a die" have no key by default; give them one in Input Gestures if you
+like. See PRIVACY.md for the exchange rates.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on

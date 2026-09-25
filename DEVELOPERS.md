@@ -1063,6 +1063,7 @@ def teardown():
 | Function | Returns | Description |
 |---|---|---|
 | `core.commands.add_intent(intent_id, patterns, handler, title=None)` | `Intent` | Patterns in any language, each with exactly one `{text}` and at least one word of its own, before, after or around it. The words are matched like command names (case, accents and punctuation don't count, misheard words like "katat" still match "catat", but a longer word such as "catatan" doesn't), and fillers before the pattern ("tolong", "Aruna") are skipped. When several intents match, the pattern with more words of its own is asked first. A command with content comes before commands and dates ("timer 10 menit" is not a reminder), but after a reminder trigger ("ingatkan aku"). The same id again replaces it. |
+| `core.commands.add_intent(..., matcher=fn)` | `Intent` | *(core 2.11)* For sentences with no fixed words to make a pattern of, such as "25 x 4" or "2 feet in inches": `fn(text)` gets every sentence none of the intent's patterns matched and returns what `request.text` should hold (usually the text itself) when the sentence is clearly its own, else `None`. It runs for everything said to Aruna, on the UI thread: be quick (no network, no files) and strict, or you take other extensions' sentences. A sentence a matcher takes is asked last, after every pattern of every intent. `patterns` may then be empty. Check `getattr(core.commands, "INTENT_MATCHERS", False)` first; older cores don't take the argument. |
 | `core.commands.remove_intent(intent_id)` | `bool` | In `teardown()`. |
 | `core.commands.match_intents(text)` | `list` | The `IntentMatch`es (`.intent`, `.text`, `.score`) of a text, as Aruna sees them. |
 
@@ -1077,7 +1078,7 @@ def teardown():
 
 A handler that raises makes Aruna say "That command didn't work" (and it is logged). Everything your handler and `confirm()` speak with `core.speech.speak()` comes in Hariku Voice, like an action's answer.
 
-The Timer & Alarm extension (`extensions/timer_alarm`) is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead.
+The Timer & Alarm extension (`extensions/timer_alarm`) is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead. The Calculator & Converter extension (`extensions/calculator`) uses a matcher with no patterns where the core has one ("25 x 4", "5 km ke mil", "berapa 25 kali 4"), and a short list of lead-word patterns ("berapa {text}", "hitung {text}") on cores 2.9 and 2.10, so it runs on both. Keep patterns few and their words distinctive: every pattern's words also go into Voice Control's vocabulary prompt, where short words push out other commands' names.
 
 **Answers told in steps** *(core 2.9)*. Aruna's Last result collects what is spoken within a moment of the answer's last line. An answer with pauses between its steps (World Trip: the captain's announcement, the engines, the arrival, a phrase in another voice) keeps it open:
 

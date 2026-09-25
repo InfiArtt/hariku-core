@@ -1,0 +1,10 @@
+{
+    "id": "calculator",
+    "name": "Calculator & Converter",
+    "version": "1.0",
+    "description": "Calculate, convert and more by typing or speaking to Aruna, in Indonesian or English: \"berapa 25 kali 4\", \"what's 15% of 80\", \"berapa akar 144\", \"convert 2 feet to inches\", \"berapa inci 2 kaki\", \"konversi 30 derajat celsius ke fahrenheit\", \"100 dolar berapa\". Numbers in digits or words (\"dua puluh lima\", \"satu koma lima\", \"3.5 million\"), answers in your language's numbers (\"33,33\", \"1.250.000\"). Go on from the result (\"hasilnya tambah 5\", \"the result times two\") and copy it. Length, weight, volume, cooking, temperature, speed, area, time, data, pressure, energy and fuel economy, with Indonesian units such as the ons. Also flips a coin, rolls dice, picks a random number, splits a bill and works out discounts. Everything is worked out on your computer; only for currencies are the day's rates fetched from Frankfurter, all at once, so what you convert isn't sent. From Hariku 2.11 the first word can be left out: \"25 x 4\", \"2 feet in inches\", \"tambah 5\".",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.9"
+}
