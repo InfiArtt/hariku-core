@@ -127,6 +127,7 @@ class LocalMixin:
         steps = max(1, len(path))
         seconds = float(rules["seconds_base"]) + float(rules["seconds_per_step"]) * steps
         pay = self.pay(char, int(rules["pay"]) + int(rules["pay_per_step"]) * steps)
+        pay = int(pay * self.simple_factor("gig_pay"))                  # the night rush
         char["stats"]["gig"] = {"to": dest, "until": self.now() + seconds, "pay": pay}
         self._save(session)
         self._send(session, "task", "gig_taken", place=self.world.locations[dest]["ref"],

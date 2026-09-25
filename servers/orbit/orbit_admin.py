@@ -147,7 +147,10 @@ class AdminMixin:
         handler = {"announce": self._admin_announce, "economy": self._admin_economy,
                    "set_price": self._admin_set_price, "goto": lambda s, m: self.admin_goto(s, self._arg(m)),
                    "invisible": self._admin_invisible, "transfers": self._admin_transfers,
-                   "admin_log": self._admin_log}.get(op)
+                   "admin_log": self._admin_log,
+                   "event_start": lambda s, m: self.admin_event_start(s, self._arg(m)),
+                   "event_stop": lambda s, m: self.admin_event_stop(s, self._arg(m)),
+                   "event_schedule": lambda s, m: self.admin_event_schedule(s, self._arg(m))}.get(op)
         if handler is not None:
             handler(session, message)
             return

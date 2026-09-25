@@ -23,7 +23,9 @@ Chat is never stored here.
 
 Other tables: companions (a pet, and later other companions, with its
 owners), ships (each player's own: its model and name, where it's docked or
-where it's flying, its fuel and cargo), achievements, lottery tickets,
+where it's flying, its fuel and cargo), events (each one that ran or is
+scheduled, its state and how it ended) and who took part in them,
+achievements, lottery tickets,
 transfer codes (only a hash, for 10 minutes), secrets that no longer work (moved to another computer, or revoked
 by an admin, so the old computer is told why), the transfers log, the
 admins' log, bans by address (a salted hash), and "meta" for server values
@@ -32,7 +34,7 @@ lottery's pot, the salt).
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is
-saved next to it (orbit.db.before-v3.bak); columns and tables are only ever
+saved next to it (orbit.db.before-v4.bak); columns and tables are only ever
 added, never dropped.
 
 Everything is written at once (autocommit, or one transaction for things
@@ -52,7 +54,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -175,6 +177,29 @@ CREATE TABLE IF NOT EXISTS ships (
 );
 """
 
+# Version 4 (Orbit 1.1, events).
+V4_TABLES = """
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY,
+    event TEXT NOT NULL,
+    starts REAL NOT NULL,
+    ends REAL NOT NULL,
+    status TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT '{}',
+    host TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL DEFAULT '',
+    created REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS events_by_status ON events (status);
+CREATE TABLE IF NOT EXISTS event_players (
+    event_id INTEGER NOT NULL,
+    char_id INTEGER NOT NULL,
+    points INTEGER NOT NULL DEFAULT 0,
+    last REAL NOT NULL,
+    PRIMARY KEY (event_id, char_id)
+);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
 FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
@@ -244,6 +269,8 @@ class Store:
                 self._migrate_2()
             if version < 3:
                 self._migrate_3()
+            if version < 4:
+                self._migrate_4()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -297,6 +324,11 @@ class Store:
 
     def _migrate_3(self):
         for statement in V3_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+
+    def _migrate_4(self):
+        for statement in V4_TABLES.split(";"):
             if statement.strip():
                 self.db.execute(statement)
 
@@ -638,6 +670,54 @@ class Store:
     def flying_ships(self):
         rows = self.db.execute("SELECT * FROM ships WHERE flight != ''").fetchall()
         return [self._ship(row) for row in rows]
+
+    # --- events -----------------------------------------------------------------------------
+
+    @staticmethod
+    def _event(row):
+        event = dict(row)
+        try:
+            state = json.loads(event.get("state") or "{}")
+        except ValueError:
+            state = {}
+        event["state"] = state if isinstance(state, dict) else {}
+        return event
+
+    def add_event(self, event, starts, ends, state, status, host="", message=""):
+        cursor = self.db.execute(
+            "INSERT INTO events (event, starts, ends, status, state, host, message, created) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (event, float(starts), float(ends), status, json.dumps(state or {}), host or "", message or "",
+             self.clock()))
+        return self._event(self.db.execute("SELECT * FROM events WHERE id = ?", (cursor.lastrowid,)).fetchone())
+
+    def save_event(self, event):
+        self.db.execute("UPDATE events SET starts = ?, ends = ?, status = ?, state = ?, host = ?, message = ? "
+                        "WHERE id = ?",
+                        (float(event["starts"]), float(event["ends"]), event["status"],
+                         json.dumps(event.get("state") or {}), event.get("host") or "", event.get("message") or "",
+                         event["id"]))
+
+    def events_with(self, status):
+        rows = self.db.execute("SELECT * FROM events WHERE status = ? ORDER BY starts, id", (status,)).fetchall()
+        return [self._event(row) for row in rows]
+
+    def add_event_points(self, event_id, char_id, points, when):
+        self.db.execute("INSERT INTO event_players (event_id, char_id, points, last) VALUES (?, ?, ?, ?) "
+                        "ON CONFLICT(event_id, char_id) DO UPDATE SET points = points + excluded.points, "
+                        "last = excluded.last", (event_id, char_id, int(points), float(when)))
+
+    def event_points(self, event_id, char_id):
+        """How much a character took part in an event (0: not at all; a row with 0 points counts as 1)."""
+        row = self.db.execute("SELECT points FROM event_players WHERE event_id = ? AND char_id = ?",
+                              (event_id, char_id)).fetchone()
+        return max(1, int(row["points"])) if row else 0
+
+    def event_players(self, event_id):
+        """[(char_id, points)] of everyone who took part, the most first."""
+        rows = self.db.execute("SELECT char_id, points FROM event_players WHERE event_id = ? "
+                               "ORDER BY points DESC, char_id", (event_id,)).fetchall()
+        return [(row["char_id"], int(row["points"])) for row in rows]
 
     # --- bans by address (only a hash of it is kept) ------------------------------------
 

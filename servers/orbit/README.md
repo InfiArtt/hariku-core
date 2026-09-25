@@ -35,6 +35,8 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_progress.py` | achievements and the leaderboards |
 | `orbit_travel.py` | the worlds: the Gate, the ferry, players' own ships, customs |
 | `orbit_local.py` | the other worlds' own work: Evergrove's creatures, Lumina City's courier gigs |
+| `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
+| `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
 | `orbit_verbs.py` | the commands the server reads from plain text (both languages) |
 | `orbit_world.py`, `world.json` | the map: worlds, rooms, compass exits, objects, goods, missions, gestures |
@@ -104,20 +106,23 @@ while running).
 1. Copy every file of this folder to `~/orbit/` (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
    `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`, `orbit_travel.py`, `orbit_local.py`,
+   `orbit_events.py`,
+   `orbit_events.py`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
    keys: every new setting has a default (below).
 2. `systemctl --user restart orbit`.
 3. On its first start, the server sees an older database (Orbit 1.0's is
-   schema version 0), saves a copy of it as `orbit.db.before-v3.bak` next to
-   it, and migrates it to version 3 in one transaction: new columns (voice,
+   schema version 0), saves a copy of it as `orbit.db.before-v4.bak` next to
+   it, and migrates it to version 4 in one transaction: new columns (voice,
    XP, the daily streak, what a character mined and harvested, what it won
-   or lost at the casino) and new tables (companions, ships, achievements,
-   lottery tickets, transfer codes, old secrets, transfers, the admins' log)
-   are added; nothing is dropped or changed, and work done before 1.1 counts
-   as XP (10 a repair, 20 a cargo run, 25 a mission). The log says "the
-   database was migrated from version 0 to 3". If the migration fails,
+   or lost at the casino) and new tables (companions, ships, events and who
+   took part in them, achievements, lottery tickets, transfer codes, old
+   secrets, transfers, the admins' log) are added; nothing is dropped or
+   changed, and work done before 1.1 counts as XP (10 a repair, 20 a cargo
+   run, 25 a mission). The log says "the database was migrated from version
+   0 to 4". If the migration fails,
    nothing is changed and the server stops with the error in the log; the
    copy is there.
 4. Every room of 1.0 still exists, so characters wake up where they were.
@@ -254,6 +259,18 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 | `game.max_goods` | 20 | goods a bag holds (bigger bags hold more) |
 | `game.transfer_minutes` | 10 | how long a transfer code works |
 | `game.transfer_tries`, `game.transfer_window` | 5, 900 | wrong transfer codes one address may send in that many seconds |
+| `game.events_enabled` | true | events that start by themselves (false: only what admins start or schedule) |
+| `game.events_random`, `game.events_seasonal` | true, true | the random events; the station's birthday, New Year, the Lantern Festival |
+| `game.events_min_gap`, `game.events_max_gap` | 1800, 3600 | seconds between random events with one player online... |
+| `game.events_crowd_factor`, `game.events_min_factor` | 0.1, 0.5 | ...each extra player online makes the gap 10% shorter, down to half |
+| `game.events_party_cooldown` | 7200 | how often one player may throw a party |
+| `game.events_weekly` | trading fair Saturday 14:00, jackpot night Friday 13:00, night rush Wednesday 13:00 | `[{"event", "weekday" (0 Monday), "hour", "minute"}]`, in UTC |
+| `game.events_enabled` | true | events that start by themselves (false: only what admins start or schedule) |
+| `game.events_random`, `game.events_seasonal` | true, true | the random events; the station's birthday, New Year, the Lantern Festival |
+| `game.events_min_gap`, `game.events_max_gap` | 1800, 3600 | seconds between random events with one player online... |
+| `game.events_crowd_factor`, `game.events_min_factor` | 0.1, 0.5 | ...each extra player online makes the gap 10% shorter, down to half |
+| `game.events_party_cooldown` | 7200 | how often one player may throw a party |
+| `game.events_weekly` | trading fair Saturday 14:00, jackpot night Friday 13:00, night rush Wednesday 13:00 | `[{"event", "weekday" (0 Monday), "hour", "minute"}]`, in UTC |
 
 ### The balance (economy.json)
 
@@ -368,6 +385,50 @@ What 1.1 ships with:
   the Gate, 35% by the ferry, 25% by ship (half with a scanner bay), times
   the world's own; a search takes all contraband and fines half its usual
   value.
+- **Events** (world.json `events`; see `orbit_events.py`): 21 in all. Random,
+  every 30 to 60 minutes while someone is online (sooner when more are),
+  never two big ones at once, each with its own cooldown: a meteor shower
+  (collect meteorites, 5 each, at the Observation Deck, on the hull walk or
+  the Moon's Sea of Dust), a solar storm (engineers' repairs pay half
+  again), a cargo spill (8 to 20 credits a crate, 6 each), a runaway robot
+  pet and a stowaway (hidden in one of 39 station rooms; listen or search
+  says which way; 120 and 100 credits to whoever finds them, security
+  double), a market boom or crash (one world, one kind of goods, a third up
+  or down), a double XP hour, happy hour (the bar and the Food Court half
+  price), a comet flyby (watch for 20 credits), a power outage (seven rooms
+  dark), a dust storm on Karmina (join in the shelter for 30), and the
+  runaway drone at the Dock (at least two online; strength 10 + 8 for each
+  player online; each successful tug does 1 or 2; everyone who helped gets
+  40 + 15 a point, at most 300, or 10 if it gets away). Weekly: the trading
+  fair (the Mall Ring a fifth off for two hours), jackpot night (three of a
+  kind pays double), the night rush (courier gigs pay double). Seasonal:
+  the station's birthday on 25 September (100 credits and an iced coffee
+  each), New Year (watch the fireworks for 50), the Lantern Festival on the
+  hundredth day of the year (free lanterns and a 25-credit thank-you).
+  Parties: a player's cabin is open to everyone for half an hour, once in
+  two hours. Admins can start, stop and schedule events.
+- **Events** (world.json `events`; see `orbit_events.py`): 21 in all. Random,
+  every 30 to 60 minutes while someone is online (sooner when more are),
+  never two big ones at once, each with its own cooldown: a meteor shower
+  (collect meteorites, 5 each, at the Observation Deck, on the hull walk or
+  the Moon's Sea of Dust), a solar storm (engineers' repairs pay half
+  again), a cargo spill (8 to 20 credits a crate, 6 each), a runaway robot
+  pet and a stowaway (hidden in one of 39 station rooms; listen or search
+  says which way; 120 and 100 credits to whoever finds them, security
+  double), a market boom or crash (one world, one kind of goods, a third up
+  or down), a double XP hour, happy hour (the bar and the Food Court half
+  price), a comet flyby (watch for 20 credits), a power outage (seven rooms
+  dark), a dust storm on Karmina (join in the shelter for 30), and the
+  runaway drone at the Dock (at least two online; strength 10 + 8 for each
+  player online; each successful tug does 1 or 2; everyone who helped gets
+  40 + 15 a point, at most 300, or 10 if it gets away). Weekly: the trading
+  fair (the Mall Ring a fifth off for two hours), jackpot night (three of a
+  kind pays double), the night rush (courier gigs pay double). Seasonal:
+  the station's birthday on 25 September (100 credits and an iced coffee
+  each), New Year (watch the fireworks for 50), the Lantern Festival on the
+  hundredth day of the year (free lanterns and a 25-credit thank-you).
+  Parties: a player's cabin is open to everyone for half an hour, once in
+  two hours. Admins can start, stop and schedule events.
 - **The worlds' work:** helium-3 in the Moon's tunnels (mining, like the
   Belt); collecting in Karmina's farming domes, on its Rust Flats, in
   Glasir's ice quarry and its blue crevasse; Evergrove's creatures (a d20
@@ -407,6 +468,12 @@ Typed in the game by a character in `game.admins` (Indonesian first):
 | `cabut akses Budi` / `revoke Budi` | no computer can play Budi until a transfer code is used (a stolen laptop) |
 | `kode pindah untuk Budi` / `transfer code for Budi` | a code for someone who lost their computer |
 | `log admin` / `admin log` | the last admin actions |
+| `mulai acara hujan meteor` / `start event meteor shower` | start any event now |
+| `hentikan acara` / `stop event` (and a name) | stop the event (or cancel a scheduled one) |
+| `jadwalkan acara 2026-09-27 14:00 ...` / `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
+| `mulai acara hujan meteor` / `start event meteor shower` | start any event now |
+| `hentikan acara` / `stop event` (and a name) | stop the event (or cancel a scheduled one) |
+| `jadwalkan acara 2026-09-27 14:00 ...` / `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
 | `bantuan admin` / `help admin` | this list, in the game (players don't see it) |
 
 Every admin action is written to the log and to the database's `admin_log`
@@ -440,12 +507,16 @@ outside, a shuttle ride or ferry trip in progress, a courier gig, its casino
 bets of the last hour a minute at a time, how many trades, jackpots,
 naturals, gigs and creatures), what it won or lost at the casino, when it was made and last seen, and whether it is
 banned or muted; its companions (a pet: kind, name, and its own stats); its
-ship (model, name, where it's docked or flying to, fuel and cargo); its
+ship (model, name, where it's docked or flying to, fuel and cargo); the
+events it took part in (and how much, for the drone's rewards); its
 achievements (which, and when); its lottery tickets (how many, for which
 week's draw); transfer codes (a hash, for 10 minutes); secrets that no
 longer work (a hash); the transfers log; the admins' log; and, in `meta`,
 the market's prices, each world's own prices, the economy's totals, today's
-temple lanterns and the lottery's next draw and carried-over pot. Trade offers, coin-flip
+temple lanterns, the lottery's next draw and carried-over pot, and the
+events' pacing (when the next random one may come, when each last came,
+which weekly and seasonal ones have run). Every event that runs or is
+scheduled is a row in `events`, with its state and how it ended. Trade offers, coin-flip
 challenges and a blackjack hand in progress live only in memory (a hand is
 played out, standing, if its player leaves or the server stops). Accounts
 have no password or email: the client makes a random 256-bit secret the
@@ -522,6 +593,8 @@ commands need no new client:
 | `achievements` (`to`), `leaderboard` (`a`: richest, level, miners, farmers, streak, casino) | | |
 | `worlds`, `gate` (`a`: a world), `ferry` (`a`), `embark` (`to`: a friend's ship), `disembark`, `fly` (`a`), `refuel` (`n`), `load`, `unload` (`item`, `n` or `"all"`), `cargo`, `name_ship` (`a`) | | travel and ships |
 | `face` (`a`: a creature), `gig` | | Evergrove's creatures, Lumina's courier gigs |
+| `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
+| `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
@@ -548,7 +621,10 @@ voice and the words in the speaker's), `to` (who you whispered to),
 with accept or decline), `transfer_code` and `expires`, `reels` (a slot
 machine's three symbols, left to right) and `outcome` (`win`, `lose`,
 `push`, `jackpot`: the client plays it after the dice land, the cards turn
-or the reels stop).
+or the reels stop), `event` (on an announcement: the event it belongs to,
+so a client can leave events unread) and `schedule` (with the `events`
+list: `[{"event", "name", "at"}]`, the coming ones as UTC timestamps, for
+the client to show in local time and set reminders).
 
 **Closing codes**: 1001 the server is restarting (reconnect), 1008 a broken
 rule (too many messages, no hello), 4000 kicked, 4001 connected from
@@ -592,12 +668,14 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `bell`, `lantern` | the temple's star bell; lighting a lantern |
 | `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
 | `creature` | one of Evergrove's creatures |
+| `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
+| `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
 | `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
 | `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 167 files, about 9.1 MB (the extension zips to about 7.2 MB): 104
-recorded (2.9 MB) and 63 synthesized (6.2 MB).
+The set: 175 files, about 9.4 MB: 104 recorded (2.9 MB) and 71 synthesized;
+the ambience loops are at 11 kHz.
 
 ### Credits: recorded sounds
 
@@ -622,7 +700,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from
@@ -652,8 +730,8 @@ reaches the server from it.
   players, without another big migration.
 - **Families:** two players partnering up with consent, and a baby companion
   that needs care, grows into a child, and follows and helps its family.
-- **Ceremonies at the venues** (the Star Dome Hall and the Jasmine Pavilion
-  are marked `venue` in world.json): a wedding with two lanterns joined into
+- **Ceremonies at the venues** (the Star Dome Hall, the Jasmine Pavilion and
+  Evergrove's Great Hall are marked `venue` in world.json): a wedding with two lanterns joined into
   one light, a moment of silence, vows the two write themselves and three
   chimes of the star bell (and a neutral ceremony without the temple); a
   naming ceremony for a baby companion; and the yearly Lantern Festival of

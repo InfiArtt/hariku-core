@@ -202,7 +202,10 @@ class CasinoMixin:
         self._take_bet(char, amount)
         table = self.econ["casino"]["slots"]
         reels = [self._pick(table["symbols"]) for _ in range(3)]
-        payout = pays(amount, slot_payout(reels, table))
+        multiple = slot_payout(reels, table)
+        if reels[0] == reels[1] == reels[2]:
+            multiple *= self.simple_factor("jackpot")        # jackpot night
+        payout = pays(amount, multiple)
         jackpot = reels == ["orbit"] * 3
         if jackpot:
             key, outcome = "slots_jackpot", "jackpot"

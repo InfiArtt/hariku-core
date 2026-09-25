@@ -203,13 +203,15 @@ class ItemsMixin:
             bought = max(0, self.plot_count(char) - int(self.econ["farm"]["plots"]))
             return int(prices[min(bought, len(prices) - 1)])
         price = int(thing.get("price") or 0)
-        if not price or thing.get("service") or not self._wobbles(sid):
+        if not price or thing.get("service"):
             return price
+        if not self._wobbles(sid):
+            return max(1, int(round(price * self.shop_discount(sid)))) if sid else price
         rules = self.econ.get("prices", {})
         factor = 1 + float(rules.get("wobble", 0)) * (2 * self._day_fraction(sid, tid) - 1)
         if tid == self.special_of(sid):
             factor -= float(rules.get("special", 0))
-        return max(1, int(round(price * factor)))
+        return max(1, int(round(price * factor * self.shop_discount(sid))))
 
     def entry_text(self, lang, char, tid, sid=None):
         thing = self.world.things[tid]
@@ -509,14 +511,21 @@ class ItemsMixin:
         if not self._at_temple(session):
             return
         temple = self.econ.get("temple", {})
-        price = int(temple.get("lantern_price", 3))
+        festival = self.lantern_rules() or {}
+        price = 0 if festival.get("free") else int(temple.get("lantern_price", 3))
         if self._cooldown_left(char, "lantern") > 0 or not self._slow(session):
             self._error(session, "lantern_wait")
             return
         if char["credits"] < price:
             self._error(session, "buy_poor", total=price, credits=char["credits"])
             return
-        self.spend(char, price, "lanterns")
+        if price:
+            self.spend(char, price, "lanterns")
+        gift = int(festival.get("gift") or 0)
+        if gift and not char["stats"].get("festival_gift") == self.today():
+            char["stats"]["festival_gift"] = self.today()
+            self.earn(char, gift, "events")
+            self._send(session, "paid", "lantern_festival_gift", n=gift, extra={"sound": "coins"})
         self._set_cooldown(char, "lantern", float(temple.get("lantern_seconds", 30)))
         count = self.lanterns_today() + 1
         self.store.set_json("lanterns", {"day": self.today(), "count": count})

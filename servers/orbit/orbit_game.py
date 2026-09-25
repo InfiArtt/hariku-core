@@ -52,6 +52,7 @@ import orbit_verbs
 from orbit_admin import AdminMixin
 from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
+from orbit_events import EventsMixin
 from orbit_items import ItemsMixin
 from orbit_lang import pick
 from orbit_local import LocalMixin
@@ -132,11 +133,11 @@ class Session:
 
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-          TravelMixin, LocalMixin, AdminMixin)
+          TravelMixin, LocalMixin, EventsMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-           TravelMixin, LocalMixin, AdminMixin):
+           TravelMixin, LocalMixin, EventsMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -161,6 +162,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self._lottery = None              # the lottery's state (meta "lottery"), when read
         self.init_economy()
         self.init_travel()
+        self.init_events()
+        self.market.event_factor = self.event_price_factor
 
     # ------------------------------------------------------------------ helpers
 
@@ -935,6 +938,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                   "ferry", "feri", "gate", "gerbang", "trade runs", "berdagang"),
         "progress": ("progress", "kemajuan", "prestasi", "achievements", "leaderboard", "leaderboards",
                      "papan", "skor", "score", "scores"),
+        "events": ("events", "event", "acara", "peristiwa", "pesta", "party", "parties"),
         "admin": ("admin",),
     }
 
@@ -976,6 +980,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_offers(now)
         self.tick_lottery(now)
         self.tick_ships(now)
+        self.tick_events(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):

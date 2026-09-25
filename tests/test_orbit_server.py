@@ -483,7 +483,7 @@ def make_game(tmp_path, world, clock):
         # In memory unless the test restarts the server from a file.
         store = orbit_store.Store(path or ":memory:", clock=clock, iterations=1000, durable=False)
         stores.append(store)
-        settings = {"admins": ["Rafli"]}
+        settings = {"admins": ["Rafli"], "events_enabled": False}     # events: tests of their own
         settings.update(config)
         game = orbit_game.Game(world, store, StrictTexts(), settings, _filter(), clock=clock,
                                rng=random.Random(7))

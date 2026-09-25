@@ -55,7 +55,8 @@ class NavMixin:
         return bool(self.effects(char)["light"])
 
     def in_the_dark(self, char):
-        return bool(self._loc(char).get("dark")) and not self.has_light(char)
+        dark = bool(self._loc(char).get("dark")) or self.event_dark(char["location"])
+        return dark and not self.has_light(char)
 
     def has_access(self, char, lock):
         return lock is None or lock in self.effects(char)["access"]
@@ -794,7 +795,7 @@ class NavMixin:
             self.cmd_go(session, {"a": "cabin"})
             return
         until = host.invites.get(session.key)
-        if not until or until < self.now():
+        if (not until or until < self.now()) and not self.party_of(host.key):
             self._error(session, "not_invited", name=host.name)
             return
         if char["location"] != "cabins_hall":

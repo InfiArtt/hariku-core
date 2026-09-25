@@ -162,15 +162,21 @@ class Market:
             return max(1, int(math.ceil(price * (1 + fee) - 1e-9)))
         return max(1, int(math.floor(price * (1 - spread) + 1e-9)))
 
+    event_factor = None                   # the game's: an event moving one world's prices
+
+    def _event(self, world, gid):
+        return self.event_factor(world, gid) if self.event_factor and world else 1.0
+
     def unit_price(self, gid, job, side, fees=None, factor=1.0, world=None):
-        return self._unit(self.price(gid) * factor * self.local_factor(world, gid), fees or self.fees(job), side)
+        price = self.price(gid) * factor * self.local_factor(world, gid) * self._event(world, gid)
+        return self._unit(price, fees or self.fees(job), side)
 
     def impact(self, world):
         return PRICE_IMPACT if world not in self.local else float(self.rules["impact"])
 
     def quote(self, gid, job, side, n, fees=None, factor=1.0, world=None):
         """The total for `n` units, the price moving with each one."""
-        price, total = self.price(gid) * factor * self.local_factor(world, gid), 0
+        price, total = self.price(gid) * factor * self.local_factor(world, gid) * self._event(world, gid), 0
         step = self.impact(world)
         for _ in range(n):
             total += self._unit(price, fees or self.fees(job), side)
@@ -708,6 +714,9 @@ class EconomyMixin:
 
     def cmd_collect(self, session, message):
         char, lang = session.char, session.lang
+        if self.events_here(char, "collect"):
+            self.event_collect(session)
+            return
         spot = self._loc(char).get("salvage")
         if not spot:
             self._error(session, "collect_nothing")

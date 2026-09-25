@@ -29,6 +29,7 @@ world.json
   moved       old room ids and the rooms that replaced them
   jobs, goods (the markets' goods), items (what missions ask you to carry),
   missions, emotes, earth (what the Observation Deck names)
+  events      what happens to everyone now and then (see orbit_events.py)
 
 economy.json (the balance: levels, the daily bonus, crops, mining, the shops'
 things and their effects...). See README.md.
@@ -199,6 +200,7 @@ class World:
             if a not in self.locations or b not in self.locations:
                 problems.append(f"shuttle link {a} - {b}: unknown room")
         problems.extend(self._check_worlds())
+        problems.extend(self._check_events())
         for old, new in self.moved.items():
             if new not in self.locations:
                 problems.append(f"moved {old} -> unknown {new}")
@@ -286,6 +288,40 @@ class World:
         for lid in economy.get("gigs", {}).get("to", []):
             if lid not in self.locations:
                 problems.append(f"gigs: unknown room {lid!r}")
+        return problems
+
+    EVENT_KINDS = ("random", "weekly", "seasonal", "hosted", "custom")
+    EVENT_ACTIONS = (None, "collect", "seek", "watch", "join", "gift", "boss")
+
+    def _check_events(self):
+        problems = []
+        for eid, event in self.data.get("events", {}).items():
+            if event.get("kind") not in self.EVENT_KINDS:
+                problems.append(f"event {eid}: unknown kind {event.get('kind')!r}")
+            if event.get("action") not in self.EVENT_ACTIONS:
+                problems.append(f"event {eid}: unknown action {event.get('action')!r}")
+            for field in ("name", "about", "start", "end"):
+                if not all(isinstance(event.get(field, {}).get(lang), str) for lang in LANGS):
+                    problems.append(f"event {eid}: {field} needs en and id")
+            if not float(event.get("duration") or 0) > 0:
+                problems.append(f"event {eid}: needs a duration")
+            rooms = list(event.get("rooms") or []) + list((event.get("effect") or {}).get("dark") or [])
+            for lid in rooms:
+                if lid not in self.locations:
+                    problems.append(f"event {eid}: unknown room {lid!r}")
+            for gid in (event.get("loot") or {}):
+                if gid not in self.goods:
+                    problems.append(f"event {eid}: unknown loot {gid!r}")
+            thing = (event.get("gift") or {}).get("thing")
+            if thing and thing not in self.things:
+                problems.append(f"event {eid}: unknown gift {thing!r}")
+            if event.get("action") in ("collect", "seek", "watch", "boss") and not event.get("rooms"):
+                problems.append(f"event {eid}: needs rooms")
+            needs = {"collect": ("found",), "seek": ("won", "wrong", "verb"), "watch": ("seen",),
+                     "join": ("joined",), "gift": ("joined",), "boss": ("won", "hit", "miss")}
+            for field in needs.get(event.get("action"), ()):
+                if field not in event:
+                    problems.append(f"event {eid}: needs {field}")
         return problems
 
     # --- the worlds ----------------------------------------------------------------------

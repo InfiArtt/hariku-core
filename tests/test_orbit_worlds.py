@@ -490,7 +490,7 @@ def test_a_version_2_database_gets_the_ships_table(tmp_path, clock, monkeypatch)
         m.setattr(orbit_store.Store, "_migrate_3", lambda self: None)
         orbit_store.Store(path, clock=clock, iterations=1000, durable=False).close()
     store = orbit_store.Store(path, clock=clock, iterations=1000, durable=False)
-    assert store.version() == 3 and store.migrated_from == 2
+    assert store.version() == orbit_store.SCHEMA_VERSION and store.migrated_from == 2
     ship = store.add_ship(1, "ship_swiftlet", "", "hangar", 24)
     ship["cargo"] = {"ice": 3, "coffee": 0}
     ship["flight"] = {"to": "moon", "arrive": 5.0}
@@ -499,7 +499,7 @@ def test_a_version_2_database_gets_the_ships_table(tmp_path, clock, monkeypatch)
     assert again["cargo"] == {"ice": 3} and again["flight"]["to"] == "moon"
     assert [s["id"] for s in store.flying_ships()] == [ship["id"]]
     store.close()
-    backup = sqlite3.connect(path + ".before-v3.bak")
+    backup = sqlite3.connect(path + f".before-v{orbit_store.SCHEMA_VERSION}.bak")
     assert backup.execute("PRAGMA user_version").fetchone()[0] == 2
     backup.close()
     assert isinstance(FakeConn(), FakeConn)

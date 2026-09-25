@@ -1677,6 +1677,14 @@
       "at": 25,
       "credits": 200,
       "desc": {"en": "win over 25 creatures in Evergrove", "id": "memenangkan hati 25 makhluk di Rimba Abadi"}
+    },
+    "eventful": {
+      "en": "Eventful",
+      "id": "Penuh Peristiwa",
+      "stat": "events",
+      "at": 10,
+      "credits": 150,
+      "desc": {"en": "take part in 10 events", "id": "ikut dalam 10 acara"}
     }
   },
   "travel": {

@@ -76,7 +76,7 @@ class WorkMixin:
         return 1.0 + float(self.econ["levels"]["pay_per_level"]) * (level - 1) + self.effects(char)["pay"]
 
     def pay(self, char, base):
-        return int(round(base * self.pay_factor(char)))
+        return int(round(base * self.pay_factor(char) * self.work_pay_factor(char)))
 
     def award_xp(self, session, amount):
         """Add XP (more while an iced coffee works); say so if a level was reached."""
@@ -86,6 +86,7 @@ class WorkMixin:
             amount = int(round(amount * float(boost.get("factor", 1.0))))
         elif boost:
             char["stats"].pop("xp_boost", None)
+        amount = int(round(amount * self.xp_factor()))
         before = self.level_of(int(char.get("xp") or 0))
         char["xp"] = int(char.get("xp") or 0) + amount
         after = self.level_of(char["xp"])
@@ -135,6 +136,8 @@ class WorkMixin:
         char = session.char
         job = char["job"]
         if self.in_transit(session):
+            return
+        if self.event_fix(session):              # the runaway drone, when it's here
             return
         if job == "engineer":
             self._work_repair(session)

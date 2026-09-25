@@ -151,6 +151,29 @@ VERBS = [
     (("approach",), "face"),
     (("gig",), "gig"), (("ambil", "gig"), "gig"), (("take", "a", "gig"), "gig"), (("kurir",), "gig"),
     (("courier", "job"), "gig"), (("antar", "paket"), "gig"), (("delivery",), "gig"),
+    # events
+    (("acara",), "events"), (("events",), "events"), (("event",), "events"), (("agenda",), "events"),
+    (("daftar", "acara"), "events"), (("what's", "on"), "events"), (("whats", "on"), "events"),
+    (("ikut",), "join"), (("join",), "join"), (("gabung",), "join"), (("ikut", "acara"), "join"),
+    (("join", "event"), "join"), (("join", "in"), "join"), (("buka", "hadiah"), "join"),
+    (("open", "gift"), "join"),
+    (("dengar",), "listen"), (("dengarkan",), "listen"), (("listen",), "listen"), (("listen", "for"), "listen"),
+    (("tangkap",), "catch"), (("catch",), "catch"), (("tangkap", "robot"), "catch"), (("catch", "robot"), "catch"),
+    (("catch", "the", "robot"), "catch"),
+    (("geledah",), "search"), (("search",), "search"), (("geledah", "ruangan"), "search"),
+    (("search", "room"), "search"), (("search", "the", "room"), "search"),
+    (("tonton",), "watch"), (("watch",), "watch"), (("tonton", "komet"), "watch"), (("watch", "comet"), "watch"),
+    (("watch", "the", "comet"), "watch"),
+    (("tonton", "kembang", "api"), "watch"), (("watch", "fireworks"), "watch"),
+    (("adakan", "pesta"), "party"), (("bikin", "pesta"), "party"), (("host", "party"), "party"),
+    (("host", "a", "party"), "party"), (("throw", "a", "party"), "party"), (("throw", "party"), "party"),
+    (("perbaiki", "drone"), "fix"), (("fix", "drone"), "fix"), (("fix", "the", "drone"), "fix"),
+    (("repair", "drone"), "fix"), (("repair", "the", "drone"), "fix"), (("matikan", "drone"), "fix"),
+    (("mulai", "event"), "event_start"), (("mulai", "acara"), "event_start"), (("start", "event"), "event_start"),
+    (("hentikan", "event"), "event_stop"), (("hentikan", "acara"), "event_stop"), (("stop", "event"), "event_stop"),
+    (("batalkan", "acara"), "event_stop"), (("cancel", "event"), "event_stop"),
+    (("jadwalkan", "event"), "event_schedule"), (("jadwalkan", "acara"), "event_schedule"),
+    (("schedule", "event"), "event_schedule"),
     # the casino
     (("kasino",), "casino"), (("casino",), "casino"), (("menu", "kasino"), "casino"),
     (("casino", "menu"), "casino"),
@@ -214,7 +237,8 @@ VERBS = [
 VERBS.sort(key=lambda entry: -len(entry[0]))
 
 ADMIN_OPS = {"grant", "take_credits", "give_item", "economy", "set_price", "reset_streak", "goto",
-             "invisible", "transfers", "revoke", "transfer_for", "admin_log"}
+             "invisible", "transfers", "revoke", "transfer_for", "admin_log", "event_start", "event_stop",
+             "event_schedule"}
 BOARD_WORDS = {"kancil", "shuttle", "pesawat", "ulang-alik"}
 _ALL_WORDS = {"all", "semua", "semuanya", "everything"}
 
@@ -298,7 +322,8 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "way", "a": rest}
     if meaning in ("map", "where", "compass", "scan", "board", "daily", "rank", "harvest", "water",
                    "farm", "mine", "collect", "transfer", "friends", "status", "casino", "hit", "stand",
-                   "lottery", "decline", "cancel_offer", "worlds", "disembark", "cargo", "gig"):
+                   "lottery", "decline", "cancel_offer", "worlds", "disembark", "cargo", "gig", "events",
+                   "join", "listen", "catch", "search", "watch", "party"):
         if meaning == "board" and used == 1 and words[0] == "naik" and rest:
             return None
         return {"c": meaning}
@@ -368,6 +393,8 @@ def parse(text, lang="en", find_direction=None):
         return {"c": "offer", "to": name, "a": more}
     if meaning in ("gate", "ferry", "fly", "face", "name_ship"):
         return {"c": meaning, "a": rest}
+    if meaning == "fix":
+        return {"c": "work"}
     if meaning == "embark":
         name, _more = _name_and_rest(text, tokens, used)
         return {"c": "embark", "to": name} if name else {"c": "embark"}
@@ -393,7 +420,7 @@ def _admin(op, text, tokens, used):
     message = {"c": "admin", "op": op}
     if op in ("economy", "transfers", "admin_log", "invisible"):
         return message
-    if op == "goto":
+    if op in ("goto", "event_start", "event_stop", "event_schedule"):
         message["a"] = _rest(text, tokens, used)
         return message
     if op == "set_price":

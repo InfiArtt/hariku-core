@@ -3394,7 +3394,8 @@
             "id": "Naga, atau kadal besar yang sedang tidur siang; pendapat orang berbeda-beda."
           }
         }
-      }
+      },
+      "venue": true
     },
     "grove_tower": {
       "name": {"en": "Star Tower", "id": "Menara Bintang"},
@@ -4876,6 +4877,547 @@
         "kangkung": 1.4,
         "strawberry": 1.4
       }
+    }
+  },
+  "events": {
+    "meteor_shower": {
+      "kind": "random",
+      "name": {"en": "Meteor shower", "id": "Hujan meteor"},
+      "about": {
+        "en": "collect meteorites at the Observation Deck, on the hull walk or on the Moon's Sea of Dust",
+        "id": "kumpulkan meteorit di Dek Observasi, di jalur lambung, atau di Lautan Debu Bulan"
+      },
+      "start": {
+        "en": "A meteor shower is sweeping past the station! Fragments are raining onto the hull walk and past the Observation Deck, and onto the Moon's Sea of Dust. Type collect there to gather them.",
+        "id": "Hujan meteor melintasi stasiun! Serpihannya berjatuhan ke jalur lambung dan melewati Dek Observasi, juga ke Lautan Debu Bulan. Ketik kumpulkan di sana untuk mengumpulkannya."
+      },
+      "end": {"en": "The meteor shower has passed.", "id": "Hujan meteor sudah berlalu."},
+      "duration": 600,
+      "weight": 3,
+      "cooldown": 7200,
+      "action": "collect",
+      "rooms": ["observation", "hull_walk", "moon_sea"],
+      "loot": {"meteorite": 45, "iron": 35, "nickel": 20},
+      "per_player": 5,
+      "sound": "event_meteor",
+      "found": {"en": "You catch {things} as it tumbles past!", "id": "Kamu menangkap {things} yang melayang lewat!"}
+    },
+    "solar_storm": {
+      "kind": "random",
+      "name": {"en": "Solar storm", "id": "Badai matahari"},
+      "about": {
+        "en": "engineers earn half again for repairs while it lasts",
+        "id": "insinyur dibayar setengah lagi untuk perbaikan"
+      },
+      "start": {
+        "en": "Solar storm! The lights flicker and the reactor strains. Engineers: every repair pays half again until it passes.",
+        "id": "Badai matahari! Lampu berkedip dan reaktor tertekan. Para insinyur: setiap perbaikan dibayar setengah lagi sampai badai berlalu."
+      },
+      "end": {
+        "en": "The solar storm has passed, and the lights are steady again.",
+        "id": "Badai matahari sudah berlalu, dan lampu kembali tenang."
+      },
+      "duration": 900,
+      "weight": 2,
+      "cooldown": 10800,
+      "big": true,
+      "effect": {"work_pay": {"engineer": 1.5}},
+      "sound": "event_storm"
+    },
+    "cargo_spill": {
+      "kind": "random",
+      "name": {"en": "Cargo spill", "id": "Muatan tumpah"},
+      "about": {
+        "en": "collect the loose crates in the Cargo Bay",
+        "id": "kumpulkan peti-peti yang lepas di Gudang Kargo"
+      },
+      "start": {
+        "en": "Crash! A cargo net has snapped in the Cargo Bay, and crates are rolling everywhere. Type collect there: the quartermaster pays for every crate brought back.",
+        "id": "Brak! Sebuah jaring kargo putus di Gudang Kargo, dan peti-peti berguling ke mana-mana. Ketik kumpulkan di sana: kepala gudang membayar setiap peti yang dikembalikan."
+      },
+      "end": {"en": "The last crate is back in its net.", "id": "Peti terakhir sudah kembali ke jaringnya."},
+      "duration": 480,
+      "weight": 3,
+      "cooldown": 5400,
+      "action": "collect",
+      "rooms": ["cargo"],
+      "credits": [8, 20],
+      "per_player": 6,
+      "sound": "event_start",
+      "found": {
+        "en": "You haul a crate back: the quartermaster pays {n} credits.",
+        "id": "Kamu menyeret sebuah peti kembali: kepala gudang membayar {n} kredit."
+      }
+    },
+    "lost_robot": {
+      "kind": "random",
+      "name": {"en": "Lost robot pet", "id": "Robot peliharaan hilang"},
+      "about": {
+        "en": "listen for its beeps and catch it in the right room",
+        "id": "dengarkan bunyi bip-nya dan tangkap di ruangan yang tepat"
+      },
+      "start": {
+        "en": "A little robot pet has escaped from Whiskers & Widgets and is hiding somewhere on the station! Type listen to hear which way its beeps come from, and catch it when you're in the right room.",
+        "id": "Seekor robot peliharaan kabur dari Kumis & Kabel dan bersembunyi di suatu tempat di stasiun! Ketik dengar untuk tahu dari arah mana bunyi bip-nya, dan tangkap saat kamu di ruangan yang tepat."
+      },
+      "end": {"en": "The little robot has gone home by itself.", "id": "Robot kecil itu sudah pulang sendiri."},
+      "duration": 900,
+      "weight": 2,
+      "cooldown": 7200,
+      "action": "seek",
+      "verb": "catch",
+      "rooms": [
+        "dock",
+        "cargo",
+        "service",
+        "engineering",
+        "workshop",
+        "lift_lower",
+        "lift_main",
+        "promenade",
+        "promenade_west",
+        "promenade_east",
+        "park",
+        "hydroponics",
+        "pavilion",
+        "cantina",
+        "casino",
+        "shop",
+        "medbay",
+        "gym",
+        "cabins_hall",
+        "lift_upper",
+        "command",
+        "bridge",
+        "comms",
+        "observation",
+        "archive",
+        "science_lab",
+        "star_hall",
+        "gate_hall",
+        "atrium",
+        "food_court",
+        "mall_west",
+        "mall_east",
+        "gear_shop",
+        "outfitter",
+        "furniture_shop",
+        "pet_shop",
+        "pawn",
+        "shipyard",
+        "hangar"
+      ],
+      "prize": 120,
+      "xp": 15,
+      "sound": "event_start",
+      "clue_sound": "robot_beep",
+      "won": {
+        "en": "{name} caught the runaway robot and wins {n} credits!",
+        "id": "{name} menangkap robot yang kabur dan memenangkan {n} kredit!"
+      },
+      "wrong": {"en": "It isn't here. Listen again.", "id": "Tidak ada di sini. Dengarkan lagi."}
+    },
+    "stowaway": {
+      "kind": "random",
+      "name": {"en": "Stowaway alert", "id": "Siaga penumpang gelap"},
+      "about": {
+        "en": "search the rooms for the stowaway (security officers are paid double)",
+        "id": "geledah ruangan-ruangan untuk mencari penumpang gelap (petugas keamanan dibayar dua kali lipat)"
+      },
+      "start": {
+        "en": "Stowaway alert! Someone slipped aboard with the last shuttle and is hiding on the station. Type search in a room to look; each search tells you which way the footsteps went.",
+        "id": "Siaga penumpang gelap! Seseorang menyusup naik bersama pesawat terakhir dan bersembunyi di stasiun. Ketik geledah di sebuah ruangan untuk memeriksa; setiap penggeledahan memberi tahu ke arah mana jejak langkahnya."
+      },
+      "end": {
+        "en": "The stowaway slipped away on the next shuttle.",
+        "id": "Penumpang gelap itu lolos dengan pesawat berikutnya."
+      },
+      "duration": 900,
+      "weight": 2,
+      "cooldown": 7200,
+      "action": "seek",
+      "verb": "search",
+      "rooms": [
+        "dock",
+        "cargo",
+        "service",
+        "engineering",
+        "workshop",
+        "lift_lower",
+        "lift_main",
+        "promenade",
+        "promenade_west",
+        "promenade_east",
+        "park",
+        "hydroponics",
+        "pavilion",
+        "cantina",
+        "casino",
+        "shop",
+        "medbay",
+        "gym",
+        "cabins_hall",
+        "lift_upper",
+        "command",
+        "bridge",
+        "comms",
+        "observation",
+        "archive",
+        "science_lab",
+        "star_hall",
+        "gate_hall",
+        "atrium",
+        "food_court",
+        "mall_west",
+        "mall_east",
+        "gear_shop",
+        "outfitter",
+        "furniture_shop",
+        "pet_shop",
+        "pawn",
+        "shipyard",
+        "hangar"
+      ],
+      "prize": 100,
+      "xp": 15,
+      "job_bonus": {"security": 2.0},
+      "sound": "event_start",
+      "won": {
+        "en": "{name} found the stowaway and wins {n} credits!",
+        "id": "{name} menemukan penumpang gelap itu dan memenangkan {n} kredit!"
+      },
+      "wrong": {
+        "en": "Nobody here, but you hear footsteps.",
+        "id": "Tidak ada siapa-siapa, tapi kamu mendengar langkah kaki."
+      }
+    },
+    "market_boom": {
+      "kind": "random",
+      "name": {"en": "Market boom", "id": "Pasar melonjak"},
+      "about": {
+        "en": "one world pays far more for one kind of goods",
+        "id": "satu dunia membayar jauh lebih mahal untuk satu jenis barang"
+      },
+      "start": {
+        "en": "Market news: {place} is short of {kind}! Prices there are up by a third for the next quarter of an hour.",
+        "id": "Kabar pasar: {place} kekurangan {kind}! Harga di sana naik sepertiga selama seperempat jam ke depan."
+      },
+      "end": {
+        "en": "The market boom is over; prices are settling.",
+        "id": "Lonjakan pasar sudah usai; harga mulai tenang."
+      },
+      "duration": 900,
+      "weight": 3,
+      "cooldown": 3600,
+      "effect": {"prices": 1.33},
+      "sound": "event_start"
+    },
+    "market_crash": {
+      "kind": "random",
+      "name": {"en": "Market crash", "id": "Pasar anjlok"},
+      "about": {
+        "en": "one world sells one kind of goods cheap",
+        "id": "satu dunia menjual satu jenis barang dengan murah"
+      },
+      "start": {
+        "en": "Market news: {place} has too much {kind}! Prices there are down by a third for the next quarter of an hour: a good time to buy.",
+        "id": "Kabar pasar: {place} kelebihan {kind}! Harga di sana turun sepertiga selama seperempat jam ke depan: saat yang tepat untuk membeli."
+      },
+      "end": {"en": "The market has recovered.", "id": "Pasar sudah pulih."},
+      "duration": 900,
+      "weight": 3,
+      "cooldown": 3600,
+      "effect": {"prices": 0.67},
+      "sound": "event_start"
+    },
+    "double_xp": {
+      "kind": "random",
+      "name": {"en": "Double XP hour", "id": "Jam XP ganda"},
+      "about": {"en": "all XP is doubled", "id": "semua XP dilipatgandakan"},
+      "start": {
+        "en": "The simulation is feeling generous: for the next hour, everything you do earns double XP!",
+        "id": "Simulasi sedang murah hati: selama satu jam ke depan, semua yang kamu lakukan mendapat XP ganda!"
+      },
+      "end": {"en": "Double XP hour is over.", "id": "Jam XP ganda sudah usai."},
+      "duration": 3600,
+      "weight": 1,
+      "cooldown": 21600,
+      "big": true,
+      "effect": {"xp": 2.0},
+      "sound": "event_start"
+    },
+    "happy_hour": {
+      "kind": "random",
+      "name": {"en": "Happy hour at the Cantina", "id": "Jam senang di Kantin"},
+      "about": {
+        "en": "half price at the Cantina's bar and the Food Court",
+        "id": "setengah harga di bar Kantin dan Pujasera"
+      },
+      "start": {
+        "en": "Happy hour at the Cantina! For the next half hour, iced coffee and snacks are half price at the bar and the Food Court.",
+        "id": "Jam senang di Kantin! Selama setengah jam ke depan, es kopi dan camilan setengah harga di bar dan Pujasera."
+      },
+      "end": {"en": "Happy hour is over. Back to full price.", "id": "Jam senang sudah usai. Harga kembali normal."},
+      "duration": 1800,
+      "weight": 2,
+      "cooldown": 10800,
+      "effect": {"discount": {"bar": 0.5, "food": 0.5}},
+      "sound": "event_party"
+    },
+    "comet_flyby": {
+      "kind": "random",
+      "name": {"en": "Comet flyby", "id": "Komet melintas"},
+      "about": {
+        "en": "watch it from the Observation Deck, the Earthrise Dome or a lookout",
+        "id": "tonton dari Dek Observasi, Kubah Terbitnya Bumi, atau anjungan pandang"
+      },
+      "start": {
+        "en": "A comet is passing close by, its tail stretched across half the sky! Type watch at the Observation Deck, the Moon's Earthrise Dome, Evergrove's Star Tower or the Bazaar's lookout.",
+        "id": "Sebuah komet lewat dekat sekali, ekornya membentang di separuh langit! Ketik tonton di Dek Observasi, Kubah Terbitnya Bumi di Bulan, Menara Bintang di Rimba Abadi, atau anjungan pandang Pasar Apung."
+      },
+      "end": {"en": "The comet has gone on its way.", "id": "Komet itu sudah melanjutkan perjalanannya."},
+      "duration": 600,
+      "weight": 2,
+      "cooldown": 7200,
+      "action": "watch",
+      "rooms": ["observation", "moon_dome", "grove_tower", "bazaar_lookout"],
+      "credits": [20, 20],
+      "xp": 5,
+      "sound": "event_start",
+      "seen": {
+        "en": "You watch the comet's long, glowing tail drift across the stars. Somebody takes a photo and pays you {n} credits for pointing it out.",
+        "id": "Kamu menonton ekor komet yang panjang dan bercahaya melayang melintasi bintang-bintang. Seseorang memotretnya dan membayarmu {n} kredit karena kamu yang menunjukkannya."
+      }
+    },
+    "power_outage": {
+      "kind": "random",
+      "name": {"en": "Power outage", "id": "Listrik padam"},
+      "about": {"en": "some rooms go dark: a headlamp helps", "id": "beberapa ruangan gelap: senter kepala membantu"},
+      "start": {
+        "en": "Power outage! The Lower Deck and the Promenade have gone dark until the engineers fix it. A headlamp helps.",
+        "id": "Listrik padam! Dek Bawah dan Promenade gelap sampai para insinyur memperbaikinya. Senter kepala membantu."
+      },
+      "end": {"en": "The power is back on.", "id": "Listrik sudah menyala kembali."},
+      "duration": 600,
+      "weight": 1,
+      "cooldown": 14400,
+      "effect": {
+        "dark": ["cargo", "service", "lift_lower", "workshop", "promenade", "promenade_west", "promenade_east"]
+      },
+      "sound": "event_storm"
+    },
+    "dust_storm": {
+      "kind": "random",
+      "name": {"en": "Dust storm on Karmina", "id": "Badai debu di Karmina"},
+      "about": {
+        "en": "take shelter in Karmina's Storm Shelter for tea and stories",
+        "id": "berlindung di Tempat Berlindung Badai Karmina untuk teh dan cerita"
+      },
+      "start": {
+        "en": "A dust storm is rolling over Karmina! The colonists are heading for the Storm Shelter, with tea and stories for anyone who joins them there (type join).",
+        "id": "Badai debu menggulung Karmina! Para kolonis menuju Tempat Berlindung Badai, dengan teh dan cerita untuk siapa saja yang bergabung di sana (ketik ikut)."
+      },
+      "end": {"en": "The dust storm on Karmina has blown over.", "id": "Badai debu di Karmina sudah reda."},
+      "duration": 900,
+      "weight": 1,
+      "cooldown": 10800,
+      "action": "join",
+      "rooms": ["kar_shelter"],
+      "credits": [30, 30],
+      "xp": 5,
+      "sound": "event_storm",
+      "joined": {
+        "en": "You squeeze onto a bench with the colonists. Someone hands you tea and a blanket; you get {n} credits' worth of hospitality.",
+        "id": "Kamu berdesakan di bangku bersama para kolonis. Seseorang memberimu teh dan selimut; keramahan senilai {n} kredit."
+      }
+    },
+    "drone_boss": {
+      "kind": "random",
+      "name": {"en": "The runaway maintenance drone", "id": "Drone perawatan yang mengamuk"},
+      "about": {
+        "en": "everyone at the Dock fixes it together: type fix drone",
+        "id": "semua orang di Dermaga memperbaikinya bersama: ketik perbaiki drone"
+      },
+      "start": {
+        "en": "Alert! A giant maintenance drone has malfunctioned and is blundering around the Dock, grabbing crates. Everyone, to the Dock! Type fix drone there to help shut it down; the more who help, the better the reward. Nobody gets hurt.",
+        "id": "Awas! Sebuah drone perawatan raksasa rusak dan menabrak-nabrak di Dermaga, merebut peti-peti. Semua ke Dermaga! Ketik perbaiki drone di sana untuk membantu mematikannya; makin banyak yang membantu, makin besar hadiahnya. Tak ada yang terluka."
+      },
+      "end": {
+        "en": "The drone got away into the vents. Everyone who tried gets a thank-you.",
+        "id": "Drone itu kabur ke lubang ventilasi. Semua yang mencoba mendapat ucapan terima kasih."
+      },
+      "duration": 600,
+      "weight": 1,
+      "cooldown": 14400,
+      "big": true,
+      "min_online": 2,
+      "action": "boss",
+      "rooms": ["dock"],
+      "hp_base": 10,
+      "hp_per_player": 8,
+      "reward_base": 40,
+      "reward_per_point": 15,
+      "reward_max": 300,
+      "consolation": 10,
+      "xp": 20,
+      "sound": "event_boss",
+      "won": {
+        "en": "The drone powers down with a sad whistle. Well done, everyone! Rewards: {rewards}.",
+        "id": "Drone itu mati dengan siulan sedih. Kerja bagus, semuanya! Hadiah: {rewards}."
+      },
+      "hit": {
+        "en": "You pry open a panel and yank a cable: the drone shudders ({left} to go).",
+        "id": "Kamu membuka sebuah panel dan mencabut kabel: drone itu bergetar ({left} lagi)."
+      },
+      "miss": {
+        "en": "The drone swats your hand away. Try again in a moment.",
+        "id": "Drone itu menepis tanganmu. Coba lagi sebentar lagi."
+      }
+    },
+    "trading_fair": {
+      "kind": "weekly",
+      "name": {"en": "Trading fair on the Mall Ring", "id": "Pekan raya dagang di Cincin Mal"},
+      "about": {"en": "every shop on the Mall Ring is a fifth off", "id": "semua toko di Cincin Mal diskon seperlima"},
+      "start": {
+        "en": "The weekly trading fair has opened on the Mall Ring: every shop there is a fifth off for the next two hours!",
+        "id": "Pekan raya dagang mingguan dibuka di Cincin Mal: semua toko di sana diskon seperlima selama dua jam ke depan!"
+      },
+      "end": {
+        "en": "The trading fair has closed until next week.",
+        "id": "Pekan raya dagang tutup sampai minggu depan."
+      },
+      "duration": 7200,
+      "effect": {"discount": {"gear": 0.8, "outfit": 0.8, "furniture": 0.8, "pets": 0.8, "food": 0.8, "shipyard": 0.8}},
+      "sound": "event_party"
+    },
+    "jackpot_night": {
+      "kind": "weekly",
+      "name": {"en": "Jackpot night at the Casino Corner", "id": "Malam jackpot di Pojok Kasino"},
+      "about": {
+        "en": "three of a kind on the slots pays double",
+        "id": "tiga gambar sama di mesin slot dibayar dua kali lipat"
+      },
+      "start": {
+        "en": "Jackpot night! For the next two hours, three of a kind on the Casino Corner's slots pays double.",
+        "id": "Malam jackpot! Selama dua jam ke depan, tiga gambar sama di mesin slot Pojok Kasino dibayar dua kali lipat."
+      },
+      "end": {
+        "en": "Jackpot night is over. The slots are back to their usual selves.",
+        "id": "Malam jackpot sudah usai. Mesin slot kembali seperti biasa."
+      },
+      "duration": 7200,
+      "effect": {"jackpot": 2.0},
+      "sound": "event_party"
+    },
+    "night_rush": {
+      "kind": "weekly",
+      "name": {"en": "Night rush in Lumina City", "id": "Jam sibuk malam di Kota Lumina"},
+      "about": {"en": "courier gigs in Lumina pay double", "id": "gig kurir di Lumina dibayar dua kali lipat"},
+      "start": {
+        "en": "Night rush in Lumina City! For the next two hours, every courier gig pays double.",
+        "id": "Jam sibuk malam di Kota Lumina! Selama dua jam ke depan, setiap gig kurir dibayar dua kali lipat."
+      },
+      "end": {"en": "The night rush in Lumina is over.", "id": "Jam sibuk malam di Lumina sudah usai."},
+      "duration": 7200,
+      "effect": {"gig_pay": 2.0},
+      "sound": "event_party"
+    },
+    "station_birthday": {
+      "kind": "seasonal",
+      "name": {"en": "The station's birthday", "id": "Ulang tahun stasiun"},
+      "about": {
+        "en": "everyone gets a birthday gift: type join",
+        "id": "semua orang mendapat hadiah ulang tahun: ketik ikut"
+      },
+      "start": {
+        "en": "Happy birthday, Orbit! The station opened on the 25th of September, and today everyone gets a gift: type join to open yours. There's cake in the Cantina.",
+        "id": "Selamat ulang tahun, Orbit! Stasiun dibuka pada 25 September, dan hari ini semua orang mendapat hadiah: ketik ikut untuk membukanya. Ada kue di Kantin."
+      },
+      "end": {
+        "en": "The birthday party is over until next year.",
+        "id": "Pesta ulang tahun sudah usai sampai tahun depan."
+      },
+      "duration": 86400,
+      "date": "09-25",
+      "action": "gift",
+      "gift": {"credits": 100, "thing": "iced_coffee"},
+      "xp": 10,
+      "sound": "event_party",
+      "joined": {
+        "en": "You open your birthday gift: {n} credits and an iced coffee!",
+        "id": "Kamu membuka hadiah ulang tahunmu: {n} kredit dan segelas es kopi!"
+      }
+    },
+    "new_year": {
+      "kind": "seasonal",
+      "name": {"en": "New Year fireworks", "id": "Kembang api Tahun Baru"},
+      "about": {"en": "watch the fireworks from a view", "id": "tonton kembang api dari tempat dengan pemandangan"},
+      "start": {
+        "en": "Happy New Year! Fireworks are blooming over the Earth. Type watch at the Observation Deck, or any lookout, to see them.",
+        "id": "Selamat Tahun Baru! Kembang api bermekaran di atas Bumi. Ketik tonton di Dek Observasi, atau anjungan pandang mana pun, untuk melihatnya."
+      },
+      "end": {
+        "en": "The last fireworks have faded. Here's to a good year.",
+        "id": "Kembang api terakhir sudah memudar. Semoga tahunnya baik."
+      },
+      "duration": 86400,
+      "date": "01-01",
+      "action": "watch",
+      "rooms": ["observation", "moon_dome", "grove_tower", "bazaar_lookout", "lumina_skybar"],
+      "credits": [50, 50],
+      "xp": 10,
+      "sound": "fireworks",
+      "seen": {
+        "en": "Fireworks burst in silent colour over the Earth's night side. Someone passes round a tray of sweets and a gift of {n} credits.",
+        "id": "Kembang api meledak dalam warna tanpa suara di atas sisi malam Bumi. Seseorang mengedarkan nampan manisan dan hadiah {n} kredit."
+      }
+    },
+    "lantern_festival": {
+      "kind": "seasonal",
+      "name": {"en": "The Lantern Festival of the Way of Starlight", "id": "Festival Lentera Jalan Cahaya Bintang"},
+      "about": {
+        "en": "light a lantern in the Star Dome Hall: free today, with a gift",
+        "id": "nyalakan lentera di Aula Kubah Bintang: gratis hari ini, dengan hadiah"
+      },
+      "start": {
+        "en": "Today is the Lantern Festival of the Way of Starlight: the hundredth day of the year, when the station fills with small lights. Lanterns in the Star Dome Hall are free today, and whoever lights one is thanked with a gift.",
+        "id": "Hari ini Festival Lentera Jalan Cahaya Bintang: hari keseratus dalam setahun, saat stasiun dipenuhi cahaya-cahaya kecil. Lentera di Aula Kubah Bintang gratis hari ini, dan siapa pun yang menyalakannya diberi hadiah."
+      },
+      "end": {
+        "en": "The Lantern Festival is over; the lanterns glow on until morning.",
+        "id": "Festival Lentera sudah usai; lentera-lentera tetap menyala sampai pagi."
+      },
+      "duration": 86400,
+      "day_of_year": 100,
+      "effect": {"lantern": {"free": true, "gift": 25}},
+      "sound": "event_party"
+    },
+    "party": {
+      "kind": "hosted",
+      "name": {"en": "A party", "id": "Pesta"},
+      "about": {
+        "en": "visit the host's cabin from the Crew Quarters",
+        "id": "kunjungi kabin tuan rumah dari Lorong Kabin Kru"
+      },
+      "start": {
+        "en": "{name} is throwing a party in their cabin! Everyone's welcome for the next half hour: go to the Crew Quarters and type visit {name}.",
+        "id": "{name} mengadakan pesta di kabinnya! Semua orang dipersilakan selama setengah jam ke depan: pergi ke Lorong Kabin Kru dan ketik kunjungi {name}."
+      },
+      "end": {
+        "en": "{name}'s party is over. Thanks for coming!",
+        "id": "Pesta {name} sudah usai. Terima kasih sudah datang!"
+      },
+      "duration": 1800,
+      "sound": "event_party"
+    },
+    "custom": {
+      "kind": "custom",
+      "name": {"en": "An announcement", "id": "Pengumuman"},
+      "about": {"en": "see the message", "id": "lihat pesannya"},
+      "start": {"en": "{message}", "id": "{message}"},
+      "end": {"en": "", "id": ""},
+      "duration": 1800,
+      "sound": "event_start"
     }
   }
 }

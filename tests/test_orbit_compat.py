@@ -99,6 +99,14 @@ PHRASEBOOK = [
     ("kargo", "id", "cargo"), ("my ship", "en", "cargo"), ("namai kapal Bintang", "id", "name_ship"),
     ("hadapi peri lumut", "id", "face"), ("face moss sprite", "en", "face"),
     ("gig", "id", "gig"), ("ambil gig", "id", "gig"),
+    # events (stage 4)
+    ("acara", "id", "events"), ("events", "en", "events"), ("ikut", "id", "join"), ("join", "en", "join"),
+    ("buka hadiah", "id", "join"), ("dengar", "id", "listen"), ("listen", "en", "listen"),
+    ("tangkap", "id", "catch"), ("catch the robot", "en", "catch"), ("geledah", "id", "search"),
+    ("search", "en", "search"), ("tonton", "id", "watch"), ("watch the comet", "en", "watch"),
+    ("adakan pesta", "id", "party"), ("host a party", "en", "party"), ("perbaiki drone", "id", "work"),
+    ("fix drone", "en", "work"), ("mulai acara hujan meteor", "id", "admin"), ("stop event", "en", "admin"),
+    ("jadwalkan acara 30 Pesta", "id", "admin"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

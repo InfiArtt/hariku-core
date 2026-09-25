@@ -121,7 +121,7 @@ def test_the_places_everyone_needs_are_open_to_everyone(world):
             rescue = world.areas[loc["area"]].get("rescue")
             assert rescue and world.locations[rescue].get("rescue") and not world.locations[rescue].get("airless"), lid
     venues = {lid for lid, loc in world.locations.items() if loc.get("venue")}
-    assert venues == {"star_hall", "pavilion"} and world.locations["star_hall"].get("temple")
+    assert venues == {"star_hall", "pavilion", "grove_hall"} and world.locations["star_hall"].get("temple")
 
 
 def test_a_map_that_breaks_the_rules_is_refused(world):
