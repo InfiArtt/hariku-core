@@ -75,6 +75,8 @@ CORE_FEATURES_SINCE = {
     "add_answer_actions": (2, 8),
     "bar_settings": (2, 8),
     "add_intent": (2, 9),
+    "hold_answer": (2, 9),
+    "show_answer": (2, 9),
 }
 
 

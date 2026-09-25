@@ -22,6 +22,10 @@ spoken command. No wx here; the window is ui/command_bar.py.
     add_intent(id, [...], handler) -> commands with content (core 2.9): "catat
                                      {text}", "timer {text}"; handler(request)
                                      returns a Reply (say, confirm, wait, then)
+    hold_answer(seconds)          -> an answer told in steps stays in Last
+                                     result across its pauses (core 2.9)
+    show_answer(text)             -> a line in Last result that isn't spoken
+                                     (core 2.9)
     bar_settings()                -> Aruna's "keep open" and "sounds" (core 2.8)
 
 How a command is matched
@@ -70,6 +74,7 @@ import logging
 import math
 import re
 import threading
+import time
 import unicodedata
 
 logger = logging.getLogger(__name__)
@@ -1034,6 +1039,81 @@ def save_bar_settings(keep_open, sounds):
     config[KEEP_OPEN_KEY] = bool(keep_open)
     config[SOUNDS_KEY] = bool(sounds)
     core.api.save_data("Core", config)
+
+
+# ------------------------------------------------------------
+# Answers told in steps (core 2.9)
+# ------------------------------------------------------------
+# Aruna shows an answer in Last result while it comes: what is spoken within
+# a moment of the last line (the bar's ANSWER_GATHER_MS) belongs to it. An
+# answer told in steps, with sounds or pauses between them (World Trip's
+# flight: an announcement, the engines, the arrival), holds it open for a
+# while with hold_answer(), and adds what it plays itself (a phrase in another
+# voice) with show_answer(). The bar registers the sink; nothing here needs wx.
+
+MAX_HOLD_SECONDS = 300.0
+
+_hold = {"until": 0.0}
+_answer_sink = None
+
+
+def hold_answer(seconds):
+    """For `seconds` from now (300 at most), what Hariku says goes into Aruna's
+    Last result, pauses and all: the answer Aruna shows keeps growing, and
+    while Aruna is open without one, the speech starts one. Call it again
+    before each step of a long answer; 0 ends the hold, after which an answer
+    ends as usual, a moment after its last line. The next command still starts
+    a new answer, and closing Aruna ends everything. Returns the seconds held."""
+    try:
+        seconds = max(0.0, min(float(seconds), MAX_HOLD_SECONDS))
+    except (TypeError, ValueError):
+        seconds = 0.0
+    with _lock:
+        _hold["until"] = time.monotonic() + seconds if seconds else 0.0
+    return seconds
+
+
+def answer_hold_left():
+    """Seconds left of the hold_answer() hold (0 when there is none)."""
+    with _lock:
+        return max(0.0, _hold["until"] - time.monotonic())
+
+
+def set_answer_sink(sink):
+    """The command bar's: sink(text) shows a line in Last result and returns
+    whether it did."""
+    global _answer_sink
+    if not callable(sink):
+        raise TypeError("sink must be callable")
+    with _lock:
+        _answer_sink = sink
+
+
+def remove_answer_sink(sink):
+    """Forget the sink, when it is still this one (a closing bar)."""
+    global _answer_sink
+    with _lock:
+        if _answer_sink == sink:
+            _answer_sink = None
+            return True
+    return False
+
+
+def show_answer(text):
+    """Add a line to the answer Aruna is showing (Last result) without saying
+    it: for something your extension plays itself, such as a phrase spoken in
+    another language's voice. Only while Aruna waits for an answer or an
+    answer is held (hold_answer); returns whether Aruna showed it."""
+    text = " ".join(str(text or "").split())
+    with _lock:
+        sink = _answer_sink
+    if not text or sink is None:
+        return False
+    try:
+        return bool(sink(text))
+    except Exception:
+        logger.exception("Command bar: showing a line failed")
+        return False
 
 
 # ------------------------------------------------------------

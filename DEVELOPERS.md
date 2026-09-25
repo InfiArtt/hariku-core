@@ -1077,6 +1077,22 @@ def teardown():
 
 A handler that raises makes Aruna say "That command didn't work" (and it is logged). Everything your handler and `confirm()` speak with `core.speech.speak()` comes in Hariku Voice, like an action's answer.
 
+**Answers told in steps** *(core 2.9)*. Aruna's Last result collects what is spoken within a moment of the answer's last line. An answer with pauses between its steps (World Trip: the captain's announcement, the engines, the arrival, a phrase in another voice) keeps it open:
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.commands.hold_answer(seconds)` | `float` | For `seconds` from now (300 at most), what Hariku says goes into Last result, pauses and all: the answer shown keeps growing, and while Aruna is open without one, the speech starts one (without the "answered" sound). Call it again before each step; `0` ends the hold. The next command still starts a new answer; closing Aruna ends everything. |
+| `core.commands.show_answer(text)` | `bool` | Add a line to Last result without saying it, for something you play yourself (a phrase spoken with `core.voice.preview()` in another language's voice). Only while Aruna waits for an answer or one is held; returns whether Aruna showed it. |
+
+```python
+def on_trip(request):
+    start_trip(request.text)          # on a thread; speaks each step as it comes
+    return Reply(wait=True)
+
+def before_each_step(seconds):
+    core.commands.hold_answer(seconds + 5)
+```
+
 Hariku's own aliases for the core and the official extensions are in `core.commands.BUILTIN_ALIASES`. The core also has **Say the time** and **Say today's date** (no key by default) for "jam berapa" and "what time is it".
 
 **A speech recogniser** (the Voice Control extension) registers itself; there is one at a time:
