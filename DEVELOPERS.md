@@ -1025,7 +1025,7 @@ Your extension's actions are commands already: register them with `core.hotkeys.
 | `core.commands.remove_aliases(action_id)` | `bool` | Remove them; call it in `teardown()`. |
 | `core.commands.match(text)` | `Match` | Every command scored for `text`: `.best` (a `Command` with `.id`, `.name`, `.title`), `.score`, `.kind` (`"run"`, `"ask"` or `"none"`). |
 | `core.commands.decide(text)` | `Decision` | What the bar does with a text: `.kind` is `"reminder"` (`.result`, a `core.when` Result), `"run"` or `"confirm"` (`.command`), `"offer_reminder"`, `"unknown"` or `"empty"`. |
-| `core.commands.answer(text)` | `"yes"`, `"no"` or `None` | A spoken or typed answer: "ya", "iya, simpan", "yes", "save" / "tidak", "batal", "no", "cancel", "bukan". |
+| `core.commands.answer(text)` | `"yes"`, `"no"` or `None` | A spoken or typed answer: "ya", "iya, simpan", "yes", "save" / "tidak", "batal", "no", "cancel", "bukan". *(core 2.9)* The verbs "pasang", "setel" and "set" are yes too when said alone ("pasang", "set it"), not in a new command ("pasang alarm jam 6"). |
 | `core.commands.looks_like_reminder(text)` | `bool` | A trigger or a date/time in it (a recogniser may listen again more carefully). |
 | `core.commands.vocabulary()` | `list` | Every command's name and aliases: the words a speech recogniser should expect. |
 
@@ -1076,6 +1076,8 @@ def teardown():
 | `then=fn` | Aruna says `say` (if any), closes, gives the focus back to the window the user was in, then calls `fn()`: type into that window, or open a window of yours. |
 
 A handler that raises makes Aruna say "That command didn't work" (and it is logged). Everything your handler and `confirm()` speak with `core.speech.speak()` comes in Hariku Voice, like an action's answer.
+
+The Timer & Alarm extension (`extensions/timer_alarm`) is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead.
 
 Hariku's own aliases for the core and the official extensions are in `core.commands.BUILTIN_ALIASES`. The core also has **Say the time** and **Say today's date** (no key by default) for "jam berapa" and "what time is it".
 
