@@ -711,11 +711,12 @@ Orbit (it needs Hariku 2.9) is a multiplayer text game played with other
 Hariku users: a space station orbiting the Earth, the hub of a shared
 simulation. Walk its decks by compass, chat in the Cantina, look down at
 Indonesia from the Observation Deck, work your job, grow crops in your own
-plots, mine the Asteroid Belt, buy gadgets and furniture for your cabin, and
-climb the ranks. The station has three decks (the Upper Deck: command and
-science; the Main Deck: the Promenade, shops, the Cantina and the cabins;
-the Lower Deck: Engineering, the Cargo Bay and the Dock), the hull outside,
-and the Asteroid Belt, about forty rooms.
+plots, mine the Asteroid Belt, shop on the Mall Ring, try your luck in the
+casino, trade with other players, and climb the ranks. The station has three
+decks (the Upper Deck: command and science; the Main Deck: the Promenade,
+shops, the Cantina, the casino and the cabins; the Lower Deck: Engineering,
+the Cargo Bay and the Dock), the Mall Ring above them, the hull outside, and
+the Asteroid Belt, about fifty rooms.
 
   1. The first time, open Preferences, Orbit: type a character name (3 to 20
      letters and digits) and choose a job (pilot, engineer, trader, scientist
@@ -730,9 +731,10 @@ and the Asteroid Belt, about forty rooms.
      you're connected.
   3. Type commands in Indonesian or English. "bantuan" or "help" lists the
      help topics: "bantuan bergerak" (moving), "bantuan ngobrol" (talking),
-     "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko" (shops)
-     and "bantuan pengaturan" (settings); "ulangi" or "repeat" reads the last
-     message again.
+     "bantuan kerja" (work), "bantuan uang" (money), "bantuan toko" (shops),
+     "bantuan kasino" (the casino), "bantuan kemajuan" (achievements and
+     leaderboards) and "bantuan pengaturan" (settings); "ulangi" or "repeat"
+     reads the last message again.
 
 Walking. You walk one room at a time by compass: n, s, e, w, ne, nw, se,
 sw, up and down, or north, south and so on; in Indonesian utara, selatan,
@@ -781,15 +783,45 @@ tomat", "siram" (water once for a bigger crop), and "panen" when it's ripe;
 crops grow in real time, from ten minutes to a day, and Orbit tells you when
 they're ripe. At the Asteroid Belt, "tambang" or "mine" (richer out on the
 Asteroid Surface and in the Crystal Cave); outside the hull, "kumpulkan" or
-"collect" in the Debris Field. Star Supply on the East Promenade sells
-devices (mappers, a scanner, a headlamp, a beacon, a communicator,
-keycards, the EVA suit), tools (better drills, bigger bags, job tools that
-raise your pay), seeds, furniture for your cabin, clothes, titles and pets;
-the Cantina's bar sells iced coffee (more XP for ten minutes) and snacks.
-"pakai X" or "use X" uses a thing, "pasang X" or "wear X" puts it on, "lepas
-X" or "remove X" takes it off, "periksa X" or "examine X" says what it does.
-Credits are only for playing: they have no real-money value, and can't be
-bought or cashed out.
+"collect" in the Debris Field. Credits are only for playing: they have no
+real-money value, and can't be bought or cashed out.
+
+Shops and trading. Star Supply on the East Promenade sells the basics (a
+pocket mapper, a headlamp, a beacon, a big bag, seeds and snacks). The Mall
+Ring, up the lift from the Upper Deck's lift lobby, has the rest: Gearworks
+(devices such as the holo mapper, the scanner, the communicator, keycards
+and the EVA suit; better drills; job tools that raise your pay), Orbit
+Outfitters (clothes and titles), Cosy Corner (furniture for your cabin),
+Whiskers & Widgets (pets), the Food Court, and Second Orbit, a secondhand
+shop that buys your things back for part of their price ("daftar" there says
+what it would pay, "jual senter" sells). Prices move a little each day, and
+each shop has one special. The Cantina's bar sells iced coffee (more XP for
+ten minutes) and snacks. "daftar" or "list" shows what's for sale, "pakai X"
+or "use X" uses a thing, "pasang X" or "wear X" puts it on, "lepas X" or
+"remove X" takes it off, "periksa X" or "examine X" says what it does. To
+trade with another player, anywhere on the station: "tawarkan Budi 3 besi
+untuk 200 kredit" or "offer Budi 3 iron for 200 credits"; Budi says "terima"
+(accept) or "tolak" (decline) within two minutes, and both sides change hands
+at once or not at all ("batalkan tawaran" takes an offer back). Goods,
+seeds, food, furniture and clothes can be traded.
+
+The casino. The Casino Corner is west of the Cantina; "kasino" or "casino"
+there lists the games. "dadu 50 tinggi" or "dice 50 high" (or low, or seven),
+"slot 20" or "slots 20" (three reels, heard stopping from left to right),
+"blackjack 50" and then "tambah kartu" or "hit", "cukup" or "stand",
+"tantang Budi 50" or "challenge Budi 50" for a coin flip with another player,
+and "lotre" or "lottery" for the weekly draw (on Sunday at 12:00 UTC; "beli
+tiket" or "buy ticket"). Bets are from 5 to 500 credits, at most 5,000 an
+hour, and the house always keeps a small edge. The casino only takes and
+pays game credits.
+
+Achievements and leaderboards. Reaching a mark (ten rooms walked, a level, a
+first harvest, 500 lumps of ore, a week of daily bonuses...) earns an
+achievement, some credits and sometimes a title; the big ones are news for
+the whole station. "prestasi" or "achievements" lists yours and the closest
+ones; "papan skor" or "leaderboard" shows the leaders, and "papan skor
+penambang" or "leaderboard miners" (or terkaya/richest, level,
+petani/farmers, beruntun/streak, kasino/casino) one board and your place.
 
 From Aruna, typed or spoken (the wake phrase too), put "orbit" in front:
 "orbit utara", "orbit bilang halo", "orbit bisik Sari nanti ya", "orbit
@@ -803,11 +835,13 @@ adds two Indonesian voices): the voice they chose ("suaraku 3" or "my voice
 3", 1 to 10; the same number is always the same voice on your computer) or
 one picked from their name. Your own actions are only confirmed briefly
 ("Terkirim."), and the Messages list keeps the whole line. Sounds come from
-where things happen: your steps (metal, carpet, grass, stone, rock...) on
-the side you walk to, someone arriving from the west on your left, the lift
-humming up, an airlock hissing, each gesture, coins, a harvest, the drill,
-the temple's bell, with the room's echo. While the window is open, a quiet
-sound of the place plays and goes quiet while Hariku speaks.
+where things happen: your steps (metal, carpet, grass, stone, wood, rock...)
+on the side you walk to, someone arriving from the west on your left, the
+lift humming up, an airlock hissing, each gesture, coins, a harvest, the
+pick on rock, the dice, cards and reels, the temple's bell, with the room's
+echo. Many of them are recordings from Kenney's free (CC0) sound packs. While
+the window is open, a quiet sound of the place plays and goes quiet while
+Hariku speaks.
 
 Settings. In Preferences, Orbit, or typed in the game: speaking messages
 ("bacakan pesan mati" or "speech off"), the players' voices ("suara pemain

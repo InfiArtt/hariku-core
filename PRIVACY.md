@@ -287,9 +287,13 @@ which, like any web host, sees your IP address; see the
   streak, what it mined and harvested, its farm plots, the rooms it has
   visited, its friends list and its beacon), cooldowns and missions, the
   voice number you chose for others to hear, its pet (a name and a kind),
-  when it was made and last seen, and whether an admin muted or banned it.
-  There is no password and no email. If an admin bans you, a salted hash of
-  your IP address is kept for 7 days.
+  its achievements, its lottery tickets for the week's draw, what it won or
+  lost at the casino in all (and its bets of the last hour, a minute at a
+  time, for the hourly limit), how many trades it made, when it was made
+  and last seen, and whether an admin muted or banned it. There is no
+  password and no email. If an admin bans you, a salted hash of your IP
+  address is kept for 7 days. Trade offers and coin-flip challenges are
+  kept only in the server's memory, until they are answered or run out.
 - Moving your character to another computer: the server keeps only a keyed
   hash of the transfer code, for 10 minutes or until it is used. After a
   move, the hash of the old computer's secret is kept so that computer can be
@@ -302,7 +306,11 @@ which, like any web host, sees your IP address; see the
   gone: the server writes no chat, secrets, codes or IP addresses to its log
   (only names, and who joined, left or was muted). Other players see your
   character's name, job and rank, where it is, what you say and do, what it
-  wears, its pet, its public progress and its description.
+  wears, its pet, its public progress (level, what it mined and harvested,
+  its achievements, and its place on the leaderboards: credits, level, ore,
+  crops, the daily streak and casino winnings) and its description. Big
+  casino wins, the lottery's winner and some achievements are announced to
+  everyone online. Admins are left off the leaderboards.
 - On your computer, in `%APPDATA%\Hariku2`: your Orbit settings (including the
   players you ignore) and, for each server you joined, its secret and your
   character's name (`OrbitAccounts`). Anyone who copies that secret can play
@@ -311,9 +319,11 @@ which, like any web host, sees your IP address; see the
   for your volume and for where things happen.
 - Other players' words may be read with Hariku Voice: with an Edge voice,
   that text is sent to Microsoft's speech service (see Edge Voices below);
-  Piper and Windows voices speak on your computer. Orbit's sounds are
-  generated and come with the extension. Credits are only for playing: they
-  have no real-money value and can't be bought or cashed out.
+  Piper and Windows voices speak on your computer. Orbit's sounds come with
+  the extension (some synthesized, some made from Kenney's public-domain
+  recordings); nothing is downloaded for them. Credits are only for playing:
+  they have no real-money value and can't be bought or cashed out, and the
+  casino's games use only these credits.
 
 ## Dropbox
 
