@@ -189,6 +189,11 @@ BUILTIN_ALIASES = {
         "pintasan keyboard", "daftar pintasan", "keyboard shortcuts"],
     "Hariku Core.go_to_date": [
         "pergi ke tanggal", "go to date"],
+    # Guides (core 2.11); "panduan orbit" is core.guides' command with content.
+    "Hariku Core.user_guide": [
+        "panduan pengguna", "buka panduan pengguna", "user guide", "open the user guide"],
+    "Hariku Core.extension_guides": [
+        "panduan ekstensi", "daftar panduan", "extension guides", "list of guides"],
     "Calendar Navigation.today": [
         "kalender hari ini", "go to today"],
     "Morning Briefing.play_briefing": [
