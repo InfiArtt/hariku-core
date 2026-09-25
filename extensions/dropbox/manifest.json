@@ -1,0 +1,11 @@
+{
+    "id": "dropbox",
+    "name": "Dropbox",
+    "version": "1.0",
+    "description": "Hear what Dropbox is doing and copy links without leaving your work. Hariku says when files you change are syncing and when they have synced (\"laporan.pdf is synced\", \"Your Dropbox is up to date\"), gently mentions a file that still hasn't synced after a few minutes, tells you when someone changes a file in a shared folder or shares something with you, and plays soft sounds. In File Explorer, on a file in your Dropbox folder, say \"salin link\" or \"copy link\" to Aruna (or give the command a key) and its shared link is copied; \"copy link to\" with a name finds the file first, and \"Dropbox status\" says whether everything has synced. Needs the Dropbox desktop app for the news about your own files. Sign in with Dropbox in your browser; Hariku asks Dropbox only about file names, sizes and times and for links, never reads or uploads file contents, and keeps the sign-in encrypted on this computer.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.9",
+    "last_tested_core_version": "2.10"
+}

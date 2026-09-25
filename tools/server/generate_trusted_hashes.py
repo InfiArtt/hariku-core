@@ -96,6 +96,7 @@ OFFICIAL_EXTENSION_IDS = {
     "timer_alarm",
     "world_trip",
     "orbit",
+    "dropbox",
     # add new official extension IDs here
 }
 

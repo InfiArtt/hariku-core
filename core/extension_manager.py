@@ -79,6 +79,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "timer_alarm",
     "world_trip",
     "orbit",
+    "dropbox",
 ])
 
 
