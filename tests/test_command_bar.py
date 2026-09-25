@@ -831,6 +831,105 @@ def test_show_answer_adds_an_unspoken_line(cb, intents, hold):
 
 
 # ------------------------------------------------------------
+# Core 2.9: Aruna in the background (the wake phrase)
+# ------------------------------------------------------------
+
+def background_bar(cb, **kwargs):
+    bar = make_bar(cb, **kwargs)
+    bar._background = True
+    return bar
+
+
+def test_in_the_background_aruna_closes_once_it_has_answered(cb):
+    bar = background_bar(cb, keep_open=True)
+    bar.submit("blablabla", source="voice")          # not understood: answered at once
+    assert bar.said == ["Maaf, aku tidak paham."] and not bar._closed
+    bar._finish_background()                         # BACKGROUND_CLOSE_MS later
+    assert bar._closed and cb.focus == []            # the focus never left the user's window
+
+
+def test_in_the_background_a_question_keeps_it_open(cb):
+    bar = background_bar(cb)
+    bar.submit("Tua-tahari ini.", source="voice")    # "Did you mean ...?"
+    bar._finish_background()
+    assert not bar._closed and bar._pending is not None
+    bar.submit("ya", source="voice")
+    assert bar.ran == ["Weather.speak_current_weather"] and bar._closed and cb.focus == []
+
+
+def test_in_the_background_it_waits_for_an_answer_to_come(cb):
+    bar = background_bar(cb, keep_open=True)
+    bar.submit("gempa terbaru", source="voice")
+    bar._finish_background()
+    assert not bar._closed                           # still waiting for the answer
+    speak_as_the_action("M 5,2, 30 km barat daya Ambon.")
+    bar._end_answer()                                # ANSWER_GATHER_MS later
+    bar._finish_background()
+    assert bar._closed and bar.txt_result.value == "M 5,2, 30 km barat daya Ambon."
+
+
+def test_in_the_background_hearing_nothing_ends_it(cb):
+    listener = FakeListener().register()
+    bar = background_bar(cb)
+    bar.start_listening()
+    listener.started[0]("stopped")
+    bar._finish_background()
+    assert bar._closed
+
+
+def test_switching_to_the_bar_makes_it_a_normal_one(cb):
+    bar = background_bar(cb, keep_open=True)
+    event = types.SimpleNamespace(GetActive=lambda: True, Skip=lambda: None)
+    bar._on_activate(event)
+    assert bar._background is False
+    bar.submit("blablabla")
+    bar._finish_background()
+    assert not bar._closed
+    bar = background_bar(cb)
+    cb.bring_to_front(bar)
+    assert bar._background is False
+    bar.close()
+
+
+def test_open_in_the_background(cb, monkeypatch):
+    import core.commands
+    shown, fronted, listened = [], [], []
+    monkeypatch.setattr(cb, "bring_to_front", lambda bar: fronted.append(bar))
+    monkeypatch.setattr(cb.CommandBar, "ShowWithoutActivating",
+                        lambda self: shown.append(self), raising=False)
+    monkeypatch.setattr(cb.CommandBar, "_auto_listen",
+                        lambda self: listened.append(self), raising=False)
+    assert cb.CAN_OPEN_IN_BACKGROUND is True
+    candidates = core.commands.commands(real_actions("id"))
+    bar = cb.open_command_bar(background=True, decide=lambda text: core.commands.decide(
+        text, candidates, parse=parse_reminder), run=lambda action_id: None,
+        say=lambda text: False)
+    assert bar._background and shown == [bar] and listened == [bar] and fronted == []
+    assert cb.open_command_bar(background=True) is bar and fronted == []   # already open
+    assert cb.open_command_bar() is bar and fronted == [bar]               # the hotkey
+    bar.close()
+
+
+def test_in_the_background_a_held_answer_is_heard_out_then_it_closes(cb, intents, hold):
+    # "bawa aku ke Tokyo" by the wake phrase: Aruna stays while the trip is
+    # told, then closes by itself; the trip itself goes on without it.
+    intents(["bawa aku ke {text}"], hold.Reply(wait=True), intent_id="Trip.go")
+    bar = background_bar(cb, keep_open=True)
+    bar.submit("bawa aku ke Tokyo", source="voice")
+    hold.hold_answer(30)
+    speak_as_the_action("Penerbangan dari Batam ke Tokyo.")
+    bar._finish_background()                         # BACKGROUND_CLOSE_MS after answering
+    assert not bar._closed                           # the flight is still being told
+    bar._gathered(bar._awaiting, 1)
+    speak_as_the_action("Selamat datang di Tokyo, Jepang.")
+    hold.hold_answer(0)
+    bar._gathered(bar._awaiting, 2)                  # the hold is over: the answer ends
+    bar._finish_background()
+    assert bar._closed and cb.focus == []
+    assert bar.txt_result.value.endswith("Selamat datang di Tokyo, Jepang.")
+
+
+# ------------------------------------------------------------
 # The hotkey: RegisterHotKey through core.hotkeys, no hook, no clash
 # ------------------------------------------------------------
 

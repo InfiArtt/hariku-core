@@ -112,6 +112,9 @@ def at(text):
     ("two eggs 10 minutes", 600, "two eggs"),
     ("10 menit lagi", 600, ""),
     ("Teh Hijau 4 menit", 240, "Teh Hijau"),  # the label as typed
+    ("4-5 minutes", 300, ""),                  # whisper's "for 5 minutes"
+    ("tea 4-5 minutes", 300, "tea"),
+    ("2-10 menit", 600, ""),                   # "to 10 minutes"
 ])
 def test_durations(ta, text, seconds, label):
     found = ta.parse.parse_duration(text, PACKS)

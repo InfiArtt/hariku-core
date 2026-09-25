@@ -161,7 +161,8 @@ def reload_settings():
 def save_settings(model, listen_on_open, silence_ms, sensitivity=None, wake_settings=None):
     """Save the page's settings (the sensitivity and the wake phrase stay as
     they are when None). `wake_settings`: {"enabled", "phrase",
-    "sensitivity", "quiet_hours"}."""
+    "sensitivity", "quiet_hours", "opens"}; "opens" ("window" or
+    "background") stays as it is when missing."""
     settings = get_settings()
     settings.update(model=model, listen_on_open=bool(listen_on_open), silence_ms=silence_ms)
     if sensitivity is not None:
@@ -171,6 +172,8 @@ def save_settings(model, listen_on_open, silence_ms, sensitivity=None, wake_sett
                         wake_phrase=wake_settings.get("phrase") or wake.DEFAULT_PHRASE,
                         wake_sensitivity=wake_settings.get("sensitivity"),
                         wake_quiet_hours=bool(wake_settings.get("quiet_hours")))
+        if wake_settings.get("opens") in store.WAKE_OPENS_CHOICES:
+            settings["wake_opens"] = wake_settings["opens"]
     store.save_settings(settings)
     reload_settings()
 
@@ -481,16 +484,32 @@ def _quiet_time():
     return core.personal.is_quiet_time()
 
 
+def background_supported():
+    """Whether this Hariku can open Aruna without a window's focus (core 2.9)."""
+    try:
+        import ui.command_bar as command_bar
+    except Exception:
+        return False
+    return bool(getattr(command_bar, "CAN_OPEN_IN_BACKGROUND", False))
+
+
 def open_aruna_listening():
     """The wake phrase was heard (UI thread): Aruna opens and listens, as the
     hotkey does with "Start listening as soon as Aruna opens"; when Aruna is
-    open already, it starts listening."""
+    open already, it starts listening. With "Listen without opening a
+    window" (1.2, core 2.9) Aruna takes no focus: the user's window keeps it,
+    and Aruna closes by itself when it's done."""
     import ui.command_bar as command_bar
+    background = get_settings()["wake_opens"] == "background" and background_supported()
     bar = command_bar.current_bar()
     if bar is None:
-        command_bar.open_command_bar(listen=True)
+        if background:
+            command_bar.open_command_bar(listen=True, background=True)
+        else:
+            command_bar.open_command_bar(listen=True)
         return
-    command_bar.bring_to_front(bar)
+    if not background:
+        command_bar.bring_to_front(bar)
     if not getattr(bar, "_listening", False):
         bar.start_listening()
 
@@ -800,6 +819,10 @@ class Controller:
     """The page's way to everything slow; results come back on the UI thread."""
 
     downloads = _downloads
+
+    @staticmethod
+    def background_supported():
+        return background_supported()
 
     @staticmethod
     def installed():

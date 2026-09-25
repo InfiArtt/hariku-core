@@ -108,6 +108,11 @@ def wake_sensitivity_choices():
     return [(name, labels[name]) for name in wake.SENSITIVITIES]
 
 
+def wake_opens_choices():
+    """[(setting, label)] of "When you say the wake phrase"."""
+    return [("window", _("wake_opens_window")), ("background", _("wake_opens_background"))]
+
+
 def wake_advice(problem):
     """What the page says about a wake phrase: what's wrong with it, if
     anything, and that English words work best with this model."""

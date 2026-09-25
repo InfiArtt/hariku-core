@@ -334,7 +334,7 @@ pages = [prefs.treebook.GetPageText(i) for i in range(prefs.treebook.GetPageCoun
 assert pages[prefs.treebook.GetSelection()] == "Voice Control", pages
 panel = main._panel
 assert panel is not None and panel.IsShown(), "the Voice Control page was not created or shown"
-assert check_labels(panel) == 11, \
+assert check_labels(panel) == 12, \
     "list, progress, status, model, silence, sensitivity, test result, wake phrase, " \
     "its advice, its sensitivity and its test"
 assert panel.list_items.GetName() == "Program and speech models"
@@ -372,6 +372,10 @@ assert panel.choice_wake_sensitivity.GetName() == "Wake phrase sensitivity"
 assert [panel.choice_wake_sensitivity.GetString(i)
         for i in range(panel.choice_wake_sensitivity.GetCount())] == ["Low", "Normal", "High"]
 assert panel.choice_wake_sensitivity.GetStringSelection() == "Normal"
+assert panel.choice_wake_opens.GetName() == "When you say the wake phrase"
+assert panel.choice_wake_opens.IsShown()                       # core 2.9 can open in the background
+assert [panel.choice_wake_opens.GetString(i) for i in range(panel.choice_wake_opens.GetCount())]     == ["Open Aruna", "Listen without opening a window"]
+assert panel.choice_wake_opens.GetStringSelection() == "Open Aruna"
 assert panel.chk_wake_quiet.GetValue() is False
 assert panel.btn_test_wake.GetLabel().replace("&", "") == "Test the wake phrase..."
 assert panel.txt_wake_test.GetName() == "Wake phrase test"
@@ -688,6 +692,36 @@ assert pump(lambda: cb.current_bar() is None), "the command bar did not close"
 assert pump(lambda: main._wake.state == wake.LISTENING, timeout=10), main._wake.state
 assert main._wake.detections == 1, "it heard the phrase again by itself"
 print("OK wake_opens_aruna")
+
+import core.speech
+# "Listen without opening a window": Aruna opens without the focus, answers
+# by voice and closes by itself; the phrase listens again afterwards.
+settings = main.get_settings()
+main.save_settings(settings["model"], settings["listen_on_open"], settings["silence_ms"],
+                   settings["sensitivity"], {"enabled": True, "phrase": settings["wake_phrase"],
+                                             "sensitivity": settings["wake_sensitivity"],
+                                             "quiet_hours": settings["wake_quiet_hours"],
+                                             "opens": "background"})
+assert main.get_settings()["wake_opens"] == "background"
+assert pump(lambda: main._wake.state == wake.LISTENING, timeout=10), main._wake.state
+core.hotkeys.actions["Earthquakes.speak_latest"].callback =     lambda: ran.append(cb.current_bar() is None) or core.speech.speak("M 5.2, near Ambon.")
+frame.Show()
+frame.Raise()
+pump(lambda: False, timeout=0.3)
+ran.clear()
+spoken.clear()
+detections = main._wake.detections
+wake_script[:] = [QUIET_CHUNK] * 3 + [TRIGGER_CHUNK]
+assert pump(lambda: ran, timeout=15), "the wake phrase did not open Aruna in the background"
+bar = cb.current_bar()
+assert bar is not None and bar._background and ran == [False], ran
+assert not bar.IsActive(), "Aruna took the focus"
+assert pump(lambda: "M 5.2, near Ambon." in spoken, timeout=5), spoken
+assert pump(lambda: cb.current_bar() is None, timeout=10), "Aruna didn't close by itself"
+assert main._wake.detections == detections + 1
+assert pump(lambda: main._wake.state == wake.LISTENING, timeout=10), main._wake.state
+frame.Hide()
+print("OK wake_in_background")
 
 # --------------------------------------------------------------------------- #
 # Remove the model and the wake phrase listener

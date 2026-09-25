@@ -30,7 +30,7 @@ def test_voice_control_page(tmp_path):
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK load", "OK page", "OK download", "OK microphone_test",
                   "OK settings", "OK listening", "OK wake_download", "OK wake_advice",
-                  "OK wake_test", "OK wake_settings", "OK wake_opens_aruna", "OK remove",
+                  "OK wake_test", "OK wake_settings", "OK wake_opens_aruna", "OK wake_in_background", "OK remove",
                   "OK teardown", "OK no_errors", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
