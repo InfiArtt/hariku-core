@@ -1,0 +1,10 @@
+{
+    "id": "timer_alarm",
+    "name": "Timer & Alarm",
+    "version": "1.0",
+    "description": "Set alarms and timers by typing or speaking to Aruna, in Indonesian or English: \"alarm besok jam 5 pagi\", \"set alarm tomorrow at 6 for the gym\", \"wake me up at 6\", \"timer mie 3 menit\". Aruna reads each alarm back with its day, date and time of day before setting it. Alarms and timers ring with a Windows alarm sound and say what they are, even with Hariku in the tray; press any key to stop, or say \"snooze\". Manage them and choose the sounds in Preferences. Everything stays on your computer.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.9"
+}

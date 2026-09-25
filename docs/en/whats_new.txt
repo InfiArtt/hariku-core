@@ -7,6 +7,24 @@ Version 2.9.0 (Core Update)
   little later, or does something once Aruna has closed (such as typing into
   the window you were in). See core.commands.add_intent in DEVELOPERS.md.
   Extensions built on it need Hariku 2.9; the Extension Manager says so.
+- New in the Extension Store: Timer & Alarm, the first extension built on
+  commands with content. Tell Aruna, typed or spoken, in English or
+  Indonesian: "alarm tomorrow at 6 AM", "wake me up at 5", "alarm besok jam 5
+  pagi", "alarm setiap hari jam 5 sholat subuh". Aruna reads each alarm back
+  with its day, date and time (AM or PM; dini hari, pagi, siang, sore or
+  malam) and sets it when you say yes; if the time is wrong, say "no", then
+  the time again ("at 2 PM", "jam 2 siang"). Timers start at once: "timer 10
+  minutes", "timer mie 3 menit", "set a timer for an hour and a half". Also
+  "cancel the tea timer", "how long is left", "list my alarms". Alarms and
+  timers ring with a Windows alarm sound and say what they are, every 10
+  seconds, even when Hariku is in the tray and during quiet hours, without
+  opening a window; press any key to stop, or tell Aruna "stop" or "snooze".
+  They survive a restart, and an alarm that came due while Hariku was closed
+  is mentioned once when it starts. The Morning Briefing says today's alarms.
+  Sounds, the ring length and the snooze length are in Preferences, Timer &
+  Alarm. Everything stays on your computer.
+- Aruna: when it asks "..., Set it?" or "..., Pasang?", "set it" and "pasang"
+  are yes too.
 
 
 Version 2.8.0 (Core Update - September 25, 2026)

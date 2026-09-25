@@ -8,6 +8,24 @@ Versi 2.9.0 (Pembaruan Inti)
   Aruna tertutup (misalnya mengetik ke jendela yang tadi kamu pakai). Lihat
   core.commands.add_intent di DEVELOPERS.md. Ekstensi yang memakainya butuh
   Hariku 2.9; Pengelola Ekstensi akan memberitahukannya.
+- Baru di Toko Ekstensi: Timer & Alarm, ekstensi pertama yang memakai perintah
+  dengan isi. Bilang ke Aruna, diketik atau diucapkan, dalam bahasa Indonesia
+  atau Inggris: "alarm besok jam 5 pagi", "bangunkan aku jam 4.30", "alarm
+  setiap hari jam 5 sholat subuh", "wake me up at 6". Aruna membacakan tiap
+  alarm dengan hari, tanggal, dan jamnya (dini hari, pagi, siang, sore, atau
+  malam) lalu memasangnya kalau kamu jawab ya; kalau jamnya salah, jawab
+  "tidak", lalu sebutkan jamnya lagi ("jam 2 siang"). Timer langsung mulai:
+  "timer 10 menit", "timer mie 3 menit", "timer setengah jam". Bisa juga
+  "batalkan timer mie", "sisa timer", "daftar alarm". Alarm dan timer
+  berbunyi dengan suara alarm Windows dan menyebutkan namanya, tiap 10 detik,
+  walaupun Hariku di tray dan saat jam tenang, tanpa membuka jendela; tekan
+  tombol apa saja untuk mematikannya, atau bilang ke Aruna "stop" atau
+  "tunda". Semuanya tetap ada setelah Hariku dibuka lagi, dan alarm yang
+  lewat selama Hariku tertutup disebutkan sekali saat Hariku mulai. Briefing
+  Pagi menyebutkan alarm hari ini. Suara, lama berbunyi, dan lama tunda ada
+  di Pengaturan, Timer & Alarm. Semuanya tetap di komputermu.
+- Aruna: kalau Aruna bertanya "..., Pasang?" atau "..., Set it?", jawaban
+  "pasang" dan "set it" juga berarti ya.
 
 
 Versi 2.8.0 (Pembaruan Inti - 25 September 2026)
