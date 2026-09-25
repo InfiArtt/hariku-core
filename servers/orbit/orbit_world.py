@@ -24,7 +24,9 @@ world.json
               fuel and market prices
   locations   the rooms: names, descriptions, ambience, compass exits (an exit
               may be locked, one-way, or lead into vacuum), objects, and flags
-              (dark, airless, private, landmark, market, shop...)
+              (dark, airless, private, landmark, market, shop...). A market
+              buys and sells kinds of goods or single goods (World.markets);
+              a good is traded at one market on each world
   shuttles    rooms joined by a timed shuttle ride instead of a door
   moved       old room ids and the rooms that replaced them
   jobs, goods (the markets' goods), items (what missions ask you to carry),

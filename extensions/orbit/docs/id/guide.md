@@ -112,16 +112,31 @@ dan perjalanan pulang dari Platform Sabuk gratis.
 ## Mencari jalan
 
 - "arah ke kantin" atau "way to the cantina" memberi langkah-langkah dari tempatmu
-  sekarang. Dari Dermaga: "timur, timur, barat daya, naik, utara, barat".
+  sekarang, dengan arah yang sama berturut-turut dihitung sekali. Dari Dermaga: "Ke
+  Kantin: 2 timur, selatan, naik, utara, lalu 2 barat." Jalan yang panjang juga
+  menyebutkan berapa langkahnya.
+- Arahnya sekaligus memandumu ke sana. Setiap habis kamu melangkah, satu baris pendek
+  menyebutkan langkah berikutnya ("Lalu 2 barat."). Kalau kamu keluar dari rute, jalannya
+  dicari lagi dari tempatmu ("Keluar dari rute. Dari sini: selatan."), dan saat sampai
+  kamu mendengar "Sampai di Kantin.", dengan bunyi pendek.
+- "pandu ke kantin" atau "guide me to the cantina" sama saja. "status pandu" mengulang
+  sisa jalannya, dan "berhenti pandu" atau "stop guide" mengakhirinya. Keluar dari game,
+  Gerbang, feri, dan naik kapal juga mengakhirinya.
+- "arah ke pasar" menuntunmu ke pasar terdekat.
 - "pergi ke kantin" atau "go to the cantina" langsung berjalan ke sana kalau kantinnya di
-  ruangan sebelah; kalau lebih jauh, kamu diberi tahu jalannya. Tidak ada teleportasi:
-  kamu menjalani tiap langkahnya.
+  ruangan sebelah; kalau lebih jauh, kamu diberi tahu jalannya dan dipandu. Tidak ada
+  teleportasi: kamu menjalani tiap langkahnya.
 - "peta" atau "map" menggambarkan dek di sekitarmu.
 - "di mana aku" atau "where am I" menyebutkan ruangan, dek, dan jalan keluarnya.
 - "kompas" atau "compass" menyebutkan arah terakhir kamu berjalan dan dek tempatmu berada.
 
-Kamu selalu bisa bertanya arah ke Dermaga, Promenade, Kantin, Toko Bintang, lobi-lobi
-lift, tempat kerjamu, dan kabinmu. Untuk tempat lain kamu butuh pemeta:
+Jalannya hanya lewat pintu yang bisa kamu buka, dan jalan satu arah hanya menurut arahnya.
+Kalau perlu, jalannya ikut naik Kancil. Di terowongan gelap pemandu tetap tahu langkah
+berikutnya walau kamu tidak bisa melihat, dan ia memberi tahu kalau langkah berikutnya
+butuh pakaian EVA yang sudah kamu pakai.
+
+Kamu selalu bisa bertanya arah ke Dermaga, Promenade, Kantin, Toko Bintang, pasar-pasar,
+lobi-lobi lift, tempat kerjamu, dan kabinmu. Untuk tempat lain kamu butuh pemeta:
 
 - Pemeta saku (Toko Bintang) mengingat setiap ruangan yang pernah kamu datangi, jadi
   "arah ke" dan "peta" tahu semuanya.
@@ -249,7 +264,8 @@ Ketik "kerja" atau "work" di tempat kerjamu, lalu jawab dengan angka.
 - Insinyur, di Ruang Mesin: ulangi nada-nada reaktor sebagai angka ("3 1 4 2"). Inti
   Reaktor, di selatan Ruang Mesin, bayarannya lebih besar.
 - Pilot, di Dermaga: terbang mengantar kargo ke Bulan. Lamanya sekitar satu menit.
-- Pedagang, di mana saja: laporan pasar.
+- Pedagang, di mana saja: laporan pasar, barang dagangan mana yang lagi murah atau mahal
+  dan di pasar mana.
 - Ilmuwan, di Laboratorium Sains: tebak angka berikutnya dari deretan hasil ukur ("18").
 - Petugas keamanan, di Gudang Kargo: temukan penyelundup di antara para pelancong ("2").
 
@@ -285,15 +301,29 @@ bisa dicairkan.
 
 ### Pasar
 
-Pasar ada di Promenade.
+Stasiun punya empat pasar, masing-masing memperdagangkan barangnya sendiri:
 
-- "harga" menyebutkan apa saja yang dibeli dan dijual; "harga panen" atau "harga bijih"
-  untuk satu jenis.
-- "beli 2 kopi", "jual 5 besi", "jual semua bijih".
+- Pasar Rempah, di barat Kebun Hidroponik: kopi, rempah, dan hasil kebun;
+- Depo Es, di utara Gudang Kargo: es komet, helium-3, dan mutiara beku;
+- Bursa Mineral, di utara Dermaga: bijih dan meteorit;
+- loket suku cadang di Bengkel, di timur Ruang Mesin: hasil pulung dan chip memori.
+
+Tiang petunjuk di Promenade ("lihat tiang petunjuk") menyebutkan semuanya, apa yang
+diperdagangkan masing-masing, dan jalan ke sana.
+
+- Di pasar, "harga" (atau "daftar") menyebutkan apa yang dibeli dan dijual pasar itu,
+  dengan harganya sendiri; "harga panen" atau "harga kopi" hanya itu saja.
+- "beli 2 kopi", "jual 5 besi", "jual semua bijih"; "jual semua" menjual semua yang
+  dibeli pasar ini.
+- Di tempat lain, "harga kopi" memberi tahu pasar kopi terdekat dan jalannya: "Pasar kopi
+  terdekat: Pasar Rempah, utara lalu 2 barat." "harga" saja menyebutkan pasar-pasar di
+  dekatmu. Membeli atau menjual bukan di pasarnya juga memberi tahu hal yang sama.
+- Di toko, "harga" adalah daftar toko itu sendiri; di Loak Orbit Kedua, berapa yang mau
+  dibayarnya.
 
 Membeli kena biaya, dan menjual rugi sedikit lagi, lebih kecil untuk pedagang, jadi
 membeli kembali barang yang baru kamu jual pasti rugi. Setiap penjualan juga menurunkan
-harganya sedikit.
+harganya sedikit. Dunia lain punya pasarnya sendiri, dan "harga" bekerja sama di sana.
 
 ### Berkebun
 
@@ -315,7 +345,7 @@ Di Sabuk Asteroid, "tambang" memberi sebongkah bijih kira-kira tiap 25 detik; bo
 lebih bagus dari Gearworks membuatnya lebih cepat. Platform Sabuk kebanyakan memberi besi
 dan nikel. Di Permukaan Asteroid (pakaian EVA) dan Gua Kristal (pakaian EVA dan senter
 kepala) kamu menemukan bijih yang lebih langka dan mahal. Penambang tua di platform
-membeli bijih, sedikit di bawah harga pasar.
+membeli bijih, sedikit di bawah harga Bursa Mineral.
 
 Di luar lambung stasiun, di Ladang Puing, "kumpulkan" memulung besi tua dan kadang
 sesuatu yang berharga. Bijih dan hasil pulungan masuk ke tasmu, yang muat 20 barang
@@ -406,7 +436,8 @@ Versi Inggrisnya: "embark", "disembark", "fly to Karmina", "refuel", "load 20 ic
 
 Tiap dunia membeli dan menjual dengan harganya sendiri, jadi membeli murah di satu dunia
 lalu menjual mahal di dunia lain adalah perjalanan dagang. Kalau kapalmu bersandar di
-dunia yang sama, barang yang tidak muat di tasmu masuk ke palkanya.
+dunia yang sama, barang yang tidak muat di tasmu masuk ke palkanya. Di atas Rangkong,
+ruang pemindainya membaca harga pasar dunia lain dari jauh: "harga Glasir".
 
 Pabean di beberapa dunia memeriksa barang gelap para pelancong dan mendenda mereka.
 Lewat Gerbang paling sering diperiksa, feri lebih jarang, kapal paling jarang.
@@ -750,8 +781,9 @@ Pintasan Keyboard, atau jalankan lewat Aruna dengan frasa ini:
 - Lihat sekitar di Orbit: "orbit lihat sekitar", "orbit lihat"
 - Siapa yang online di Orbit: "orbit siapa online", "orbit siapa yang online"
 - Kredit dan isi tas di Orbit: "orbit cek kredit", "orbit kredit", "orbit tas"
-- Sambungkan atau putuskan Orbit: "orbit sambungkan", "orbit putuskan". Aksi ini
-  menyambungkan kalau kamu belum tersambung, dan memutuskan kalau sudah.
+- Sambungkan Orbit: "orbit sambungkan", "orbit hubungkan". Kalau sudah tersambung, aksi
+  ini memberi tahu saja: ia tidak pernah mengeluarkanmu.
+- Putuskan Orbit: "orbit putuskan".
 - Status Orbit: "orbit status", "status orbit"
 - Keluar dari Orbit: "orbit keluar", "keluar dari orbit"
 - Bonus harian di Orbit: "orbit harian", "orbit bonus harian"

@@ -112,6 +112,9 @@ GAME_DEFAULTS = {
 }
 
 TALK_KINDS = ("say", "whisper", "shout")
+# What's new, said once to a returning player: each version's note, and the notes since theirs.
+NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"))
+SEEN_VERSION = NEWS[-1][0]
 
 
 class Session:
@@ -387,7 +390,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 return self._refuse(conn, "bad_job")
             char = self.store.create(name, key, secret_hash, job, self.config["start_credits"],
                                      self.world.start)
-            char["stats"]["seen_version"] = "1.2"
+            char["stats"]["seen_version"] = SEEN_VERSION
             new = True
             logger.info("new character %s (%s)", name, job)
         if char["banned"]:
@@ -447,12 +450,11 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         notes.append(self.settle_travel(session))
         char["stats"].pop("visit", None)          # guests wake up at home
         seen = char["stats"].get("seen_version")
-        if not new and seen != "1.2":
-            char["stats"]["seen_version"] = "1.2"
-            news = [self.render(lang, "whats_new_12")]
-            if seen != "1.1":
-                news.insert(0, self.render(lang, "whats_new"))      # from Orbit 1.0: both
-            notes[0:0] = news
+        if not new and seen != SEEN_VERSION:
+            char["stats"]["seen_version"] = SEEN_VERSION
+            versions = [version for version, _key in NEWS]
+            since = versions.index(seen) + 1 if seen in versions else 0     # from Orbit 1.0: all of it
+            notes[0:0] = [self.render(lang, key) for _version, key in NEWS[since:]]
         self.give_starter(char)
         notes.extend(self.grant_by_level(session, quiet=True))
         ripe = self.ripe_plots(char)

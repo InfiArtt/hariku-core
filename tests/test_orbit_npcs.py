@@ -468,9 +468,19 @@ def test_returning_players_hear_what_is_new_once(make_game):
     cmd(game, ani, "bye")
     back = join(game, "Ani")
     assert "New in Orbit 1.2: the simulation has residents who aren't players" in back.sent[1]["text"]
+    assert "New in Orbit 1.3: the station's goods are traded at four markets now" in back.sent[1]["text"]
     assert "it's a whole simulation now" not in back.sent[1]["text"]
     cmd(game, back, "bye")
-    assert "New in Orbit" not in join(game, "Ani").sent[1]["text"]
+    third = join(game, "Ani")
+    assert "New in Orbit" not in third.sent[1]["text"]
+    third.session.char["stats"]["seen_version"] = "1.2"         # from 1.2: only 1.3's note
+    cmd(game, third, "bye")
+    again = join(game, "Ani")
+    assert "New in Orbit 1.3:" in again.sent[1]["text"] and "New in Orbit 1.2" not in again.sent[1]["text"]
+    again.session.char["stats"].pop("seen_version")              # from 1.0: every note
+    cmd(game, again, "bye")
+    first = join(game, "Ani").sent[1]["text"]
+    assert first.index("it's a whole simulation now") < first.index("New in Orbit 1.2") < first.index("New in Orbit 1.3")
 
 
 # ------------------------------------------------------------

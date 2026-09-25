@@ -1293,6 +1293,7 @@
     "festival_gift": "Your share of the festival's gift: {n} credits and a {thing}. You have {credits} credits.",
 
     "whats_new_12": "New in Orbit 1.2: the simulation has residents who aren't players, with their own voices and stories: talk to them (talk to Jali, in the Cantina; residents lists them all), and they'll remember you. Pets to feed, play with, raise and teach tricks (help pets); families, with partners and a baby to adopt at the Medbay (help family); and weddings, from a ring at Starglint Jewellers on the Mall Ring to the Starlight rite (help weddings). The Lantern Festival now lights a gift for everyone.",
+    "whats_new_13": "New in Orbit 1.3: the station's goods are traded at four markets now, each with its own: the Spice Market, west of Hydroponics (coffee, spices, crops); the Ice Depot, north of the Cargo Bay (comet ice, helium-3, frost pearls); the Mineral Exchange, north of the Dock (ores, meteorites); and the Workshop's parts counter (salvage, memory chips). The signpost on the Promenade shows the way. prices at a market lists that market; anywhere else it names the nearest one. The way to a place now comes in short runs (2 east, then north) and guides you step by step; stop guide ends it.",
 
     "board_duels": "duels",
     "crew_hangar_none": "That door opens only for crews. Found or join a crew first: help crews.",
@@ -2598,6 +2599,7 @@
     "festival_gift": "Bagianmu dari hadiah festival: {n} kredit dan {thing}. Kreditmu {credits}.",
 
     "whats_new_12": "Baru di Orbit 1.2: simulasi ini punya penduduk yang bukan pemain, dengan suara dan kisah mereka sendiri: ajak mereka bicara (bicara dengan Jali, di Kantin; penduduk menyebutkan semuanya), dan mereka akan mengingatmu. Peliharaan untuk diberi makan, diajak bermain, dibesarkan, dan diajari trik (bantuan hewan); keluarga, dengan pasangan dan bayi untuk diadopsi di Klinik (bantuan keluarga); dan pernikahan, dari cincin di Perhiasan Kilau Bintang di Cincin Mal sampai upacara Cahaya Bintang (bantuan pernikahan). Festival Lentera kini menyalakan hadiah untuk semua.",
+    "whats_new_13": "Baru di Orbit 1.3: barang-barang stasiun kini diperdagangkan di empat pasar, masing-masing dengan barangnya sendiri: Pasar Rempah, di barat Kebun Hidroponik (kopi, rempah, hasil kebun); Depo Es, di utara Gudang Kargo (es komet, helium-3, mutiara beku); Bursa Mineral, di utara Dermaga (bijih, meteorit); dan loket suku cadang di Bengkel (hasil pulung, chip memori). Tiang petunjuk di Promenade menunjukkan jalannya. harga di pasar menyebutkan isi pasar itu; di tempat lain, pasar yang terdekat. Arah ke suatu tempat kini ringkas (2 timur, lalu utara) dan memandumu langkah demi langkah; berhenti pandu untuk mengakhirinya.",
 
     "board_duels": "duel",
     "crew_hangar_none": "Pintu itu hanya terbuka untuk kru. Dirikan atau bergabung dengan kru dulu: bantuan kru.",

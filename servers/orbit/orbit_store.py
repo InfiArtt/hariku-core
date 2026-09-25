@@ -35,7 +35,9 @@ lottery's pot, the salt). Since Orbit 1.2 (schema 8): what each resident
 remembers of each character (npc_memory: affinity, talks, gifts, favours,
 small notes), partnerships between two characters, weddings (their hall,
 tier, ceremony, time, what was paid, their progress and the memory kept
-afterwards) and their guests (invited, answered, came).
+afterwards) and their guests (invited, answered, came). Orbit 1.3 keeps
+schema 8: its markets keep their prices as before (by good for the station,
+by world for the others), and the guide lives in memory.
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is

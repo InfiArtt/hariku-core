@@ -15,7 +15,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | Path | What |
 |---|---|
 | `GET /orbit/ws` | the game, over WebSocket |
-| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.2", "protocol": 1, "online": 3}` |
+| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.3", "protocol": 1, "online": 3}` |
 
 `/ws` and `/health` work too, for a proxy that strips the `/orbit` prefix.
 
@@ -26,10 +26,10 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_server.py` | the program: HTTP, WebSocket connections, limits, the tick |
 | `orbit_ws.py` | the WebSocket protocol (RFC 6455), shared with the Hariku extension |
 | `orbit_game.py` | the game's core: joining, talking, looking, time passing (no I/O) |
-| `orbit_nav.py` | walking by compass, the way, maps, dark rooms, locks, air, the Kancil, cabins |
+| `orbit_nav.py` | walking by compass, the way (compact) and the guide, maps, dark rooms, locks, air, the Kancil, cabins |
 | `orbit_items.py` | things: shops, using, wearing, examining, food, the temple |
 | `orbit_work.py` | jobs and their mini-games, XP and levels, missions, the daily bonus |
-| `orbit_econ.py` | the markets, the farm, mining and salvage, profiles, the economy's totals |
+| `orbit_econ.py` | the markets (prices where you stand, the way to the nearest), the farm, mining and salvage, profiles, the economy's totals |
 | `orbit_casino.py` | the Casino Corner: dice, slots, blackjack, coin flips, the weekly lottery |
 | `orbit_trade.py` | trading between players (offer, accept), and the pawn shop |
 | `orbit_progress.py` | achievements and the leaderboards |
@@ -70,7 +70,7 @@ mkdir -p ~/orbit
 cd ~/orbit
 cp config.example.json config.json        # then put your character's name in "admins"
 python3 orbit_server.py --config config.json
-# "Orbit 1.2 listening on 127.0.0.1:7340"; Ctrl+C stops it
+# "Orbit 1.3 listening on 127.0.0.1:7340"; Ctrl+C stops it
 ```
 
 As a systemd **user** service (no sudo; linger is already on):
@@ -108,6 +108,39 @@ To update: copy the new files over and `systemctl --user restart orbit`.
 Players hear "the station's computer is restarting" and their Orbit reconnects
 by itself. The database is `~/orbit/orbit.db` (with `orbit.db-wal` next to it
 while running).
+
+### Updating to 1.3 (markets where you stand, the guide; no migration)
+
+1. Copy these files to `~/orbit/`, never `private/`: `orbit_econ.py`,
+   `orbit_game.py`, `orbit_items.py`, `orbit_nav.py`, `orbit_npcs.py`,
+   `orbit_server.py`, `orbit_trade.py`, `orbit_travel.py`, `orbit_verbs.py`,
+   `orbit_work.py`, `orbit_world.py`, `world.json`, `npcs.json`, `texts.json`
+   (copying the whole folder, as before, is just as good). No new files, and
+   `config.json` needs no new keys.
+2. `systemctl --user restart orbit`.
+3. **The database stays at version 8: there is nothing to migrate**, so no
+   copy is made and the log has no migration line. What is stored keeps its
+   meaning: the station's prices (meta `market`, by good, with an admin's
+   price for the hour), each world's own (`market_worlds`, by world) and an
+   event's boom or crash (by world and kind). A good is traded at one market
+   on each world (the server refuses a `world.json` that breaks this), so the
+   station's stored price for coffee is simply the Spice Market's now, and the
+   Mineral Exchange's for iron. Characters stay where they were (the
+   Promenade is still there, with a signpost to the markets); the new rooms
+   are on everyone's map; a character's rooms known and missions are
+   untouched.
+4. Returning players hear once what's new in 1.3 (and in 1.2 and 1.1, if they
+   missed those).
+5. The 1.0 to 1.3 clients keep working: `prices`, `buy` and `sell` are the
+   same commands, and "pandu ke kantin", "guide me to the cantina", "berhenti
+   pandu", "stop guide" reach the server as plain text. The guide's lines are
+   ordinary `info` events; the arrival's `sound` (`gadget_arrived`) falls back
+   to `gadget` in clients from 1.1 (1.0 plays nothing). Client 1.4 only makes
+   "orbit connect" connect and "orbit disconnect" disconnect (it was one
+   toggle).
+6. Check: `curl -fsS http://127.0.0.1:7340/orbit/health` says `"version":
+   "1.3"`; in the game, "prices" on the Promenade names the markets and the
+   way to each.
 
 ### Updating to 1.2 (the database migrates by itself)
 
@@ -312,7 +345,49 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 ### The balance (economy.json)
 
 Everything in `economy.json` can be changed; it's read when the server starts.
-What 1.2 ships with:
+What 1.3 ships with:
+
+- **The markets** (world.json, a room's `market`): the station's goods are
+  traded at four rooms, each dealing in its own, both buying and selling:
+
+  | Market | Where | Goods |
+  |---|---|---|
+  | the Spice Market (`spice_market`, new) | west of Hydroponics, Main Deck | coffee, spices, every crop |
+  | the Ice Depot (`ice_depot`, new) | north of the Cargo Bay, Lower Deck | comet ice, helium-3, frost pearls |
+  | the Mineral Exchange (`mineral_exchange`, new) | north of the Dock, Lower Deck (east to the Ice Depot) | iron, nickel, titanium, platinum, quantum crystals, meteorites, rust salt, ember crystals |
+  | the Workshop's parts counter (`workshop`) | east of Engineering, Lower Deck | scrap, circuit boards, satellite chips, gold foil, memory chips |
+
+  The Promenade trades nothing now; its signpost (`look at the signpost`)
+  lists the markets, what each deals in and the way. A market's `buys` and
+  `sells` name kinds of goods (`crop`) or goods (`coffee`), with a `factor`
+  for all its prices, `prices` for single goods and `about` (what it deals
+  in, in words); `"market": true` still means every legal good. A good is
+  traded at one market on each world, checked when the server starts, so a
+  world's prices are its market's and nothing can be bought at one counter
+  and sold dear at the next. The station's markets and the other worlds'
+  main markets are landmarks (anyone may ask the way); the Drift Bazaar's
+  back alley isn't. `prices` (harga) and `list` in a market say what it
+  buys and sells at its prices (by kind; `prices crops`, `prices coffee`);
+  in a shop or the pawn shop, their own list. Anywhere else, `prices`,
+  `buy` and `sell` name the nearest market for what was asked, with the
+  compact way there ("Nearest market for coffee: the Spice Market, north,
+  then 2 west."; the deck instead, where the player may not ask the way);
+  `way to the market` is the nearest one. The trader's report (work) says
+  where each good is traded, and so does Bang Jali's market gossip; a
+  Hornbill's scanner bay still reads another world's markets, as a report.
+- **The way** is said in runs ("2 east, south, up, north, then 2 west";
+  "naik 3 tingkat" / "up 3 levels"), with the number of steps when it is 8
+  or more in three runs or more, and it **guides**: after each step one
+  short `info` line says the next run ("Then 2 west."), a step off the
+  route finds the way again ("Off the route. From here: south."), and
+  arriving says so ("You've arrived at the Cantina.", `sound`
+  `gadget_arrived`). `guide` alone repeats what's left; `stop guide` ends it,
+  and so do logging out, the Gate, the ferry and boarding a ship. The guide
+  keeps to the doors the player can open, takes one-way exits only their
+  way, rides the Kancil when that's the way, knows the next step in the dark
+  and says when the next one needs a worn EVA suit. It lives in the session,
+  in memory: a reconnect within the link-dead minute keeps it, a restart
+  forgets it (the player asks the way again).
 
 - **Levels:** reaching level L takes 60 × L × (L-1) / 2 XP (level 2 at 60,
   5 at 600, 10 at 2,700, 20, the top, at 11,400). XP: a repair 10 (+2 for
@@ -912,8 +987,8 @@ whether they came). Vows are written by the couple to be kept (they're told
 so when asked for them) and are read back only by the couple and those who
 came; everything else said at a wedding is chat, never stored. Trade
 offers, coin-flip challenges, crew invitations, duel challenges, partnership,
-adoption and ring proposals, a duel, a naming rite and a blackjack hand in
-progress live only in memory (a hand is played out,
+adoption and ring proposals, a duel, a naming rite, the guide's way and a
+blackjack hand in progress live only in memory (a hand is played out,
 standing, if its player leaves or the server stops). Accounts have no
 password or email: the client makes a random 256-bit secret the first time
 it joins this server and keeps it on the player's computer; the server keeps
@@ -930,9 +1005,9 @@ never contains secrets, codes, chat or addresses.
 
 JSON text messages over WebSocket (text frames only; 4096 bytes at most from
 a client). Everything the server sends is already in the player's language.
-Protocol version 1 is unchanged since Orbit 1.0: everything 1.1 and 1.2
-added is optional, so the 1.0 and 1.1 clients keep working (they only miss
-the new sounds; every 1.2 command reaches the server from them as plain
+Protocol version 1 is unchanged since Orbit 1.0: everything 1.1, 1.2 and
+1.3 added is optional, so the older clients keep working (they only miss
+the new sounds; every newer command reaches the server from them as plain
 text).
 
 **Joining.** The client's first message:
@@ -970,18 +1045,19 @@ commands need no new client:
 | `look` | `a`: nothing, a person, a thing, a thing you own, a direction | |
 | `move` | `d`: n, ne, e, se, s, sw, w, nw, u, d | walk one room |
 | `go` | `a`: a direction or a place | next door: a walk; further: the way (admins teleport) |
-| `way`, `map`, `where`, `compass`, `scan`, `locate` | `a` / `to` | finding your way and people |
+| `way`, `map`, `where`, `compass`, `scan`, `locate` | `a` / `to` | finding your way and people (`way` also starts the guide) |
+| `guide` | `a`: a place (the way, guided); nothing: what's left; `op`: `stop` | the guide (1.3; from text: pandu ke, guide me to, berhenti pandu, stop guide) |
 | `board` | | the Kancil, at the Dock or the Belt Platform |
 | `say`, `shout` | `a`: the words | shout: station-wide, once every 10 s |
 | `whisper` | `to`, `a` | to anyone on the station |
 | `emote` | `e`: smile, wave, laugh, nod, shrug, clap, cheer, sigh, bow, dance, hug; `to` (optional) | |
-| `who`, `inventory`, `prices` (`a`: a kind), `missions`, `complete`, `abandon`, `work`, `help` (`a`: a topic) | | |
+| `who`, `inventory`, `prices` (`a`: a kind, a good, or a world for a Hornbill's scanner), `missions`, `complete`, `abandon`, `work`, `help` (`a`: a topic) | | `prices`: at a market, its list; elsewhere, the nearest market |
 | `give` | `to`, `n`, `item` (`credits` or a thing) | in the same room |
 | `describe` | `a`: a short description (nothing: show it) | |
 | `answer` | `a`: the reactor's numbers, a reading, a traveller | |
 | `accept` | `n`: a mission's number (none: the newest trade offer or coin flip waiting for you) | |
 | `take` | `item`, `n` | a mission's things |
-| `buy`, `sell` | `item`, `n` (`"all"` to sell everything, or all of a kind) | market goods, and the shop you're in |
+| `buy`, `sell` | `item`, `n` (`"all"` to sell everything, or all of a kind) | the goods of the market you're in, and the shop you're in |
 | `list`, `use`, `unequip`, `open` | `a` / `item` (`equip`: true to wear) | shops and things |
 | `plant` (`item`, `n`), `water`, `harvest`, `farm`, `mine`, `collect` | | the farm, mining, salvage |
 | `daily`, `profile` (`to`), `rank`, `voice` (`a`: 1-10 or auto), `transfer` | | |
@@ -1083,7 +1159,7 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `coins`, `register`, `trade` | money changing hands; a shop's till; a trade done |
 | `mine`, `rare`, `plant`, `water`, `harvest`, `ripe` | mining, a rare find, the farm |
 | `levelup`, `daily`, `achievement` | a new level; the daily bonus; an achievement |
-| `equip`, `gadget`, `scan`, `air`, `rescue`, `gulp`, `crunch` | things: wearing, devices, the scanner, the air warning, the tow, food |
+| `equip`, `gadget`, `scan`, `air`, `rescue`, `gulp`, `crunch` | things: wearing, devices, the scanner, the air warning, the tow, food (`gadget_arrived`, arriving where the guide led you, plays `gadget` unless a pack has its own) |
 | `pet_robot`, `pet_cat`, `pet_robocat`, `pet_minidrone`, `pet_fox`, `pet_jelly`, `pet_trick` | each kind of pet's own sound; a trick shown off |
 | `npc_warm`, `baby` | a resident grows fonder of you (and warm moments: partners, a rite's end); a child |
 | `ring`, `wedding_music`, `lanterns_join`, `flowers` | a proposal, a wedding beginning, the Starlight rite's two lights joined, flowers thrown |
@@ -1128,7 +1204,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_markets.py tests/test_orbit_guide.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from
@@ -1141,9 +1217,14 @@ rescue in the same world) and the travel links between the worlds.
 reader: `test_orbit_compat.py` checks that every command added later still
 reaches the server from it. The residents', pets', families' and weddings'
 tests run on a fixed clock with seeded randomness; `test_orbit_npcs.py` also
-migrates a version 7 database to 8.
+migrates a version 7 database to 8. `test_orbit_markets.py` checks that each
+station market lists and trades only its own goods, the way to the nearest
+one, and that a version 8 database keeps its prices at the new markets;
+`test_orbit_guide.py` the compact way and the guide (the next step, a
+detour, arriving, stopping, logging out and travel), past keycard doors,
+through the dark, down the one-way slide and out into vacuum.
 
-## Later (not in 1.2)
+## Later (not in 1.3)
 
 - **Pets shared by two players:** a companion already has any number of
   owners (`companion_owners`), as children do; a pet could be given to a

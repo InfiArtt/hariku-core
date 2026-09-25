@@ -54,7 +54,7 @@ import orbit_store  # noqa: E402
 import orbit_world  # noqa: E402
 import orbit_ws as ws  # noqa: E402
 
-VERSION = "1.2"
+VERSION = "1.3"
 logger = logging.getLogger("orbit")
 
 DEFAULTS = {

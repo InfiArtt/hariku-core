@@ -106,16 +106,29 @@ the Belt Platform is free.
 
 ## Finding your way
 
-- "way to the cantina" gives the steps from where you are. From the Dock: "east, east,
-  southwest, up, north, west".
+- "way to the cantina" gives the steps from where you are, with the same direction in a
+  row counted once. From the Dock: "To the Cantina: 2 east, south, up, north, then 2
+  west." A long way also says how many steps it is.
+- The way also guides you there. After each step you take, one short line says what
+  comes next ("Then 2 west."). If you step off the route, it finds the way again from
+  where you are ("Off the route. From here: south."), and when you get there it says
+  "You've arrived at the Cantina.", with a short sound.
+- "guide me to the cantina" does the same. "guide" alone repeats the rest of the way, and
+  "stop guide" ends it. Logging out, the Gate, the ferry and boarding a ship end it too.
+- "way to the market" leads you to the nearest market.
 - "go to the cantina" walks there when it's the next room; when it's further, it tells
-  you the way. There's no teleporting: you walk each step.
+  you the way and guides you. There's no teleporting: you walk each step.
 - "map" describes the deck around you.
 - "where am I" names the room, the deck and the exits.
 - "compass" says which way you last walked and which deck you're on.
 
-You can always ask the way to the Dock, the Promenade, the Cantina, Star Supply, the lift
-lobbies, your workplace and your cabin. For other places you need a mapper:
+The way only goes through doors you can open, and one-way exits only their way. It takes
+the Kancil when that's part of it. In a dark tunnel the guide still knows the next step
+when you can't see it, and it tells you when the next step needs your EVA suit on.
+
+You can always ask the way to the Dock, the Promenade, the Cantina, Star Supply, the
+markets, the lift lobbies, your workplace and your cabin. For other places you need a
+mapper:
 
 - A pocket mapper (Star Supply) remembers every room you've been to, so "way to" and
   "map" know all of them.
@@ -231,7 +244,8 @@ Type "work" at your workplace, then answer with numbers.
 - Engineers, in Engineering: repeat the reactor's tones as numbers ("3 1 4 2"). The
   Reactor Core, south of Engineering, pays more.
 - Pilots, at the Dock: fly a cargo run to the Moon. It takes about a minute.
-- Traders, anywhere: a market report.
+- Traders, anywhere: a market report, which trade good is cheap or dear and at which
+  market.
 - Scientists, in the Science Lab: find the next number in a row of readings ("18").
 - Security officers, in the Cargo Bay: spot the smuggler among the travellers ("2").
 
@@ -265,15 +279,30 @@ at 40.
 Credits are only for playing: they have no real-money value, and can't be bought or
 cashed out.
 
-### The market
+### The markets
 
-The market is on the Promenade.
+The station has four markets, each trading its own goods:
 
-- "prices" lists what it buys and sells; "prices crops" or "prices ore" one kind.
-- "buy 2 coffee", "sell 5 iron", "sell all ore".
+- the Spice Market, west of Hydroponics: coffee, spices and crops;
+- the Ice Depot, north of the Cargo Bay: comet ice, helium-3 and frost pearls;
+- the Mineral Exchange, north of the Dock: ores and meteorites;
+- the parts counter in the Workshop, east of Engineering: salvage and memory chips.
+
+The signpost on the Promenade ("look at the signpost") lists them, with what each trades
+and the way there.
+
+- At a market, "prices" (or "list") says what that market buys and sells, at its own
+  prices; "prices crops" or "prices coffee" only those.
+- "buy 2 coffee", "sell 5 iron", "sell all ore"; "sell all" sells everything this market
+  buys.
+- Anywhere else, "prices coffee" tells you the nearest market for coffee and the way:
+  "Nearest market for coffee: the Spice Market, north, then 2 west." "prices" alone names
+  the markets near you. Buying or selling away from the right market says the same.
+- In a shop, "prices" is the shop's own list; at Second Orbit, what it would pay you.
 
 Buying costs a fee and selling loses a little more, less for traders, so buying back
-what you just sold always loses. Every sale also moves the price down a little.
+what you just sold always loses. Every sale also moves the price down a little. Other
+worlds have their own markets, and "prices" works the same way there.
 
 ### Farming
 
@@ -295,7 +324,7 @@ At the Asteroid Belt, "mine" gives a lump of ore every 25 seconds or so; a bette
 from Gearworks makes it quicker. The Belt Platform gives mostly iron and nickel. Out on
 the Asteroid Surface (an EVA suit) and in the Crystal Cave (a suit and a headlamp) you
 find rarer, dearer ore. The old miner on the platform buys ore, for a little less than
-the market.
+the Mineral Exchange pays.
 
 Outside the hull, in the Debris Field, "collect" salvages scrap and sometimes something
 valuable. Ore and salvage go in your bag, which holds 20 goods (a big bag from Star
@@ -381,7 +410,8 @@ for half its price. It docks in the Hangar, west of the Dock.
 
 Every world buys and sells at its own prices, so buying cheap on one world and selling
 dear on another is a trade run. With your ship docked on the same world, what doesn't fit
-in your bag goes into its hold.
+in your bag goes into its hold. Aboard a Hornbill, its scanner bay reads another world's
+market prices from afar: "prices Glasir".
 
 Some worlds' customs search travellers for contraband and fine them. The Gate is searched
 most often, the ferry less, a ship least.
@@ -700,8 +730,9 @@ Gestures, or run them from Aruna with these phrases:
 - Look around in Orbit: "orbit look around"
 - Who is online in Orbit: "orbit who is online", "orbit who"
 - Credits and bag in Orbit: "orbit check credits", "orbit inventory"
-- Connect to or disconnect from Orbit: "orbit connect", "orbit disconnect". It connects
-  when you aren't connected, and disconnects when you are.
+- Connect to Orbit: "orbit connect". Already connected, it says so: it never logs you
+  out.
+- Disconnect from Orbit: "orbit disconnect".
 - Orbit status: "orbit status"
 - Leave Orbit: "leave orbit", "orbit logout", "orbit log out"
 - Daily bonus in Orbit: "orbit daily"
