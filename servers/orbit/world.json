@@ -1096,9 +1096,16 @@
       "at": [1, 1],
       "ambience": "vent",
       "exits": {"s": "promenade_east", "w": "park"},
+      "family_desk": true,
+      "hints": {
+        "all": {
+          "en": "The family desk is here: type adopt to give a little one a home.",
+          "id": "Meja keluarga ada di sini: ketik adopsi untuk memberi si kecil sebuah rumah."
+        }
+      },
       "desc": {
-        "en": "Clean, white and quiet, apart from the patient beep of a heart monitor. A medkit cabinet hangs on the wall next to two neatly made beds.",
-        "id": "Bersih, putih, dan tenang, kecuali bunyi pelan monitor jantung. Lemari kotak P3K tergantung di dinding, di samping dua ranjang yang rapi."
+        "en": "Clean, white and quiet, apart from the patient beep of a heart monitor. A medkit cabinet hangs on the wall next to two neatly made beds, and a small desk with a vase of paper stars stands by the door to the nursery.",
+        "id": "Bersih, putih, dan tenang, kecuali bunyi pelan monitor jantung. Lemari kotak P3K tergantung di dinding, di samping dua ranjang yang rapi, dan sebuah meja kecil dengan vas berisi bintang kertas berdiri di dekat pintu ruang bayi."
       },
       "objects": {
         "cabinet": {
@@ -1116,6 +1123,13 @@
           "desc": {
             "en": "Two beds with straps, so patients don't float off in their sleep.",
             "id": "Dua ranjang dengan sabuk, supaya pasien tidak melayang waktu tidur."
+          }
+        },
+        "desk": {
+          "names": {"en": ["family desk", "desk", "adoption desk", "nursery"], "id": ["meja keluarga", "meja", "meja adopsi", "ruang bayi"]},
+          "desc": {
+            "en": "The family desk. Little ones who arrived in the simulation without a family are cared for in the nursery behind it, until someone gives them a home. Type adopt: partners decide together, and anyone of level 3 or more may.",
+            "id": "Meja keluarga. Si kecil yang tiba di simulasi tanpa keluarga dirawat di ruang bayi di belakangnya, sampai ada yang memberinya rumah. Ketik adopsi: pasangan memutuskan bersama, dan siapa pun yang sudah level 3 boleh."
           }
         }
       }

@@ -151,6 +151,14 @@ PHRASEBOOK = [
     ("istirahatkan hewan", "id", "pet"), ("tidurkan Kiki", "id", "pet"), ("rest pet", "en", "pet"),
     ("ajari trik duduk", "id", "pet"), ("teach trick sit", "en", "pet"), ("trik duduk", "id", "pet"),
     ("do trick sit", "en", "pet"), ("rename pet Kiki", "en", "pet"), ("ganti nama Kiki jadi Momo", "id", "pet"),
+    # families (1.2)
+    ("ajak berpasangan Budi", "id", "partner"), ("partner with Budi", "en", "partner"), ("pasangan", "id", "partner"),
+    ("partner", "en", "partner"), ("akhiri kemitraan", "id", "partner"), ("end partnership", "en", "partner"),
+    ("konfirmasi akhiri", "id", "partner"), ("confirm end", "en", "partner"), ("adopsi", "id", "adopt"),
+    ("adopt a baby", "en", "adopt"), ("keluarga", "id", "family"), ("my family", "en", "family"),
+    ("anak", "id", "family"), ("children", "en", "family"), ("bacakan cerita untuk Mira", "id", "child"),
+    ("read a story to Mira", "en", "child"), ("minta tolong Mira", "id", "child"), ("bawa Mira", "id", "child"),
+    ("bring Mira", "en", "child"), ("upacara nama Mira", "id", "naming"), ("naming rite Mira", "en", "naming"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

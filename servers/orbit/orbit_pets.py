@@ -517,7 +517,8 @@ class PetsMixin:
                 self.store.save_companion(comp)
             self.pet_reacts(owner, chance=1.0, comp=comp)
             return True
-        return False
+        family = getattr(self, "family_emote_at", None)
+        return bool(family and family(session, name, eid, emote))
 
     def give_to_companion(self, session, name, message):
         """ "beri makan Kiki": both clients read it as giving "makan" something (Kiki)."""

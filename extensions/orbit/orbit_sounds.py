@@ -2038,6 +2038,31 @@ def _square_ish(frequency, i):
     return max(-0.6, min(0.6, 2.0 * v))
 
 
+def baby():
+    """A little one: a soft coo that rises and falls, and a tiny three-note giggle."""
+    out = _zeros(0.9)
+    n = int(0.35 * RATE)
+    phase = 0.0
+    coo = []
+    for i in range(n):
+        x = i / n
+        f = 380 + 140 * math.sin(math.pi * x) + 8 * math.sin(TAU * 6 * i / RATE)
+        phase += TAU * f / RATE
+        v = math.sin(phase) + 0.35 * math.sin(2 * phase) + 0.15 * math.sin(3 * phase)
+        coo.append(v * math.sin(math.pi * x) ** 1.5)
+    _put(out, 0.02, _band(coo, 900, q=0.8), 0.9)
+    for k in range(3):
+        m = int(0.07 * RATE)
+        ph = 0.0
+        syllable = []
+        for i in range(m):
+            x = i / m
+            ph += TAU * (620 + 60 * k + 80 * math.sin(math.pi * x)) / RATE
+            syllable.append((math.sin(ph) + 0.3 * math.sin(2 * ph)) * math.sin(math.pi * x))
+        _put(out, 0.45 + 0.11 * k, _band(syllable, 1100, q=0.9), 0.7 - 0.1 * k)
+    return mono_bytes(out, RATE, 0.24)
+
+
 def pet_trick():
     """A pet shows off a trick: a quick sparkling rise and a little ta-da."""
     out = _zeros(0.8)
@@ -2327,7 +2352,8 @@ SOUNDS = (
        ("arcade_ticket.wav", arcade_ticket), ("arcade_over.wav", arcade_over),
        ("crew_chat.wav", crew_chat), ("crew_join.wav", crew_join), ("duel_start.wav", duel_start),
        ("npc_warm.wav", npc_warm), ("pet_fox.wav", pet_fox), ("pet_jelly.wav", pet_jelly),
-       ("pet_minidrone.wav", pet_minidrone), ("pet_robocat.wav", pet_robocat), ("pet_trick.wav", pet_trick)]
+       ("pet_minidrone.wav", pet_minidrone), ("pet_robocat.wav", pet_robocat), ("pet_trick.wav", pet_trick),
+       ("baby.wav", baby)]
 )
 
 

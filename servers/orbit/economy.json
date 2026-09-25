@@ -252,7 +252,7 @@
       "stock": ["robot_pet", "cat_pet", "minidrone_pet", "robocat_pet", "fox_pet", "jelly_pet", "pet_food", "pet_treat"]
     },
     "jewels": {"name": {"en": "Starglint Jewellers", "id": "Perhiasan Kilau Bintang"}, "stock": ["ring_silver", "ring_gold", "ring_star"]},
-    "food": {"name": {"en": "the Food Court", "id": "Pujasera"}, "stock": ["iced_coffee", "martabak", "kerupuk"]},
+    "food": {"name": {"en": "the Food Court", "id": "Pujasera"}, "stock": ["iced_coffee", "martabak", "kerupuk", "baby_porridge"]},
     "casino": {"name": {"en": "the lottery booth", "id": "loket lotre"}, "stock": ["lottery_ticket"], "fixed": true},
     "shipyard": {
       "name": {"en": "the Orbit Shipyard", "id": "Galangan Kapal Orbit"},
@@ -738,7 +738,7 @@
       },
       "price": 20,
       "tradeable": true,
-      "effects": {"cooldown_cut": 0.5}
+      "effects": {"cooldown_cut": 0.5, "child_food": 30}
     },
     "kerupuk": {
       "type": "consumable",
@@ -754,7 +754,7 @@
       },
       "price": 3,
       "tradeable": true,
-      "effects": {"snack": true}
+      "effects": {"snack": true, "child_food": 15}
     },
     "plot": {
       "type": "service",
@@ -1445,6 +1445,19 @@
         }
       }
     },
+    "baby_porridge": {
+      "type": "consumable",
+      "one": {"en": "pot of baby porridge", "id": "mangkuk bubur bayi"},
+      "many": {"en": "pots of baby porridge", "id": "mangkuk bubur bayi"},
+      "names": {"en": ["baby porridge", "porridge", "baby food"], "id": ["bubur bayi", "bubur", "makanan bayi"]},
+      "desc": {
+        "en": "Warm rice porridge with pumpkin, sealed in a pot that won't spill in low gravity. For babies and little children: feed the baby.",
+        "id": "Bubur nasi hangat dengan labu, dalam mangkuk tersegel yang tak tumpah di gravitasi rendah. Untuk bayi dan anak kecil: beri makan bayi."
+      },
+      "price": 8,
+      "tradeable": true,
+      "effects": {"child_food": 40}
+    },
     "pet_food": {
       "type": "consumable",
       "one": {"en": "bag of pet food", "id": "kantong pakan hewan"},
@@ -1824,6 +1837,54 @@
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},
+  "family": {
+    "_note": "Families (orbit_family.py). Proposals wait ask_seconds; a player declined waits snub_seconds before asking again, and partner_cooldown after a partnership ends. Adopting costs adopt_price (from adopt_level, at most max_children each, adopt_days apart). A child's needs fall by decay points an hour; care for a low need (below care_below) counts towards the next stage (care points and days). A happy child (stage 2) at your side adds xp_bonus to work XP, and fetches once a day from the fetch table (weights).",
+    "ask_seconds": 120,
+    "snub_seconds": 600,
+    "partner_cooldown": 86400,
+    "confirm_seconds": 60,
+    "adopt_price": 300,
+    "adopt_level": 3,
+    "adopt_days": 3,
+    "max_children": 2,
+    "decay": {"food": 1.5, "fun": 2.0, "rest": 1.0},
+    "start": {"food": 80, "fun": 80, "rest": 80},
+    "play": {"fun": 30, "rest": -5, "cooldown": 300},
+    "story": {"fun": 15, "rest": 15, "cooldown": 600},
+    "rest": {"rest": 45, "cooldown": 1200},
+    "full": 95,
+    "care_below": 75,
+    "sad": 30,
+    "happy": 70,
+    "stages": [{"care": 0, "days": 0}, {"care": 6, "days": 2}, {"care": 18, "days": 5}],
+    "xp_bonus": 0.05,
+    "fetch": {"kerupuk": 40, "seed_kangkung": 25, "pet_treat": 20, "iced_coffee": 15},
+    "speak_gap": [600, 1200],
+    "desc": {
+      "0": {"en": "A baby wrapped in a soft blanket patterned with stars, with a tiny fist that grips anything nearby.", "id": "Bayi terbungkus selimut lembut bermotif bintang, dengan kepalan mungil yang menggenggam apa saja di dekatnya."},
+      "1": {"en": "A toddler with a wobbly walk, a bright laugh and very strong opinions about shoes.", "id": "Balita dengan langkah tertatih, tawa yang renyah, dan pendapat yang sangat kuat soal sepatu."},
+      "2": {"en": "A bright-eyed child who asks a question about everything, and remembers every answer.", "id": "Anak bermata cerah yang menanyakan segala hal, dan mengingat setiap jawabannya."}
+    },
+    "lines": {
+      "0": [
+        {"kind": "emote", "en": "{child} coos and reaches for {parent}'s finger.", "id": "{child} berceloteh dan meraih jari {parent}."},
+        {"kind": "emote", "en": "{child} giggles at nothing at all.", "id": "{child} terkikik tanpa alasan."},
+        {"kind": "emote", "en": "{child} blows a tiny bubble and looks very proud of it.", "id": "{child} meniup gelembung kecil dan tampak bangga sekali."}
+      ],
+      "1": [
+        {"kind": "say", "en": "{parent}! {parent}! Look!", "id": "{parent}! {parent}! Lihat!"},
+        {"kind": "say", "en": "Stars! Lots of stars!", "id": "Bintang! Bintangnya banyak!"},
+        {"kind": "say", "en": "Again! Again!", "id": "Lagi! Lagi!"},
+        {"kind": "say", "en": "Kitty!", "id": "Kucing!"}
+      ],
+      "2": [
+        {"kind": "say", "en": "{parent}, can we go to the Observation Deck later?", "id": "{parent}, nanti kita ke Dek Observasi, ya?"},
+        {"kind": "say", "en": "I drew a picture of the Earth for you. The blue part is the sea.", "id": "Aku gambar Bumi buat kamu. Yang biru itu laut."},
+        {"kind": "say", "en": "When I grow up, I'm going to fly the ferry. Or be a gardener. Or both.", "id": "Kalau sudah besar, aku mau jadi pilot feri. Atau tukang kebun. Atau dua-duanya."},
+        {"kind": "say", "en": "Did you know the station goes round the Earth sixteen times a day?", "id": "Kamu tahu nggak, stasiun ini keliling Bumi enam belas kali sehari?"}
+      ]
+    }
+  },
   "pets": {
     "_note": "Pets (orbit_pets.py). Needs (food, fun, rest) fall by decay points an hour, never below 0; care for a need below care_below counts towards the next stage (care points and days since it came); lessons teach a trick (at least half of them work, more when the pet is happy). finds: a pet that may choose you on a world (on: collect or face), when you haven't one of its kind.",
     "decay": {"food": 3.0, "fun": 4.0, "rest": 2.0},

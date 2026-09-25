@@ -271,6 +271,29 @@ VERBS = [
     (("say", "hello", "to"), "greet"),
     (("penduduk",), "residents"), (("residents",), "residents"), (("warga",), "residents"), (("npc",), "residents"),
     (("npcs",), "residents"), (("daftar", "penduduk"), "residents"), (("who", "lives", "here"), "residents"),
+    # families
+    (("pasangan",), "partner"), (("pasanganku",), "partner"), (("partner",), "partner"), (("my", "partner"), "partner"),
+    (("status", "pasangan"), "partner"), (("partnership",), "partner"),
+    (("ajak", "berpasangan"), "partner_ask"), (("jadikan", "pasangan"), "partner_ask"),
+    (("berpasangan", "dengan"), "partner_ask"), (("partner", "with"), "partner_ask"),
+    (("partner", "up", "with"), "partner_ask"), (("be", "partners", "with"), "partner_ask"),
+    (("akhiri", "kemitraan"), "partner_end"), (("akhiri", "pasangan"), "partner_end"),
+    (("end", "partnership"), "partner_end"), (("end", "the", "partnership"), "partner_end"),
+    (("konfirmasi", "akhiri"), "partner_end_confirm"), (("confirm", "end"), "partner_end_confirm"),
+    (("adopsi",), "adopt"), (("adopsi", "anak"), "adopt"), (("adopsi", "bayi"), "adopt"), (("adopt",), "adopt"),
+    (("adopt", "a", "baby"), "adopt"), (("adopt", "a", "child"), "adopt"),
+    (("keluarga",), "family"), (("keluargaku",), "family"), (("family",), "family"), (("my", "family"), "family"),
+    (("anak",), "family"), (("anakku",), "family"), (("status", "anak"), "family"), (("child",), "family"),
+    (("children",), "family"), (("my", "child"), "family"), (("my", "children"), "family"),
+    (("bacakan", "cerita"), "child_story"), (("bacakan", "dongeng"), "child_story"),
+    (("ceritakan", "dongeng"), "child_story"), (("read", "a", "story"), "child_story"),
+    (("tell", "a", "story"), "child_story"), (("read", "a", "story", "to"), "child_story"),
+    (("tell", "a", "story", "to"), "child_story"),
+    (("minta", "tolong"), "child_fetch"), (("mintai", "tolong"), "child_fetch"),
+    (("bawa",), "child_take"), (("gendong",), "child_take"), (("bring",), "child_take"),
+    (("upacara", "nama"), "naming"), (("upacara", "pemberian", "nama"), "naming"), (("naming", "rite"), "naming"),
+    (("naming", "ceremony"), "naming"), (("name", "the", "baby"), "naming"), (("name", "baby"), "naming"),
+    (("namai", "bayi"), "naming"), (("namai", "anak"), "naming"),
     # trading (and anything waiting for a yes)
     (("terima",), "accept"), (("accept",), "accept"), (("terima", "tawaran"), "accept"),
     (("accept", "offer"), "accept"), (("terima", "tantangan"), "accept"), (("accept", "challenge"), "accept"),
@@ -513,6 +536,22 @@ def parse(text, lang="en", find_direction=None):
         return message
     if meaning in ("talk", "greet"):
         return {"c": meaning, "to": rest}
+    if meaning.startswith("partner"):
+        op = {"partner": "status", "partner_ask": "ask", "partner_end": "end",
+              "partner_end_confirm": "end_confirm"}[meaning]
+        name = _word(text, tokens[used]) if op == "ask" and used < len(tokens) else rest
+        return {"c": "partner", "op": op, "to": name}
+    if meaning in ("adopt", "family"):
+        return {"c": meaning}
+    if meaning.startswith("child_"):
+        words = rest.split()
+        while words and words[0].lower() in ("untuk", "to", "for", "kepada", "ke", "pada", "buat"):
+            words = words[1:]
+        while words and words[-1].lower() in ("along", "serta", "ikut", "for", "help"):
+            words = words[:-1]
+        return {"c": "child", "op": meaning[6:], "a": " ".join(words)}
+    if meaning == "naming":
+        return {"c": "naming", "a": rest}
     if meaning == "residents":
         return {"c": "residents"}
     if meaning == "ask":

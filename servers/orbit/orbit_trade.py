@@ -173,7 +173,8 @@ class TradeMixin:
         for table, accept, decline in ((self.offers, self.accept_offer, self._decline_offer),
                                        (self.challenges, self.accept_challenge, self.decline_challenge),
                                        (self.crew_invites, self.accept_crew_invite, self.decline_crew_invite),
-                                       (self.duel_asks, self.accept_duel, self.decline_duel)):
+                                       (self.duel_asks, self.accept_duel, self.decline_duel),
+                                       (self.family_asks, self.accept_family, self.decline_family)):
             entry = table.get(session.key)
             if entry:
                 waiting.append((entry["at"], accept, decline))

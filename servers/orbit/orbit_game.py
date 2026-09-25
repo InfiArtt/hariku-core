@@ -54,6 +54,7 @@ import orbit_verbs
 from orbit_admin import AdminMixin
 from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
+from orbit_family import FamilyMixin
 from orbit_events import EventsMixin
 from orbit_hunt import HuntMixin
 from orbit_arcade import ArcadeMixin, client_version
@@ -145,12 +146,12 @@ class Session:
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-          PetsMixin, AdminMixin)
+          PetsMixin, FamilyMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
            TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-           PetsMixin, AdminMixin):
+           PetsMixin, FamilyMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -181,6 +182,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.init_hunt()
         self.init_crews()
         self.init_duels()
+        self.init_family()
         self.init_npcs()
 
     # ------------------------------------------------------------------ helpers
@@ -449,6 +451,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if ripe:
             notes.append(self.render(lang, "farm_ripe_join", n=ripe))
         notes.extend(self.pet_join_notes(session))
+        notes.extend(self.family_join_notes(session))
         if self.daily_ready(char) and not new:
             notes.append(self.render(lang, "daily_ready"))
         notes.extend(self.check_achievements(session, quiet=True))
@@ -479,6 +482,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.forget_offers(session)
         self.forget_crew_invites(session)
         self.forget_duels(session)
+        self.forget_family_asks(session)
         self.sessions.pop(session.key, None)
         self._save(session)
         if not self._loc(session.char).get("private") and not session.invisible:
@@ -619,6 +623,10 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         nid = None if dark else self.npc_here(session, target)
         if nid is not None:
             self._send(session, "info", text=self.npc_look_text(session, nid))
+            return
+        companion = None if dark else self.companion_look(session, target)
+        if companion:
+            self._send(session, "info", text=companion)
             return
         oid, obj = self.world.find_object(session.char["location"], target)
         if obj is not None:
@@ -1059,6 +1067,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         "people": ("people", "residents", "resident", "npc", "npcs", "penduduk", "warga", "orang", "tokoh",
                    "characters", "karakter"),
         "pets": ("pets", "pet", "hewan", "peliharaan", "hewan peliharaan", "tricks", "trik"),
+        "family": ("family", "keluarga", "partner", "partners", "pasangan", "children", "child", "anak", "adopt",
+                   "adopsi", "baby", "bayi", "naming", "upacara nama"),
         "admin": ("admin",),
     }
 
@@ -1105,6 +1115,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_crews(now)
         self.tick_duels(now)
         self.tick_npcs(now)
+        self.tick_family(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):

@@ -374,7 +374,19 @@ class NpcsMixin:
             return self._npc_variant(d["greet_known"])
         return self._npc_variant(d["greet"])
 
+    def _your_child(self, session, name, op="talk", text=""):
+        """Talking to (or asking for help from) a child of yours: True when it was one."""
+        finder = getattr(self, "_child_named", None)
+        child = finder(session.char, name) if finder and name else None
+        if child is None or not child["name"]:
+            return False
+        helping = any(w in str(text).lower().split() for w in ("help", "bantuan", "tolong", "fetch", "errand"))
+        self.run(session, {"c": "child", "op": "fetch" if op == "ask" and helping else "talk", "a": child["name"]})
+        return True
+
     def cmd_talk(self, session, message):
+        if self._your_child(session, self._arg(message, "to", 60) or self._arg(message, "a", 60)):
+            return
         nid = self._npc_for(session, self._arg(message, "to", 60) or self._arg(message, "a", 60))
         if nid is None:
             return
@@ -417,6 +429,8 @@ class NpcsMixin:
     def cmd_ask(self, session, message):
         name = self._arg(message, "to", 60)
         text = self._arg(message, "a", 200)
+        if self._your_child(session, name, "ask", text):
+            return
         here = self.npcs_in(self.room_of(session.char))
         nid = None
         if name and self._npc_match(here, name, exact_only=True) is None:

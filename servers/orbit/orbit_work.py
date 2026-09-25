@@ -86,7 +86,7 @@ class WorkMixin:
             amount = int(round(amount * float(boost.get("factor", 1.0))))
         elif boost:
             char["stats"].pop("xp_boost", None)
-        amount = int(round(amount * self.xp_factor()))
+        amount = int(round(amount * self.xp_factor() * self.family_xp_factor(char)))
         before = self.level_of(int(char.get("xp") or 0))
         char["xp"] = int(char.get("xp") or 0) + amount
         self.crew_points(char, amount)
@@ -550,6 +550,13 @@ class WorkMixin:
         text = self._arg(message, "item", 60) or self._arg(message)
         if session.blackjack and orbit_safety.name_key(text) in CARD_WORDS:
             self.run(session, {"c": "hit"})          # "ambil kartu" at the card table
+            return
+        words = text.split()
+        if words and words[-1].lower() in ("along", "serta", "with", "ikut"):
+            words = words[:-1]
+        child = self._child_named(char, " ".join(words)) if words else None
+        if child is not None:
+            self.run(session, {"c": "child", "op": "take", "a": " ".join(words)})   # "take Mira along"
             return
         if orbit_safety.name_key(text) in ("gig", "a gig", "paket", "parcel"):
             self.run(session, {"c": "gig"})          # "ambil gig" (read by a client as take)
