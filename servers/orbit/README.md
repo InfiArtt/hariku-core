@@ -36,7 +36,8 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_travel.py` | the worlds: the Gate, the ferry, players' own ships, customs |
 | `orbit_local.py` | the other worlds' own work: Evergrove's creatures, Lumina City's courier gigs |
 | `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
-| `orbit_events.py` | events: random, weekly, seasonal, parties, the co-op drone, admins' events |
+| `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
+| `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
 | `orbit_verbs.py` | the commands the server reads from plain text (both languages) |
 | `orbit_world.py`, `world.json` | the map: worlds, rooms, compass exits, objects, goods, missions, gestures |
@@ -103,32 +104,34 @@ while running).
 
 ### Updating to 1.1 (the database migrates by itself)
 
-1. Copy every file of this folder to `~/orbit/` (new in 1.1: `economy.json`,
+1. Copy every file of this folder to `~/orbit/`, but never `private/` (the
+   hunt's seasons: see below) (new in 1.1: `economy.json`,
    `orbit_nav.py`, `orbit_items.py`, `orbit_work.py`, `orbit_econ.py`,
    `orbit_casino.py`, `orbit_trade.py`, `orbit_progress.py`, `orbit_travel.py`, `orbit_local.py`,
-   `orbit_events.py`,
-   `orbit_events.py`,
+   `orbit_events.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `hunt.example.json`,
    `orbit_admin.py`, `orbit_verbs.py`, `orbit_backup.py`,
    `orbit-backup.service`, `orbit-backup.timer`; changed: the other
    `orbit_*.py`, `world.json`, `texts.json`). `config.json` needs no new
    keys: every new setting has a default (below).
 2. `systemctl --user restart orbit`.
 3. On its first start, the server sees an older database (Orbit 1.0's is
-   schema version 0), saves a copy of it as `orbit.db.before-v4.bak` next to
-   it, and migrates it to version 4 in one transaction: new columns (voice,
+   schema version 0), saves a copy of it as `orbit.db.before-v5.bak` next to
+   it, and migrates it to version 5 in one transaction: new columns (voice,
    XP, the daily streak, what a character mined and harvested, what it won
    or lost at the casino) and new tables (companions, ships, events and who
-   took part in them, achievements, lottery tickets, transfer codes, old
+   took part in them, hunt progress, achievements, lottery tickets, transfer codes, old
    secrets, transfers, the admins' log) are added; nothing is dropped or
    changed, and work done before 1.1 counts as XP (10 a repair, 20 a cargo
    run, 25 a mission). The log says "the database was migrated from version
-   0 to 4". If the migration fails,
+   0 to 5". If the migration fails,
    nothing is changed and the server stops with the error in the log; the
    copy is there.
 4. Every room of 1.0 still exists, so characters wake up where they were.
    Returning players are told once what's new, and get a compass (and the
    keycards their XP already earned, and quietly the achievements their
    past work already reached).
+5. The hunt starts only when `config.json` names a season file (`"hunt"`;
+   see [The hunt](#the-hunt-the-lost-chord)).
 
 ### Backups
 
@@ -240,6 +243,7 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 | `database` | `orbit.db` | the SQLite file |
 | `world`, `economy`, `texts` | the bundled files | the map, the balance, the lines |
 | `words` | `words.json` | the word filter's list (Indonesian and English; edit freely) |
+| `hunt` | `""` (none) | the hunt's season file, e.g. `private/season1.hunt.json` (never in the repository) |
 | `max_connections`, `max_per_ip` | 200, 8 | connections at once, in all and from one address |
 | `max_message` | 4096 | the largest message a client may send, in bytes |
 | `rate`, `burst`, `abuse_limit` | 5, 15, 40 | messages a second from one connection, a quick burst, and how many dropped messages before it is closed |
@@ -265,12 +269,8 @@ folder). The environment can set `ORBIT_CONFIG`, `ORBIT_HOST`, `ORBIT_PORT` and
 | `game.events_crowd_factor`, `game.events_min_factor` | 0.1, 0.5 | ...each extra player online makes the gap 10% shorter, down to half |
 | `game.events_party_cooldown` | 7200 | how often one player may throw a party |
 | `game.events_weekly` | trading fair Saturday 14:00, jackpot night Friday 13:00, night rush Wednesday 13:00 | `[{"event", "weekday" (0 Monday), "hour", "minute"}]`, in UTC |
-| `game.events_enabled` | true | events that start by themselves (false: only what admins start or schedule) |
-| `game.events_random`, `game.events_seasonal` | true, true | the random events; the station's birthday, New Year, the Lantern Festival |
-| `game.events_min_gap`, `game.events_max_gap` | 1800, 3600 | seconds between random events with one player online... |
-| `game.events_crowd_factor`, `game.events_min_factor` | 0.1, 0.5 | ...each extra player online makes the gap 10% shorter, down to half |
-| `game.events_party_cooldown` | 7200 | how often one player may throw a party |
-| `game.events_weekly` | trading fair Saturday 14:00, jackpot night Friday 13:00, night rush Wednesday 13:00 | `[{"event", "weekday" (0 Monday), "hour", "minute"}]`, in UTC |
+| `game.hunt_admins_compete` | false | admins on the hunt's board and in its prizes (they can know the answers) |
+| `game.hunt_wrong_base`, `game.hunt_wrong_max` | 60, 86400 | seconds to wait after a wrong answer, doubling each time up to this |
 
 ### The balance (economy.json)
 
@@ -446,6 +446,83 @@ achievements, admin) and spent by sink (shops, market, fares, rescues,
 lanterns, casino bets, lottery, admin), so you can see whether money grows
 too fast and adjust these numbers.
 
+## The hunt (the Lost Chord)
+
+A season-long chain of hard riddles for the whole server: the simulation's
+founder broke her last chord apart and hid each note behind a riddle, and
+whoever finds them all first wins.
+Players type `perburuan` / `hunt` (their riddle, and any hints released),
+`selidiki` / `investigate` (also `cari petunjuk`, `look for clues`) where
+they think a clue is, `pecahkan ...` / `solve ...` (also `jawaban ...`,
+`my answer is ...`) and `papan pemburu` / `hunt board`.
+
+- **Clues** are in rooms. Some show only to someone carrying a thing (a
+  scanner), wearing one (a headlamp), or at certain station hours (UTC;
+  `[22, 5]` runs past midnight); some are tones to listen to, played like
+  the reactor's (1 to 4, low to high and left to right); a dark room hides
+  them without a light. When a clue of your riddle is in the room, looking
+  says "Something here seems to invite a closer look"; investigating where
+  one is hidden from you says you can't quite make it out.
+- **A wrong answer** makes you wait: a minute, then 2, 4, 8... up to a day
+  (`game.hunt_wrong_base`, `game.hunt_wrong_max`), and every try is
+  rate-limited, so guessing doesn't pay. Answers are compared in lower case
+  without accents, spaces or punctuation.
+- **A right one** gives the next riddle, and the station hears "Ani has found
+  note 2 of 5". The first to finish wins the season's `prize.first` credits
+  and its title (Keeper of the Lost Chord, a thing of their own); the next
+  ones `prize.others` in order, then `prize.rest` each. Everyone hears who
+  finished and in which place.
+- **The rival**, the Meridian Grey company, "finds" a note every
+  `rival.hours` and says so, to keep the pressure on, but never the last one.
+- **Admins** know the answers, so they're left off the board and out of the
+  prizes (unless `game.hunt_admins_compete`); `uji perburuan` / `hunt test`
+  plays the season from the start without counting, to try it out.
+
+**A season is never in this repository**, which is public: the riddles,
+where the clues are and what unlocks them are the game. Seasons are written
+in `servers/orbit/private/` (ignored by git) and live in `~/orbit/private/`
+on the server. There are two files. The **authoring** file has the answers in
+plain text (`"accept"`: every answer a riddle takes, in both languages and
+other spellings); it stays on the computer it was written on. The server's
+file, built from it, has only keyed hashes of them (HMAC-SHA256 with a new
+random salt of 32 bytes, over "season:stage:answer"), so the answers can't
+be read from it; keep it private all the same (short answers, like numbers,
+could be guessed offline from it). `orbit_hunt_tool.py` builds and checks
+them (its docstring describes the format):
+
+```sh
+cd servers/orbit
+python orbit_hunt_tool.py template > private/season2.authoring.json    # a start
+python orbit_hunt_tool.py build private/season1.authoring.json private/season1.hunt.json
+python orbit_hunt_tool.py check private/season1.hunt.json
+python orbit_hunt_tool.py try private/season1.hunt.json 2 "an answer"    # right or wrong
+```
+
+To run a season on the server:
+
+```sh
+mkdir -p ~/orbit/private && chmod 700 ~/orbit/private
+# copy private/season1.hunt.json there: only the built file, never the authoring one
+chmod 600 ~/orbit/private/season1.hunt.json
+# in config.json: "hunt": "private/season1.hunt.json"
+systemctl --user restart orbit
+```
+
+The log says "the hunt's season 1 begins" the first time (a restart goes on
+with the same season). For the next season: build its file and copy it over
+the one `"hunt"` names, then an admin types `musim baru` / `new season`,
+with no restart (a new name in config.json needs a restart instead):
+everyone starts it at the first riddle and hears so; the old season's
+progress stays in the database. A file that can't be read or isn't right is
+refused (the log says why) and the season running goes on. When a riddle
+proves too hard, `umumkan petunjuk 2` / `release hint 2` gives everyone the
+next of riddle 2's hints (the season file has them), and `hunt` repeats it
+from then on. `status perburuan` / `hunt status` shows where everyone is,
+their tries and waits.
+
+`hunt.example.json` is a fake two-riddle demo season (its answers are
+"orbit" and "1234"), for trying the hunt out and for the tests.
+
 ## Admin commands
 
 Typed in the game by a character in `game.admins` (Indonesian first):
@@ -471,9 +548,10 @@ Typed in the game by a character in `game.admins` (Indonesian first):
 | `mulai acara hujan meteor` / `start event meteor shower` | start any event now |
 | `hentikan acara` / `stop event` (and a name) | stop the event (or cancel a scheduled one) |
 | `jadwalkan acara 2026-09-27 14:00 ...` / `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
-| `mulai acara hujan meteor` / `start event meteor shower` | start any event now |
-| `hentikan acara` / `stop event` (and a name) | stop the event (or cancel a scheduled one) |
-| `jadwalkan acara 2026-09-27 14:00 ...` / `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
+| `status perburuan` / `hunt status` | the hunt: everyone's riddle, tries and waits |
+| `musim baru` / `new season` | read the hunt's season file again (a new season begins when its number changed) |
+| `umumkan petunjuk 2` / `release hint 2` | the next hint of the hunt's riddle 2, to everyone |
+| `uji perburuan` / `hunt test` | play the hunt from the start without counting (again: back) |
 | `bantuan admin` / `help admin` | this list, in the game (players don't see it) |
 
 Every admin action is written to the log and to the database's `admin_log`
@@ -505,26 +583,30 @@ field with the rest of its play state (cooldowns, missions, farm plots and
 their timers, worn things, the rooms it knows, its beacon, friends, air left
 outside, a shuttle ride or ferry trip in progress, a courier gig, its casino
 bets of the last hour a minute at a time, how many trades, jackpots,
-naturals, gigs and creatures), what it won or lost at the casino, when it was made and last seen, and whether it is
-banned or muted; its companions (a pet: kind, name, and its own stats); its
-ship (model, name, where it's docked or flying to, fuel and cargo); the
-events it took part in (and how much, for the drone's rewards); its
-achievements (which, and when); its lottery tickets (how many, for which
-week's draw); transfer codes (a hash, for 10 minutes); secrets that no
-longer work (a hash); the transfers log; the admins' log; and, in `meta`,
-the market's prices, each world's own prices, the economy's totals, today's
+naturals, gigs and creatures), what it won or lost at the casino, when it
+was made and last seen, and whether it is banned or muted; its companions (a
+pet: kind, name, and its own stats); its ship (model, name, where it's
+docked or flying to, fuel and cargo); the events it took part in (and how
+much, for the drone's rewards); its achievements (which, and when); its
+lottery tickets (how many, for which week's draw); how far it got in each
+season of the hunt (its riddle, tries, wrong answers in a row and the wait,
+when it finished and in which place; the answers it typed are only compared,
+never kept); transfer codes (a hash, for 10 minutes); secrets that no longer
+work (a hash); the transfers log; the admins' log; and, in `meta`, the
+market's prices, each world's own prices, the economy's totals, today's
 temple lanterns, the lottery's next draw and carried-over pot, and the
 events' pacing (when the next random one may come, when each last came,
-which weekly and seasonal ones have run). Every event that runs or is
-scheduled is a row in `events`, with its state and how it ended. Trade offers, coin-flip
-challenges and a blackjack hand in progress live only in memory (a hand is
-played out, standing, if its player leaves or the server stops). Accounts
-have no password or email: the client makes a random 256-bit secret the
-first time it joins this server and keeps it on the player's computer; the
-server keeps only a PBKDF2-SHA256 hash of it (with a salt made once for this
-server). Chat (say, whisper, shout) is passed on to whoever hears it and
-never written anywhere. A banned connection's address is kept only as a
-salted hash, for 7 days.
+which weekly and seasonal ones have run) and the hunt's season (the rival's
+progress, the hints released, how many have finished). Every event that runs
+or is scheduled is a row in `events`, with its state and how it ended. Trade
+offers, coin-flip challenges and a blackjack hand in progress live only in
+memory (a hand is played out, standing, if its player leaves or the server
+stops). Accounts have no password or email: the client makes a random
+256-bit secret the first time it joins this server and keeps it on the
+player's computer; the server keeps only a PBKDF2-SHA256 hash of it (with a
+salt made once for this server). Chat (say, whisper, shout) is passed on to
+whoever hears it and never written anywhere. A banned connection's address
+is kept only as a salted hash, for 7 days.
 
 The log says when the server starts and stops, when characters are created,
 join, resume, log out and leave (by name), transfers, and what admins did. It
@@ -594,12 +676,12 @@ commands need no new client:
 | `worlds`, `gate` (`a`: a world), `ferry` (`a`), `embark` (`to`: a friend's ship), `disembark`, `fly` (`a`), `refuel` (`n`), `load`, `unload` (`item`, `n` or `"all"`), `cargo`, `name_ship` (`a`) | | travel and ships |
 | `face` (`a`: a creature), `gig` | | Evergrove's creatures, Lumina's courier gigs |
 | `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
-| `events`, `join`, `listen`, `catch`, `search`, `watch`, `party` | | events (the drone: `work` at the Dock) |
+| `hunt`, `investigate`, `solve` (`a`: the answer), `hunt_board` | | the hunt |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
 | `text` | `a`: plain words | the server reads them (see above) |
-| `admin` | `op`: mute, unmute, kick, ban, unban, announce, grant, take_credits, give_item, economy, set_price, reset_streak, goto, invisible, transfers, revoke, transfer_for, admin_log; `to`, `n`, `a`, `item` | admins only |
+| `admin` | `op`: mute, unmute, kick, ban, unban, announce, grant, take_credits, give_item, economy, set_price, reset_streak, goto, invisible, transfers, revoke, transfer_for, admin_log, event_start, event_stop, event_schedule, hunt_status, new_season, release_hint, hunt_test; `to`, `n`, `a`, `item` | admins only |
 
 **Events** (`{"t": "ev", "k": kind, "text": "...", ...}`). `k` tells the
 client which sound fits and whose voice reads it: `room`, `moved`, `arrive`,
@@ -612,7 +694,7 @@ action), `room`, `amb` (`vent`, `cantina`, `engine`, `garden`, `deck`,
 `neon`, `arcade`), `floor` and `acoustics` (where you are now),
 `dir` (the way you walked, or the side someone came from or left by), `via`
 (`lift`, `ladder`, `slide`, `airlock`, `door`), `codes` (the reactor's
-tones, 1 to 4), `sound` (a cue more specific than the kind's), `emote`
+or a hunt clue's tones, 1 to 4), `sound` (a cue more specific than the kind's), `emote`
 (which gesture), `voice` (the voice number a speaker chose; on your own
 lines, yours), `words` (on a line said, whispered or shouted, yours or
 another player's: the words alone, so a client can read the name in one
@@ -669,12 +751,12 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `launch`, `landing`, `gate`, `ferry`, `refuel`, `cargo`, `customs` | ships and shuttles, the Gate, the ferry, fuel, the hold, a customs check |
 | `creature` | one of Evergrove's creatures |
 | `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
-| `event_start`, `event_end`, `event_party`, `event_storm`, `event_boss`, `event_meteor`, `fireworks`, `robot_beep` | events beginning and ending, each kind with a sting of its own; the runaway robot's beeps, from its side |
+| `hunt_clue`, `hunt_found`, `hunt_rival` | the hunt: a clue (and others' progress, a hint), a note found, the rival ahead |
 | `dice`, `reel_spin`, `reel_stop`, `cards`, `deal`, `coinflip`, `lottery`, `lottery_draw` | the casino's games (the reels stop left, middle, right) |
 | `win`, `lose`, `push`, `jackpot` | how a game came out |
 | `amb_vent`, `amb_cantina`, `amb_engine`, `amb_garden`, `amb_deck`, `amb_space`, `amb_belt`, `amb_venue`, `amb_mall`, `amb_casino`, `amb_gate`, `amb_moon`, `amb_colony`, `amb_ice`, `amb_bazaar`, `amb_forest`, `amb_neon`, `amb_arcade` | the ambience loops (4 seconds, seamless; the other worlds' at 11 kHz) |
 
-The set: 175 files, about 9.4 MB: 104 recorded (2.9 MB) and 71 synthesized;
+The set: 178 files, about 9.8 MB: 104 recorded (2.9 MB) and 74 synthesized;
 the ambience loops are at 11 kHz.
 
 ### Credits: recorded sounds
@@ -700,7 +782,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_casino.py` computes each game's return exactly from

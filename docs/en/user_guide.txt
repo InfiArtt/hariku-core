@@ -852,23 +852,19 @@ me" (and an event's name), or the "Remind me of the next event" button in
 the Orbit window, sets an ordinary Hariku reminder five minutes before it
 starts, so it rings even with Orbit closed.
 
-Events. Now and then something happens to everyone, announced with a sound
-of its own: a meteor shower ("kumpulkan" or "collect" where the meteorites
-fall), a solar storm, a runaway robot pet ("dengar" or "listen" says which
-way its beeps come from; "tangkap" or "catch" in the right room), a
-stowaway ("geledah" or "search"), a comet ("tonton" or "watch" from the
-Observation Deck), a market boom on one world, a double XP hour, happy
-hour at the Cantina, a power cut, and a runaway maintenance drone at the
-Dock that everyone fixes together ("perbaiki drone" or "fix drone"; the
-more you help, the bigger your reward). Every week there's a trading fair
-on the Mall Ring, a jackpot night and a night rush in Lumina City; every
-year the station's birthday on 25 September, New Year and the Lantern
-Festival. "acara" or "events" says what's on and what's coming; "ikut" or
-"join" takes part where needed. In your own cabin, "adakan pesta" or
-"host party" invites everyone for half an hour. "ingatkan aku" or "remind
-me" (and an event's name), or the "Remind me of the next event" button in
-the Orbit window, sets an ordinary Hariku reminder five minutes before it
-starts, so it rings even with Orbit closed.
+The hunt. The simulation's founder hid a prize behind a chain of hard
+riddles, the Lost Chord, and the first player to solve them all wins it
+(later finishers win smaller prizes). "perburuan" or "hunt" tells you your
+riddle. Clues are hidden in rooms around the worlds: when one for your
+riddle is where you are, looking there says something invites a closer
+look, and "selidiki" or "investigate" finds it. Some clues show only with
+the right thing in your bag or on your head, some only at certain hours of
+the station's clock (UTC), and some are tones to listen to, like the
+reactor's. "pecahkan" or "solve" and your answer answers the riddle; a wrong
+answer makes you wait before trying again, longer each time. "papan
+pemburu" or "hunt board" shows who has come furthest, and how close the
+rival company is. Admins may release an official hint for a riddle that
+proves too hard.
 
 The casino. The Casino Corner is west of the Cantina; "kasino" or "casino"
 there lists the games. "dadu 50 tinggi" or "dice 50 high" (or low, or seven),
