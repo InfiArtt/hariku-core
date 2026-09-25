@@ -1,5 +1,5 @@
 {
-  "_note": "Orbit's station. Rooms have compass exits (n, ne, e, se, s, sw, w, nw, u, d); an exit may be {\"to\": room, \"lock\": crew|tech|officer|brass, \"oneway\": true, \"via\": lift|ladder|slide|airlock|door, \"msg\": {en, id}}. Flags: dark (a headlamp shows it), airless (an EVA suit only), private, landmark (anyone can ask the way there), secret, market, shop, farm, mine, salvage, rescue (where the air rescue drops you), venue (a place for ceremonies), temple. A room's floor (metal unless said: carpet, grass, stone, rock, suit, wet) and acoustics (room unless said: small, hall, hangar, outside, cave, open) tell the client which footsteps and echo to play. See README.md.",
+  "_note": "Orbit's station. Rooms have compass exits (n, ne, e, se, s, sw, w, nw, u, d); an exit may be {\"to\": room, \"lock\": crew|tech|officer|brass, \"oneway\": true, \"via\": lift|ladder|slide|airlock|door, \"msg\": {en, id}}. Flags: dark (a headlamp shows it), airless (an EVA suit only), private, landmark (anyone can ask the way there), secret, market ({buys, sells}: kinds of goods or goods; a factor, prices for single goods, about; a good is traded at one market on each world), shop, farm, mine, salvage, rescue (where the air rescue drops you), venue (a place for ceremonies), temple. A room's floor (metal unless said: carpet, grass, stone, rock, suit, wet) and acoustics (room unless said: small, hall, hangar, outside, cave, open) tell the client which footsteps and echo to play. See README.md.",
   "start": "dock",
   "directions": {
     "n": {
@@ -208,11 +208,11 @@
       "area": "lower",
       "at": [-2, 0],
       "ambience": "vent",
-      "exits": {"e": "cargo", "s": "airlock", "w": "hangar"},
+      "exits": {"n": "mineral_exchange", "e": "cargo", "s": "airlock", "w": "hangar"},
       "job": "pilot",
       "desc": {
-        "en": "The docking ring hums with pumps and clamps. Through a thick window you can see the cargo shuttle Merpati latched on, its belly scorched from the last reentry. A schedule board lists flights to Moon Base Tranquility. In the next berth, the little mining shuttle Kancil ferries miners to the Asteroid Belt.",
-        "id": "Cincin dermaga berdengung oleh pompa dan penjepit. Lewat jendela tebal kelihatan pesawat kargo Merpati yang sedang bersandar, perutnya gosong bekas masuk atmosfer. Papan jadwal menampilkan penerbangan ke Pangkalan Bulan Tranquility. Di tambatan sebelah, pesawat tambang mungil Kancil mengantar para penambang ke Sabuk Asteroid."
+        "en": "The docking ring hums with pumps and clamps. Through a thick window you can see the cargo shuttle Merpati latched on, its belly scorched from the last reentry. A schedule board lists flights to Moon Base Tranquility. In the next berth, the little mining shuttle Kancil ferries miners to the Asteroid Belt, and north, the Mineral Exchange buys what they bring back.",
+        "id": "Cincin dermaga berdengung oleh pompa dan penjepit. Lewat jendela tebal kelihatan pesawat kargo Merpati yang sedang bersandar, perutnya gosong bekas masuk atmosfer. Papan jadwal menampilkan penerbangan ke Pangkalan Bulan Tranquility. Di tambatan sebelah, pesawat tambang mungil Kancil mengantar para penambang ke Sabuk Asteroid, dan di utara, Bursa Mineral membeli hasil bawaan mereka."
       },
       "hints": {
         "pilot": {
@@ -278,10 +278,10 @@
       "area": "lower",
       "at": [-1, 0],
       "ambience": "vent",
-      "exits": {"e": "service", "w": "dock"},
+      "exits": {"n": "ice_depot", "e": "service", "w": "dock"},
       "desc": {
-        "en": "A huge hold stacked with containers, strapped down so nothing drifts. A forklift drone beeps as it works, and the air smells of metal and cold.",
-        "id": "Ruang besar penuh kontainer yang diikat supaya tidak melayang. Drone forklift berbunyi bip sambil bekerja, dan udaranya berbau logam dan dingin."
+        "en": "A huge hold stacked with containers, strapped down so nothing drifts. A forklift drone beeps as it works, and the air smells of metal and cold: the Ice Depot is just north.",
+        "id": "Ruang besar penuh kontainer yang diikat supaya tidak melayang. Drone forklift berbunyi bip sambil bekerja, dan udaranya berbau logam dan dingin: Depo Es ada tepat di utara."
       },
       "objects": {
         "containers": {
@@ -306,6 +306,99 @@
           "id": "Petugas keamanan: ketik kerja untuk berpatroli mencari penyelundup."
         }
       },
+      "acoustics": "hangar"
+    },
+    "mineral_exchange": {
+      "name": {"en": "Mineral Exchange", "id": "Bursa Mineral"},
+      "ref": {"en": "the Mineral Exchange", "id": "Bursa Mineral"},
+      "in": {"en": "at the Mineral Exchange", "id": "di Bursa Mineral"},
+      "aliases": {
+        "en": ["mineral exchange", "minerals", "ore exchange", "ore market", "meteorite exchange"],
+        "id": ["bursa mineral", "bursa bijih", "pasar bijih", "pasar mineral"]
+      },
+      "area": "lower",
+      "at": [-2, 1],
+      "ambience": "bazaar",
+      "exits": {"s": "dock", "e": "ice_depot"},
+      "market": {
+        "buys": ["iron", "nickel", "titanium", "platinum", "quantum", "meteorite", "rustsalt", "ember_crystal"],
+        "sells": ["iron", "nickel", "titanium", "platinum", "quantum", "meteorite", "rustsalt", "ember_crystal"],
+        "about": {"en": "ores and meteorites", "id": "bijih dan meteorit"}
+      },
+      "desc": {
+        "en": "A trading floor just off the Dock, loud with miners back from the Belt. Scales are bolted to the deck, and a price board clatters every time a number changes. At the back, a collector turns a meteorite shard under a lamp, looking for the glitter.",
+        "id": "Lantai bursa di sebelah Dermaga, riuh oleh para penambang yang baru pulang dari Sabuk. Timbangan dibaut ke lantai, dan papan harga berderak setiap kali angkanya berubah. Di belakang, seorang kolektor memutar serpihan meteorit di bawah lampu, mencari kilaunya."
+      },
+      "hints": {
+        "all": {
+          "en": "Ores and meteorites are bought and sold here: type prices, then buy or sell.",
+          "id": "Bijih dan meteorit dibeli dan dijual di sini: ketik harga, lalu beli atau jual."
+        }
+      },
+      "objects": {
+        "board": {
+          "names": {"en": ["board", "price board", "prices"], "id": ["papan", "papan harga", "harga"]},
+          "desc": {
+            "en": "Iron, nickel, titanium, platinum, quantum crystals, meteorites, rust salt and ember crystals, each with its price flicking up and down. Type prices to hear them.",
+            "id": "Besi, nikel, titanium, platina, kristal kuantum, meteorit, garam karat, dan kristal bara, masing-masing dengan harganya yang naik turun. Ketik harga untuk mendengarnya."
+          }
+        },
+        "scales": {
+          "names": {"en": ["scales", "scale"], "id": ["timbangan"]},
+          "desc": {
+            "en": "Heavy scales, checked every morning by an inspector with a very small hammer.",
+            "id": "Timbangan berat, diperiksa setiap pagi oleh seorang petugas dengan palu yang sangat kecil."
+          }
+        }
+      },
+      "landmark": true,
+      "acoustics": "hall"
+    },
+    "ice_depot": {
+      "name": {"en": "Ice Depot", "id": "Depo Es"},
+      "ref": {"en": "the Ice Depot", "id": "Depo Es"},
+      "in": {"en": "at the Ice Depot", "id": "di Depo Es"},
+      "aliases": {
+        "en": ["ice depot", "ice store", "water depot", "ice market"],
+        "id": ["depo es", "gudang es", "depo air", "pasar es"]
+      },
+      "area": "lower",
+      "at": [-1, 1],
+      "ambience": "vent",
+      "floor": "wet",
+      "exits": {"s": "cargo", "w": "mineral_exchange"},
+      "market": {
+        "buys": ["ice", "helium3", "frostpearl"],
+        "sells": ["ice", "helium3", "frostpearl"],
+        "about": {"en": "comet ice, helium-3 and frost pearls", "id": "es komet, helium-3, dan mutiara beku"}
+      },
+      "desc": {
+        "en": "A cold hall of insulated tanks and humming chillers, north of the Cargo Bay. Blocks of comet ice, the station's drinking water, wait in frosted crates, beside racks of helium-3 canisters and a small locked case of frost pearls. Your breath clouds in the air.",
+        "id": "Aula dingin penuh tangki berinsulasi dan pendingin yang berdengung, di utara Gudang Kargo. Balok-balok es komet, air minum stasiun, menunggu di peti yang berembun, di samping rak tabung helium-3 dan sebuah kotak kecil terkunci berisi mutiara beku. Napasmu mengembun di udara."
+      },
+      "hints": {
+        "all": {
+          "en": "Comet ice, helium-3 and frost pearls are bought and sold here: type prices, then buy or sell.",
+          "id": "Es komet, helium-3, dan mutiara beku dibeli dan dijual di sini: ketik harga, lalu beli atau jual."
+        }
+      },
+      "objects": {
+        "tanks": {
+          "names": {"en": ["tanks", "tank", "chillers", "chiller"], "id": ["tangki", "pendingin"]},
+          "desc": {
+            "en": "Every drop the station drinks passes through these tanks, melted from comet ice and filtered three times. A sign says: please do not lick the pipes.",
+            "id": "Setiap tetes yang diminum stasiun melewati tangki-tangki ini, dicairkan dari es komet dan disaring tiga kali. Ada tulisan: mohon jangan menjilat pipanya."
+          }
+        },
+        "case": {
+          "names": {"en": ["case", "pearls", "frost pearls"], "id": ["kotak", "mutiara", "mutiara beku"]},
+          "desc": {
+            "en": "Frost pearls from Glasir's ice fields, kept cold so they don't cloud. Type prices.",
+            "id": "Mutiara beku dari padang es Glasir, disimpan dingin supaya tidak keruh. Ketik harga."
+          }
+        }
+      },
+      "landmark": true,
       "acoustics": "hangar"
     },
     "service": {
@@ -473,16 +566,38 @@
       "name": {"en": "Workshop", "id": "Bengkel"},
       "ref": {"en": "the Workshop", "id": "Bengkel"},
       "in": {"en": "in the Workshop", "id": "di Bengkel"},
-      "aliases": {"en": ["workshop", "garage"], "id": ["bengkel"]},
+      "aliases": {
+        "en": ["workshop", "garage", "parts counter", "salvage counter", "salvage market"],
+        "id": ["bengkel", "loket suku cadang", "loket rongsok", "pasar rongsok"]
+      },
       "area": "lower",
       "at": [2, 0],
       "ambience": "engine",
       "exits": {"w": "engineering"},
-      "desc": {
-        "en": "Lathes, welding torches and a pegboard of tools. A half-built robot dog sits on the workbench, waiting patiently for its other two legs.",
-        "id": "Mesin bubut, obor las, dan papan perkakas. Anjing robot setengah jadi duduk di meja kerja, sabar menunggu dua kaki lainnya."
+      "market": {
+        "buys": ["salvage", "chips"],
+        "sells": ["salvage", "chips"],
+        "about": {"en": "salvage and memory chips", "id": "hasil pulung dan chip memori"}
       },
+      "desc": {
+        "en": "Lathes, welding torches and a pegboard of tools. A half-built robot dog sits on the workbench, waiting patiently for its other two legs. By the door, the engineers' parts counter buys salvage and sells tested memory chips.",
+        "id": "Mesin bubut, obor las, dan papan perkakas. Anjing robot setengah jadi duduk di meja kerja, sabar menunggu dua kaki lainnya. Di dekat pintu, loket suku cadang para insinyur membeli hasil pulung dan menjual chip memori yang sudah diuji."
+      },
+      "hints": {
+        "all": {
+          "en": "Salvage and memory chips are bought and sold at the parts counter: type prices, then buy or sell.",
+          "id": "Hasil pulung dan chip memori dibeli dan dijual di loket suku cadang: ketik harga, lalu beli atau jual."
+        }
+      },
+      "landmark": true,
       "objects": {
+        "counter": {
+          "names": {"en": ["counter", "parts counter", "bins"], "id": ["loket", "loket suku cadang", "tong"]},
+          "desc": {
+            "en": "Bins of scrap metal, old circuit boards, satellite chips and a thin stack of gold foil, and a tray of memory chips, each with a green tested sticker. Type prices.",
+            "id": "Tong-tong berisi besi tua, papan sirkuit tua, cip satelit, dan setumpuk tipis foil emas, serta nampan chip memori, masing-masing berstiker hijau tanda sudah diuji. Ketik harga."
+          }
+        },
         "dog": {
           "names": {"en": ["dog", "robot dog"], "id": ["anjing", "anjing robot"]},
           "desc": {
@@ -698,22 +813,21 @@
       "ref": {"en": "the Promenade", "id": "Promenade"},
       "in": {"en": "on the Promenade", "id": "di Promenade"},
       "aliases": {
-        "en": ["promenade", "main street", "street", "market", "plaza", "corridor"],
-        "id": ["promenade", "jalan utama", "pasar", "plaza", "koridor"]
+        "en": ["promenade", "main street", "street", "plaza", "corridor"],
+        "id": ["promenade", "jalan utama", "plaza", "koridor"]
       },
       "area": "main",
       "at": [0, 0],
       "ambience": "vent",
       "exits": {"s": "lift_main", "w": "promenade_west", "e": "promenade_east", "n": "park"},
-      "market": true,
       "desc": {
-        "en": "The station's main street curves away in both directions, lined with little shops and warm lights. Market stalls sell goods from Earth and the Moon, and the mission board glows by the lift. You can smell coffee from the Cantina.",
-        "id": "Jalan utama stasiun melengkung ke dua arah, dipenuhi toko kecil dan lampu hangat. Kios pasar menjual barang dari Bumi dan Bulan, dan papan misi menyala di dekat lift. Tercium aroma kopi dari Kantin."
+        "en": "The station's main street curves away in both directions, lined with little shops and warm lights. A signpost in the middle points the way to the station's markets, and the mission board glows by the lift. You can smell coffee from the Cantina.",
+        "id": "Jalan utama stasiun melengkung ke dua arah, dipenuhi toko kecil dan lampu hangat. Tiang petunjuk di tengahnya menunjukkan jalan ke pasar-pasar stasiun, dan papan misi menyala di dekat lift. Tercium aroma kopi dari Kantin."
       },
       "hints": {
         "all": {
-          "en": "Type prices for the market, or missions for the mission board.",
-          "id": "Ketik harga untuk melihat pasar, atau misi untuk papan misi."
+          "en": "Look at the signpost for the way to the markets, or type missions for the mission board.",
+          "id": "Lihat tiang petunjuk untuk arah ke pasar-pasar, atau ketik misi untuk papan misi."
         }
       },
       "objects": {
@@ -727,12 +841,13 @@
             "id": "Papan misi: kerjaan kecil di sekitar stasiun, baru setiap hari. Ketik misi untuk membacanya."
           }
         },
-        "stalls": {
-          "names": {"en": ["stalls", "stall", "market", "shops"], "id": ["kios", "lapak", "pasar", "toko"]},
-          "desc": {
-            "en": "Sacks of coffee, jars of spices, blocks of comet ice, memory chips and glittering meteorite shards. The prices change every few minutes. Type prices.",
-            "id": "Karung kopi, toples rempah, balok es komet, chip memori, dan serpihan meteorit yang berkilau. Harganya berubah tiap beberapa menit. Ketik harga."
-          }
+        "signpost": {
+          "names": {
+            "en": ["signpost", "sign", "market sign", "markets", "market", "stalls"],
+            "id": ["tiang petunjuk", "petunjuk", "plang", "plang pasar", "penunjuk arah", "pasar", "kios"]
+          },
+          "desc": {"en": "", "id": ""},
+          "markets": true
         },
         "lift": {
           "names": {"en": ["lift", "elevator"], "id": ["lift", "elevator"]},
@@ -925,7 +1040,7 @@
       "area": "main",
       "at": [-1, 1],
       "ambience": "garden",
-      "exits": {"s": "promenade_west", "e": "park", "n": "pavilion"},
+      "exits": {"s": "promenade_west", "e": "park", "n": "pavilion", "w": "spice_market"},
       "desc": {
         "en": "Rows of lettuce, chillies and tomatoes grow under pink lights, and water trickles through clear tubes. It smells like rain here. Crates of fresh vegetables wait by the door.",
         "id": "Deretan selada, cabai, dan tomat tumbuh di bawah lampu merah muda, air mengalir pelan di pipa-pipa bening. Baunya seperti habis hujan. Peti-peti sayur segar menunggu di dekat pintu."
@@ -966,12 +1081,59 @@
       "farm": true,
       "hints": {
         "all": {
-          "en": "Type plots to see your plots, plant tomato to plant, harvest when it's ripe, and list for seeds.",
-          "id": "Ketik lahan untuk melihat petakmu, tanam tomat untuk menanam, panen kalau sudah matang, dan daftar untuk bibit."
+          "en": "Type plots to see your plots, plant tomato to plant, harvest when it's ripe, and list for seeds. The Spice Market, west, buys what you grow.",
+          "id": "Ketik lahan untuk melihat petakmu, tanam tomat untuk menanam, panen kalau sudah matang, dan daftar untuk bibit. Pasar Rempah, di barat, membeli hasil kebunmu."
         }
       },
       "floor": "grass",
       "acoustics": "open"
+    },
+    "spice_market": {
+      "name": {"en": "Spice Market", "id": "Pasar Rempah"},
+      "ref": {"en": "the Spice Market", "id": "Pasar Rempah"},
+      "in": {"en": "at the Spice Market", "id": "di Pasar Rempah"},
+      "aliases": {
+        "en": ["spice market", "food market", "coffee market", "produce market", "crop market"],
+        "id": ["pasar rempah", "pasar makanan", "pasar kopi", "pasar sayur", "pasar hasil kebun"]
+      },
+      "area": "main",
+      "at": [-2, 1],
+      "ambience": "bazaar",
+      "floor": "wood",
+      "exits": {"e": "hydroponics"},
+      "market": {
+        "buys": ["coffee", "spices", "crop"],
+        "sells": ["coffee", "spices", "crop"],
+        "about": {"en": "coffee, spices and crops", "id": "kopi, rempah, dan hasil kebun"}
+      },
+      "desc": {
+        "en": "A covered market that smells of roasting coffee, cloves and cardamom. Stallholders scoop coffee beans into sacks and spices into jars, and the farmers from Hydroponics, next door, sell their crops by the crate: kangkung, chillies, strawberries, and now and then a moon melon.",
+        "id": "Pasar beratap yang harum oleh kopi sangrai, cengkih, dan kapulaga. Para pedagang menyendok biji kopi ke dalam karung dan rempah ke dalam toples, dan para petani dari Kebun Hidroponik, di sebelah, menjual hasil kebun mereka per peti: kangkung, cabai, stroberi, dan sesekali melon bulan."
+      },
+      "hints": {
+        "all": {
+          "en": "Coffee, spices and crops are bought and sold here: type prices, then buy or sell.",
+          "id": "Kopi, rempah, dan hasil kebun dibeli dan dijual di sini: ketik harga, lalu beli atau jual."
+        }
+      },
+      "objects": {
+        "stalls": {
+          "names": {"en": ["stalls", "stall", "sacks", "jars"], "id": ["kios", "lapak", "karung", "toples"]},
+          "desc": {
+            "en": "Sacks of coffee from the hills of Earth, jars of cloves, nutmeg and cinnamon, and crates of whatever Hydroponics grew this week. Type prices.",
+            "id": "Karung kopi dari perbukitan Bumi, toples cengkih, pala, dan kayu manis, serta peti berisi apa saja yang tumbuh di Kebun Hidroponik minggu ini. Ketik harga."
+          }
+        },
+        "roaster": {
+          "names": {"en": ["roaster", "coffee roaster", "drum"], "id": ["sangrai", "penyangrai", "penyangrai kopi"]},
+          "desc": {
+            "en": "A copper drum turns slowly over a heating coil, and the beans inside crackle. The smell reaches the Promenade on a good day.",
+            "id": "Drum tembaga berputar pelan di atas kumparan pemanas, dan biji kopi di dalamnya berderak. Pada hari yang baik, aromanya sampai ke Promenade."
+          }
+        }
+      },
+      "landmark": true,
+      "acoustics": "hall"
     },
     "pavilion": {
       "name": {"en": "Jasmine Pavilion", "id": "Paviliun Melati"},
@@ -2500,6 +2662,7 @@
       "floor": "stone",
       "acoustics": "hall",
       "market": {"buys": ["trade", "crop", "ore", "salvage"], "sells": ["trade", "crop", "ore", "salvage"]},
+      "landmark": true,
       "hints": {
         "all": {
           "en": "Type prices to hear what sells cheap and dear on the Moon.",
@@ -2731,6 +2894,7 @@
       },
       "floor": "stone",
       "market": {"buys": ["trade", "crop", "ore", "salvage"], "sells": ["trade", "crop", "ore", "salvage"]},
+      "landmark": true,
       "objects": {
         "stalls": {
           "names": {"en": ["stalls", "awnings"], "id": ["kios", "tenda"]},
@@ -2991,6 +3155,7 @@
       "floor": "wood",
       "acoustics": "small",
       "market": {"buys": ["trade", "crop", "ore"], "sells": ["trade", "crop", "ore"]},
+      "landmark": true,
       "objects": {
         "scales": {
           "names": {"en": ["scales", "kettle"], "id": ["timbangan", "ketel"]},
@@ -3178,6 +3343,7 @@
       "floor": "stone",
       "acoustics": "cave",
       "market": {"buys": ["trade", "crop", "ore", "salvage"], "sells": ["trade", "crop", "ore", "salvage"]},
+      "landmark": true,
       "objects": {
         "lanterns": {
           "names": {"en": ["lanterns", "stalls", "neon"], "id": ["lampion", "kios", "neon"]},
@@ -3351,6 +3517,7 @@
       "floor": "grass",
       "acoustics": "open",
       "market": {"buys": ["trade", "crop", "ore"], "sells": ["trade", "crop", "ore"]},
+      "landmark": true,
       "objects": {
         "well": {
           "names": {"en": ["well", "cart", "cottages"], "id": ["sumur", "gerobak", "pondok"]},
@@ -3600,6 +3767,7 @@
         "buys": ["trade", "crop", "ore", "salvage", "contraband"],
         "sells": ["trade", "crop", "ore", "salvage"]
       },
+      "landmark": true,
       "objects": {
         "tarps": {
           "names": {"en": ["tarps", "stalls", "sellers"], "id": ["terpal", "kios", "penjual"]},

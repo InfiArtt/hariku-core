@@ -539,7 +539,7 @@ def test_joining_welcomes_you_and_tells_the_room(make_game):
     first = rafli.sent[1]
     assert first["k"] == "room" and first["text"].startswith("Selamat datang di Orbit, Rafli!")
     assert "Dermaga." in first["text"] and "Pilot: ketik kerja" in first["text"]
-    assert "Jalan keluar: timur, selatan, barat, naik kancil." in first["text"]
+    assert "Jalan keluar: utara, timur, selatan, barat, naik kancil." in first["text"]
     sari = join(game, "Sari", "engineer", "en")
     assert rafli.last()["k"] == "arrive" and rafli.last()["actor"] == "Sari"
     assert rafli.last()["text"] == "Sari baru pertama kali masuk ke stasiun. Sapa, yuk!"
@@ -614,7 +614,7 @@ def test_looking_around_at_people_and_things(make_game):
     cmd(game, rafli, "look")
     text = rafli.last()["text"]
     assert text.startswith("Dock. The docking ring hums") and "Here: Sari the engineer." in text
-    assert "Exits: east, south, west, ride the Kancil." in text and "Things to look at: shuttle" in text
+    assert "Exits: north, east, south, west, ride the Kancil." in text and "Things to look at: shuttle" in text
     cmd(game, rafli, "look", a="sari")
     assert rafli.last()["text"] == "Sari, trainee engineer. A tall engineer with a red scarf."
     cmd(game, rafli, "look", a="the shuttle")
@@ -645,9 +645,9 @@ def test_walking_tells_both_rooms_which_way(make_game):
     again = cmd(game, rafli, "move", d="e")
     assert "Ruang besar" not in again["text"] and "Di sini ada Budi si pilot." in again["text"]
     # A wall says which ways there are; the lift goes up and down.
-    bump = cmd(game, rafli, "move", d="n")
+    bump = cmd(game, rafli, "move", d="s")
     assert bump == {"t": "ev", "k": "error", "sound": "bump",
-                    "text": "Tidak bisa ke utara dari sini. Jalan keluar: timur, barat."}
+                    "text": "Tidak bisa ke selatan dari sini. Jalan keluar: utara, timur, barat."}
     cmd(game, rafli, "move", d="e")
     cmd(game, rafli, "move", d="s")
     up = cmd(game, rafli, "move", d="u")
@@ -848,19 +848,19 @@ def test_a_cargo_run_lands_even_while_you_are_away(make_game, clock):
     assert back.sent[0]["room"] == "dock" and back.sent[0]["credits"] > 100
 
 
-def test_trading_on_the_promenade(make_game, clock):
+def test_trading_at_the_markets(make_game, clock):
     game = make_game()
     tina = join(game, "Tina", "trader")
     rafli = join(game, "Rafli", "pilot")
     cmd(game, tina, "buy", item="kopi", n=2)
-    assert tina.last()["text"] == "The market is on the Promenade."
-    prices = cmd(game, tina, "prices")["text"]
-    assert prices.startswith("Market prices in credits, for one each, at your trader's rates: Trade goods:")
-    assert "; Crops: " in prices and "; Ore: " in prices and "; Salvage: " in prices
-    ores = cmd(game, tina, "prices", a="bijih")["text"]
-    assert "Ore: " in ores and "Crops" not in ores and "iron ore" in ores
+    assert tina.last()["text"] == ("You're not at a market. Nearest market for coffee: the Spice Market, "
+                                   "2 east, south, up, 2 north, then 2 west (8 steps).")
     for conn in (tina, rafli):
-        walk(game, conn, "promenade")
+        walk(game, conn, "spice_market")
+    prices = cmd(game, tina, "prices")["text"]
+    assert prices.startswith("Prices at the Spice Market, in credits for one, at your trader's rates. Trade goods: "
+                             "sack of coffee, buy ")
+    assert ". Crops: bunch of kangkung, buy " in prices and "Ore" not in prices and "memory chip" not in prices
     price_before = game.market.prices["coffee"]
     total = game.market.quote("coffee", "trader", "buy", 2)
     bought = cmd(game, tina, "buy", item="kopi", n=2)
@@ -871,12 +871,12 @@ def test_trading_on_the_promenade(make_game, clock):
     assert sold["k"] == "trade" and game.sessions["tina"].char["credits"] < 100
     # Traders pay less than everyone else.
     assert game.market.unit_price("chips", "trader", "buy") < game.market.unit_price("chips", "pilot", "buy")
-    assert cmd(game, rafli, "buy", item="meteorite", n=5)["text"].startswith("That costs")
-    assert cmd(game, rafli, "sell", item="ice")["text"] == "You don't have any blocks of comet ice to sell."
-    assert cmd(game, rafli, "buy", item="unicorns")["text"] == "The market doesn't sell unicorns."
+    assert cmd(game, rafli, "buy", item="vanilla", n=5)["text"].startswith("That costs")
+    assert cmd(game, rafli, "sell", item="tomato")["text"] == "You don't have any crates of tomatoes to sell."
+    assert cmd(game, rafli, "buy", item="unicorns")["text"] == "No market sells unicorns."
     game.sessions["rafli"].char["credits"] = 10_000
-    assert cmd(game, rafli, "buy", item="ice", n=20)["k"] == "trade"
-    assert cmd(game, rafli, "buy", item="ice", n=1)["text"] == "Your bag holds at most 20 goods."
+    assert cmd(game, rafli, "buy", item="kangkung", n=20)["k"] == "trade"
+    assert cmd(game, rafli, "buy", item="kangkung", n=1)["text"] == "Your bag holds at most 20 goods."
 
 
 def test_prices_drift_within_bounds_and_are_kept(make_game, clock, tmp_path):
@@ -898,9 +898,9 @@ def test_the_trader_report(make_game):
     tina = join(game, "Tina", "trader", "id")
     game.market.prices["coffee"] = 12 * 0.7
     game.market.prices["chips"] = 60 * 1.4
-    report = cmd(game, tina, "work")["text"]
-    assert report == ("Laporan pasar. Bagus dibeli: karung kopi, 30 persen di bawah harga biasa. "
-                      "Bagus dijual: chip memori, 40 persen di atas harga biasa.")
+    report = cmd(game, tina, "work")["text"]           # a report, anywhere: and where each is traded
+    assert report == ("Laporan pasar. Bagus dibeli: karung kopi, 30 persen di bawah harga biasa, di Pasar Rempah. "
+                      "Bagus dijual: chip memori, 40 persen di atas harga biasa, di Bengkel.")
     budi = join(game, "Budi", "scientist")
     assert cmd(game, budi, "work")["text"] == "You work in the Science Lab: go there first."
 

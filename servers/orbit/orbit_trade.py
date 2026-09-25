@@ -315,14 +315,13 @@ class TradeMixin:
         char = session.char
         text = self._arg(message, "item", 60)
         tid = self.find_owned(char, text) if text else None
-        if tid is None:
-            if text and self.world.find_good(text):
-                self._error(session, "pawn_goods")
-            else:
-                self._error(session, "pawn_what", what=text or "?")
+        good = tid if tid in self.world.goods else self.world.find_good(text) if text and tid is None else None
+        if good is not None:
+            self._error(session, "pawn_goods", pointer=self.market_pointer(session, self.good_word(good), {good},
+                                                                           "buys"))
             return
-        if tid in self.world.goods:
-            self._error(session, "pawn_goods")
+        if tid is None:
+            self._error(session, "pawn_what", what=text or "?")
             return
         value = self.pawn_value(tid)
         if not value:

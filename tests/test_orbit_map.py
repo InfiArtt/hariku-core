@@ -109,6 +109,7 @@ def test_the_places_everyone_needs_are_open_to_everyone(world):
     must |= {job["workplace"] for job in world.jobs.values()}
     must |= {m[f] for m in world.missions.values() for f in ("from", "to")}
     must |= {lid for lid, loc in world.locations.items() if loc.get("shop") or loc.get("farm")}
+    must |= set(world.markets)
     for lid in must:
         wid = world.world_of(lid)
         start = world.start if wid in ("station", "belt") else world.worlds[wid]["port"]
@@ -459,7 +460,7 @@ def test_the_shop_sells_things_with_levels_and_limits(make_game):
     assert examine.startswith("Sweeps the rooms around you")
     assert examine.endswith(f"Price here: {game.price_of(char, 'scanner', 'gear')} credits.")
     walk(game, ani, "promenade")
-    assert cmd(game, ani, "buy", item="mapper")["text"] == "pocket mappers are sold at Star Supply."
+    assert cmd(game, ani, "buy", item="mapper")["text"] == "Look for pocket mappers at Star Supply."
 
 
 def test_prices_move_a_little_each_day_and_each_shop_has_a_special(make_game, clock):

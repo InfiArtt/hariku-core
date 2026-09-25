@@ -651,6 +651,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             if obj.get("arcade"):
                 (self.cmd_high_scores if obj["arcade"] == "scores" else self.cmd_arcade)(session, {})
                 return
+            if obj.get("markets"):
+                self.markets_sign(session)
+                return
             if obj.get("earth"):
                 text = self._earth(lang)
             elif obj.get("farm"):

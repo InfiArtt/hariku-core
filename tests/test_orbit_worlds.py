@@ -340,7 +340,7 @@ def test_prices_are_those_of_the_world_you_are_on(make_game):
     to_world(game, ani, "karmina")
     walk(game, ani, "kar_market")
     listed = cmd(game, ani, "prices")["text"]
-    assert listed.startswith("Prices on Karmina. Market prices in credits")
+    assert listed.startswith("Prices at the Red Market, in credits for one. Trade goods: sack of coffee, buy ")
     assert "Contraband" not in listed
     assert cmd(game, ani, "prices", a="glasir")["text"].startswith("To read the prices Glasir Station from here")
     to_world(game, ani, "bazaar")
@@ -348,7 +348,9 @@ def test_prices_are_those_of_the_world_you_are_on(make_game):
     alley = cmd(game, ani, "prices")["text"]
     assert "Contraband: star orchid" in alley and "coffee" not in alley
     walk(game, ani, "bazaar_lookout")
-    assert "Contraband" in cmd(game, ani, "prices")["text"]                    # the whole Bazaar's kinds
+    near = cmd(game, ani, "prices")["text"]                 # away from them: the Bazaar's two markets
+    assert near.startswith("You're not at a market. Markets near you: the Great Bazaar (trade goods, crops, ore "
+                           "and salvage), south; the Back Alley (contraband), in the Drift Bazaar.")
 
 
 def test_customs_find_contraband_or_wave_you_through(make_game, monkeypatch):

@@ -327,7 +327,16 @@ class WorkMixin:
 
     # --- the trader ---------------------------------------------------------------------------
 
+    def station_market_in(self, gid):
+        """Where on the station `gid` is traded ("at the Spice Market"), for a report."""
+        for lid, market in self.world.markets.items():
+            if self.world.world_of(lid) == "station" and gid in market["buys"] | market["sells"]:
+                return self.world.locations[lid]["in"]
+        return self.world.worlds["station"]["in"]
+
     def _work_trade(self, session):
+        """The trader's work, anywhere: a market report (the station's prices, and where they
+        are paid), not a counter."""
         lang = session.lang
         ratios = {gid: self.market.prices[gid] / good["base"] for gid, good in self.world.goods.items()
                   if good.get("kind", "trade") == "trade"}
@@ -336,10 +345,10 @@ class WorkMixin:
         parts = [self.render(lang, "trader_intro")]
         if ratios[cheap] < 0.97:
             parts.append(self.render(lang, "trader_cheap", good=self.world.goods[cheap]["many"],
-                                     pct=int(round((1 - ratios[cheap]) * 100))))
+                                     pct=int(round((1 - ratios[cheap]) * 100)), where=self.station_market_in(cheap)))
         if ratios[dear] > 1.03:
             parts.append(self.render(lang, "trader_dear", good=self.world.goods[dear]["many"],
-                                     pct=int(round((ratios[dear] - 1) * 100))))
+                                     pct=int(round((ratios[dear] - 1) * 100)), where=self.station_market_in(dear)))
         if len(parts) == 1:
             parts.append(self.render(lang, "trader_calm"))
         self._send(session, "info", text=" ".join(parts))

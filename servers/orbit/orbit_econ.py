@@ -11,13 +11,20 @@
 Money: the markets, the farm, mining and salvage, your profile, and the
 economy's totals.
 
-The Promenade's market buys and sells every good (trade goods, crops, ore,
-salvage); prices drift every few minutes back towards each good's usual
-price and move a little with every unit traded, so selling a big load at
-once pays less per unit. The old miner on the Belt Platform buys ore for
-three quarters of the price. Buying costs a fee and selling loses a spread
-(less for traders, and less again with a trader's tools), so buying and
-selling back at once always loses.
+The station's goods are traded at four markets, each dealing in its own:
+the Spice Market west of Hydroponics (coffee, spices, crops), the Ice Depot
+north of the Cargo Bay (comet ice, helium-3, frost pearls), the Mineral
+Exchange north of the Dock (ores, meteorites) and the Workshop's parts
+counter (salvage, memory chips). A good is traded at one market on each
+world, so a world's prices are its market's. "prices" (harga) and "list"
+say what the market you stand in buys and sells, at its prices; anywhere
+else, where the nearest market for what you asked about is, and the way.
+Prices drift every few minutes back towards each good's usual price and move
+a little with every unit traded, so selling a big load at once pays less per
+unit. The old miner on the Belt Platform buys ore for three quarters of the
+price. Buying costs a fee and selling loses a spread (less for traders, and
+less again with a trader's tools), so buying and selling back at once always
+loses.
 
 The farm: your own plots in Hydroponics (2 to start, more to buy). Plant
 seeds, and they ripen in real time, from ten minutes (kangkung) to a day
@@ -47,6 +54,7 @@ admins' "economy" report), in the database's meta table.
 import math
 
 import orbit_safety
+from orbit_lang import pick
 
 TRADE_FEES = {"trader": (0.02, 0.04)}    # (added when buying, taken when selling)
 PUBLIC_FEES = (0.10, 0.12)
@@ -59,7 +67,8 @@ KIND_WORDS = {
     "salvage": ("salvage", "rongsok", "rongsokan", "hasil pulung", "junk"),
 }
 RARE_ORE = {"platinum", "meteorite", "quantum", "goldfoil", "satchip", "frostpearl", "ember_crystal"}
-LEGAL_KINDS = ("trade", "crop", "ore", "salvage")
+KIND_ORDER = ("trade", "crop", "ore", "salvage", "contraband")
+MARKET_WORDS = {"market", "markets", "nearest market", "a market", "pasar", "pasarnya", "pasar terdekat"}
 VOICE_STYLES = 10
 
 
@@ -235,82 +244,233 @@ class EconomyMixin:
         if self._flows_dirty and now - self._flows_saved >= 30:
             self.save_economy()
 
-    # --- the market -----------------------------------------------------------------
+    # --- the markets ----------------------------------------------------------------
+    #
+    # Each market room buys and sells its own goods (world.json: a room's "market"), and
+    # the prices are listed where they are paid: "prices" and "list" in a market say what
+    # this market deals in, at its prices. Anywhere else they say where the nearest market
+    # for what you asked about is, and the way there.
 
     def market_here(self, char):
-        """(what it buys, what it sells, the price factor) where you are, or None."""
-        market = self._loc(char).get("market")
-        if not market:
-            return None
-        if market is True:
-            kinds = set(LEGAL_KINDS)
-            return kinds, kinds, 1.0
-        return set(market.get("buys", [])), set(market.get("sells", [])), float(market.get("factor", 1.0))
+        """The market where you stand (World.markets: "buys" and "sells" by good, "factor",
+        "prices", "about"), or None."""
+        return self.world.markets.get(char["location"])
 
     def fees_for(self, char):
         return self.effects(char)["fees"] or Market.fees(char["job"])
 
-    def _market_where(self, session, side="sells"):
-        """Where the nearest market that `side` ("sells" or "buys") is: on this world, else the
-        station's Promenade."""
-        wid = self.world_here(session.char)
-        markets = [lid for lid, loc in self.world.locations.items()
-                   if loc.get("market") and self.world.world_of(lid) == wid
-                   and (loc["market"] is True or loc["market"].get(side))] if wid else []
-        market = markets[0] if markets else next(lid for lid, loc in self.world.locations.items()
-                                                 if loc.get("market") is True)
-        self._error(session, "market_where", where=self.world.locations[market]["in"])
+    def market_unit(self, lid, gid, char, side):
+        """One `gid` at market `lid`: what it costs `char` ("buy") or brings them ("sell")."""
+        return self.market.unit_price(gid, char["job"], side, self.fees_for(char),
+                                      self.world.market_factor(lid, gid), self.world.world_of(lid))
 
-    def world_market_kinds(self, wid):
-        """The kinds of goods a world's markets deal in (buying or selling)."""
-        kinds = set()
-        for lid, loc in self.world.locations.items():
-            market = loc.get("market")
-            if not market or self.world.world_of(lid) != wid:
-                continue
-            if market is True:
-                kinds |= set(LEGAL_KINDS)
+    def market_quote(self, lid, gid, char, side, n):
+        return self.market.quote(gid, char["job"], side, n, self.fees_for(char),
+                                 self.world.market_factor(lid, gid), self.world.world_of(lid))
+
+    def kind_name(self, kind):
+        return {lang: self.render(lang, f"kind_{kind}") for lang in ("en", "id")}
+
+    def good_word(self, gid):
+        """A good as a word ("coffee", "kopi"), not a measure of it ("sacks of coffee")."""
+        names = self.world.goods[gid]["names"]
+        return {lang: names[lang][0] for lang in ("en", "id")}
+
+    def asked_goods(self, text):
+        """What a player asks about: (what, goods). `what` names it in both languages (None:
+        everything); `goods` is a set of good ids (every good for nothing typed), or None when
+        the words name no good and no kind of goods."""
+        key = orbit_safety.name_key(text)
+        if not key:
+            return None, set(self.world.goods)
+        for kind, words in KIND_WORDS.items():
+            if key in words:
+                return self.kind_name(kind), {gid for gid, good in self.world.goods.items()
+                                              if good.get("kind", "trade") == kind}
+        gid = self.world.find_good(text)
+        if gid is not None:
+            return self.good_word(gid), {gid}
+        return text, None
+
+    def market_about(self, lid):
+        """What a market deals in, in words: its "about", or the kinds and goods it trades."""
+        market = self.world.markets[lid]
+        if market.get("about"):
+            return market["about"]
+        dealt = market["buys"] | market["sells"]
+        words = []
+        for kind in KIND_ORDER:
+            of_kind = {gid for gid, good in self.world.goods.items() if good.get("kind", "trade") == kind}
+            if of_kind and of_kind <= dealt:
+                words.append(self.kind_name(kind))
             else:
-                kinds |= set(market.get("buys", [])) | set(market.get("sells", []))
-        return kinds
+                words.extend(self.good_word(gid) for gid in self.world.goods if gid in dealt & of_kind)
+        return {lang: self.texts.join(lang, words) for lang in ("en", "id")}
 
-    def cmd_prices(self, session, message):
+    def markets_for(self, char, goods, side=None):
+        """[(market room, the route there or None)]: the markets dealing in any of `goods`
+        (side "buys": those that buy them from you; "sells": those that sell them), nearest
+        first. The markets of the world you're on; with none there, those you can walk (or ride
+        the Kancil) to."""
+        here = char["location"]
+        wid = self.world_here(char)
+        found = []
+        for lid, market in self.world.markets.items():
+            dealt = market[side] if side else market["buys"] | market["sells"]
+            if not dealt & goods or lid == here:
+                continue
+            path = self.route_for(char, lid) if self.world.world_of(here) else None
+            same = self.world.world_of(lid) == wid
+            if not same and path is None:
+                continue
+            found.append((0 if same else 1, len(path) if path is not None else 1000, lid, path))
+        found.sort(key=lambda entry: entry[:3])
+        if found and found[0][0] == 0:
+            found = [entry for entry in found if entry[0] == 0]
+        return [(lid, path) for _same, _n, lid, path in found]
+
+    def nearest_market(self, char, goods=None):
+        found = self.markets_for(char, goods or set(self.world.goods))
+        return found[0][0] if found else None
+
+    def market_entries(self, session, found, about=False):
+        """ "the Spice Market, west, north, then west" for each (market, route): the way when
+        you may ask it (the landmarks, or your mapper), else the deck it's on."""
         char, lang = session.char, session.lang
-        fees = self.fees_for(char)
-        text = self._arg(message, "a", 40)
-        wanted = orbit_safety.name_key(text)
-        wid = self.world_here(char) or "station"
-        named = self.world.find_world(text) if text and not any(wanted in w for w in KIND_WORDS.values()) else None
-        if named and named != wid:
-            ship = self.ship_aboard(char)
-            if ship is None or not self.ship_spec(ship).get("scanner"):
-                self._error(session, "prices_remote", place=self.world.worlds[named]["ref"])
-                return
-            wid, wanted = named, ""
-        here = self.market_here(char) if wid == self.world_here(char) else None
-        dealt = (here[0] | here[1]) if here else self.world_market_kinds(wid)
-        if not dealt:
-            self._error(session, "prices_none_here", place=self.world.worlds[wid]["in"])
+        known = self.guide_rooms(char)
+        entries = []
+        for lid, path in found:
+            loc = self.world.locations[lid]
+            place = pick(loc["ref"], lang)
+            if about:
+                place = self.render(lang, "market_about", place=place, about=self.market_about(lid))
+            if path is not None and (lid in known or self.is_admin(session)):
+                way = self.steps_text(lang, path)
+            else:
+                way = self.world.area_of(lid).get("in", "")
+            entries.append(self.render(lang, "market_entry", place=place, way=way))
+        return "; ".join(entries)
+
+    def market_pointer(self, session, what=None, goods=None, side=None):
+        """Where to go for `goods` (named `what`), from here: "Nearest market for coffee: the
+        Spice Market, west, north, then west." With no goods: every market near."""
+        char, lang = session.char, session.lang
+        everything = goods is None or goods == set(self.world.goods)
+        found = self.markets_for(char, goods or set(self.world.goods), side)
+        place = self.world.worlds.get(self.world_here(char) or "station", {}).get("in", "")
+        if not found:
+            if everything:
+                return self.render(lang, "prices_none_here", place=place)
+            return self.render(lang, "market_none_world", what=what, place=place)
+        if everything:
+            return self.render(lang, "markets_nearest", markets=self.market_entries(session, found[:6], about=True))
+        if len(goods) == 1:
+            found = found[:1]
+        return self.render(lang, "market_nearest", what=what, markets=self.market_entries(session, found[:4]))
+
+    def markets_sign(self, session):
+        """The Promenade's signpost: every market near, what it deals in, and the way."""
+        found = self.markets_for(session.char, set(self.world.goods))
+        self._info(session, "markets_sign", markets=self.market_entries(session, found, about=True))
+
+    def market_list(self, session, lid, what, goods):
+        """What market `lid` buys and sells (of `goods`), at its prices, by kind."""
+        char, lang = session.char, session.lang
+        market = self.world.markets[lid]
+        shown = (market["buys"] | market["sells"]) & goods
+        if not shown:
+            self._error(session, "market_not_here", what=what,
+                        pointer=self.market_pointer(session, what, goods))
             return
-        kinds = [k for k, words in KIND_WORDS.items() if wanted in words and k in dealt] or \
-            [k for k in KIND_WORDS if k in dealt]
-        factor = here[2] if here else 1.0
         groups = []
-        for kind in kinds:
+        for kind in KIND_ORDER:
             entries = []
             for gid, good in self.world.goods.items():
-                if good.get("kind", "trade") != kind:
+                if gid not in shown or good.get("kind", "trade") != kind:
                     continue
-                entries.append(self.render(lang, "price_entry", good=good["one"],
-                                           buy=self.market.unit_price(gid, char["job"], "buy", fees, factor, wid),
-                                           sell=self.market.unit_price(gid, char["job"], "sell", fees, factor, wid)))
+                buy = self.market_unit(lid, gid, char, "buy") if gid in market["sells"] else None
+                sell = self.market_unit(lid, gid, char, "sell") if gid in market["buys"] else None
+                key = "price_entry" if buy and sell else "price_entry_buy" if buy else "price_entry_sell"
+                entries.append(self.render(lang, key, good=good["one"], buy=buy, sell=sell))
             if entries:
-                groups.append(self.render(lang, f"prices_{kind}", entries=", ".join(entries)))
+                groups.append(self.render(lang, f"prices_{kind}", entries="; ".join(entries)))
         key = "prices_trader" if char["job"] == "trader" else "prices"
-        text = self.render(lang, key, entries="; ".join(groups))
-        if wid != "station":
-            text = self.render(lang, "prices_world", place=self.world.worlds[wid]["in"]) + " " + text
-        self._send(session, "info", text=text)
+        self._info(session, key, where=self.world.locations[lid]["in"], entries=". ".join(groups))
+
+    def scan_prices(self, session, wid):
+        """A Hornbill's scanner bay reads another world's markets (a report: you trade there)."""
+        char, lang = session.char, session.lang
+        ship = self.ship_aboard(char)
+        if ship is None or not self.ship_spec(ship).get("scanner"):
+            self._error(session, "prices_remote", place=self.world.worlds[wid]["ref"])
+            return
+        parts = []
+        for lid, market in self.world.markets.items():
+            if self.world.world_of(lid) != wid:
+                continue
+            entries = []
+            for gid, good in self.world.goods.items():
+                if gid not in market["buys"] | market["sells"]:
+                    continue
+                buy = self.market_unit(lid, gid, char, "buy") if gid in market["sells"] else None
+                sell = self.market_unit(lid, gid, char, "sell") if gid in market["buys"] else None
+                key = "price_entry" if buy and sell else "price_entry_buy" if buy else "price_entry_sell"
+                entries.append(self.render(lang, key, good=good["one"], buy=buy, sell=sell))
+            parts.append(self.render(lang, "scan_market", place=self.world.locations[lid]["ref"],
+                                     entries="; ".join(entries)))
+        if not parts:
+            self._error(session, "prices_none_here", place=self.world.worlds[wid]["in"])
+            return
+        self._info(session, "prices_scan", place=self.world.worlds[wid]["ref"], markets=" ".join(parts),
+                   sound="scan")
+
+    def cmd_prices(self, session, message):
+        """ "prices" / "harga": at a market, what it buys and sells here; in a shop, its list; at
+        the pawn shop, what it would pay; anywhere else, the way to the nearest market."""
+        char = session.char
+        text = self._arg(message, "a", 40)
+        what, goods = self.asked_goods(text)
+        if goods is None:
+            wid = self.world.find_world(text)
+            if wid is not None:
+                self.scan_prices(session, wid)
+                return
+        here = char["location"]
+        if here in self.world.markets:
+            if goods is None:
+                self._unknown_good(session, text)
+                return
+            self.market_list(session, here, what, goods)
+            return
+        sid, shop = self.shop_here(char)
+        if shop is not None and not (text and goods):
+            tid = self.world.find_thing(text) if text else None
+            if tid in shop.get("stock", []):
+                self._info(session, "shop_list", shop=shop["name"], entries=self.entry_text(session.lang, char, tid, sid))
+            else:
+                self.cmd_list(session, {"a": text})
+            return
+        if self._loc(char).get("pawn") and not (text and goods):
+            self.pawn_list(session)
+            return
+        if goods is None:
+            self._unknown_good(session, text)
+            return
+        ship = self.ship_aboard(char)
+        if not text and ship is not None and self.ship_spec(ship).get("scanner") and self.world_here(char):
+            self.scan_prices(session, self.world_here(char))
+            return
+        self._info(session, "not_at_market", pointer=self.market_pointer(session, what, goods))
+
+    def _unknown_good(self, session, text):
+        """Words that name no good: a thing sold in a shop says where, else nobody sells it."""
+        tid = self.world.find_thing(text)
+        place = self.where_sold(tid) if tid is not None and tid not in self.world.goods else None
+        if place:
+            self._error(session, "sold_at", thing=self.world.things[tid]["many"],
+                        place=self.world.locations[place]["ref"])
+        else:
+            self._error(session, "no_good", what=text or "?")
 
     def _good_and_count(self, session, message, allow_all=False, high=None):
         good = self.world.find_good(self._arg(message, "item", 60))
@@ -340,23 +500,18 @@ class EconomyMixin:
                 if self._slow(session):
                     self.buy_thing(session, tid, n)
                 return
+        lid = char["location"]
         here = self.market_here(char)
         good = self.world.find_good(text)
-        if here is None or good is None or self.world.goods[good].get("kind", "trade") not in here[1]:
-            tid = self.world.find_thing(text)
-            if tid is not None and tid not in self.world.goods:
-                place = self.where_sold(tid)
-                if place:
-                    self._error(session, "sold_at", thing=self.world.things[tid]["many"],
-                                place=self.world.locations[place]["ref"])
-                    return
-            if here is None or not here[1]:
-                self._market_where(session)
-                return
+        if here is None or good is None or good not in here["sells"]:
             if good is None:
-                self._error(session, "no_good", what=text or "?")
+                self._unknown_good(session, text)
                 return
-            self._error(session, "market_doesnt_sell", thing=self.world.goods[good]["many"])
+            pointer = self.market_pointer(session, self.good_word(good), {good}, "sells")
+            if here is None:
+                self._error(session, "not_at_market", pointer=pointer)
+            else:
+                self._error(session, "market_doesnt_sell", thing=self.world.goods[good]["many"], pointer=pointer)
             return
         ship = self.ship_docked_here(char)
         room = self.bag_size(char) - self._goods_count(char)
@@ -370,8 +525,7 @@ class EconomyMixin:
             else:
                 self._error(session, "bag_full", max=self.bag_size(char))
             return
-        wid = self.world_here(char)
-        total = self.market.quote(good, char["job"], "buy", n, self.fees_for(char), here[2], wid)
+        total = self.market_quote(lid, good, char, "buy", n)
         if total > char["credits"]:
             self._error(session, "buy_poor", total=total, credits=char["credits"])
             return
@@ -383,7 +537,7 @@ class EconomyMixin:
             if n > to_bag:
                 ship["cargo"][good] = int(ship["cargo"].get(good, 0)) + n - to_bag
                 self.store.save_ship(ship)
-            self.market.trade(good, "buy", n, wid)
+            self.market.trade(good, "buy", n, self.world.world_of(lid))
             self._save(session)
         text = self.render(session.lang, "buy_ok", things=self._count_of(good, n), total=total,
                            credits=char["credits"])
@@ -392,19 +546,32 @@ class EconomyMixin:
         self._send(session, "trade", text=text)
 
     def cmd_sell(self, session, message):
-        char, lang = session.char, session.lang
+        char = session.char
         if self._loc(char).get("pawn"):
             self.pawn_sell(session, message)
             return
+        lid = char["location"]
         here = self.market_here(char)
-        if here is None or not here[0]:
-            self._market_where(session, "buys")
+        item = self._arg(message, "item", 60)
+        text = orbit_safety.name_key(item)
+        owned = self.find_owned(char, item) if item else None
+        if owned is not None and owned not in self.world.goods and self.pawn_value(owned):
+            pawn = next((l for l, loc in self.world.locations.items() if loc.get("pawn")), None)
+            self._error(session, "sell_at_pawn", thing=self.world.things[owned]["many"],
+                        place=self.world.locations[pawn]["ref"] if pawn else "?")
             return
-        buys, _sells, factor = here
-        text = orbit_safety.name_key(self._arg(message, "item", 60))
-        if message.get("n") == "all" and (not text or any(text in w for w in KIND_WORDS.values())):
-            kinds = [k for k, words in KIND_WORDS.items() if text in words] or list(buys)
-            self._sell_all(session, [k for k in kinds if k in buys])
+        what, goods = self.asked_goods(item)
+        if here is None or not here["buys"]:
+            pointer = self.market_pointer(session, what, goods if item and goods else None, "buys")
+            self._error(session, "not_at_market" if here is None else "market_buys_nothing", pointer=pointer)
+            return
+        buys = here["buys"]
+        if message.get("n") == "all" and (not text or any(text in words for words in KIND_WORDS.values())):
+            if not goods & buys:
+                self._error(session, "market_not_here", what=what,
+                            pointer=self.market_pointer(session, what, goods, "buys"))
+                return
+            self._sell_all(session, goods & buys)
             return
         ship = self.ship_docked_here(char)
         good, n = self._good_and_count(session, message, allow_all=True, high=100000)
@@ -418,16 +585,16 @@ class EconomyMixin:
         if not have:
             self._error(session, "sell_none", thing=self.world.goods[good]["many"])
             return
-        if self.world.goods[good].get("kind", "trade") not in buys:
-            self._error(session, "market_doesnt_buy", thing=self.world.goods[good]["many"])
+        if good not in buys:
+            self._error(session, "market_doesnt_buy", thing=self.world.goods[good]["many"],
+                        pointer=self.market_pointer(session, self.good_word(good), {good}, "buys"))
             return
         if n is None:
             return
         if n > have:
             self._error(session, "not_enough", things=self._count_of(good, have))
             return
-        wid = self.world_here(char)
-        total = self.market.quote(good, char["job"], "sell", n, self.fees_for(char), factor, wid)
+        total = self.market_quote(lid, good, char, "sell", n)
         from_bag = min(n, in_bag)
         with self.store.transaction():
             self.earn(char, total, "market")
@@ -436,32 +603,30 @@ class EconomyMixin:
             if n > from_bag:
                 ship["cargo"][good] = in_hold - (n - from_bag)
                 self.store.save_ship(ship)
-            self.market.trade(good, "sell", n, wid)
+            self.market.trade(good, "sell", n, self.world.world_of(lid))
             self._save(session)
         self._send(session, "trade", "sell_ok", things=self._count_of(good, n), total=total,
                    credits=char["credits"])
 
-    def _sell_all(self, session, kinds):
+    def _sell_all(self, session, goods):
+        """Everything of `goods` in your bag (and your ship's hold, docked on this world), sold here."""
         char = session.char
-        factor = self.market_here(char)[2]
-        wid = self.world_here(char)
+        lid = char["location"]
         ship = self.ship_docked_here(char)
         hold = ship["cargo"] if ship else {}
         sold, total = [], 0
         with self.store.transaction():
             for gid in sorted(set(char["inventory"]) | set(hold)):
-                good = self.world.goods.get(gid)
-                if not good or good.get("kind", "trade") not in kinds:
+                if gid not in goods:
                     continue
                 n = int(char["inventory"].get(gid, 0)) + int(hold.get(gid, 0))
                 if n <= 0:
                     continue
-                price = self.market.quote(gid, char["job"], "sell", n, self.fees_for(char), factor, wid)
-                total += price
+                total += self.market_quote(lid, gid, char, "sell", n)
                 sold.append(self._count_of(gid, n))
                 char["inventory"].pop(gid, None)
                 hold.pop(gid, None)
-                self.market.trade(gid, "sell", n, wid)
+                self.market.trade(gid, "sell", n, self.world.world_of(lid))
             if not sold:
                 self._error(session, "sell_all_none")
                 return

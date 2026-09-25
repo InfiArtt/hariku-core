@@ -58,6 +58,7 @@ VIAS = ("walk", "lift", "ladder", "slide", "airlock", "door", "gate")
 THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture", "outfit",
                "title", "pet", "service", "ship", "arcade")
 GOOD_KINDS = ("trade", "crop", "ore", "salvage", "contraband")
+LEGAL_KINDS = ("trade", "crop", "ore", "salvage")          # what "market": true deals in
 _ARTICLES = {"the", "a", "an", "to", "ke", "di", "my", "ku"}
 _NOT_WORD = re.compile(r"[^\w\s]")
 
@@ -120,6 +121,7 @@ class World:
         self.things = self._things()
         self.crops = self.economy.get("crops", {})
         self.shops = self.economy.get("shops", {})
+        self.markets, self._market_problems = self._read_markets()
         self._check()
         self._place_names = self._index({lid: loc.get("aliases", {}) for lid, loc in
                                          self.locations.items() if not loc.get("hidden")},
@@ -157,6 +159,69 @@ class World:
         with open(npcs_path, encoding="utf-8") as f:
             npcs = json.load(f)
         return cls(data, economy, npcs)
+
+    def _read_markets(self):
+        """Every market room's {"buys", "sells"} (sets of good ids), "factor" (for every good
+        there, times "prices": a factor for each good) and "about" (what it deals in, in words,
+        or None); and the problems found. A market's "buys" and "sells" may name kinds of goods
+        ("crop") or goods ("coffee"); "market": true deals in every legal good."""
+        markets, problems = {}, []
+
+        def goods_of(lid, words):
+            found = set()
+            for word in words:
+                if word in GOOD_KINDS:
+                    found |= {gid for gid, good in self.goods.items() if good.get("kind", "trade") == word}
+                elif word in self.goods:
+                    found.add(word)
+                else:
+                    problems.append(f"{lid}: its market names the unknown {word!r}")
+            return found
+
+        for lid, loc in self.locations.items():
+            spec = loc.get("market")
+            if not spec:
+                continue
+            if spec is True:
+                spec = {"buys": list(LEGAL_KINDS), "sells": list(LEGAL_KINDS)}
+            if not isinstance(spec, dict):
+                problems.append(f"{lid}: a market is true or {{buys, sells, factor, prices, about}}")
+                continue
+            market = {"buys": goods_of(lid, spec.get("buys") or []), "sells": goods_of(lid, spec.get("sells") or []),
+                      "factor": 1.0, "prices": {}, "about": spec.get("about")}
+            try:
+                market["factor"] = float(spec.get("factor", 1.0))
+                market["prices"] = {gid: float(v) for gid, v in (spec.get("prices") or {}).items()}
+            except (TypeError, ValueError):
+                problems.append(f"{lid}: a market's factor and prices are numbers")
+            if market["factor"] <= 0 or any(v <= 0 for v in market["prices"].values()):
+                problems.append(f"{lid}: a market's factors are above 0")
+            for gid in market["prices"]:
+                if gid not in market["buys"] | market["sells"]:
+                    problems.append(f"{lid}: its market has a price for {gid!r}, which it doesn't deal in")
+            if not market["buys"] | market["sells"]:
+                problems.append(f"{lid}: its market deals in nothing")
+            about = market["about"]
+            if about is not None and not all(isinstance(about.get(lang), str) for lang in LANGS):
+                problems.append(f"{lid}: its market's about needs en and id")
+            markets[lid] = market
+        # One market for each good on a world: a world's prices are the prices at its market.
+        dealer = {}
+        for lid, market in markets.items():
+            wid = self.world_of(lid)
+            for gid in sorted(market["buys"] | market["sells"]):
+                other = dealer.get((wid, gid))
+                if other:
+                    problems.append(f"{gid} is traded at both {other} and {lid}, on the same world")
+                dealer[(wid, gid)] = lid
+        return markets, problems
+
+    def market_factor(self, lid, gid):
+        """How a market's price for `gid` compares to its world's."""
+        market = self.markets.get(lid)
+        if market is None:
+            return 1.0
+        return market["factor"] * market["prices"].get(gid, 1.0)
 
     def _things(self):
         things = {}
@@ -283,6 +348,10 @@ class World:
         for gid, good in self.goods.items():
             if good.get("kind", "trade") not in GOOD_KINDS:
                 problems.append(f"good {gid}: unknown kind {good.get('kind')!r}")
+        problems.extend(self._market_problems)
+        for lid in self.markets:
+            if self.world_of(lid) is None:
+                problems.append(f"{lid}: a market in no world")
         economy = self.economy
         for lid, loc in self.locations.items():
             if loc.get("mine") and loc["mine"] not in economy.get("mining", {}).get("tables", {}):

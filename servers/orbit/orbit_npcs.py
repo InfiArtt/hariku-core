@@ -846,9 +846,12 @@ class NpcsMixin:
         return names[0], names[1]
 
     def _live_market(self, session, nid):
+        """The station's good furthest from its usual price, and the market it's traded at."""
+        dealers = {gid: lid for lid, market in self.world.markets.items() if self.world.world_of(lid) == "station"
+                   for gid in market["buys"] | market["sells"]}
         best, gap = None, 0.08
         for gid, good in self.world.goods.items():
-            if good.get("kind", "trade") == "contraband" or not good.get("base"):
+            if good.get("kind", "trade") == "contraband" or not good.get("base") or gid not in dealers:
                 continue
             ratio = self.market.price(gid) / float(good["base"])
             if abs(ratio - 1) > gap:
@@ -856,9 +859,10 @@ class NpcsMixin:
         if best is None:
             return None, {}
         gid, ratio = best
-        price = self.market.unit_price(gid, session.char["job"], "sell" if ratio >= 1 else "buy",
-                                       fees=self.fees_for(session.char))
-        return ("high" if ratio >= 1 else "low"), {"good": self.world.goods[gid]["one"], "price": int(round(price))}
+        lid = dealers[gid]
+        price = self.market_unit(lid, gid, session.char, "sell" if ratio >= 1 else "buy")
+        return ("high" if ratio >= 1 else "low"), {"good": self.world.goods[gid]["one"], "price": int(round(price)),
+                                                   "where": self.world.locations[lid]["in"]}
 
     def _live_event(self, session, nid):
         now = self.now()

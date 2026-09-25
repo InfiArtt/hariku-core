@@ -288,7 +288,10 @@ def test_selling_everything_and_the_ore_buyer(make_game, clock):
     sold = cmd(game, ani, "sell", item="", n="all")
     assert sold["text"] == f"You sell 4 lumps of iron ore and 1 chunk of titanium for {expected} credits. You now have {100 - 5 + expected}."
     assert inv == {"compass": 1, "tomato": 2}
-    assert cmd(game, ani, "buy", item="iron")["text"] == "The market is on the Promenade."
+    # The old miner only buys: iron is sold at the station's Mineral Exchange, a ride away.
+    assert cmd(game, ani, "buy", item="iron")["text"] == (
+        "You can't buy lumps of iron ore here. Nearest market for iron: the Mineral Exchange, ride the Kancil, "
+        "then north.")
 
 
 # ------------------------------------------------------------

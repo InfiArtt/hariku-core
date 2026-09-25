@@ -15,11 +15,12 @@ English). There is no teleporting: "go to the cantina" walks there only when
 the Cantina is next door, and otherwise tells you the way.
 
   look            the room, and its exits: "Exits: north, southwest, down."
-  way to X        the steps from here: "south, south, west". Anyone can ask
-                  the way to a few landmarks (the Dock, the Promenade, the
-                  Cantina, Star Supply, the lifts), their own workplace, their
-                  cabin and their beacon; a mapper knows every room you have
-                  been to, and a holo mapper every public room
+  way to X        the steps from here, compact: "2 south, then west". Anyone
+                  can ask the way to a few landmarks (the Dock, the Promenade,
+                  the Cantina, Star Supply, the markets, the lifts), their own
+                  workplace, their cabin and their beacon; a mapper knows every
+                  room you have been to, and a holo mapper every public room.
+                  "the way to the market": the nearest one
   map             this deck in words; more with a mapper
   where am I      the room, the deck and the exits
   compass         the way you last walked, and the deck
@@ -36,6 +37,8 @@ invite someone and they may visit.
 """
 
 import orbit_safety
+import orbit_world
+from orbit_econ import MARKET_WORDS
 from orbit_lang import pick
 
 LONG_ROUTE = 8               # a route of this many steps (in three runs or more) also says how many
@@ -338,6 +341,10 @@ class NavMixin:
         key = orbit_safety.name_key(text)
         if key in ("suar", "beacon", "my beacon", "suarku", "penanda"):
             return session.char["stats"].get("beacon") or "?beacon"
+        if orbit_world.strip_articles(text) in MARKET_WORDS:        # "the way to the market": the nearest
+            nearest = self.nearest_market(session.char)
+            if nearest:
+                return nearest
         return self.world.find_location(text)
 
     # --- the way, the map ------------------------------------------------------------------

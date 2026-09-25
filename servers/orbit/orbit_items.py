@@ -20,7 +20,7 @@ Things you own, and what they do (economy.json "things"):
   seeds, furniture for your cabin, clothes, rings, titles, and pets
 
   list / daftar         what the shop you're in sells
-  buy X / beli X        buy it (the market's goods too, on the Promenade)
+  buy X / beli X        buy it (and goods at the market that sells them)
   use X / pakai X       use it: drink, eat, place a beacon, wear...
   wear X / pasang X     wear it (headlamp, EVA suit, clothes, a title)
   take off X / lepas X  stop wearing it

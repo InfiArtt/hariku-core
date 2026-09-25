@@ -433,7 +433,9 @@ def test_the_pawn_shop_buys_things_back(make_game):
     listed = cmd(game, ani, "list")["text"]
     assert listed == "Second Orbit would pay, in credits: headlamp, 48. Type sell and the thing's name."
     assert cmd(game, ani, "sell", item="compass")["text"] == "The owner won't buy compasses."
-    assert cmd(game, ani, "sell", item="iron")["text"] == "Goods are sold at the market on the Promenade, not here."
+    assert cmd(game, ani, "sell", item="iron")["text"].startswith(
+        "Goods are sold at a market, not here. Nearest market for iron: the Mineral Exchange, north, east, south, "
+        "down 3 levels,")
     sold = cmd(game, ani, "sell", item="headlamp")
     assert sold["text"] == "You sell 1 headlamp to Second Orbit for 48 credits. You have 48."
     char = char_of(game, "Ani")

@@ -174,6 +174,13 @@ PHRASEBOOK = [
     # the duels' board, the tournament (1.2)
     ("papan skor duel", "id", "leaderboard"), ("leaderboard duels", "en", "leaderboard"),
     ("mulai acara turnamen", "id", "admin"), ("start event tournament", "en", "admin"),
+    # the markets where you stand (server 1.3)
+    ("harga", "id", "prices"), ("harga kopi", "id", "prices"), ("prices coffee", "en", "prices"),
+    ("pasar", "id", "prices"), ("market", "en", "prices"), ("daftar harga", "id", "prices"),
+    ("daftar", "id", "list"), ("list", "en", "list"),
+    ("lihat tiang petunjuk", "id", "look"), ("look at the signpost", "en", "look"),
+    ("arah ke pasar", "id", "way"), ("way to the market", "en", "way"), ("pergi ke pasar", "id", "go"),
+    ("beli 2 kopi", "id", "buy"), ("jual semua bijih", "id", "sell"), ("sell 3 ice", "en", "sell"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

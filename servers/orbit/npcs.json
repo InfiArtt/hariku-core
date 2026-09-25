@@ -66,8 +66,8 @@
           "live": "market",
           "say": {"en": ["Prices are behaving themselves today. Boring, but good for the heart."], "id": ["Harga-harga lagi kalem hari ini. Membosankan, tapi bagus untuk jantung."]},
           "cases": {
-            "high": {"en": ["Word at the bar is that {good} is dear right now: {price} credits on the Promenade. Sell, sell, sell. You didn't hear it from me."], "id": ["Kabar di bar, {good} lagi mahal: {price} kredit di Promenade. Jual, jual, jual. Bukan aku yang bilang, ya."]},
-            "low": {"en": ["Word at the bar is that {good} is cheap right now: {price} credits on the Promenade. Buy low, my friend."], "id": ["Kabar di bar, {good} lagi murah: {price} kredit di Promenade. Beli saat murah, kawan."]}
+            "high": {"en": ["Word at the bar is that {good} is dear right now: {price} credits {where}. Sell, sell, sell. You didn't hear it from me."], "id": ["Kabar di bar, {good} lagi mahal: {price} kredit {where}. Jual, jual, jual. Bukan aku yang bilang, ya."]},
+            "low": {"en": ["Word at the bar is that {good} is cheap right now: {price} credits {where}. Buy low, my friend."], "id": ["Kabar di bar, {good} lagi murah: {price} kredit {where}. Beli saat murah, kawan."]}
           }
         },
         "jukebox": {
