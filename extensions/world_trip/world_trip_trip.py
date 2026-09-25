@@ -93,10 +93,15 @@ class Script:
 
     def later(self, seconds, fn, gen):
         """fn() after `seconds`, unless the script moved on (cancel, skip)."""
+        holder = []
+
         def fire():
+            if holder and holder[0] in self._timers:
+                self._timers.remove(holder[0])
             if gen == self._gen:
                 fn()
-        self._timers.append(self.sv.call_later(seconds, fire))
+        holder.append(self.sv.call_later(seconds, fire))
+        self._timers.append(holder[0])
 
     def _advance(self, gen):
         while True:
@@ -194,7 +199,7 @@ def native_names(dest, code, user_language, localized):
     in Latin letters, its English or own name. None when unknown."""
     if code is None:
         return None
-    english = localized("en") if user_language != "en" else dest["name"]
+    english = dest.get("name_en") or (localized("en") if user_language != "en" else dest["name"])
     names = [dest["name"], dest.get("query"), english]
     found = phrases.native_city(dest.get("country_code"), names, code)
     if found:
@@ -498,8 +503,8 @@ class TripManager:
         else:
             trip.voice = None
         if settings["radio"]:
-            sv.run(lambda: sv.stations(dest, [dest["name"], dest.get("query") or ""]),
-                   keep("stations"))
+            names = [dest["name"], dest.get("name_en") or "", dest.get("query") or ""]
+            sv.run(lambda: sv.stations(dest, names, trip.language), keep("stations"))
         else:
             trip.stations = []
 

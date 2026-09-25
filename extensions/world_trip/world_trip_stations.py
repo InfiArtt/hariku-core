@@ -46,6 +46,20 @@ SEARCH_LIMIT = 40
 MAX_STATIONS = 12
 PLAYABLE_CODECS = {"MP3": 0, "AAC": 1, "AAC+": 1, "AACP": 1, "HE-AAC": 1}
 
+# How the directory names the languages World Trip greets in (its "language"
+# field), so a station in the local language comes before one in another.
+RADIO_LANGUAGES = {
+    "ja": ("japanese",), "ko": ("korean",), "zh": ("chinese", "mandarin"),
+    "zh-TW": ("chinese", "mandarin", "taiwanese"), "yue": ("cantonese", "chinese"),
+    "th": ("thai",), "vi": ("vietnamese",), "ms": ("malay",), "tl": ("tagalog", "filipino"),
+    "hi": ("hindi",), "ar": ("arabic",), "tr": ("turkish",), "ru": ("russian",),
+    "uk": ("ukrainian",), "fr": ("french",), "de": ("german",), "es": ("spanish",),
+    "pt": ("portuguese",), "pt-PT": ("portuguese",), "it": ("italian",), "nl": ("dutch",),
+    "el": ("greek",), "sv": ("swedish",), "pl": ("polish",), "en": ("english",),
+    "id": ("indonesian", "bahasa indonesia"), "jv": ("javanese", "indonesian"),
+    "he": ("hebrew",), "fa": ("persian", "farsi"), "sw": ("swahili",), "km": ("khmer",),
+}
+
 
 class StationError(Exception):
     """`kind`: "offline" or "service"."""
@@ -86,6 +100,7 @@ def clean_station(raw):
         "country_code": str(raw.get("countrycode") or "").upper()[:2],
         "latitude": number("geo_lat"),
         "longitude": number("geo_long"),
+        "language": str(raw.get("language") or "").lower()[:200],
         "tags": str(raw.get("tags") or "")[:200],
     }
 
@@ -106,11 +121,8 @@ def _near(station, dest):
     return 2 * 6371.0 * math.asin(min(1.0, math.sqrt(h))) <= GEO_KM
 
 
-def is_local(station, dest, names=()):
-    """Whether a station is the city's own: near its point, or naming it in
-    its name or region."""
-    if _near(station, dest):
-        return True
+def names_city(station, names=()):
+    """Whether a station names the city in its name or region."""
     words = f" {phrases.normalize(station['name'])} {phrases.normalize(station['state'])} "
     for name in names:
         key = phrases.normalize(name)
@@ -119,14 +131,29 @@ def is_local(station, dest, names=()):
     return False
 
 
+def is_local(station, dest, names=()):
+    """Whether a station is the city's own: near its point, or naming it."""
+    return _near(station, dest) or names_city(station, names)
+
+
 def score(station):
     return math.log1p(max(0, station["votes"])) + 2 * math.log1p(max(0, station["clicks"]))
 
 
-def rank(stations, dest, names=(), limit=MAX_STATIONS):
-    """The playable stations to try, best first: the city's own, then the
-    country's; the most listened to first. Duplicates (same stream or name)
-    once."""
+def speaks_other_language(station, languages):
+    """True when the station lists its languages and the local one isn't
+    among them (RFI's Chinese service, for Paris)."""
+    listed = [part.strip() for part in station.get("language", "").split(",") if part.strip()]
+    if not listed or not languages:
+        return False
+    return not any(any(lang in part for lang in languages) for part in listed)
+
+
+def rank(stations, dest, names=(), limit=MAX_STATIONS, languages=()):
+    """The playable stations to try, best first: those located in the city,
+    then those naming it, then the country's; within each, those in the local
+    `languages` (the directory's words, such as "french"), then the most
+    listened to. Duplicates (same stream or name) once."""
     cc = str(dest.get("country_code") or "").upper()
     seen_urls, seen_names, usable = set(), set(), []
     for station in stations:
@@ -140,7 +167,8 @@ def rank(stations, dest, names=(), limit=MAX_STATIONS):
         seen_urls.add(station["url"])
         seen_names.add(name_key)
         usable.append(station)
-    usable.sort(key=lambda s: (0 if is_local(s, dest, names) else 1, -score(s),
+    usable.sort(key=lambda s: (0 if _near(s, dest) else 1 if names_city(s, names) else 2,
+                               speaks_other_language(s, languages), -score(s),
                                PLAYABLE_CODECS.get(s["codec"], 9), s["name"].lower()))
     return usable[:limit]
 
@@ -189,9 +217,9 @@ class RadioBrowser:
         found = self._get("/json/stations/search", query)
         return [s for s in (clean_station(item) for item in (found or [])) if s]
 
-    def stations_for(self, dest, names=()):
-        """The playable stations for a destination, best first. Raises
-        StationError when no mirror answers."""
+    def stations_for(self, dest, names=(), languages=()):
+        """The playable stations for a destination, best first (see rank()).
+        Raises StationError when no mirror answers."""
         cc = str(dest.get("country_code") or "").upper()
         lat, lon = round(float(dest["latitude"]), 2), round(float(dest["longitude"]), 2)
         found, errors = [], []
@@ -206,7 +234,7 @@ class RadioBrowser:
                 errors.append(e)
         if not found and errors:
             raise errors[0]
-        return rank(found, dest, names)
+        return rank(found, dest, names, languages=languages)
 
     def count_click(self, uuid):
         """Tell the directory a station was played (its popularity count)."""

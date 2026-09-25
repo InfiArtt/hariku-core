@@ -231,7 +231,7 @@ class FakeServices(main.Services):
     def weather(self, dest):
         return {"temperature": 18.4, "code": 53, "is_day": False, "timezone": dest["timezone"]}
 
-    def stations(self, dest, names):
+    def stations(self, dest, names, language=None):
         return list(STATIONS) if dest["name"] == "Tokyo" else []
 
     def summary(self, dest, names, english_names):

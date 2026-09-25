@@ -107,8 +107,8 @@ SINGAPURA = {"name": "Singapura", "country": "Singapura", "country_code": "SG", 
 NOW = datetime.datetime(2026, 9, 25, 12, 30, tzinfo=UTC)     # 19:30 in Batam, 21:30 in Tokyo
 
 
-def geo(name, lat, lon, cc, country, feature="PPL", population=0, tz="", region=""):
-    return {"name": name, "latitude": lat, "longitude": lon, "country_code": cc,
+def geo(name, lat, lon, cc, country, feature="PPL", population=0, tz="", region="", geo_id=None):
+    return {"id": geo_id, "name": name, "latitude": lat, "longitude": lon, "country_code": cc,
             "country": country, "feature_code": feature, "population": population,
             "timezone": tz, "admin1": region}
 
@@ -314,49 +314,132 @@ def test_what_a_trip_asks_for(m, text, expected):
 
 
 class FakeGeocoder:
-    """Canned Open-Meteo answers, keyed by (name, language)."""
+    """Canned Open-Meteo answers: searches keyed by (name, language), places
+    looked up by id keyed by (id, language)."""
 
-    def __init__(self, answers, fail=None):
+    def __init__(self, answers, by_id=None, fail=None):
         self.answers = answers
+        self.by_id = by_id or {}
         self.urls = []
         self.fail = fail
 
     def __call__(self, url):
         import urllib.parse
+        import core.place_search
         self.urls.append(url)
         if self.fail:
-            import core.place_search
             raise core.place_search.FetchError(self.fail, "down")
-        query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+        parts = urllib.parse.urlsplit(url)
+        query = urllib.parse.parse_qs(parts.query)
+        if parts.path.endswith("/get"):
+            found = self.by_id.get((int(query["id"][0]), query["language"][0]))
+            if found is None:
+                raise core.place_search.FetchError("service", "HTTP 404", status=404)
+            return dict(found)
         key = (query["name"][0], query["language"][0])
         return {"results": [dict(r) for r in self.answers.get(key, [])]}
 
 
-TOKYO_RESULTS = [geo("Tokyo", 35.6895, 139.69171, "JP", "Jepang", "PPLC", 9733276, "Asia/Tokyo",
-                     "Prefektur Tokyo"),
-                 geo("Tokyo", -8.0, 147.0, "PG", "Papua Nugini", "PPL", 0, "Pacific/Port_Moresby")]
+TOKYO_EN = geo("Tokyo", 35.6895, 139.69171, "JP", "Japan", "PPLC", 9733276, "Asia/Tokyo",
+               "Tokyo", geo_id=1850147)
+TOKYO_ID = dict(TOKYO_EN, country="Jepang", admin1="Prefektur Tokyo")
+TOKYO_PNG = geo("Tokyo", -8.0, 147.0, "PG", "Papua Nugini", "PPL", 0, "Pacific/Port_Moresby",
+                geo_id=2)
+TOKYO_RESULTS = [TOKYO_ID, TOKYO_PNG]
 
 
-def test_a_city_is_found(m):
-    fetch = FakeGeocoder({("Tokyo", "id"): TOKYO_RESULTS})
+def test_a_city_is_found_and_named_in_the_users_language(m):
+    fetch = FakeGeocoder({("Tokyo", "en"): [TOKYO_EN, dict(TOKYO_PNG, country="Papua New Guinea")],
+                          ("Tokyo", "id"): TOKYO_RESULTS},
+                         by_id={(1850147, "id"): TOKYO_ID})
     dest = m.places.resolve("Tokyo", "id", fetch)
-    assert (dest["name"], dest["country"], dest["country_code"], dest["timezone"]) == (
-        "Tokyo", "Jepang", "JP", "Asia/Tokyo")
-    assert dest["query"] == "Tokyo" and dest["feature"] == "PPLC"
-    assert len(fetch.urls) == 1 and fetch.urls[0].startswith(
-        "https://geocoding-api.open-meteo.com/v1/search?")
+    assert (dest["name"], dest["name_en"], dest["country"], dest["country_code"],
+            dest["timezone"], dest["region"]) == ("Tokyo", "Tokyo", "Jepang", "JP", "Asia/Tokyo",
+                                                  "Prefektur Tokyo")
+    assert dest["query"] == "Tokyo" and dest["feature"] == "PPLC" and dest["id"] == 1850147
+    assert [u.split("?")[0] for u in fetch.urls] == [
+        "https://geocoding-api.open-meteo.com/v1/search",
+        "https://geocoding-api.open-meteo.com/v1/search",
+        "https://geocoding-api.open-meteo.com/v1/get"]
+    assert "source_language" not in dest
+    fetch = FakeGeocoder({("Tokyo", "en"): [TOKYO_EN]})
+    english = m.places.resolve("Tokyo", "en", fetch)
+    assert english["country"] == "Japan" and len(fetch.urls) == 1        # nothing to look up
+
+
+MECCA_EN = geo("Mecca", 21.42664, 39.82563, "SA", "Saudi Arabia", "PPLA", 1578722,
+               "Asia/Riyadh", "Mecca Region", geo_id=104515)
+MECCA_ID = dict(MECCA_EN, name="Mekkah", country="Arab Saudi")
+
+
+def test_what_the_user_says_in_either_language(m):
+    # "Mecca" in an Indonesian search finds only towns in America and Italy.
+    fetch = FakeGeocoder({
+        ("Mecca", "en"): [MECCA_EN, geo("Mecca", 33.57, -116.08, "US", "United States", "PPL",
+                                        8577, geo_id=5371858)],
+        ("Mecca", "id"): [geo("Mecca", 33.57, -116.08, "US", "AS", "PPL", 8577, geo_id=5371858),
+                          geo("Mecca", 44.9, 7.9, "IT", "Italia", "PPL", 25, geo_id=3)]},
+        by_id={(104515, "id"): MECCA_ID})
+    dest = m.places.resolve("Mecca", "id", fetch)
+    assert (dest["name"], dest["name_en"], dest["country"]) == ("Mekkah", "Mecca", "Arab Saudi")
+    # "Mekkah" only an Indonesian search knows; its English name is looked up.
+    fetch = FakeGeocoder({("Mekkah", "id"): [MECCA_ID]}, by_id={(104515, "en"): MECCA_EN})
+    dest = m.places.resolve("Mekkah", "id", fetch)
+    assert (dest["name"], dest["name_en"], dest["country_code"]) == ("Mekkah", "Mecca", "SA")
+    # "New York": "Kota New York" in Indonesian, said without the "Kota".
+    nyc = geo("New York", 40.71, -74.0, "US", "United States", "PPL", 8804190,
+              "America/New_York", "New York", geo_id=5128581)
+    fetch = FakeGeocoder({
+        ("New York", "en"): [nyc],
+        ("New York", "id"): [geo("York", 40.87, -97.59, "US", "AS", "PPLA2", 7864, geo_id=9)]},
+        by_id={(5128581, "id"): dict(nyc, name="Kota New York", country="AS")})
+    dest = m.places.resolve("New York", "id", fetch)
+    assert (dest["name"], dest["country"]) == ("New York", "AS")
+
+
+def test_home_country_wins_a_close_call(m):
+    # "Bali" for an Indonesian is the island, not Bāli in India.
+    bali_india = geo("Bāli", 22.64, 88.34, "IN", "India", "PPL", 296973, geo_id=1277539)
+    island = geo("Pulau Bali", -8.33, 115.0, "ID", "Indonesia", "ISL", 4225384,
+                 "Asia/Makassar", "Provinsi Bali", geo_id=1650535)
+    answers = {("Bali", "en"): [bali_india],
+               ("Bali", "id"): [bali_india, island,
+                                geo("Bali", 35.0, 104.0, "CN", "Tiongkok", "PPLA4", 7101)]}
+    fetch = FakeGeocoder(answers, by_id={(1650535, "en"): dict(island, name="Bali")})
+    dest = m.places.resolve("Bali", "id", fetch)
+    assert (dest["name"], dest["country_code"], dest["timezone"]) == ("Bali", "ID", "Asia/Makassar")
+    assert m.places.resolve("Bali", "en", FakeGeocoder(answers))["country_code"] == "IN"
+
+
+def test_names_without_their_administrative_word(m):
+    p = m.places
+    assert p.display_name("DI Yogyakarta", "Yogyakarta") == "Yogyakarta"
+    assert p.display_name("Kota New York", "New York") == "New York"
+    assert p.display_name("Kota Kinabalu", "Kota Kinabalu") == "Kota Kinabalu"
+    assert p.display_name("Moskwa", "Moscow") == "Moskwa"
+    singapore = geo("Singapore", 1.29, 103.85, "SG", "Singapore", "PPLC", 3547809,
+                    "Asia/Singapore", geo_id=1880252)
+    fetch = FakeGeocoder({("Singapura", "id"): [geo("Singapura", 1.36, 103.8, "SG", "Singapura",
+                                                   "PCLI", 5638676)],
+                          ("Singapore", "en"): [singapore]},
+                         by_id={(1880252, "id"): dict(singapore, country="Singapura")})
+    dest = m.places.resolve("Singapura", "id", fetch)       # the country, so its city
+    assert dest["name"] == "Singapura" and dest["country"] == "Singapura"
 
 
 def test_a_country_lands_in_its_best_known_city(m):
-    fetch = FakeGeocoder({("Tokyo", "id"): TOKYO_RESULTS})
+    fetch = FakeGeocoder({("Tokyo", "en"): [TOKYO_EN]}, by_id={(1850147, "id"): TOKYO_ID})
     dest = m.places.resolve("Jepang", "id", fetch)
-    assert dest["name"] == "Tokyo" and dest["country_code"] == "JP"
+    assert (dest["name"], dest["country"], dest["country_code"]) == ("Tokyo", "Jepang", "JP")
     assert dest["query"] == "Jepang"
     # A country the aliases don't know, found as a country by the geocoder.
+    zagreb = geo("Zagreb", 45.81, 15.98, "HR", "Croatia", "PPLC", 698966, "Europe/Zagreb",
+                 geo_id=3186886)
     fetch = FakeGeocoder({
-        ("Norge", "en"): [geo("Norway", 62.0, 10.0, "NO", "Norway", "PCLI", 5000000)],
-        ("Oslo", "en"): [geo("Oslo", 59.91, 10.75, "NO", "Norway", "PPLC", 580000, "Europe/Oslo")]})
-    assert m.places.resolve("Norge", "en", fetch)["name"] == "Oslo"
+        ("Kroasia", "id"): [geo("Kroasia", 45.17, 15.5, "HR", "Kroasia", "PCLI", 4000000)],
+        ("Zagreb", "en"): [zagreb]}, by_id={(3186886, "id"): dict(zagreb, country="Kroasia")})
+    dest = m.places.resolve("Kroasia", "id", fetch)
+    assert (dest["name"], dest["country"]) == ("Zagreb", "Kroasia")
     assert m.places.COUNTRY_CITIES["SA"] == "Mecca" and m.places.COUNTRY_CITIES["US"] == "New York"
 
 
@@ -366,12 +449,13 @@ def test_airports_and_other_countries_are_skipped(m):
         geo("Phnom Penh", 11.56, 104.92, "KH", "Cambodia", "PPLC", 1573544, "Asia/Phnom_Penh")]})
     assert m.places.resolve("Phnom Penh", "en", fetch)["feature"] == "PPLC"
     results = m.places.parse_results({"results": TOKYO_RESULTS})
-    assert m.places.choose(results, cc="PG")["country_code"] == "PG"
-    assert m.places.choose(results, cc="FR") is None
+    assert m.places.choose(results, "Tokyo")["country_code"] == "JP"      # by population
+    assert m.places.choose(results, "Tokyo", cc="PG")["country_code"] == "PG"
+    assert m.places.choose(results, "Tokyo", cc="FR") is None
 
 
 def test_a_surprise_trip_avoids_the_last_city(m):
-    answers = {(name, "id"): [geo(name, 10.0, 10.0, cc, cc)]
+    answers = {(name, "en"): [geo(name, 10.0, 10.0, cc, cc)]
                for name, cc in m.places.SURPRISE_CITIES}
     fetch = FakeGeocoder(answers)
     seen = set()
@@ -395,6 +479,9 @@ def test_nothing_found_or_offline(m):
 
 
 def test_the_local_name_is_the_same_city(m):
+    by_id = FakeGeocoder({}, by_id={(1850147, "ja"): dict(TOKYO_EN, name="東京都")})
+    assert m.places.localized_name(dict(TOKYO, id=1850147), "ja", by_id) == "東京都"
+    # Without an id: a search, and only a result near the city counts.
     fetch = FakeGeocoder({("Tokyo", "ja"): [
         geo("東京都", 35.6895, 139.69171, "JP", "日本", "PPLC"),
         geo("Tokyo", -8.0, 147.0, "PG", "パプアニューギニア")]})
@@ -653,6 +740,23 @@ def test_stations_of_the_city_come_first(m):
     ranked = s.rank([s.clean_station(r) for r in raw], TOKYO, ["Tokyo"])
     assert [r["name"] for r in ranked] == ["Gotanno FM", "Tokyo Jazz", "Big National",
                                            "Shonan Beach FM"]
+
+
+def test_the_local_language_comes_first(m):
+    s = m.stations
+
+    def french(name, language, votes, **kw):
+        raw = station(name, cc="FR", votes=votes, state="Paris", **kw)
+        raw["language"] = language
+        return s.clean_station(raw)
+
+    found = [french("RFI-Chinese", "chinese", 900), french("NRJ Paris", "french", 400),
+             french("Nostalgie", "", 300), french("FIP", "French,English", 200)]
+    ranked = s.rank(found, PARIS, ["Paris"], languages=s.RADIO_LANGUAGES["fr"])
+    assert [r["name"] for r in ranked] == ["NRJ Paris", "Nostalgie", "FIP", "RFI-Chinese"]
+    assert [r["name"] for r in s.rank(found, PARIS, ["Paris"])][0] == "RFI-Chinese"
+    for code in m.phrases.LANGUAGES:
+        assert s.RADIO_LANGUAGES.get(code), code
 
 
 class FakeRadioBrowser:
@@ -993,6 +1097,7 @@ class FakeServices:
         self.clicks = []
         self.volume_changes = []
         self.resolved = []
+        self.station_requests = []
 
     # time
     def utcnow(self):
@@ -1116,7 +1221,8 @@ class FakeServices:
     def native_voice(self, code, country_code):
         return self.voice_by_language.get(code)
 
-    def stations(self, dest, names):
+    def stations(self, dest, names, language=None):
+        self.station_requests.append((dest["name"], language))
         if isinstance(self.station_list, Exception):
             raise self.station_list
         return list(self.station_list)

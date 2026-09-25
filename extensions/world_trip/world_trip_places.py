@@ -19,9 +19,10 @@ saja") turned into a destination, and the flight's distance and time.
 
 A country becomes its capital or best-known city (COUNTRY_CITIES). Places
 are found through Open-Meteo's geocoding (core.place_search's URL, fetch and
-User-Agent), which also knows countries by name in any language (feature
-code PCL...). Only the name typed or said is sent; the user's own place is
-never part of a request. No wx.
+User-Agent), searched in English and in the user's language and then looked
+up by id to be named in the user's language; the geocoder also knows
+countries by name (feature code PCL...). Only the name typed or said is
+sent; the user's own place is never part of a request. No wx.
 """
 
 import math
@@ -237,6 +238,22 @@ def parse_query(text):
 # ------------------------------------------------------------
 # Open-Meteo geocoding
 # ------------------------------------------------------------
+# A search's results depend on its language: in Indonesian, "Mecca" doesn't
+# find the city in Saudi Arabia (its Indonesian name is "Mekkah") and "New
+# York" finds York, Nebraska first. So a place is searched in English and in
+# the user's language, the candidates are scored (the name said, population,
+# a capital, the user's own country), and the one chosen is then looked up by
+# its GeoNames id in the user's language ("Mekkah, Arab Saudi") and, later,
+# in the local language ("Москва", "Αθήνα"), which is always the same place.
+
+GET_URL = "https://geocoding-api.open-meteo.com/v1/get"
+# The country whose places win a close call, by the user's language: "Bali"
+# is the island for an Indonesian, not Bāli in India.
+HOME_COUNTRY_BY_LANGUAGE = {"id": "ID"}
+# Words the Indonesian names put before a city: "Kota New York", "DI Yogyakarta".
+ADMIN_PREFIXES = ("kota", "di", "daerah istimewa", "kabupaten", "pulau", "provinsi",
+                  "kota administrasi", "city of", "prefektur")
+
 
 def city_url(name, language="en", count=SEARCH_COUNT):
     """A geocoding search in any language Open-Meteo knows ("ja" gives 東京都)."""
@@ -245,35 +262,46 @@ def city_url(name, language="en", count=SEARCH_COUNT):
     return place_search.GEOCODING_URL + "?" + urllib.parse.urlencode(params)
 
 
+def get_url(geo_id, language="en"):
+    """One place by its GeoNames id, named in `language`."""
+    params = {"id": int(geo_id), "language": (language or "en").split("-")[0].lower()}
+    return GET_URL + "?" + urllib.parse.urlencode(params)
+
+
+def parse_result(item):
+    """One Open-Meteo place as a plain dict, or None when unusable."""
+    if not isinstance(item, dict):
+        return None
+    lat = place_search.to_float(item.get("latitude"))
+    lon = place_search.to_float(item.get("longitude"))
+    name = " ".join(str(item.get("name") or "").split())
+    if lat is None or lon is None or not name:
+        return None
+    try:
+        place_search.validate(lat, lon)
+    except place_search.LocationError:
+        return None
+    population = item.get("population")
+    geo_id = item.get("id")
+    return {
+        "id": geo_id if isinstance(geo_id, int) and not isinstance(geo_id, bool) else None,
+        "name": name,
+        "latitude": lat,
+        "longitude": lon,
+        "country": " ".join(str(item.get("country") or "").split()),
+        "country_code": str(item.get("country_code") or "").upper()[:2],
+        "region": " ".join(str(item.get("admin1") or "").split()),
+        "timezone": place_search.clean_timezone(item.get("timezone")) or "",
+        "feature": str(item.get("feature_code") or "").upper(),
+        "population": population if isinstance(population, int) else 0,
+    }
+
+
 def parse_results(payload):
     """Open-Meteo's results as plain dicts, the unusable ones dropped."""
-    found = []
     results = payload.get("results") if isinstance(payload, dict) else None
-    for item in results if isinstance(results, list) else []:
-        if not isinstance(item, dict):
-            continue
-        lat = place_search.to_float(item.get("latitude"))
-        lon = place_search.to_float(item.get("longitude"))
-        name = " ".join(str(item.get("name") or "").split())
-        if lat is None or lon is None or not name:
-            continue
-        try:
-            place_search.validate(lat, lon)
-        except place_search.LocationError:
-            continue
-        population = item.get("population")
-        found.append({
-            "name": name,
-            "latitude": lat,
-            "longitude": lon,
-            "country": " ".join(str(item.get("country") or "").split()),
-            "country_code": str(item.get("country_code") or "").upper()[:2],
-            "region": " ".join(str(item.get("admin1") or "").split()),
-            "timezone": place_search.clean_timezone(item.get("timezone")) or "",
-            "feature": str(item.get("feature_code") or "").upper(),
-            "population": population if isinstance(population, int) else 0,
-        })
-    return found
+    found = [parse_result(item) for item in (results if isinstance(results, list) else [])]
+    return [r for r in found if r]
 
 
 def is_country(result):
@@ -281,24 +309,38 @@ def is_country(result):
 
 
 # Things that aren't a place to land in: airports, parks, buildings...
-_NOT_A_TOWN = ("AIRP", "AMUS", "HTL", "RSTN", "BLDG", "SCH", "HSP", "MUS", "STDM", "MALL",
-               "CH", "MSQE", "TMPL", "PRK", "RES", "ZOO", "PO", "RSTP", "BUSTN")
+_NOT_A_TOWN = ("AIRP", "AIRH", "AMUS", "HTL", "RSTN", "BLDG", "SCH", "HSP", "MUS", "STDM",
+               "MALL", "CH", "MSQE", "TMPL", "PRK", "RES", "ZOO", "PO", "RSTP", "BUSTN")
 
 
-def choose(results, cc=None, capital_first=False):
-    """The best result: in country `cc` when given, never a country or an
-    airport; with `capital_first`, a capital (PPLC) before a bigger town."""
-    usable = [r for r in results if not is_country(r) and r["feature"] not in _NOT_A_TOWN
+def score(result, query, bias_cc=None, first=False):
+    """How well a result fits what was said: its name (said exactly, or in
+    its name), how many live there, a capital, the user's own country."""
+    key, name = phrases.normalize(query), phrases.normalize(result["name"])
+    value = 0.0
+    if key and name == key:
+        value += 3.0
+    elif key and f" {key} " in f" {name} ":
+        value += 2.0
+    value += math.log10(max(0, result.get("population") or 0) + 1)
+    value += {"PPLC": 2.0, "PPLA": 1.0, "PPLA2": 0.5}.get(result["feature"], 0.0)
+    if bias_cc and result["country_code"] == bias_cc:
+        value += 1.0
+    if first:
+        value += 0.3
+    return value
+
+
+def choose(results, query="", cc=None, bias_cc=None):
+    """The best town among the results (in country `cc` when given): never a
+    country, an airport or a building."""
+    usable = [(i, r) for i, r in enumerate(results)
+              if not is_country(r) and r["feature"] not in _NOT_A_TOWN
               and (cc is None or r["country_code"] == cc)]
     if not usable:
         return None
-    if capital_first:
-        capitals = [r for r in usable if r["feature"] == "PPLC"]
-        if capitals:
-            return capitals[0]
-    # The geocoder puts the best match first; a town beats a same-named hill.
-    towns = [r for r in usable if r["feature"].startswith(("PPL", "ADM", "ISL"))]
-    return (towns or usable)[0]
+    return max(usable, key=lambda item: (score(item[1], query, bias_cc, item[0] == 0),
+                                         -item[0]))[1]
 
 
 def _search(name, language, fetch):
@@ -308,28 +350,78 @@ def _search(name, language, fetch):
         raise ResolveError("offline", str(e)) from e
 
 
-def destination(result, query=""):
-    """A result as the trip keeps it."""
+def _searches(name, language, fetch):
+    """Results in English, then in the user's language (duplicates once),
+    each with the language it was named in ("source_language")."""
+    found = [dict(r, source_language="en") for r in _search(name, "en", fetch)]
+    if language and language != "en":
+        seen = {r["id"] for r in found if r["id"]}
+        found += [dict(r, source_language=language) for r in _search(name, language, fetch)
+                  if not r["id"] or r["id"] not in seen]
+    return found
+
+
+def lookup(geo_id, language, fetch):
+    """A place by its GeoNames id, named in `language`, or None."""
+    if not geo_id:
+        return None
+    try:
+        return parse_result(fetch(get_url(geo_id, language)))
+    except (place_search.FetchError, ValueError, TypeError):
+        return None
+
+
+def display_name(local, english):
+    """The user's name for a city without an administrative word before it:
+    "Kota New York" -> "New York", "DI Yogyakarta" -> "Yogyakarta"; "Kota
+    Kinabalu" stays (that is its name)."""
+    local_key, english_key = phrases.normalize(local), phrases.normalize(english)
+    if english and local_key != english_key and local_key.endswith(" " + english_key):
+        if local_key[:-len(english_key)].strip() in ADMIN_PREFIXES:
+            return english
+    return local
+
+
+def destination(result, query="", language="en", fetch=None):
+    """A result as the trip keeps it: named in the user's language (looked
+    up by its id), with its English name in "name_en"."""
     dest = dict(result)
+    source = dest.pop("source_language", "en")
     dest["query"] = query
+    english = result["name"]
+    if source != "en" and fetch is not None:
+        found = lookup(result.get("id"), "en", fetch)
+        english = found["name"] if found else english
+    dest["name_en"] = english
+    if language and language != "en" and fetch is not None:
+        local = result if source == language else lookup(result.get("id"), language, fetch)
+        if local:
+            dest["name"] = display_name(local["name"], english)
+            dest["country"] = local["country"] or result["country"]
+            dest["region"] = local["region"] or result["region"]
+    if dest["country_code"] == "SG" and dest.get("country"):
+        # The city-state goes by its country's name: "Singapura", not
+        # "Singapore, Singapura" (the geocoder names the city in English).
+        dest["name"] = dest["country"]
     return dest
 
 
-def _city_of_country(cc, language, fetch):
+def _city_of_country(cc, language, fetch, query):
     city = COUNTRY_CITIES.get(cc)
     if not city:
         raise ResolveError("no_city", cc)
-    found = choose(_search(city, language, fetch), cc=cc, capital_first=False)
+    found = choose(_search(city, "en", fetch), city, cc=cc)
     if found is None:
         raise ResolveError("not_found", city)
-    return found
+    return destination(found, query, language, fetch)
 
 
 def resolve(text, language, fetch=None, rng=None, avoid=None):
     """The destination for what the user asked (not "home"): a dict with
-    "name", "country", "country_code", "region", "latitude", "longitude",
-    "timezone", "feature", "population" and "query". `language` is the user's
-    ("id" or "en"), for the names. Blocks on the network. Raises ResolveError."""
+    "name" (in the user's language), "name_en", "country", "country_code",
+    "region", "latitude", "longitude", "timezone", "feature", "population",
+    "id" (GeoNames) and "query". `language` is the user's ("id" or "en").
+    Blocks on the network. Raises ResolveError."""
     fetch = fetch or place_search.fetch_json
     query = parse_query(text)
     kind = query["kind"]
@@ -339,39 +431,42 @@ def resolve(text, language, fetch=None, rng=None, avoid=None):
         rng = rng or random
         choices = [c for c in SURPRISE_CITIES if c[0] != avoid] or list(SURPRISE_CITIES)
         name, cc = rng.choice(choices)
-        found = choose(_search(name, language, fetch), cc=cc)
+        found = choose(_search(name, "en", fetch), name, cc=cc)
         if found is None:
             raise ResolveError("not_found", name)
-        dest = destination(found, text)
+        dest = destination(found, text, language, fetch)
         dest["surprise"] = name          # its English name, so the next surprise differs
         return dest
     if kind == "country":
-        return destination(_city_of_country(query["cc"], language, fetch), text)
-    results = _search(query["name"], language, fetch)
-    if not results:
-        raise ResolveError("not_found", query["name"])
-    first = results[0]
-    if is_country(first) and first["country_code"]:
+        return _city_of_country(query["cc"], language, fetch, text)
+    name = query["name"]
+    results = _searches(name, language, fetch)
+    key = phrases.normalize(name)
+    for result in results:
         # "Jepang", "Prancis", "Japan": a country, so its best-known city.
-        return destination(_city_of_country(first["country_code"], language, fetch), text)
-    found = choose(results)
+        if is_country(result) and result["country_code"] and \
+                phrases.normalize(result["name"]) == key:
+            return _city_of_country(result["country_code"], language, fetch, text)
+    found = choose(results, name, bias_cc=HOME_COUNTRY_BY_LANGUAGE.get(language))
     if found is None:
-        raise ResolveError("not_found", query["name"])
-    return destination(found, text)
+        raise ResolveError("not_found", name)
+    return destination(found, text, language, fetch)
 
 
 def localized_name(dest, code, fetch=None):
-    """The destination's name in language `code` (the primary subtag is sent),
-    from a result within NEAR_KM of it, or None. Blocks on the network."""
+    """The destination's name in language `code` (its primary subtag is
+    sent): looked up by its id, else from a search result within NEAR_KM of
+    it; None when unknown. Blocks on the network."""
     fetch = fetch or place_search.fetch_json
+    found = lookup(dest.get("id"), code, fetch)
+    if found:
+        return found["name"]
     try:
-        results = parse_results(fetch(city_url(dest["name"], code)))
+        results = parse_results(fetch(city_url(dest.get("name_en") or dest["name"], code)))
     except place_search.FetchError:
         return None
     for result in results:
-        if is_country(result):
-            continue
-        if distance_km(result, dest) <= NEAR_KM:
+        if not is_country(result) and distance_km(result, dest) <= NEAR_KM:
             return result["name"]
     return None
 

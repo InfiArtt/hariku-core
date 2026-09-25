@@ -334,13 +334,14 @@ class Services:
     def native_voice(self, code, country_code):
         return self.voices.for_language(code, country_code)
 
-    def stations(self, dest, names):
+    def stations(self, dest, names, language=None):
         key = net.point_key(dest, f"{dest.get('country_code', '')}:")
         with _cache_lock:
             found = _cache["stations"].get(key)
         if found is not None:
             return found
-        found = self.browser.stations_for(dest, [n for n in names if n])
+        found = self.browser.stations_for(dest, [n for n in names if n],
+                                          stations.RADIO_LANGUAGES.get(language, ()))
         with _cache_lock:
             _cache["stations"].put(key, found)
         _call_after(_save_cache)

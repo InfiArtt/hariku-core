@@ -218,9 +218,10 @@ alarm sounds on your computer or tones that come with the extension.
 The World Trip extension connects only when you take a trip or ask something
 during one, and it only ever sends the destination, never anything about you:
 - Finding the city you asked for sends its name, as you typed or said it, to
-  Open-Meteo's geocoding (`geocoding-api.open-meteo.com`); to say the city's
-  name in its own language and in English, the name is looked up again with
-  that language. The weather sends the destination's point, rounded to about 1
+  Open-Meteo's geocoding (`geocoding-api.open-meteo.com`), searched in English
+  and in Hariku's language; to name the city in your language, in English and
+  in its own language, the city found is looked up again by its GeoNames
+  number. The weather sends the destination's point, rounded to about 1
   kilometre, to Open-Meteo (`api.open-meteo.com`). See Open-Meteo's
   [terms and privacy](https://open-meteo.com/en/terms).
 - The radio asks the free Radio Browser directory (`*.api.radio-browser.info`)
