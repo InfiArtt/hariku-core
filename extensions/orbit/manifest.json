@@ -1,0 +1,10 @@
+{
+    "id": "orbit",
+    "name": "Orbit",
+    "version": "1.0",
+    "description": "A small multiplayer text game on a space station orbiting the Earth. Hang out and chat in the Cantina, look down at Indonesia from the Observation Deck, whisper to friends, repair the reactor, fly cargo runs to the Moon, trade on the Promenade and take small missions. Play in its window or from Aruna, typed or spoken: \"orbit pergi ke kantin\", \"orbit bilang halo\", \"orbit siapa online\". Other players speak in voices of their own (Hariku Voice), with generated stereo sounds and quiet ambience. Connects only when you play; the server keeps your character (name, job, description, credits, items) and a hash of a secret made on your computer, and passes chat on without storing it.",
+    "author": "Rafli",
+    "main": "main.py",
+    "language": "en",
+    "minimum_core_version": "2.9"
+}

@@ -1,0 +1,8 @@
+{
+  "_note": "Words the Orbit server masks in chat and refuses in names. Whole words are compared after folding look-alikes (4 = a, 1 = i, 0 = o...) and letters repeated for emphasis. Add or remove words freely; restart the server to apply.",
+  "en": ["fuck", "fucker", "fucking", "motherfucker", "shit", "bullshit", "bitch", "cunt",
+         "asshole", "bastard", "whore", "slut", "nigger", "nigga", "faggot", "retard", "wanker"],
+  "id": ["anjing", "anjir", "bangsat", "bajingan", "kontol", "memek", "ngentot", "entot",
+         "jancok", "jancuk", "goblok", "tolol", "kampret", "pelacur", "lonte", "perek",
+         "brengsek", "keparat"]
+}

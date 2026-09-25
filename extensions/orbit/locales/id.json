@@ -1,0 +1,71 @@
+{
+    "manifest": {
+        "language_name": "Bahasa Indonesia",
+        "language_code": "id",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.9",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Orbit",
+
+        "action_open": "Buka Orbit",
+        "action_look": "Lihat sekitar di Orbit",
+        "action_who": "Siapa yang online di Orbit",
+        "action_credits": "Kredit dan isi tas di Orbit",
+        "action_connect": "Sambungkan atau putuskan Orbit",
+        "title_play": "Orbit",
+        "title_open": "buka Orbit",
+        "title_look": "lihat sekitar di Orbit",
+        "title_who": "siapa yang online di Orbit",
+        "title_credits": "kredit di Orbit",
+        "title_connect": "sambungkan Orbit",
+
+        "job_pilot": "Pilot",
+        "job_engineer": "Insinyur",
+        "job_trader": "Pedagang",
+        "job_scientist": "Ilmuwan",
+        "job_security": "Petugas keamanan",
+
+        "status_idle": "Belum tersambung.",
+        "status_connecting": "Menyambung ke Orbit...",
+        "status_offline": "Orbit sedang offline. Coba lagi dalam {seconds} detik.",
+        "status_online": "Tersambung ke Orbit sebagai {name}, {job}.",
+        "say_connecting": "Menyambung ke Orbit...",
+        "say_connected": "Tersambung ke Orbit.",
+        "say_offline": "Orbit sedang offline. Aku coba terus, ya.",
+        "say_disconnected": "Sambungan ke Orbit diputus.",
+        "err_address": "Alamat server harus diawali wss:// (atau ws:// khusus untuk komputer ini). Cek di Pengaturan, Orbit.",
+        "err_no_name": "Pilih dulu nama karakter di Pengaturan, Orbit: 3 sampai 20 huruf dan angka.",
+        "fail_kicked": "Admin mengeluarkanmu dari stasiun. Sambungkan lagi nanti.",
+        "fail_replaced": "Kamu sedang main Orbit di tempat lain, jadi sambungan ini ditutup.",
+        "fail_banned": "Kamu dilarang masuk stasiun Orbit.",
+        "fail_other": "Orbit menolak sambungan ({code}).",
+        "nothing_yet": "Belum ada pesan.",
+
+        "help": "Perintah Orbit. Bergerak: pergi ke kantin, ke dermaga, pulang (ke kabinmu). Melihat: lihat, lihat Sari, lihat bumi (di Dek Observasi). Ngobrol: bilang halo (atau awali dengan tanda kutip), bisik Sari ketemu di dek, teriak halo semua. Gerakan: senyum, lambai, tertawa, angguk, angkat bahu, tepuk tangan, sorak, hela napas, hormat, joget, peluk Sari. Dirimu: siapa, tas atau kredit, beri Sari 50 kredit, deskripsi aku lalu beberapa kata. Kerja: kerja (insinyur di Ruang Mesin, pilot di Dermaga, pedagang di mana saja), lalu ketik angka nada reaktornya. Misi: misi, ambil misi 1, ambil peti, selesaikan misi, batalkan misi. Pasar di Promenade: harga, beli 2 kopi, jual semua kopi. Orbit sendiri: sambungkan, putuskan, ulangi (baca pesan terakhir lagi). Lewat Aruna, awali dengan orbit: orbit pergi ke kantin.",
+
+        "window_title": "Orbit",
+        "lbl_messages": "Pesan:",
+        "lbl_command": "Perintah:",
+        "lbl_status": "Status:",
+        "btn_connect": "&Sambungkan",
+        "btn_disconnect": "&Putuskan",
+        "btn_help": "&Bantuan",
+
+        "lbl_server": "Alamat server:",
+        "lbl_name": "Nama karakter (untuk kunjungan pertama):",
+        "lbl_job": "Pekerjaan (untuk kunjungan pertama):",
+        "chk_speak": "&Bacakan pesan",
+        "chk_voices": "&Suara berbeda untuk tiap pemain (Hariku Voice)",
+        "chk_ambience": "Suasana &latar selama jendela Orbit terbuka",
+        "lbl_volume": "Volume suasana latar:",
+        "chk_sounds": "B&unyi",
+        "note_character": "Karaktermu di server ini: {name}, {job}. Kotak nama dan pekerjaan hanya dipakai saat pertama kali masuk ke sebuah server.",
+        "note_first": "Nama (3 sampai 20 huruf dan angka) dan pekerjaan dipakai saat pertama kali kamu masuk; setelah itu server mengingat karaktermu.",
+        "note_voices": "Kata-kata tiap pemain dibacakan oleh salah satu suara Hariku Voice dalam bahasamu, selalu suara yang sama untuk pemain yang sama. Kalau suaranya kurang dari dua, semuanya dibacakan suaramu yang biasa. Edge Voices dari Toko Ekstensi menambah dua suara Indonesia dan banyak suara Inggris (teksnya dikirim ke Microsoft).",
+        "note_privacy": "Orbit hanya tersambung saat kamu membukanya, menekan Sambungkan, atau memberinya perintah. Server menyimpan nama, pekerjaan, deskripsi, kredit, dan barang karaktermu, serta hash dari sebuah rahasia yang dibuat di komputer ini (tanpa kata sandi, tanpa email). Obrolan diteruskan ke pemain yang mendengarnya dan tidak disimpan."
+    }
+}

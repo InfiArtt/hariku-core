@@ -1,0 +1,71 @@
+{
+    "manifest": {
+        "language_name": "English",
+        "language_code": "en",
+        "translator": "Hariku Developer",
+        "email": "dev@hariku.app",
+        "version": "1.0",
+        "core_version": "2.9",
+        "rtl": false
+    },
+    "messages": {
+        "ext_name": "Orbit",
+
+        "action_open": "Open Orbit",
+        "action_look": "Look around in Orbit",
+        "action_who": "Who is online in Orbit",
+        "action_credits": "Credits and bag in Orbit",
+        "action_connect": "Connect to or disconnect from Orbit",
+        "title_play": "Orbit",
+        "title_open": "open Orbit",
+        "title_look": "look around in Orbit",
+        "title_who": "who is online in Orbit",
+        "title_credits": "credits in Orbit",
+        "title_connect": "connect to Orbit",
+
+        "job_pilot": "Pilot",
+        "job_engineer": "Engineer",
+        "job_trader": "Trader",
+        "job_scientist": "Scientist",
+        "job_security": "Security officer",
+
+        "status_idle": "Not connected.",
+        "status_connecting": "Connecting to Orbit...",
+        "status_offline": "Orbit is offline. Trying again in {seconds} seconds.",
+        "status_online": "Connected to Orbit as {name}, {job}.",
+        "say_connecting": "Connecting to Orbit...",
+        "say_connected": "Connected to Orbit.",
+        "say_offline": "Orbit is offline. I'll keep trying.",
+        "say_disconnected": "Disconnected from Orbit.",
+        "err_address": "The server address must start with wss:// (or ws:// for this computer only). Check it in Preferences, Orbit.",
+        "err_no_name": "Choose a character name in Preferences, Orbit, first: 3 to 20 letters and digits.",
+        "fail_kicked": "An admin sent you off the station. Connect again later.",
+        "fail_replaced": "You're playing Orbit somewhere else, so this connection closed.",
+        "fail_banned": "You're banned from the Orbit station.",
+        "fail_other": "Orbit refused the connection ({code}).",
+        "nothing_yet": "Nothing has been said yet.",
+
+        "help": "Orbit's commands. Moving: go to the cantina, go dock, home (your cabin). Looking: look, look at Sari, look at earth (on the Observation Deck). Talking: say hello (or start with a quote mark), whisper Sari meet me on the deck, shout hello everyone. Gestures: smile, wave, laugh, nod, shrug, clap, cheer, sigh, bow, dance, hug Sari. You: who, inventory or credits, give Sari 50 credits, describe me followed by a few words. Work: work (engineers in Engineering, pilots at the Dock, traders anywhere), then type the reactor's numbers. Missions: missions, accept 1, take crates, complete, abandon mission. The market on the Promenade: prices, buy 2 coffee, sell all coffee. Orbit itself: connect, disconnect, repeat (the last message again). From Aruna, start with orbit: orbit go to the cantina.",
+
+        "window_title": "Orbit",
+        "lbl_messages": "Messages:",
+        "lbl_command": "Command:",
+        "lbl_status": "Status:",
+        "btn_connect": "&Connect",
+        "btn_disconnect": "&Disconnect",
+        "btn_help": "&Help",
+
+        "lbl_server": "Server address:",
+        "lbl_name": "Character name (for your first visit):",
+        "lbl_job": "Job (for your first visit):",
+        "chk_speak": "&Speak messages",
+        "chk_voices": "A different &voice for each player (Hariku Voice)",
+        "chk_ambience": "&Ambience while the Orbit window is open",
+        "lbl_volume": "Ambience volume:",
+        "chk_sounds": "S&ounds",
+        "note_character": "Your character on this server: {name}, {job}. The name and job boxes are only used the first time you join a server.",
+        "note_first": "The name (3 to 20 letters and digits) and the job are used the first time you join; after that, the server remembers your character.",
+        "note_voices": "Each player's words are read by one of Hariku Voice's voices of your language, always the same one for the same player. With fewer than two such voices, everything is read by your usual voice. Edge Voices, from the Extension Store, adds two Indonesian and many English voices (they send the text to Microsoft).",
+        "note_privacy": "Orbit connects only when you open it, press Connect or give it a command. The server keeps your character's name, job, description, credits and items, and a hash of a secret made on this computer (no password, no email). Chat is passed on to the players who hear it and is not stored."
+    }
+}

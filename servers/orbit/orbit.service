@@ -1,0 +1,23 @@
+# Orbit as a systemd *user* service (no sudo):
+#   mkdir -p ~/.config/systemd/user
+#   cp ~/orbit/orbit.service ~/.config/systemd/user/orbit.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now orbit
+#   journalctl --user -u orbit -f
+# "loginctl enable-linger" keeps user services running after you log out.
+
+[Unit]
+Description=Orbit, the Hariku multiplayer game server
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/orbit
+ExecStart=/usr/bin/python3 %h/orbit/orbit_server.py --config %h/orbit/config.json
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

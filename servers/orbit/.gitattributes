@@ -1,0 +1,3 @@
+# The server runs on Linux: keep Unix line endings in every checkout, so the
+# files can be copied to the VPS as they are (systemd reads orbit.service).
+* text=auto eol=lf

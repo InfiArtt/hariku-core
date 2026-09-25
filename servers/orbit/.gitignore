@@ -1,0 +1,6 @@
+# The server's own data and the local configuration: never committed.
+*.db
+*.db-wal
+*.db-shm
+config.json
+__pycache__/

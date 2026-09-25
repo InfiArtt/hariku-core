@@ -95,6 +95,7 @@ OFFICIAL_EXTENSION_IDS = {
     "voice_control",
     "timer_alarm",
     "world_trip",
+    "orbit",
     # add new official extension IDs here
 }
 
