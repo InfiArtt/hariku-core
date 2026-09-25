@@ -553,6 +553,56 @@ Aruna for it) pauses it until you resume it or restart Hariku. The microphone
 stays on your computer: nothing is saved or sent anywhere. A headset stops
 your screen reader's voice from reaching the microphone.
 
+TIMER & ALARM (EXTENSION)
+--------------------------
+With the Timer & Alarm extension (from the Extension Store; it needs Hariku
+2.9), you set alarms and timers by typing or saying them to Aruna, in English
+or Indonesian.
+
+Alarms. Say for example "alarm tomorrow at 6 AM", "set alarm tomorrow at 2
+for football", "wake me up at 5", "alarm besok jam 5 pagi" or "alarm setiap
+hari jam 5 sholat subuh". Aruna reads the alarm back with its day, its date
+and its time with AM or PM (in Indonesian: dini hari, pagi, siang, sore or
+malam), for example: Alarm "football", tomorrow, Saturday 26 September, at
+2:00 AM. Set it? Press Enter or say "yes" to set it. An hour said alone, such
+as "at 2", is read like this:
+
+  - With a day ("tomorrow at 2") or a repeat ("every day at 5"): the first
+    such hour on that day, 2:00 AM or 5:00 AM.
+  - With no day ("at 2"): the next 2 o'clock to come.
+  - "Wake me up" is always the morning.
+
+If that is not what you meant, say "no", then just the time again, for
+example "at 2 PM" or "jam 2 siang", and Aruna asks again. When you give no
+time ("alarm tomorrow"), Aruna asks for it instead of guessing. A time that
+has already passed today, said without a day, is set for tomorrow, and Aruna
+says so.
+
+Timers start at once: "timer 10 minutes", "timer tea 3 minutes", "set a timer
+for an hour and a half", "timer setengah jam", "hitung mundur 90 detik".
+Several can run at the same time.
+
+You can also say: "cancel the tea timer", "cancel all timers", "delete the
+football alarm" (Aruna asks first), "how long is left", "list my alarms".
+
+When an alarm or timer is due, it rings even when Hariku is hidden in the tray
+and during quiet hours: a sound, then what it is ("Alarm: football"), again
+every 10 seconds. It opens no window and doesn't move your focus. To stop it,
+press any key, or tell Aruna "stop". To snooze it, tell Aruna "snooze" or
+"snooze 10 minutes", even right after a key stopped it. If nobody stops it,
+it rings for 3 minutes (you can change this), and Hariku tells you what you
+missed when you next press a key. An alarm that came due while Hariku was
+closed is mentioned once when Hariku starts again. The Morning Briefing says
+today's alarms. If you use Hariku Voice for reminders, alarms are spoken with
+that voice too.
+
+In Preferences, Timer & Alarm, you find your alarms and timers (Delete or
+Remove deletes one, after asking), "Stop ringing", the alarm and timer sounds
+(Windows' own alarm sounds, with a Test button that plays 3 seconds), how long
+a ring lasts and how long a snooze is. The commands "Stop the ringing alarm or
+timer", "Snooze the alarm" and the others have no key by default; give them
+one in Input Gestures if you like. Everything stays on your computer.
+
 CLOSE BEHAVIOUR
 ----------------
 When you press the X button on the main window, Hariku's behaviour depends on
