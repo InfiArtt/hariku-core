@@ -1,14 +1,21 @@
 Version 2.10.0 (Core Update)
 ================================================================================
 - A new welcome. The first time Hariku starts, it introduces itself as your
-  new companion, polite, curious and a little formal, and its first task is
-  to get to know you. Choose your language (it switches at once), say your
-  name and what Hariku should call you, and from then on everything it says
-  uses that name: "It's a pleasure to meet you, Rafli.", "Now, where do you
-  live, Rafli?". Find your city and hear the time there and,
+  slightly nosy new friend and gets to know you. Choose your language (it
+  switches at once), say your name and what Hariku should call you, and from
+  then on everything it says uses that name: "Hey, Rafli! Finally, we
+  meet.", "So, Rafli, where do you live?". Find your city and hear the time there and,
   when you're online, the weather: "In Batam it's 14:20 now, mostly clear,
   31 degrees." Your city becomes your main place, Home. Tell Hariku your
   birthday if you like, and it wishes you a happy birthday on the day.
+- Hariku has personalities. How it talks follows what it calls you: call
+  yourself Princess and it answers like a loyal servant of the court, bro
+  and it's laid-back, babyy and it's sweet; any other name gets the cheeky
+  friend. You can also pick one yourself on the welcome's name page or in
+  Preferences, Profile ("How Hariku talks"): Cheeky friend, Sweet, Laid-back
+  bro, Royal or Polite. The welcome, Aruna's replies and the greeting when
+  Hariku starts all follow it; extensions can give each persona their own
+  words too (a text "key@sweet" in their language files).
 - The welcome introduces Aruna (Ctrl+Alt+Backspace, or the key you gave it):
   type "what time is it" or "jam berapa" right there, and Aruna answers.
 - It suggests a few extensions from the store, with a line about each:

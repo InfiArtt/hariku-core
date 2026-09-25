@@ -45,6 +45,7 @@ import core.extension_manager
 import core.hotkeys
 import core.i18n
 import core.onboarding as onboarding
+import core.persona
 import core.personal
 import core.places
 import core.sounds
@@ -271,6 +272,14 @@ class OnboardingDialog(wx.Dialog):
             panel, sizer, lambda: _("onb_nickname_label"),
             lambda: wx.TextCtrl(panel, value=self.answers.nickname))
         self.txt_nickname.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
+        # How Hariku talks (core.persona); "auto" follows the nickname.
+        self.persona_values = [value for value, _label in core.persona.choices()]
+        self.choice_persona = self._field(
+            panel, sizer, lambda: _("onb_persona_label"),
+            lambda: wx.Choice(panel, choices=[label for _v, label in core.persona.choices()]))
+        persona = self.answers.persona if self.answers.persona in self.persona_values \
+            else core.persona.AUTO
+        self.choice_persona.SetSelection(self.persona_values.index(persona))
         self._static(panel, sizer, lambda: _("onb_name_intro"))
         self.txt_name.Bind(wx.EVT_TEXT, self._on_name_text)
         self.txt_nickname.Bind(wx.EVT_TEXT, self._on_nickname_text)
@@ -371,6 +380,12 @@ class OnboardingDialog(wx.Dialog):
     def _nickname(self):
         return onboarding.nickname_for(self.txt_name.GetValue(), self.txt_nickname.GetValue())
 
+    def _persona(self):
+        """The persona setting chosen on the name page ("auto" or a persona)."""
+        sel = self.choice_persona.GetSelection()
+        return self.persona_values[sel] if 0 <= sel < len(self.persona_values) \
+            else core.persona.AUTO
+
     def _language(self):
         sel = self.choice_language.GetSelection()
         return self.language_codes[sel] if 0 <= sel < len(self.language_codes) else None
@@ -398,6 +413,9 @@ class OnboardingDialog(wx.Dialog):
         for i, month in enumerate(self._month_names()):
             if self.choice_month.GetString(i) != month:
                 self.choice_month.SetString(i, month)
+        for i, (_value, label) in enumerate(core.persona.choices()):
+            if self.choice_persona.GetString(i) != label:
+                self.choice_persona.SetString(i, label)
         _change(self.txt_chosen, self._chosen_text())
         self._show_ext_details()
         self._update_buttons()
@@ -554,6 +572,9 @@ class OnboardingDialog(wx.Dialog):
     def _reply_after(self, page):
         """What Hariku answers to the page being left, said at the top of the next."""
         if page == "name":
+            # From here on Hariku talks in the persona chosen (or the nickname's).
+            onboarding.use_persona(self._persona(), self.txt_name.GetValue(),
+                                   self.txt_nickname.GetValue())
             return onboarding.name_reply(self._nickname())
         if page == "where":
             place = self.city or self.main
@@ -846,7 +867,7 @@ class OnboardingDialog(wx.Dialog):
         return onboarding.Answers(
             language=self._language() or self.answers.language,
             name=self.txt_name.GetValue(), nickname=self.txt_nickname.GetValue(),
-            place=self.city, birthday=self._birthday(),
+            persona=self._persona(), place=self.city, birthday=self._birthday(),
             autostart=self.chk_autostart.GetValue(), greet=self.chk_greet.GetValue(),
             extensions=[o["id"] for o in self.chosen_extensions()])
 

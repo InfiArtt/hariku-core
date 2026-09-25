@@ -1160,6 +1160,19 @@ from core.i18n import get_translator, get_current_language, get_available_langua
 | `set_language(language_code)` | None | Change the active language and save to config. **Requires app restart** to take full effect. |
 | `use_language(language_code)` | `bool` | *(core 2.10)* Switch the language right away, without saving it and without a restart: translators look the language up on every call, so texts made from now on are in it, and the translations already loaded (extensions' too) stay. `False` for a language the core doesn't have. The welcome uses it when the user picks a language. |
 | `translations(key, domain="core")` | `list` | *(core 2.10)* Every language's text for `key`, for recognising a name the user may have saved in another language (the welcome finds a place called "Home" or "Rumah"). |
+| `get_persona()` | `str` | *(core 2.10)* How Hariku talks now: `playful` (the default), `sweet`, `bro`, `royal` or `polite`. `core.persona` chooses it from the user's setting and nickname; see Personas below. |
+
+#### Personas (core 2.10)
+
+Hariku talks in a persona: a cheeky friend by default, or sweet, laid-back ("bro"), royal or polite, chosen in Preferences, Profile or picked from the nickname ("Princess" gets the royal one). A persona is only words. When a persona is active, every translator looks a key up as `key@persona` first, then as `key`, so your language file can give a persona its own version of any text and leave the rest alone:
+
+```json
+"timer_done": "Your {name} timer is done.",
+"timer_done@royal": "Your {name} timer has run its course, as you commanded.",
+"timer_done@bro": "Yo, the {name} timer's done."
+```
+
+Keep the same `{placeholders}` as the plain text, and give every language the same persona keys. `playful` has no `@` texts of its own: it uses the plain ones.
 | `get_language_manifest(domain, language_code=None)` | `dict` | Returns the manifest dict for a specific language in a domain. If `language_code` is `None`, uses the current language. |
 | `format_date(date_obj, format_string)` | `str` | Formats a date using **translated** day and month names. Supports `%A` (full day), `%a` (short day), `%B` (full month), `%b` (short month), `%d`, `%m`, `%Y`. |
 | `apply_rtl_layout(window)` | None | Checks the current language manifest for the `rtl` flag and applies Right-To-Left layout mirroring to a `wx.Window`. Call this in your dialog's `__init__` if you support RTL languages. |

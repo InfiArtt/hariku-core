@@ -242,7 +242,7 @@ def test_other_keys_pass_through(cb):
 def test_not_understood_and_empty(cb):
     bar = make_bar(cb)
     type_and_enter(bar, "asdf qwerty")
-    assert bar.said == ["Maaf, itu belum ada di kamusku. Coba dengan kata lain?"] and not bar._closed
+    assert bar.said == ["Hmm, itu belum masuk kamusku. Coba pakai kata lain?"] and not bar._closed
     type_and_enter(bar, "   ")
     assert bar.said[-1].startswith("Ketik atau ucapkan perintah")
 
@@ -313,7 +313,7 @@ def test_offer_the_quick_reminder(cb, monkeypatch):
     bar = make_bar(cb)
     bar._decide = lambda text: core.commands.decide(text, [], parse=lambda t: result)
     type_and_enter(bar, "rapat jam")
-    assert bar.said[-1] == "Perintah itu belum ada di kamusku. Mau kujadikan pengingat cepat?"
+    assert bar.said[-1] == "Itu belum masuk kamusku. Mau kujadikan pengingat cepat saja?"
     bar._on_enter(None)
     assert opened == ["rapat jam"] and bar._closed
     assert cb.focus == []                  # the quick reminder takes the focus itself
@@ -760,7 +760,7 @@ def test_a_failing_intent_says_so(cb, intents):
     intents(["catat {text}"], boom)
     bar = make_bar(cb, keep_open=True)
     type_and_enter(bar, "catat beli gula")
-    assert bar.said == ["Maaf, perintah itu gagal kujalankan."] and not bar._closed
+    assert bar.said == ["Waduh, perintah itu gagal kujalankan."] and not bar._closed
     bar.close()
 
 
@@ -843,7 +843,7 @@ def background_bar(cb, **kwargs):
 def test_in_the_background_aruna_closes_once_it_has_answered(cb):
     bar = background_bar(cb, keep_open=True)
     bar.submit("blablabla", source="voice")          # not understood: answered at once
-    assert bar.said == ["Maaf, itu belum ada di kamusku. Coba dengan kata lain?"] and not bar._closed
+    assert bar.said == ["Hmm, itu belum masuk kamusku. Coba pakai kata lain?"] and not bar._closed
     bar._finish_background()                         # BACKGROUND_CLOSE_MS later
     assert bar._closed and cb.focus == []            # the focus never left the user's window
 

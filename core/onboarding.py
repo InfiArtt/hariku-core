@@ -13,8 +13,10 @@ be tested. The window is ui/onboarding_dialog.py.
 
 Eight pages, one conversation:
   1. hello, and the language (it switches at once: core.i18n.use_language);
-  2. the user's name, and what to call them (default: the first word of the
-     name). From here on everything Hariku says uses that nickname;
+  2. the user's name, what to call them (default: the first word of the
+     name) and how Hariku talks (core.persona: "auto" follows the nickname,
+     so "Princess" gets the royal persona). From here on everything Hariku
+     says uses that nickname, in that persona;
   3. where they live: a city search (Open-Meteo), then the local time there
      and, online, the weather, in words;
   4. their birthday (day and month, the year optional);
@@ -57,6 +59,7 @@ import core.commands
 import core.extension_catalog as catalog
 import core.extension_manager
 import core.i18n
+import core.persona
 import core.personal
 import core.place_search
 import core.places
@@ -117,14 +120,15 @@ class Answers:
     `birthday` is (day, month, year or None) or None; `extensions` the ids of
     the store extensions to install at Finish."""
 
-    FIELDS = ("language", "name", "nickname", "place", "birthday", "autostart", "greet",
-              "extensions")
+    FIELDS = ("language", "name", "nickname", "persona", "place", "birthday", "autostart",
+              "greet", "extensions")
 
-    def __init__(self, language="en", name="", nickname="", place=None, birthday=None,
-                 autostart=False, greet=True, extensions=()):
+    def __init__(self, language="en", name="", nickname="", persona=core.persona.AUTO,
+                 place=None, birthday=None, autostart=False, greet=True, extensions=()):
         self.language = language
         self.name = name
         self.nickname = nickname
+        self.persona = persona
         self.place = dict(place) if place else None
         self.birthday = tuple(birthday) if birthday else None
         self.autostart = bool(autostart)
@@ -225,6 +229,7 @@ def prefill(first_run=False, windows_tags=None):
     name = profile["name"]
     return Answers(language=language, name=name,
                    nickname=profile["nickname"] or first_word(name),
+                   persona=core.persona.get_setting(),
                    birthday=profile["birthday"],
                    autostart=config.get(AUTOSTART_KEY) is True,
                    greet=profile["greet_on_startup"])
@@ -247,8 +252,14 @@ def main_place():
 # ------------------------------------------------------------
 
 def name_reply(nickname):
-    """ "Senang kenalan, Rafli!" """
+    """ "Halo, Rafli! Akhirnya kita kenalan juga." (in the persona talked in) """
     return personal(_("onb_name_reply", name=nickname))
+
+
+def use_persona(setting, name, nickname):
+    """Talk in the persona the name page chose from here on (core.persona);
+    returns it. Saved only at Finish; Cancel goes back to the saved one."""
+    return core.persona.apply(setting, nickname_for(name, nickname))
 
 
 def question(page, nickname="", reply=""):
@@ -579,7 +590,7 @@ def save_place(candidate, name=None):
 def save(answers, first_run=False, set_autostart=None):
     """Write the answers where they belong; a blank name, nickname or
     birthday, or no city chosen, keeps what is saved. Returns what changed
-    ({"name", "place", "birthday", "greet", "autostart", "language",
+    ({"name", "persona", "place", "birthday", "greet", "autostart", "language",
     "completed", "errors"}); a part that fails is logged and the rest is
     still saved."""
     set_autostart = set_autostart or core.api.set_autostart
@@ -611,6 +622,12 @@ def save(answers, first_run=False, set_autostart=None):
     if answers.greet != profile["greet_on_startup"]:
         core.personal.set_startup_greeting(answers.greet)
         done["greet"] = answers.greet
+
+    # Saved when changed, and applied again either way: the nickname may pick
+    # another persona.
+    if answers.persona != core.persona.get_setting():
+        done["persona"] = answers.persona
+    core.persona.save_setting(answers.persona)
 
     if answers.place:
         try:
@@ -650,6 +667,7 @@ def cancel(first_run=False, shown_language=None, opened_language=None):
     Returns the language Hariku goes on in: the saved one, else the one
     Hariku had when the welcome opened (`opened_language`), or on a first run
     without a saved one, the one shown."""
+    core.persona.apply()     # the one saved, not the one the name page chose
     config = _config()
     saved = config.get(LANGUAGE_KEY) if isinstance(config.get(LANGUAGE_KEY), str) else None
     if not first_run:

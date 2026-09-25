@@ -114,6 +114,9 @@ class HarikuApp(wx.App):
         import core.i18n
         core.i18n.init()
         _ = core.i18n.get_translator("core")
+        # Core 2.10: how Hariku talks (a persona), from the setting and the nickname.
+        import core.persona
+        core.persona.apply()
 
         import core.core_panels
         core.core_panels.register()

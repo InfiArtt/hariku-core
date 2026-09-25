@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import wx
 import core.api
+import core.persona
 import core.personal
 import core.quick_reminder
 import core.ui_scale
@@ -391,6 +392,14 @@ class ProfileSettingsPanel(_ScrollingPage):
         self.txt_nickname = _labeled(self, vbox, _("profile_lbl_nickname"),
                                      lambda: wx.TextCtrl(self, value=profile["nickname"]))
         self.txt_nickname.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
+        # How Hariku talks (core 2.10): "follow what I call you", or a persona.
+        self._personas = core.persona.choices()
+        self.choice_persona = _labeled(
+            self, vbox, _("profile_lbl_persona"),
+            lambda: wx.Choice(self, choices=[label for _value, label in self._personas]))
+        values = [value for value, _label in self._personas]
+        self._loaded_persona = core.persona.get_setting()
+        self.choice_persona.SetSelection(values.index(self._loaded_persona))
         self.txt_title = _labeled(self, vbox, _("profile_lbl_title"),
                                   lambda: wx.TextCtrl(self, value=profile["title"]))
         self.txt_title.SetMaxLength(core.personal.MAX_VALUE_LENGTH)
@@ -599,6 +608,11 @@ class ProfileSettingsPanel(_ScrollingPage):
             self._loaded_title = title
         except core.personal.ProfileError as e:
             wx.MessageBox(str(e), _("error"), wx.OK | wx.ICON_ERROR, self)
+        # Saved, or at least applied again: the nickname may pick another persona.
+        sel = self.choice_persona.GetSelection()
+        persona = self._personas[sel][0] if 0 <= sel < len(self._personas) else core.persona.AUTO
+        core.persona.save_setting(persona)
+        self._loaded_persona = persona
         core.personal.set_startup_greeting(self.chk_greet.GetValue())
         greeting = (self.txt_greeting.GetValue().strip(), self.chk_boot_only.GetValue())
         if greeting != self._loaded_greeting:
