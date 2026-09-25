@@ -47,7 +47,6 @@ admins' "economy" report), in the database's meta table.
 import math
 
 import orbit_safety
-from orbit_lang import pick
 
 TRADE_FEES = {"trader": (0.02, 0.04)}    # (added when buying, taken when selling)
 PUBLIC_FEES = (0.10, 0.12)

@@ -46,6 +46,7 @@ import re
 import time
 
 import orbit_earth
+import orbit_hunt
 import orbit_lang
 import orbit_safety
 import orbit_verbs
@@ -53,6 +54,7 @@ from orbit_admin import AdminMixin
 from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
 from orbit_events import EventsMixin
+from orbit_hunt import HuntMixin
 from orbit_items import ItemsMixin
 from orbit_lang import pick
 from orbit_local import LocalMixin
@@ -119,6 +121,7 @@ class Session:
         self.away = False         # the player's window is hidden and they've been quiet
         self.blackjack = None     # a hand at the casino's card table
         self.earned = None        # the achievements they have (read when first needed)
+        self.hunt_test = False    # an admin playing the hunt without it counting
         self.chat = orbit_safety.TokenBucket(config["chat_rate"], config["chat_burst"], clock)
         self.shout = orbit_safety.TokenBucket(1.0 / max(1, config["shout_seconds"]), 1, clock)
         self.econ = orbit_safety.TokenBucket(config["econ_rate"], config["econ_burst"], clock)
@@ -133,11 +136,11 @@ class Session:
 
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-          TravelMixin, LocalMixin, EventsMixin, AdminMixin)
+          TravelMixin, LocalMixin, EventsMixin, HuntMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
-           TravelMixin, LocalMixin, EventsMixin, AdminMixin):
+           TravelMixin, LocalMixin, EventsMixin, HuntMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -164,6 +167,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.init_travel()
         self.init_events()
         self.market.event_factor = self.event_price_factor
+        self.init_hunt()
 
     # ------------------------------------------------------------------ helpers
 
@@ -557,6 +561,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                                      people=[self._person(lang, o) for o in sorted(others, key=lambda o: o.key)]))
         elif full and not loc.get("private"):
             parts.append(self.render(lang, "look_alone"))
+        mark = self.hunt_mark(session)
+        if mark:
+            parts.append(mark)
         parts.append(self.exits_text(session))
         if loc.get("airless"):
             parts.append(self.air_text(session))
@@ -573,6 +580,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             session.visited.add(session.char["location"])
             self._send(session, "room", text=self.look_text(session, full=True),
                        extra=self._where(session))
+            return
+        if orbit_hunt.normalize(target) in orbit_hunt.LOOK_FOR_CLUES:
+            self.cmd_investigate(session, message)          # "look for clues" (both clients send look)
             return
         d = self.world.find_direction(target, lang)
         if d:
@@ -939,6 +949,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         "progress": ("progress", "kemajuan", "prestasi", "achievements", "leaderboard", "leaderboards",
                      "papan", "skor", "score", "scores"),
         "events": ("events", "event", "acara", "peristiwa", "pesta", "party", "parties"),
+        "hunt": ("hunt", "perburuan", "berburu", "riddles", "teka-teki", "tekateki", "nada", "chord"),
         "admin": ("admin",),
     }
 
@@ -981,6 +992,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_lottery(now)
         self.tick_ships(now)
         self.tick_events(now)
+        self.tick_hunt(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):

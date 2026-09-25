@@ -1,0 +1,97 @@
+{
+  "_note": "A tiny, obviously fake demo season, for trying the hunt out and for the tests. Its answers are 'orbit' and '1234'. The real seasons live only on the server (see orbit_hunt_tool.py).",
+  "season": "demo",
+  "title": {
+    "en": "The Lost Chord (a demo)",
+    "id": "Nada yang Hilang (demo)"
+  },
+  "intro": {
+    "en": "This is only a demo of the hunt, with two easy riddles.",
+    "id": "Ini hanya contoh perburuan, dengan dua teka-teki mudah."
+  },
+  "prize": {
+    "first": 1000,
+    "others": [
+      500
+    ],
+    "rest": 100,
+    "title": "title_chord_keeper"
+  },
+  "rival": {
+    "name": {
+      "en": "Meridian Grey",
+      "id": "Meridian Kelabu"
+    },
+    "hours": 24
+  },
+  "stages": [
+    {
+      "id": "d1",
+      "riddle": {
+        "en": "What is this game called? Investigate at the Dock.",
+        "id": "Apa nama permainan ini? Selidiki di Dermaga."
+      },
+      "found": {
+        "en": "Right: the first demo note.",
+        "id": "Benar: nada demo pertama."
+      },
+      "clues": [
+        {
+          "room": "dock",
+          "text": {
+            "en": "A sticker on the schedule board: the answer is orbit.",
+            "id": "Stiker di papan jadwal: jawabannya orbit."
+          }
+        }
+      ],
+      "hints": [
+        {
+          "en": "It's the name of the game.",
+          "id": "Itu nama permainannya."
+        }
+      ],
+      "answers": [
+        "82491175e8f5b62801a419660573f2ac08e86d1becb7d41f07fd2fb30857c8ab"
+      ]
+    },
+    {
+      "id": "d2",
+      "riddle": {
+        "en": "Take a scanner to the Science Lab, investigate, and give the tones you hear as digits.",
+        "id": "Bawa pemindai ke Laboratorium Sains, selidiki, dan sebutkan nada yang kamu dengar sebagai angka."
+      },
+      "found": {
+        "en": "Right: the second demo note.",
+        "id": "Benar: nada demo kedua."
+      },
+      "clues": [
+        {
+          "room": "science_lab",
+          "requires": {
+            "thing": "scanner"
+          },
+          "text": {
+            "en": "Your scanner hums four tones.",
+            "id": "Pemindaimu mendengungkan empat nada."
+          },
+          "tones": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "hints": [
+        {
+          "en": "Low to high.",
+          "id": "Dari rendah ke tinggi."
+        }
+      ],
+      "answers": [
+        "616bf70b487b9a4a28fca171926b89c9c0c344a8c62f6f6277383c77d90a9a7f"
+      ]
+    }
+  ],
+  "salt": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"
+}

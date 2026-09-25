@@ -151,6 +151,19 @@ VERBS = [
     (("approach",), "face"),
     (("gig",), "gig"), (("ambil", "gig"), "gig"), (("take", "a", "gig"), "gig"), (("kurir",), "gig"),
     (("courier", "job"), "gig"), (("antar", "paket"), "gig"), (("delivery",), "gig"),
+    # the hunt
+    (("perburuan",), "hunt"), (("hunt",), "hunt"), (("the", "hunt"), "hunt"), (("nada", "yang", "hilang"), "hunt"),
+    (("lost", "chord"), "hunt"), (("the", "lost", "chord"), "hunt"),
+    (("selidiki",), "investigate"), (("investigate",), "investigate"), (("telusuri",), "investigate"),
+    (("look", "for", "clues"), "investigate"), (("cari", "petunjuk"), "investigate"),
+    (("pecahkan",), "solve"), (("solve",), "solve"), (("jawaban",), "solve"), (("my", "answer", "is"), "solve"),
+    (("jawabanku",), "solve"),
+    (("papan", "pemburu"), "hunt_board"), (("hunt", "board"), "hunt_board"), (("hunters",), "hunt_board"),
+    (("para", "pemburu"), "hunt_board"),
+    (("status", "perburuan"), "hunt_status"), (("hunt", "status"), "hunt_status"),
+    (("musim", "baru"), "new_season"), (("new", "season"), "new_season"),
+    (("umumkan", "petunjuk"), "release_hint"), (("release", "hint"), "release_hint"),
+    (("uji", "perburuan"), "hunt_test"), (("hunt", "test"), "hunt_test"),
     # events
     (("acara",), "events"), (("events",), "events"), (("event",), "events"), (("agenda",), "events"),
     (("daftar", "acara"), "events"), (("what's", "on"), "events"), (("whats", "on"), "events"),
@@ -238,7 +251,7 @@ VERBS.sort(key=lambda entry: -len(entry[0]))
 
 ADMIN_OPS = {"grant", "take_credits", "give_item", "economy", "set_price", "reset_streak", "goto",
              "invisible", "transfers", "revoke", "transfer_for", "admin_log", "event_start", "event_stop",
-             "event_schedule"}
+             "event_schedule", "hunt_status", "new_season", "release_hint", "hunt_test"}
 BOARD_WORDS = {"kancil", "shuttle", "pesawat", "ulang-alik"}
 _ALL_WORDS = {"all", "semua", "semuanya", "everything"}
 
@@ -323,7 +336,7 @@ def parse(text, lang="en", find_direction=None):
     if meaning in ("map", "where", "compass", "scan", "board", "daily", "rank", "harvest", "water",
                    "farm", "mine", "collect", "transfer", "friends", "status", "casino", "hit", "stand",
                    "lottery", "decline", "cancel_offer", "worlds", "disembark", "cargo", "gig", "events",
-                   "join", "listen", "catch", "search", "watch", "party"):
+                   "join", "listen", "catch", "search", "watch", "party", "hunt", "investigate", "hunt_board"):
         if meaning == "board" and used == 1 and words[0] == "naik" and rest:
             return None
         return {"c": meaning}
@@ -395,6 +408,8 @@ def parse(text, lang="en", find_direction=None):
         return {"c": meaning, "a": rest}
     if meaning == "fix":
         return {"c": "work"}
+    if meaning == "solve":
+        return {"c": "solve", "a": rest}
     if meaning == "embark":
         name, _more = _name_and_rest(text, tokens, used)
         return {"c": "embark", "to": name} if name else {"c": "embark"}
@@ -418,7 +433,12 @@ def parse(text, lang="en", find_direction=None):
 
 def _admin(op, text, tokens, used):
     message = {"c": "admin", "op": op}
-    if op in ("economy", "transfers", "admin_log", "invisible"):
+    if op in ("economy", "transfers", "admin_log", "invisible", "hunt_status", "new_season", "hunt_test"):
+        return message
+    if op == "release_hint":
+        numbers = [_number(t[2]) for t in tokens[used:] if _number(t[2]) is not None]
+        if numbers:
+            message["n"] = numbers[0]
         return message
     if op in ("goto", "event_start", "event_stop", "event_schedule"):
         message["a"] = _rest(text, tokens, used)

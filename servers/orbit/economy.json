@@ -1406,6 +1406,23 @@
       "slot": "title",
       "pawn": false,
       "effects": {"title": {"en": "Globetrotter", "id": "Penjelajah Dunia"}}
+    },
+    "title_chord_keeper": {
+      "type": "title",
+      "one": {"en": "title 'Keeper of the Lost Chord'", "id": "gelar 'Penjaga Nada yang Hilang'"},
+      "many": {"en": "titles 'Keeper of the Lost Chord'", "id": "gelar 'Penjaga Nada yang Hilang'"},
+      "names": {
+        "en": ["keeper of the lost chord", "title keeper of the lost chord", "chord keeper"],
+        "id": ["penjaga nada yang hilang", "gelar penjaga nada yang hilang"]
+      },
+      "desc": {
+        "en": "A title held by whoever first found a season's Lost Chord. Wear it to show it.",
+        "id": "Gelar milik siapa pun yang pertama menemukan Nada yang Hilang dalam satu musim. Pakai untuk menampilkannya."
+      },
+      "unique": true,
+      "slot": "title",
+      "pawn": false,
+      "effects": {"title": {"en": "Keeper of the Lost Chord", "id": "Penjaga Nada yang Hilang"}}
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10},

@@ -107,6 +107,14 @@ PHRASEBOOK = [
     ("adakan pesta", "id", "party"), ("host a party", "en", "party"), ("perbaiki drone", "id", "work"),
     ("fix drone", "en", "work"), ("mulai acara hujan meteor", "id", "admin"), ("stop event", "en", "admin"),
     ("jadwalkan acara 30 Pesta", "id", "admin"),
+    # the hunt (stage 5)
+    ("perburuan", "id", "hunt"), ("hunt", "en", "hunt"), ("nada yang hilang", "id", "hunt"),
+    ("the lost chord", "en", "hunt"), ("selidiki", "id", "investigate"), ("investigate", "en", "investigate"),
+    ("cari petunjuk", "id", "investigate"), ("look for clues", "en", "look"), ("pecahkan 1234", "id", "solve"),
+    ("solve orbit", "en", "solve"), ("jawaban bintang", "id", "solve"), ("my answer is 42", "en", "solve"),
+    ("papan pemburu", "id", "hunt_board"), ("hunt board", "en", "hunt_board"),
+    ("status perburuan", "id", "admin"), ("hunt status", "en", "admin"), ("musim baru", "id", "admin"),
+    ("umumkan petunjuk 2", "id", "admin"), ("release hint 2", "en", "admin"), ("uji perburuan", "id", "admin"),
 ]
 # Only the current client: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

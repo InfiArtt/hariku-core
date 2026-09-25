@@ -67,6 +67,7 @@ DEFAULTS = {
     "economy": "economy.json",
     "texts": "texts.json",
     "words": "words.json",
+    "hunt": "",                   # the hunt's season file (private: never in the repository)
     "max_connections": 200,
     "max_per_ip": 8,
     "max_message": 4096,
@@ -113,7 +114,7 @@ def load_config(path=None, overrides=None):
                 config["game"].update(value)
             else:
                 config[key] = value
-    for key in ("database", "world", "economy", "texts", "words"):
+    for key in ("database", "world", "economy", "texts", "words", "hunt"):
         value = config.get(key)
         if value and value != ":memory:" and not os.path.isabs(value):
             candidate = os.path.join(base, value)
@@ -291,7 +292,10 @@ class OrbitServer:
             words = []
             if config.get("words") and os.path.exists(config["words"]):
                 words = orbit_safety.load_words(config["words"])
-            game = orbit_game.Game(world, self.store, texts, config.get("game"),
+            game_config = dict(config.get("game") or {})
+            if config.get("hunt"):
+                game_config.setdefault("hunt_path", config["hunt"])
+            game = orbit_game.Game(world, self.store, texts, game_config,
                                    orbit_safety.WordFilter(words))
         self.game = game
         self.connections = set()

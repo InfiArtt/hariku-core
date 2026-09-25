@@ -24,8 +24,9 @@ Chat is never stored here.
 Other tables: companions (a pet, and later other companions, with its
 owners), ships (each player's own: its model and name, where it's docked or
 where it's flying, its fuel and cargo), events (each one that ran or is
-scheduled, its state and how it ended) and who took part in them,
-achievements, lottery tickets,
+scheduled, its state and how it ended) and who took part in them, the
+hunt's progress (each character's stage in each season, its tries and its
+wait after a wrong answer), achievements, lottery tickets,
 transfer codes (only a hash, for 10 minutes), secrets that no longer work (moved to another computer, or revoked
 by an admin, so the old computer is told why), the transfers log, the
 admins' log, bans by address (a salted hash), and "meta" for server values
@@ -34,7 +35,7 @@ lottery's pot, the salt).
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is
-saved next to it (orbit.db.before-v4.bak); columns and tables are only ever
+saved next to it (orbit.db.before-v5.bak); columns and tables are only ever
 added, never dropped.
 
 Everything is written at once (autocommit, or one transaction for things
@@ -54,7 +55,7 @@ logger = logging.getLogger("orbit.store")
 
 HASH_ITERATIONS = 60_000
 SECRET_MIN_LENGTH = 32          # hex characters: 128 bits at least
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # The schema of Orbit 1.0 (version 0). Migrations add to it.
 SCHEMA = """
@@ -200,6 +201,21 @@ CREATE TABLE IF NOT EXISTS event_players (
 );
 """
 
+# Version 5 (Orbit 1.1, the hunt).
+V5_TABLES = """
+CREATE TABLE IF NOT EXISTS hunt_progress (
+    season TEXT NOT NULL,
+    char_id INTEGER NOT NULL,
+    stage INTEGER NOT NULL DEFAULT 0,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    wrong INTEGER NOT NULL DEFAULT 0,
+    cooldown REAL NOT NULL DEFAULT 0,
+    finished REAL NOT NULL DEFAULT 0,
+    place INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (season, char_id)
+);
+"""
+
 BASE_FIELDS = ("id", "name", "name_key", "secret_hash", "job", "credits", "location", "description",
                "inventory", "stats", "banned", "muted_until", "created", "last_seen")
 FIELDS = BASE_FIELDS + tuple(name for name, _decl in V1_COLUMNS + V2_COLUMNS)
@@ -271,6 +287,8 @@ class Store:
                 self._migrate_3()
             if version < 4:
                 self._migrate_4()
+            if version < 5:
+                self._migrate_5()
             self.db.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         if had_data:
             self.migrated_from = version
@@ -329,6 +347,11 @@ class Store:
 
     def _migrate_4(self):
         for statement in V4_TABLES.split(";"):
+            if statement.strip():
+                self.db.execute(statement)
+
+    def _migrate_5(self):
+        for statement in V5_TABLES.split(";"):
             if statement.strip():
                 self.db.execute(statement)
 
@@ -718,6 +741,41 @@ class Store:
         rows = self.db.execute("SELECT char_id, points FROM event_players WHERE event_id = ? "
                                "ORDER BY points DESC, char_id", (event_id,)).fetchall()
         return [(row["char_id"], int(row["points"])) for row in rows]
+
+    # --- the hunt -----------------------------------------------------------------------------
+
+    def hunt_progress(self, season, char_id):
+        row = self.db.execute("SELECT stage, attempts, wrong, cooldown, finished, place FROM hunt_progress "
+                              "WHERE season = ? AND char_id = ?", (str(season), char_id)).fetchone()
+        if row is None:
+            return {"stage": 0, "attempts": 0, "wrong": 0, "cooldown": 0.0, "finished": 0.0, "place": 0}
+        return dict(row)
+
+    def save_hunt_progress(self, season, char_id, progress):
+        self.db.execute(
+            "INSERT INTO hunt_progress (season, char_id, stage, attempts, wrong, cooldown, finished, place) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(season, char_id) DO UPDATE SET stage = excluded.stage, "
+            "attempts = excluded.attempts, wrong = excluded.wrong, cooldown = excluded.cooldown, "
+            "finished = excluded.finished, place = excluded.place",
+            (str(season), char_id, int(progress["stage"]), int(progress["attempts"]), int(progress["wrong"]),
+             float(progress["cooldown"]), float(progress["finished"]), int(progress["place"])))
+
+    def hunt_board(self, season, limit=10, exclude=()):
+        """[(name, stage, finished, place)]: the finishers by place, then the furthest."""
+        skip, keys = self._without(exclude)
+        skip = skip.replace("name_key", "c.name_key")
+        rows = self.db.execute(
+            "SELECT c.name, h.stage, h.finished, h.place FROM hunt_progress h JOIN characters c ON c.id = h.char_id "
+            f"WHERE h.season = ? AND c.banned = 0 AND (h.stage > 0 OR h.finished > 0){skip} "
+            "ORDER BY h.finished = 0, h.place, h.stage DESC, c.name_key LIMIT ?",
+            (str(season),) + keys + (int(limit),)).fetchall()
+        return [(row["name"], int(row["stage"]), float(row["finished"]), int(row["place"])) for row in rows]
+
+    def hunt_players(self, season):
+        rows = self.db.execute(
+            "SELECT c.name, h.* FROM hunt_progress h JOIN characters c ON c.id = h.char_id WHERE h.season = ? "
+            "ORDER BY h.stage DESC, c.name_key", (str(season),)).fetchall()
+        return [dict(row) for row in rows]
 
     # --- bans by address (only a hash of it is kept) ------------------------------------
 

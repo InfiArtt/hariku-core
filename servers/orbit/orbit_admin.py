@@ -150,7 +150,9 @@ class AdminMixin:
                    "admin_log": self._admin_log,
                    "event_start": lambda s, m: self.admin_event_start(s, self._arg(m)),
                    "event_stop": lambda s, m: self.admin_event_stop(s, self._arg(m)),
-                   "event_schedule": lambda s, m: self.admin_event_schedule(s, self._arg(m))}.get(op)
+                   "event_schedule": lambda s, m: self.admin_event_schedule(s, self._arg(m)),
+                   "hunt_status": self.admin_hunt_status, "new_season": self.admin_new_season,
+                   "release_hint": self.admin_release_hint, "hunt_test": self.admin_hunt_test}.get(op)
         if handler is not None:
             handler(session, message)
             return
@@ -174,6 +176,11 @@ class AdminMixin:
 
     def _admin_announce(self, session, message):
         text = orbit_safety.tidy(self._arg(message), self.config["say_limit"])
+        words = text.lower().split()
+        if len(words) == 2 and words[0] in ("petunjuk", "hint") and words[1].isdigit():
+            # "umumkan petunjuk 2": Orbit 1.0 reads it as announce; it's the hunt's hint.
+            self.admin_release_hint(session, {"n": int(words[1])})
+            return
         if not text:
             self._error(session, "say_what")
             return
