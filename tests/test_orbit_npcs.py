@@ -281,7 +281,7 @@ def test_residents_keep_their_daily_schedule(make_game, clock):
     assert game.npcs["laras"]["room"] == "food_court" and game.npcs["jali"]["room"] == "cantina"
     at(clock, 3, 0)
     early = make_game()
-    assert early.npcs["gino"]["room"] is None and early.npcs["laras"]["room"] == "archive"
+    assert early.npcs["gino"]["room"] is None and early.npcs["laras"]["room"] == "reading_room"   # 1.6: reading
 
 
 def test_a_resident_walks_to_the_next_place_and_both_rooms_hear_it(make_game, clock):

@@ -583,6 +583,11 @@ class WorkMixin:
         if ferry is not None:
             self.run(session, {"c": "ferry", "a": ferry})    # "take the ferry to the Moon" (Orbit 1.0: take)
             return
+        if orbit_safety.name_key(text) in ("up", "to my feet"):
+            self.run(session, {"c": "stand_up"})     # "get up" (read by a client as take)
+            return
+        if self.pick_up(session, text, self._count(message, default=None)):
+            return                                   # something lying here (orbit_floor)
         item = self.world.find_item(text)
         if item is None:
             if self.world.find_good(text):

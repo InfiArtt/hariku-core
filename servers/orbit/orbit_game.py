@@ -19,6 +19,11 @@ fakes. The rest of the game is in mixins, one file each:
                   daily bonus
   orbit_econ.py   the markets, the farm, mining and salvage, your profile
   orbit_here.py   "x here": what can be done in this room, and with someone or something
+  orbit_social.py postures (sit, lie, sleep, stand), following and leading, exits and
+                  peering, gestures in your own words, dice, the time, being away,
+                  the rooms' own lines
+  orbit_floor.py  things put down, picked up, put on a table, thrown and caught
+  orbit_pastimes.py  the jukebox and the fishing pond
   orbit_admin.py  moving a character to another computer; admin commands
 
 A connection ("conn") is anything with send(dict), close(code, reason), a
@@ -53,11 +58,13 @@ import orbit_lang
 import orbit_npcs
 import orbit_safety
 import orbit_verbs
+import orbit_world
 from orbit_admin import AdminMixin
 from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
 from orbit_family import FamilyMixin
 from orbit_events import EventsMixin
+from orbit_floor import FloorMixin
 from orbit_here import HERE_WORDS, HereMixin
 from orbit_hunt import HuntMixin
 from orbit_arcade import ArcadeMixin, client_version
@@ -68,8 +75,10 @@ from orbit_lang import pick
 from orbit_local import LocalMixin
 from orbit_nav import NavMixin
 from orbit_npcs import NpcsMixin
+from orbit_pastimes import PastimesMixin
 from orbit_pets import PetsMixin
 from orbit_progress import ProgressMixin
+from orbit_social import SocialMixin
 from orbit_trade import TradeMixin
 from orbit_travel import TravelMixin
 from orbit_weddings import WeddingsMixin
@@ -119,7 +128,7 @@ TALK_KINDS = ("say", "whisper", "shout")
 LINES_CLIENT = (1, 6)
 # What's new, said once to a returning player: each version's note, and the notes since theirs.
 NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"), ("1.4", "whats_new_14"),
-        ("1.5", "whats_new_15"))
+        ("1.5", "whats_new_15"), ("1.6", "whats_new_16"))
 SEEN_VERSION = NEWS[-1][0]
 
 
@@ -143,6 +152,11 @@ class Session:
         self.guide = None         # the way being guided, step by step: {"dest", "path"} (orbit_nav)
         self.guide_told = False   # the guide's how-to said once this session
         self.client = (0, 0)      # the client's version ("Hariku Orbit 1.1": (1, 1))
+        self.pose = None          # sitting, lying or asleep (orbit_social); None: standing
+        self.afk = None           # away from the keyboard: the note left ("" for none); None: here
+        self.leader = None        # the name key of the player this one follows (orbit_social)
+        self.fishing = None       # a line in the pond (orbit_pastimes)
+        self.last_command = None  # what "again" repeats
         self.chat = orbit_safety.TokenBucket(config["chat_rate"], config["chat_burst"], clock)
         self.shout = orbit_safety.TokenBucket(1.0 / max(1, config["shout_seconds"]), 1, clock)
         self.econ = orbit_safety.TokenBucket(config["econ_rate"], config["econ_burst"], clock)
@@ -158,12 +172,12 @@ class Session:
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-          PetsMixin, FamilyMixin, WeddingsMixin, HereMixin, AdminMixin)
+          PetsMixin, FamilyMixin, WeddingsMixin, SocialMixin, FloorMixin, PastimesMixin, HereMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
            TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-           PetsMixin, FamilyMixin, WeddingsMixin, HereMixin, AdminMixin):
+           PetsMixin, FamilyMixin, WeddingsMixin, SocialMixin, FloorMixin, PastimesMixin, HereMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -202,6 +216,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.init_family()
         self.init_weddings()
         self.init_npcs()
+        self.init_social()
+        self.init_floor()
+        self.init_pastimes()
 
     # ------------------------------------------------------------------ helpers
 
@@ -515,6 +532,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.forget_crew_invites(session)
         self.forget_duels(session)
         self.forget_family_asks(session)
+        self.forget_following(session)
+        self.forget_airborne(session)
+        session.pose = session.afk = session.fishing = None
         self.sessions.pop(session.key, None)
         self._save(session)
         if not self._loc(session.char).get("private") and not session.invisible:
@@ -536,7 +556,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             return
         if session.away and command not in ("away", "bye", "status"):
             session.away = False              # any command: back from being away
+        if command not in ("away", "bye", "status", "transfer") and \
+                not (command == "text" and self.is_again(message)):
+            session.last_command = dict(message)
         try:
+            if command != "text":
+                self.rouse(session, command)
             handler(self, session, message)
             if self.sessions.get(session.key) is session:
                 self.check_achievements(session)
@@ -550,6 +575,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if handler is None:
             self._error(session, "unknown_command")
             return
+        self.rouse(session, message.get("c"))
         handler(self, session, message)
 
     # --- looking --------------------------------------------------------------------
@@ -618,20 +644,25 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         lines.append(self.exits_text(session))
         if loc.get("airless"):
             lines.append(self.air_text(session))
-        others = self._in_room(self.room_of(char), exclude=(session,), visible=True)
+        others = sorted(self._in_room(self.room_of(char), exclude=(session,), visible=True), key=lambda o: o.key)
         residents = self.residents_text(session)
         if others:
-            lines.append(self.render(lang, "look_people",
-                                     people=[self._person(lang, o) for o in sorted(others, key=lambda o: o.key)]))
+            lines.append(self.render(lang, "look_people", people=[self._person(lang, o) for o in others]))
+            lines.extend(self.pose_line(lang, o) for o in others)       # "Maya is sitting on a bar stool."
         elif full and not loc.get("private") and not residents:
             lines.append(self.render(lang, "look_alone"))
         if residents:
             lines.append(residents)
         lines.append(self.wedding_decor(session))
         lines.append(self.hunt_mark(session))
+        lines.append(self.floor_text(lang, self.room_of(char)))
         if full and loc.get("objects"):
             things = [o["names"][lang][0] for o in loc["objects"].values()]
             lines.append(self.render(lang, "look_objects", things=things))
+        mine = self.pose_of(session)
+        if mine:
+            key = {"sit": "pose_you_sitting", "lie": "pose_you_lying", "sleep": "pose_you_asleep"}[mine["kind"]]
+            lines.append(self.render(lang, key, at=self.pose_at(session, mine)))
         return "\n".join(line for line in lines if line)
 
     def cmd_look(self, session, message):
@@ -696,6 +727,13 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             self._send(session, "info", "look_self", rank=self.rank_name(session.char),
                        description=description)
             return
+        pile = None if dark else self._pile_named(self.room_of(session.char), target, anywhere=True)
+        if pile is not None:                     # something put down here (orbit_floor)
+            thing = self.world.things[pile["id"]]
+            self._info(session, text="\n".join([pick(thing.get("desc") or thing["one"], lang),
+                                                self.render(lang, "floor_look", things=self._count_of(
+                                                    pile["id"], pile["n"]), name=pile.get("by_name") or "?")]))
+            return
         if self.examine(session, target):
             return
         parsed = orbit_verbs.parse(target, lang, self.world.find_direction)
@@ -705,7 +743,28 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if self._find_session(target) is not None:
             self._error(session, "not_here", name=self._find_session(target).name)
             return
+        there = self.object_elsewhere(session.char, target)
+        if there is not None:
+            self._error(session, "look_what_there", what=target, place=self.world.locations[there]["in"])
+            return
         self._error(session, "look_what", what=target)
+
+    def object_elsewhere(self, char, text):
+        """The room (on this world, and open to anyone) where a thing to look at by this name is: "read
+        logbook" away from the Reading Room says where the books are. None if there's none."""
+        index = getattr(self, "_object_rooms", None)
+        if index is None:
+            index = self._object_rooms = {}
+            for lid, loc in self.world.locations.items():
+                if any(loc.get(flag) for flag in ("hidden", "secret", "private", "dark", "crew_room")):
+                    continue
+                for obj in (loc.get("objects") or {}).values():
+                    for name in obj["names"]["en"]:
+                        index.setdefault(orbit_world.strip_articles(name), []).append(lid)
+        here = self.world.world_of(char["location"])
+        rooms = [lid for lid in index.get(orbit_world.strip_articles(text), []) if lid != char["location"]]
+        rooms = [lid for lid in rooms if self.world.world_of(lid) == here]
+        return rooms[0] if len(rooms) == 1 else None
 
     def player_text(self, lang, other):
         char = other.char
@@ -713,6 +772,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         parts = [self.render(lang, "look_player", name=other.name, rank=self.rank_name(char))]
         parts.extend(self.appearance(lang, char))
         parts.append(description)
+        parts.append(self.pose_line(lang, other))
         return "\n".join(p for p in parts if p)
 
     # --- talking --------------------------------------------------------------------
@@ -804,6 +864,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                    actor=session.name, words=words)
         self._send(session, "whispered", "whisper_self", brief="brief_whispered", name=target.name,
                    words=words, extra=dict(self._voice_extra(session, words, actor=False), to=target.name))
+        if target.afk is not None:
+            self._info(session, "whisper_afk_note" if target.afk else "whisper_afk", name=target.name,
+                       note=target.afk)
 
     def cmd_shout(self, session, message):
         if self._muted(session):
@@ -856,8 +919,11 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         actor = session.name
         room = self.room_of(session.char)
         extra = {"actor": actor, "emote": eid}
+        mine = {"emote": eid}
+        if emote.get("sound"):
+            extra["sound"] = mine["sound"] = emote["sound"]
         if target is None:
-            self._send(session, "emote", text=emote[session.lang]["you"], extra={"emote": eid})
+            self._send(session, "emote", text=emote[session.lang]["you"], extra=mine)
             for other in self._in_room(room, exclude=(session,)):
                 self._send(other, "emote", text=emote[other.lang]["they"].format(actor=actor),
                            extra=extra)
@@ -865,7 +931,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             self.wedding_emote(session, eid)
             return
         self._send(session, "emote", text=emote[session.lang]["you_at"].format(target=target.name),
-                   extra={"emote": eid})
+                   extra=mine)
         self._send(target, "emote", text=emote[target.lang]["at_you"].format(actor=actor), extra=extra)
         for other in self._in_room(room, exclude=(session, target)):
             self._send(other, "emote", text=emote[other.lang]["they_at"].format(actor=actor,
@@ -894,8 +960,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                                 where=self._whereabouts(lang, other))
             if other.conn is None:
                 entry += self.render(lang, "who_away_suffix")
+            elif other.afk is not None:
+                entry += self.render(lang, "who_afk_suffix")
             elif other.away:
                 entry += self.render(lang, "who_idle_suffix")
+            elif (self.pose_of(other) or {}).get("kind") == "sleep":
+                entry += self.render(lang, "who_asleep_suffix")
             entries.append(entry)
         self._send(session, "who", "who", count=len(entries), people="\n".join(entries))
 
@@ -1004,7 +1074,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         return self.world.thing_count(thing, n)
 
     def _goods_count(self, char):
-        return sum(n for gid, n in char["inventory"].items() if gid in self.world.goods)
+        """The goods in `char`'s bag, and those they put down that nobody picked up (orbit_floor)."""
+        return sum(n for gid, n in char["inventory"].items() if gid in self.world.goods) + \
+            self.floor_goods_of(char)
 
     @staticmethod
     def _take_away(char, thing, n):
@@ -1056,14 +1128,51 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
 
     # --- reading plain text ------------------------------------------------------------
 
+    @staticmethod
+    def is_again(message):
+        """ "again" or "!": the last command once more."""
+        return str(message.get("a") or "").strip().lower() in AGAIN_WORDS
+
+    def again(self, session):
+        last = session.last_command
+        handler = self.COMMANDS.get(last.get("c")) if last else None
+        if handler is None:
+            self._error(session, "again_none")
+            return
+        if last.get("c") != "text":
+            self.rouse(session, last.get("c"))
+        handler(self, session, dict(last))
+
+    def socials(self):
+        """{words: gesture id} of the world's gestures ("high five", "hi5"...), for reading plain text."""
+        found = getattr(self, "_socials", None)
+        if found is None:
+            found = {}
+            for eid, emote in self.world.emotes.items():
+                for words in [eid] + list(emote.get("words") or []):
+                    found[tuple(orbit_world.norm(words).split())] = eid
+            self._socials = found
+        return found
+
     def cmd_text(self, session, message):
         text = self._arg(message)
         if not text:
             self._error(session, "unknown_command")
             return
+        if self.is_again(message):
+            self.again(session)
+            return
+        if text.startswith(":"):
+            self.run(session, {"c": "pose", "a": text[1:]})         # ":waves hello"
+            return
         if session.arcade and self.arcade_side(session, text):
             return                              # "left!" while dodging meteors
-        parsed = orbit_verbs.parse(text, session.lang, self.world.find_direction)
+        parsed = orbit_verbs.parse(text, session.lang, self.world.find_direction, self.socials())
+        if parsed is not None:
+            if parsed.get("c") == "emote" and parsed.get("to") and self._find_near(session, parsed["to"]) is None \
+                    and self.npc_here(session, parsed["to"]) is None and self._find_session(parsed["to"]) is None \
+                    and not self.companion_look(session, parsed["to"]):
+                parsed = None                   # "cry wolf": not a gesture at anyone
         if parsed is not None:
             self.run(session, parsed)
             return
@@ -1079,7 +1188,11 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         elif self.world.find_thing(text, fuzzy=False) and self.examine(session, text):
             pass
         else:
-            self._error(session, "unknown_text", what=text[:60])
+            near = orbit_verbs.near_miss(text, self.socials())
+            if near:
+                self._error(session, "unknown_text_near", what=text[:60], cmd=near)
+            else:
+                self._error(session, "unknown_text", what=text[:60])
 
     HELP_TOPICS = {
         "moving": ("moving", "move", "movement", "walking", "map", "directions", "navigation", "the way",
@@ -1097,6 +1210,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         "duels": ("duels", "duel", "duels on", "duels off", "arena", "contest"),
         "arcade": ("arcade", "games", "tokens", "token", "tickets", "prizes", "pixel pier", "high scores"),
         "people": ("people", "residents", "resident", "npc", "npcs", "characters"),
+        "social": ("social", "socials", "postures", "posture", "sit", "sitting", "sleep", "emote", "emotes",
+                   "gestures", "gesture", "follow", "following", "lead", "roll", "dice roll", "afk", "time",
+                   "drop", "put", "throw", "room", "exits", "peer", "jukebox", "fishing", "fish"),
         "pets": ("pets", "pet", "tricks"),
         "family": ("family", "partner", "partners", "children", "child", "adopt", "adoption", "baby",
                    "naming"),
@@ -1152,6 +1268,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_npcs(now)
         self.tick_family(now)
         self.tick_weddings(now)
+        self.tick_social(now)
+        self.tick_floor(now)
         self.tick_economy(now)
 
     def tick_session(self, session, now):
@@ -1165,6 +1283,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.tick_gig(session, now)
         self.tick_arcade(session, now)
         self.tick_pets(session, now)
+        self.tick_fishing(session, now)
 
     def shutdown(self):
         """The server is stopping: say so, and save everyone."""
@@ -1178,6 +1297,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
 
 
 CREDIT_WORDS = {"credit", "credits", "cr", "money", "coins"}
+AGAIN_WORDS = {"again", "!"}
 
 
 def _collect_commands():

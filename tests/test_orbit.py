@@ -130,7 +130,7 @@ def lang(monkeypatch):
     ("?", {"local": "help"}),
     ("connect", {"local": "connect"}),
     ("disconnect", {"local": "disconnect"}),
-    ("repeat", {"local": "repeat"}), ("again", {"local": "repeat"}),
+    ("repeat", {"local": "repeat"}), ("again", {"c": "text", "a": "again"}), ("!", {"c": "text", "a": "again"}),
     ("cantina", {"c": "text", "a": "cantina"}),
     ("orbit go to the dock", {"c": "go", "a": "the dock"}),
     ("please orbit who is online", {"c": "who"}),
@@ -1941,7 +1941,7 @@ def _server_cues():
                  if (t.get("effects") or {}).get("pet"))             # each kind of pet's own
     with open(os.path.join(server, "world.json"), encoding="utf-8") as f:
         world = json.load(f)
-    found.update(f"emote_{e}" for e in world["emotes"])
+    found.update(e.get("sound") or f"emote_{eid}" for eid, e in world["emotes"].items())   # 1.6's reuse cues
     for event in world.get("events", {}).values():
         found.update(event[k] for k in ("sound", "clue_sound") if event.get(k))
     found.update(f"step_{loc.get('floor', 'metal')}" for loc in world["locations"].values())

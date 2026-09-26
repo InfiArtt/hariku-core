@@ -65,9 +65,10 @@ KIND_WORDS = {
     "crop": ("crop", "crops", "produce", "vegetables", "fruit"),
     "ore": ("ore", "ores", "rocks", "minerals"),
     "salvage": ("salvage", "junk"),
+    "fish": ("fish", "fishes", "catch"),
 }
 RARE_ORE = {"platinum", "meteorite", "quantum", "goldfoil", "satchip", "frostpearl", "ember_crystal"}
-KIND_ORDER = ("trade", "crop", "ore", "salvage", "contraband")
+KIND_ORDER = ("trade", "crop", "fish", "ore", "salvage", "contraband")
 MARKET_WORDS = {"market", "markets", "nearest market", "a market", "the market", "the nearest market"}
 VOICE_STYLES = 10
 

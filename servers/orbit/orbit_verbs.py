@@ -28,6 +28,15 @@ every client can use them:
     parse("dice 50 high")         -> {"c": "dice", "a": "high", "n": 50}
     parse("x here")               -> {"c": "examine", "a": "here"}   (and "what can I do here")
     parse("x Rocco")              -> {"c": "examine", "a": "Rocco"}
+    parse("exits")                -> {"c": "exits"}                  (and "ex")
+    parse("sit on the sofa")      -> {"c": "sit", "a": "on the sofa"}
+    parse("stand")                -> {"c": "stand"}   (blackjack's, in a hand; else getting up)
+    parse("drop 2 coffee")        -> {"c": "drop", "item": "2 coffee"}
+    parse("put coffee on the table")
+                                  -> {"c": "put", "a": "coffee on the table"}
+    parse("roll 2d6")             -> {"c": "roll", "a": "2d6"}      ("roll 50 high": the casino's dice)
+    parse("wink at Maya", socials=...)
+                                  -> {"c": "emote", "e": "wink", "to": "Maya"}
     parse("offer Sam 3 iron for 200 credits")
                                   -> {"c": "offer", "to": "Sam", "a": "3 iron for 200 credits"}
     parse("grant Sam 50")         -> {"c": "admin", "op": "grant", "to": "Sam", "n": 50}
@@ -38,6 +47,7 @@ comes from the world (its direction words), so the words for directions live
 in world.json. No I/O.
 """
 
+import difflib
 import re
 
 _TOKEN_RE = re.compile(r"\S+")
@@ -72,6 +82,26 @@ VERBS = [
     (("light", "a", "lantern"), "lantern"), (("light", "the", "lantern"), "lantern"),
     (("light", "a", "star", "lantern"), "lantern"),
     (("read",), "read"),
+    # the room, and the people in it (the Nova Realm's commands)
+    (("exits",), "exits"), (("ex",), "exits"), (("list", "exits"), "exits"), (("obvious", "exits"), "exits"),
+    (("peer",), "peer"), (("peek",), "peer"),
+    (("sit",), "sit"), (("sit", "down"), "sit"), (("take", "a", "seat"), "sit"), (("have", "a", "seat"), "sit"),
+    (("stand", "up"), "stand_up"), (("get", "up"), "stand_up"), (("rise",), "stand_up"),
+    (("get", "to", "my", "feet"), "stand_up"),
+    (("lie",), "lie"), (("lie", "down"), "lie"), (("lay", "down"), "lie"),
+    (("sleep",), "sleep"), (("nap",), "sleep"), (("take", "a", "nap"), "sleep"), (("go", "to", "sleep"), "sleep"),
+    (("wake",), "wake"), (("wake", "up"), "wake"),
+    (("follow",), "follow"), (("unfollow",), "unfollow"), (("stop", "following"), "unfollow"),
+    (("lead",), "lead"), (("stop", "leading"), "unlead"), (("disband",), "disband"),
+    (("emote",), "pose"), (("pose",), "pose"),
+    (("time",), "time"), (("clock",), "time"), (("what", "time", "is", "it"), "time"),
+    (("what's", "the", "time"), "time"), (("whats", "the", "time"), "time"), (("date",), "time"),
+    (("afk",), "afk"), (("brb",), "afk"), (("away", "from", "keyboard"), "afk"),
+    (("jukebox",), "jukebox"), (("pick", "a", "song"), "jukebox"), (("pick", "song"), "jukebox"),
+    (("choose", "a", "song"), "jukebox"), (("play", "song"), "jukebox"), (("play", "a", "song"), "jukebox"),
+    (("play", "the", "jukebox"), "jukebox"),
+    (("fish",), "fish"), (("go", "fishing"), "fish"), (("cast",), "fish"), (("cast", "a", "line"), "fish"),
+    (("reel",), "reel"), (("reel", "in"), "reel"), (("reel", "it", "in"), "reel"),
     # what you can do here, or with someone or something (the Nova Realm's examine)
     (("x",), "examine"), (("examine",), "examine"), (("what", "can", "i", "do", "with"), "examine"),
     (("what", "can", "i", "do", "here"), "examine_here"), (("what", "can", "i", "do"), "examine_here"),
@@ -82,6 +112,13 @@ VERBS = [
     (("equip",), "equip"), (("wear",), "equip"),
     (("put", "on"), "equip"), (("place",), "equip"), (("set", "beacon"), "equip"),
     (("unequip",), "unequip"), (("take", "off"), "unequip"), (("remove",), "unequip"),
+    (("undress",), "undress"), (("take", "off", "everything"), "undress"), (("take", "off", "my", "clothes"), "undress"),
+    (("dress", "in"), "equip"), (("get", "dressed", "in"), "equip"),
+    # things put down, picked up, thrown
+    (("drop",), "drop"), (("put", "down"), "drop"), (("discard",), "drop"),
+    (("put",), "put"),
+    (("get",), "take"), (("take",), "take"), (("pick", "up"), "take"), (("grab",), "take"),
+    (("throw",), "throw"), (("toss",), "throw"),
     (("list",), "list"), (("stock",), "list"), (("catalog",), "list"), (("menu",), "list"),
     (("shop",), "shop"),
     # friends and visitors
@@ -169,7 +206,7 @@ VERBS = [
     (("schedule", "event"), "event_schedule"),
     # the casino
     (("casino",), "casino"), (("casino", "menu"), "casino"),
-    (("dice",), "dice"), (("roll",), "dice"), (("roll", "dice"), "dice"), (("roll", "the", "dice"), "dice"),
+    (("dice",), "dice"), (("roll",), "roll"), (("roll", "dice"), "roll"), (("roll", "the", "dice"), "roll"),
     (("play", "dice"), "dice"),
     (("slot",), "slots"), (("slots",), "slots"), (("play", "slots"), "slots"), (("play", "the", "slots"), "slots"),
     (("spin",), "slots"), (("slot", "machine"), "slots"),
@@ -332,8 +369,9 @@ def _name_and_rest(text, tokens, index):
     return _word(text, tokens[index]), _rest(text, tokens, index + 1)
 
 
-def parse(text, _lang=None, find_direction=None):
-    """The command in `text`, or None when there is none here."""
+def parse(text, _lang=None, find_direction=None, socials=None):
+    """The command in `text`, or None when there is none here. `socials`: {words: gesture id} (the
+    world's gestures, "high five" and all), read after the commands."""
     text = " ".join(str(text or "").split())
     tokens = _tokens(text)
     if not tokens:
@@ -353,7 +391,7 @@ def parse(text, _lang=None, find_direction=None):
             meaning, used = what, len(phrase)
             break
     if meaning is None:
-        return None
+        return _social(text, tokens, socials) if socials else None
     rest = _rest(text, tokens, used)
     if meaning == "way":
         return {"c": "way", "a": rest}
@@ -364,8 +402,25 @@ def parse(text, _lang=None, find_direction=None):
     if meaning in ("map", "where", "compass", "scan", "board", "daily", "rank", "harvest", "water",
                    "farm", "mine", "collect", "transfer", "friends", "status", "casino", "hit", "stand",
                    "lottery", "decline", "cancel_offer", "worlds", "disembark", "cargo", "gig", "events",
-                   "join", "listen", "catch", "search", "watch", "party", "hunt", "investigate", "hunt_board"):
+                   "join", "listen", "catch", "search", "watch", "party", "hunt", "investigate", "hunt_board",
+                   "exits", "stand_up", "time", "undress", "fish", "reel"):
         return {"c": meaning}
+    if meaning in ("sit", "lie", "sleep", "peer", "pose", "afk", "jukebox", "wake"):
+        return {"c": meaning, "a": rest}
+    if meaning in ("follow", "lead"):
+        return {"c": meaning, "to": rest}
+    if meaning in ("unfollow", "unlead", "disband"):
+        return {"c": "lead" if meaning != "unfollow" else "follow",
+                "op": "disband" if meaning == "disband" else "stop"}
+    if meaning == "roll":
+        choice, n = _thing_and_count(tokens, used)
+        if n is not None and set(choice.split()) & DICE_BETS:
+            return {"c": "dice", "a": " ".join(w for w in choice.split() if w not in ("dice", "the")), "n": n}
+        return {"c": "roll", "a": rest}
+    if meaning in ("drop", "take"):
+        return {"c": meaning, "item": rest}
+    if meaning in ("put", "throw"):
+        return {"c": meaning, "a": rest}
     if meaning == "locate":
         if not rest:
             return {"c": "where"}
@@ -519,8 +574,56 @@ def parse(text, _lang=None, find_direction=None):
 
 
 ABOUT_WORDS = ("about", "regarding")
+DICE_BETS = {"high", "low", "seven", "7", "hi", "lo"}
 WEDDING_WORDS = {"wedding", "weddings"}
 TO_WORDS = ("to",)
+
+
+PREPOSITIONS = ("to", "at", "with", "for", "on")
+
+
+def _social(text, tokens, socials):
+    """ "wink", "wink at Maya", "high five Maya": a gesture; "smile if you're happy" is a sentence."""
+    words = [t[2] for t in tokens]
+    for phrase in sorted(socials, key=len, reverse=True):
+        if tuple(words[:len(phrase)]) != phrase:
+            continue
+        rest = tokens[len(phrase):]
+        if rest and rest[0][2] in PREPOSITIONS:
+            rest = rest[1:]
+        if len(rest) > 1:
+            return None
+        message = {"c": "emote", "e": socials[phrase]}
+        if rest:
+            message["to"] = _word(text, rest[0])
+        return message
+    return None
+
+
+def command_words(socials=()):
+    """The first word of every command read here, and of the gestures: what "did you mean" offers."""
+    words = {phrase[0] for phrase, _meaning in VERBS if len(phrase[0]) > 2}
+    words.update(phrase[0] for phrase in socials if len(phrase[0]) > 2)
+    words.update(CLIENT_WORDS)
+    return words
+
+
+# What every client reads itself, before sending: a near miss may be one of these too.
+CLIENT_WORDS = ("look", "say", "who", "inventory", "buy", "sell", "go", "walk", "whisper", "shout", "help", "work",
+                "missions", "take", "get", "give", "accept", "complete", "abandon", "prices", "describe",
+                "answer", "north", "south", "east", "west", "northeast", "northwest", "southeast", "southwest",
+                "up", "down", "smile", "wave", "laugh", "nod", "shrug", "clap", "cheer", "sigh", "bow", "dance",
+                "hug")
+
+
+def near_miss(text, socials=()):
+    """ "exist" -> "exits": the command a mistyped first word most likely meant, or None."""
+    tokens = _tokens(text)
+    if not tokens or len(tokens[0][2]) < 3:
+        return None
+    first = tokens[0][2]
+    close = difflib.get_close_matches(first, sorted(command_words(socials)), n=1, cutoff=0.75)
+    return close[0] if close and close[0] != first else None
 
 
 def _ask(text, tokens, used):

@@ -61,8 +61,8 @@ ACOUSTICS = ("room", "small", "hall", "hangar", "outside", "cave", "open")
 VIAS = ("walk", "lift", "ladder", "slide", "airlock", "door", "gate")
 THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture", "outfit",
                "title", "pet", "service", "ship", "arcade")
-GOOD_KINDS = ("trade", "crop", "ore", "salvage", "contraband")
-LEGAL_KINDS = ("trade", "crop", "ore", "salvage")          # what "market": true deals in
+GOOD_KINDS = ("trade", "crop", "ore", "salvage", "fish", "contraband")
+LEGAL_KINDS = ("trade", "crop", "ore", "salvage", "fish")          # what "market": true deals in
 _ARTICLES = {"the", "a", "an", "to", "my"}
 _NOT_WORD = re.compile(r"[^\w\s]")
 

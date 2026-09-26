@@ -371,7 +371,9 @@ def test_x_things_you_carry_here_and_for_sale(spied):
     assert last_said(typed(game, ani, "x jukebox"))["text"] == "You don't see jukebox here."
     char["location"] = "cantina"
     assert last_said(typed(game, ani, "x jukebox"))["lines"] == ["With the jukebox you can:",
-                                                         "look at jukebox: what it is"]
+                                                         "look at jukebox: what it is",
+                                                         "jukebox: the songs on the jukebox; a coin plays one "
+                                                         "for the room"]
     me = last_said(typed(game, ani, "x me"))["lines"]
     assert me[0] == "For yourself you can:" and "inventory: your credits and things" in me
 

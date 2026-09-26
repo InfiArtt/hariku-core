@@ -14,6 +14,10 @@ There is no teleporting: "go to the cantina" walks there only when the
 Cantina is next door, and otherwise tells you the way.
 
   look            the room, and its exits: "Exits: north, southwest, down."
+                  (exits, a line each with where they lead, and peer north: orbit_social)
+  walking         stands you up first ("You stand up and walk north..."); those
+                  following you come along a step behind, and both rooms hear it
+                  ("Maya arrives from the west.", "Sam arrives, following Maya.")
   way to X        the steps from here, compact: "2 south, then west". Anyone
                   can ask the way to a few landmarks (the Dock, the Promenade,
                   the Cantina, Star Supply, the markets, the lifts), their own
@@ -177,9 +181,10 @@ class NavMixin:
             return
         self.walk(session, d)
 
-    def walk(self, session, d):
+    def walk(self, session, d, leader=None):
+        """Walk one room `d`; `leader`: following them. Returns whether the player moved."""
         if self.in_transit(session):
-            return
+            return False
         char, lang = session.char, session.lang
         here = char["location"]
         ex = self.world.exits.get(here, {}).get(d)
@@ -190,10 +195,10 @@ class NavMixin:
             else:
                 self._error(session, "no_exit", dir=self.dir_word(lang, d),
                             exits=self._exit_words(session), sound="bump")
-            return
+            return False
         if not self.has_access(char, ex.get("lock")):
             self._error(session, f"locked_{ex['lock']}", dir=self.dir_word(lang, d), sound="locked")
-            return
+            return False
         dest = ex["to"]
         dest_loc = self.world.locations[dest]
         host = None
@@ -201,24 +206,33 @@ class NavMixin:
             crew, _role = self.crew_of(char)
             if crew is None:
                 self._error(session, "crew_hangar_none", sound="locked")
-                return
+                return False
             host = f"crew{crew['id']}"                        # the crew's own room, all its members'
         here_airless = bool(self._loc(char).get("airless"))
         if dest_loc.get("airless") and not here_airless:
             if not self.effects(char)["eva"]:
                 self._error(session, "need_eva", sound="locked")
-                return
+                return False
             self._start_air(char, here)
-        self._move_to(session, dest, d, message=ex.get("msg"), via=ex.get("via"), host=host)
+        if leader is None and session.leader is not None:
+            self.stop_following(session)                      # walking off on your own
+        old_room = self.room_of(char)
+        stood = self.stand_up(session, quiet=True)            # "You stand up and walk north..."
+        self._move_to(session, dest, d, message=ex.get("msg"), via=ex.get("via"), host=host, stood=stood,
+                      leader=leader)
         if here_airless and not dest_loc.get("airless"):
             char["stats"].pop("eva", None)
             self._save(session)
             self._info(session, "air_refilled", sound="air")
+        if leader is None:
+            self.followers_walk(session, old_room, d, dest)
+        return True
 
     def _move_to(self, session, dest, d=None, message=None, sound=None, quiet=False, host=None,
-                 via=None):
+                 via=None, stood=None, leader=None):
         """Put the player in `dest` (came `d`), telling both rooms; `host`:
-        the cabin's owner when visiting one."""
+        the cabin's owner when visiting one; `stood`: the pose they got up from
+        to go; `leader`: the player they follow."""
         char, lang = session.char, session.lang
         old_room = self.room_of(char)
         old_loc = self._loc(char)
@@ -236,19 +250,36 @@ class NavMixin:
             char["stats"]["heading"] = d
         self._remember_room(char, dest)
         self._save(session)
+        session.pose = None
         if not quiet and not session.invisible:
-            self._announce_leave(session, old_room, old_loc, new_loc, d, host)
-            self._announce_arrive(session, new_room, came_from, new_loc, back)
+            if stood:
+                self._to_room(old_room, "emote", "got_up_other", exclude=(session,),
+                              extra={"actor": session.name, "sound": "equip"}, actor=session.name)
+            self._announce_leave(session, old_room, old_loc, new_loc, d, host, leader=leader)
+            self._announce_arrive(session, new_room, came_from, new_loc, back, leader=leader)
         first = dest not in session.visited
         session.visited.add(dest)
+        lines = []
+        if stood and stood["kind"] == "sleep":
+            lines.append(self.render(lang, "woke_to_go"))
+        got_up = bool(stood) and stood["kind"] != "sleep"
         if message:
+            if got_up:
+                lines.append(self.render(lang, "got_up_you"))
             line = pick(message, lang).format(place=pick(new_loc["ref"], lang))
+        elif leader is not None and d in self.world.directions:
+            line = self.render(lang, "moved_follow", name=leader.name, dir=self.dir_word(lang, d),
+                               place=new_loc["ref"])
         elif d in ("u", "d"):
-            line = self.render(lang, "moved_up" if d == "u" else "moved_down", place=new_loc["ref"])
+            key = "moved_up" if d == "u" else "moved_down"
+            line = self.render(lang, f"{key}_stood" if got_up else key, place=new_loc["ref"])
         elif d in self.world.directions:
-            line = self.render(lang, "moved_dir", dir=self.dir_word(lang, d), place=new_loc["ref"])
+            line = self.render(lang, "moved_dir_stood" if got_up else "moved_dir", dir=self.dir_word(lang, d),
+                               place=new_loc["ref"])
         else:
             line = self.render(lang, "moved", place=new_loc["ref"])
+        lines.append(line)
+        line = "\n".join(lines)
         extra = dict(self._where(session))
         if d in self.world.directions:
             extra["dir"] = d
@@ -263,9 +294,14 @@ class NavMixin:
         self.arcade_left(session)
         self.npc_notice(session)
 
-    def _announce_leave(self, session, old_room, old_loc, new_loc, d, host):
+    def _announce_leave(self, session, old_room, old_loc, new_loc, d, host, leader=None):
         name = session.name
         extra = {"actor": name}
+        if leader is not None and d in self.world.directions and not old_loc.get("private"):
+            for other in self._in_room(old_room, exclude=(session,)):
+                self._send(other, "leave", "leave_follow", extra=dict(extra, dir=d), actor=name, name=leader.name,
+                           dir=self.dir_word(other.lang, d))
+            return
         if old_loc.get("private"):
             self._to_room(old_room, "leave", "leave_cabin", exclude=(session,), extra=extra, actor=name)
             return
@@ -288,9 +324,14 @@ class NavMixin:
             self._send(other, "leave", key, extra=extra, actor=name,
                        dir=self.dir_word(other.lang, d), place=new_loc["ref"])
 
-    def _announce_arrive(self, session, new_room, came_from, new_loc, back):
+    def _announce_arrive(self, session, new_room, came_from, new_loc, back, leader=None):
         name = session.name
         extra = {"actor": name}
+        if leader is not None and back is not None and not new_loc.get("private"):
+            for other in self._in_room(new_room, exclude=(session, leader)):
+                self._send(other, "arrive", "arrive_follow", extra=dict(extra, dir=back), actor=name,
+                           name=leader.name)
+            return
         if new_loc.get("private"):
             self._to_room(new_room, "arrive", "arrive_visit", exclude=(session,), extra=extra, actor=name)
             return

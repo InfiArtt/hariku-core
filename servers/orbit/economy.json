@@ -156,7 +156,7 @@
     },
     "bar": {
       "name": {"en": "the Cantina bar"},
-      "stock": ["iced_coffee", "martabak", "kerupuk"],
+      "stock": ["iced_coffee", "martabak", "kerupuk", "hot_chocolate", "ginger_fizz", "noodle_cup", "orbit_special"],
       "fixed": true
     },
     "seeds": {
@@ -238,7 +238,16 @@
       "stock": ["robot_pet", "cat_pet", "minidrone_pet", "robocat_pet", "fox_pet", "jelly_pet", "pet_food", "pet_treat"]
     },
     "jewels": {"name": {"en": "Starglint Jewellers"}, "stock": ["ring_silver", "ring_gold", "ring_star"]},
-    "food": {"name": {"en": "the Food Court"}, "stock": ["iced_coffee", "martabak", "kerupuk", "baby_porridge"]},
+    "food": {"name": {"en": "the Food Court"}, "stock": [
+      "iced_coffee",
+      "martabak",
+      "kerupuk",
+      "baby_porridge",
+      "space_ramen",
+      "cheese_toastie",
+      "fruit_skewer",
+      "sesame_bun"
+    ]},
     "casino": {"name": {"en": "the lottery booth"}, "stock": ["lottery_ticket"], "fixed": true},
     "shipyard": {
       "name": {"en": "the Orbit Shipyard"},
@@ -250,7 +259,14 @@
       "currency": "arcade_ticket",
       "stock": ["plush_comet", "glow_stars", "mini_cabinet", "title_arcade_ace", "giant_robot"],
       "fixed": true
-    }
+    },
+    "tea_house": {
+      "name": {"en": "the Tumbling Cup"},
+      "stock": ["ginger_tea", "cardamom_coffee", "date_cake"],
+      "fixed": true
+    },
+    "noodle_stall": {"name": {"en": "the noodle stalls"}, "stock": ["neon_noodles", "rain_dumplings"], "fixed": true},
+    "lodge_kitchen": {"name": {"en": "the lodge kitchen"}, "stock": ["glasir_cocoa", "cloudberry_pie"], "fixed": true}
   },
   "things": {
     "compass": {
@@ -887,7 +903,8 @@
       "effects": {
         "cabin": {
           "en": "A striped hammock is strung across a corner."
-        }
+        },
+        "seat": {"n": 1, "at": {"en": "in the hammock"}, "lie": true, "lie_at": {"en": "swinging in the hammock"}}
       }
     },
     "aquarium": {
@@ -919,6 +936,12 @@
       "effects": {
         "cabin": {
           "en": "A rattan sofa with plump cushions invites you to sit."
+        },
+        "seat": {
+          "n": 2,
+          "at": {"en": "on the rattan sofa"},
+          "lie": true,
+          "lie_at": {"en": "full length on the rattan sofa"}
         }
       }
     },
@@ -1729,6 +1752,235 @@
       "slot": "title",
       "pawn": false,
       "effects": {"title": {"en": "Arcade Ace"}}
+    },
+    "hot_chocolate": {
+      "type": "consumable",
+      "one": {"en": "mug of hot chocolate"},
+      "many": {"en": "mugs of hot chocolate"},
+      "names": {"en": ["hot chocolate", "chocolate", "cocoa mug"]},
+      "desc": {"en": "Thick hot chocolate in a mug with a lid, and a marshmallow that bobs about inside it."},
+      "price": 8,
+      "tradeable": true,
+      "effects": {
+        "taste": {
+          "en": "You sip the hot chocolate. Thick, sweet, and warm all the way down; the marshmallow bumps your nose."
+        },
+        "other": {"en": "{actor} sips a mug of hot chocolate."},
+        "sound": "gulp",
+        "child_food": 20
+      }
+    },
+    "ginger_fizz": {
+      "type": "consumable",
+      "one": {"en": "ginger fizz"},
+      "many": {"en": "ginger fizzes"},
+      "names": {"en": ["ginger fizz", "fizz", "ginger beer"]},
+      "desc": {"en": "A fizzy ginger drink in a squeeze bottle. The bubbles don't know which way is up."},
+      "price": 6,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You drink the ginger fizz. The bubbles go everywhere, including your nose."},
+        "other": {"en": "{actor} drinks a ginger fizz and sneezes."},
+        "sound": "gulp"
+      }
+    },
+    "noodle_cup": {
+      "type": "consumable",
+      "one": {"en": "cup of instant noodles"},
+      "many": {"en": "cups of instant noodles"},
+      "names": {"en": ["instant noodles", "noodle cup", "noodles"]},
+      "desc": {"en": "Instant noodles, the station's oldest friend. Just add hot water and patience."},
+      "price": 10,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You slurp the noodles. Salty, hot and exactly what you needed."},
+        "other": {"en": "{actor} slurps a cup of instant noodles."},
+        "sound": "gulp",
+        "child_food": 20
+      }
+    },
+    "orbit_special": {
+      "type": "consumable",
+      "one": {"en": "Orbit Special"},
+      "many": {"en": "Orbit Specials"},
+      "names": {"en": ["orbit special", "special"]},
+      "desc": {
+        "en": "The Cantina's mystery dish, served in a covered bowl. Nobody knows what it is. Rocco just winks."
+      },
+      "price": 25,
+      "tradeable": true,
+      "effects": {
+        "taste": {
+          "en": "You lift the lid and eat the Orbit Special. It tastes like fried rice, then like strawberries, then like a very good Tuesday. You still don't know what it was."
+        },
+        "other": {"en": "{actor} eats an Orbit Special, and looks puzzled but happy."},
+        "sound": "gulp"
+      }
+    },
+    "space_ramen": {
+      "type": "consumable",
+      "one": {"en": "bowl of space ramen"},
+      "many": {"en": "bowls of space ramen"},
+      "names": {"en": ["space ramen", "ramen", "bowl of ramen"]},
+      "desc": {"en": "Ramen in a sealed bowl with a straw, so the broth stays put, and a soft egg bobbing in it."},
+      "price": 18,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You slurp the space ramen through its straw, egg and all. Warm, rich, perfect."},
+        "other": {"en": "{actor} slurps a bowl of space ramen."},
+        "sound": "gulp",
+        "child_food": 30
+      }
+    },
+    "cheese_toastie": {
+      "type": "consumable",
+      "one": {"en": "moon cheese toastie"},
+      "many": {"en": "moon cheese toasties"},
+      "names": {"en": ["cheese toastie", "toastie", "moon cheese", "toasted sandwich"]},
+      "desc": {"en": "A toasted sandwich of pale, holey moon cheese, pressed flat and crisp."},
+      "price": 12,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You bite into the toastie and the cheese stretches all the way to your elbow."},
+        "other": {"en": "{actor} eats a moon cheese toastie, trailing strings of cheese."},
+        "sound": "crunch",
+        "child_food": 25
+      }
+    },
+    "fruit_skewer": {
+      "type": "consumable",
+      "one": {"en": "fruit skewer"},
+      "many": {"en": "fruit skewers"},
+      "names": {"en": ["fruit skewer", "fruit", "skewer"]},
+      "desc": {"en": "Strawberries, dragon fruit and melon from Hydroponics, on a stick."},
+      "price": 9,
+      "tradeable": true,
+      "effects": {
+        "taste": {
+          "en": "You eat the fruit skewer piece by piece: strawberry, dragon fruit, melon. Fresh from Hydroponics."
+        },
+        "other": {"en": "{actor} eats a fruit skewer, one piece at a time."},
+        "sound": "gulp",
+        "child_food": 20
+      }
+    },
+    "sesame_bun": {
+      "type": "consumable",
+      "one": {"en": "sesame bun"},
+      "many": {"en": "sesame buns"},
+      "names": {"en": ["sesame bun", "bun", "buns"]},
+      "desc": {"en": "A soft steamed bun rolled in sesame seeds, with sweet bean paste inside."},
+      "price": 7,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You eat the sesame bun. Soft outside, sweet inside, seeds everywhere."},
+        "other": {"en": "{actor} eats a sesame bun and is covered in seeds."},
+        "sound": "gulp",
+        "child_food": 20
+      }
+    },
+    "ginger_tea": {
+      "type": "consumable",
+      "one": {"en": "cup of ginger tea"},
+      "many": {"en": "cups of ginger tea"},
+      "names": {"en": ["ginger tea", "tea", "cup of tea"]},
+      "desc": {"en": "Strong ginger tea with honey, the Bazaar's answer to everything."},
+      "price": 5,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You sip the ginger tea. It bites back, then warms you right through."},
+        "other": {"en": "{actor} sips a cup of ginger tea."},
+        "sound": "gulp"
+      }
+    },
+    "cardamom_coffee": {
+      "type": "consumable",
+      "one": {"en": "cardamom coffee"},
+      "many": {"en": "cardamom coffees"},
+      "names": {"en": ["cardamom coffee", "spiced coffee"]},
+      "desc": {"en": "Coffee brewed with cardamom pods, dark and fragrant, in a tiny cup."},
+      "price": 9,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You drink the cardamom coffee in three small sips. Your eyes open a little wider."},
+        "other": {"en": "{actor} drinks a tiny cup of cardamom coffee."},
+        "sound": "gulp"
+      }
+    },
+    "date_cake": {
+      "type": "consumable",
+      "one": {"en": "slice of date cake"},
+      "many": {"en": "slices of date cake"},
+      "names": {"en": ["date cake", "cake", "slice of cake"]},
+      "desc": {"en": "A dense, sticky cake of dates and walnuts, sold by the slice."},
+      "price": 8,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You eat the date cake. It's so sticky that your fingers stay together for a while."},
+        "other": {"en": "{actor} eats a slice of date cake and licks their fingers."},
+        "sound": "gulp",
+        "child_food": 20
+      }
+    },
+    "neon_noodles": {
+      "type": "consumable",
+      "one": {"en": "bowl of neon noodles"},
+      "many": {"en": "bowls of neon noodles"},
+      "names": {"en": ["neon noodles", "glowing noodles"]},
+      "desc": {"en": "Noodles in a broth that glows faintly pink under the holograms. Perfectly safe, probably."},
+      "price": 12,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You eat the neon noodles. They taste of chilli and lime, and your spoon glows."},
+        "other": {"en": "{actor} eats a bowl of glowing noodles."},
+        "sound": "gulp",
+        "child_food": 25
+      }
+    },
+    "rain_dumplings": {
+      "type": "consumable",
+      "one": {"en": "box of rain dumplings"},
+      "many": {"en": "boxes of rain dumplings"},
+      "names": {"en": ["rain dumplings", "dumplings", "dumpling"]},
+      "desc": {"en": "Steamed dumplings in a paper box, named for the rain they're always eaten in."},
+      "price": 10,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You eat the dumplings one by one while the rain drums on the stall's awning."},
+        "other": {"en": "{actor} eats a box of dumplings."},
+        "sound": "gulp",
+        "child_food": 25
+      }
+    },
+    "glasir_cocoa": {
+      "type": "consumable",
+      "one": {"en": "mug of lodge cocoa"},
+      "many": {"en": "mugs of lodge cocoa"},
+      "names": {"en": ["lodge cocoa", "cocoa", "glasir cocoa"]},
+      "desc": {"en": "The lodge's cocoa, made with real milk flown in at great expense and a pinch of sea salt."},
+      "price": 7,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You drink the lodge cocoa with your boots off. Your toes forgive you for the ice."},
+        "other": {"en": "{actor} sips a mug of cocoa, toes wriggling."},
+        "sound": "gulp",
+        "child_food": 20
+      }
+    },
+    "cloudberry_pie": {
+      "type": "consumable",
+      "one": {"en": "slice of cloudberry pie"},
+      "many": {"en": "slices of cloudberry pie"},
+      "names": {"en": ["cloudberry pie", "pie", "berry pie"]},
+      "desc": {"en": "Tart golden cloudberries from the lodge's greenhouse, in buttery pastry."},
+      "price": 11,
+      "tradeable": true,
+      "effects": {
+        "taste": {"en": "You eat the cloudberry pie. Tart, sweet and golden, like summer somewhere far away."},
+        "other": {"en": "{actor} eats a slice of cloudberry pie."},
+        "sound": "gulp",
+        "child_food": 20
+      }
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10, "festival_goal": 30, "festival_cap": 5,
@@ -2321,5 +2573,65 @@
     "rest_seconds": 60,
     "declined_seconds": 300,
     "ask_seconds": 60
+  },
+  "jukebox": {
+    "_note": "The Cantina's jukebox (orbit_pastimes.py): a song costs price credits and plays for the whole room; one song a room every gap seconds.",
+    "price": 2,
+    "gap": 60,
+    "songs": [
+      {
+        "name": {"en": "Moonlight Swing"},
+        "words": ["moonlight"],
+        "line": {"en": "A lazy clarinet and a brushed snare fill the Cantina."}
+      },
+      {
+        "name": {"en": "Neon Horizon"},
+        "words": ["neon"],
+        "line": {"en": "Synthesizers pulse like city lights on wet glass."}
+      },
+      {
+        "name": {"en": "Low Orbit Boogie"},
+        "words": ["boogie", "low orbit"],
+        "line": {"en": "A piano rolls and a trumpet shouts, and somebody starts tapping a table."}
+      },
+      {
+        "name": {"en": "Stardust Lullaby"},
+        "words": ["stardust", "lullaby"],
+        "line": {"en": "A soft saxophone drifts through the room like steam from a cup."}
+      },
+      {
+        "name": {"en": "Gravity Is Optional"},
+        "words": ["gravity"],
+        "line": {"en": "A bouncing bassline, and the robot barista's wheel squeaks in time."}
+      },
+      {
+        "name": {"en": "Rocket Sweetheart"},
+        "words": ["rocket", "sweetheart"],
+        "line": {"en": "Big band brass and a crooner who promises to wait for you by the airlock."}
+      },
+      {
+        "name": {"en": "Night Shift Drive"},
+        "words": ["night shift", "drive"],
+        "line": {"en": "A slow, steady synthwave beat, made for staring out of windows."}
+      },
+      {
+        "name": {"en": "Both"},
+        "words": ["both buttons"],
+        "line": {"en": "Swing and synthwave at the same time. It shouldn't work. It somehow does."}
+      }
+    ]
+  },
+  "fishing": {
+    "_note": "The pond in Willow Nook (orbit_pastimes.py): a tug comes wait seconds after a cast, reel within window seconds; at most daily fish a day; a golden koi is let go, for xp. chance: out of their sum; kg: the size range. Earns less than mining (tests/test_orbit_social.py).",
+    "wait": [10, 30],
+    "window": 5,
+    "cooldown": 3,
+    "daily": 30,
+    "fish": {
+      "perch": {"chance": 60, "kg": [0.2, 1.1]},
+      "carp": {"chance": 28, "kg": [0.8, 3.6]},
+      "trout": {"chance": 10, "kg": [0.5, 2.4]},
+      "golden_koi": {"chance": 2, "kg": [1.0, 4.0], "release": true, "xp": 15}
+    }
   }
 }

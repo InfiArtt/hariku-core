@@ -295,8 +295,10 @@ def test_indonesian_from_an_old_client_gets_the_english_hint(spy, client, text):
     game.receive(conn, dict(parsed, t="cmd"))
     assert calls == ["text"], calls
     hint = orbit_lang.Texts().render("en", "unknown_text", what=text)
-    assert conn.last() == {"t": "ev", "k": "error", "text": hint}
     assert hint == f'I don\'t understand "{text}". Type help for the commands.'
+    said = conn.last()
+    assert said["k"] == "error" and said["text"].startswith(f'I don\'t understand "{text}". ')
+    assert said["text"].endswith("Type help for the commands.")       # "Did you mean pet?" may come between
 
 
 @pytest.mark.parametrize("client", ["1.0", "1.4"])

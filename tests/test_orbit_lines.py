@@ -85,7 +85,8 @@ MULTI = [
     ("dock", {"c": "status"}, ["Connected as "]),
     ("dock", {"c": "profile"}, ["Newcomer, "]),
     ("dock", {"c": "rank"}, ["Rank: "]),
-    ("dock", {"c": "help"}, ["Help, by group.", "The station: help moving, help talking, help people."]),
+    ("dock", {"c": "help"}, ["Help, by group.", "The station: help moving, help talking, help people, help social "
+                                                "(the room: exits, sit, follow, gestures, drop and get)."]),
     ("dock", {"c": "help", "a": "money"}, ["Money: daily gives a bonus once a day, bigger with a streak."]),
     ("dock", {"c": "events"}, []),
     ("dock", {"c": "missions"}, ["Today's missions:"]),

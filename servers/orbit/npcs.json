@@ -32,7 +32,14 @@
         {"kind": "emote", "en": "{npc} hums along with the jukebox, a little off key."},
         {"kind": "say", "en": "Iced coffee, anyone? Fresh palm sugar today."},
         {"kind": "say", "en": "They say prices on the Moon are wild this week. Don't quote me."},
-        {"kind": "emote", "en": "{npc} slides a cup along the bar to nobody in particular, then catches it himself."}
+        {"kind": "emote", "en": "{npc} slides a cup along the bar to nobody in particular, then catches it himself."},
+        {"kind": "say", "en": "Try the Orbit Special. Nobody knows what's in it, not even me."},
+        {"kind": "emote", "en": "{npc} feeds the jukebox a coin and picks something slow."},
+        {
+          "kind": "emote",
+          "en": "{npc} slides a mug of hot chocolate down the bar to someone who looks like they need it."
+        },
+        {"kind": "say", "en": "Whoever keeps picking Both on the jukebox: I know it's you."}
       ],
       "topics": {
         "gossip": {
@@ -87,6 +94,23 @@
         "favour": {
           "names": {"en": ["favour", "favor", "help", "errand", "a job"]},
           "favour": true
+        },
+        "menu": {
+          "names": {"en": ["menu", "food", "orbit special", "special", "hot chocolate", "noodles", "drinks"]},
+          "say": {
+            "en": [
+              "New on the menu: hot chocolate with a marshmallow, ginger fizz, instant noodles, and the Orbit Special. Don't ask what's in the Special. Type list.",
+              "The hot chocolate is my grandmother's recipe. The ginger fizz is nobody's fault."
+            ]
+          }
+        },
+        "pond": {
+          "names": {"en": ["pond", "fishing", "fish", "willow nook"]},
+          "say": {
+            "en": [
+              "There's a pond past the Sky Park, north: Willow Nook. Hana feeds the fish. Catch a trout and the Spice Market will pay you for it."
+            ]
+          }
         }
       },
       "favours": [
@@ -113,7 +137,12 @@
         {"kind": "emote", "en": "{npc} taps a pipe with a spanner and listens, frowning."},
         {"kind": "say", "en": "Easy, girl. Easy. Nobody's rushing you."},
         {"kind": "emote", "en": "{npc} mutters numbers under his breath and scribbles them on his palm."},
-        {"kind": "say", "en": "Forty years on this station, and she still surprises me."}
+        {"kind": "say", "en": "Forty years on this station, and she still surprises me."},
+        {"kind": "emote", "en": "{npc} taps a gauge with one knuckle, listens, and nods."},
+        {
+          "kind": "say",
+          "en": "The Crew Lounge kettle is older than half the crew. Still boils faster than mine."
+        }
       ],
       "topics": {
         "reactor": {
@@ -142,6 +171,14 @@
           "names": {"en": ["daughter", "family", "your family"]},
           "min": 30,
           "say": {"en": ["My daughter pilots ferries between Glasir and Karmina now. She sends me a postcard from every port. I keep them in my toolbox, next to the good spanner."]}
+        },
+        "lounge": {
+          "names": {"en": ["lounge", "crew lounge", "kettle", "puzzle"]},
+          "say": {
+            "en": [
+              "The Crew Lounge is west of the Crew Quarters. Sofa, kettle, a puzzle of the Earth nobody can finish. The last piece is somewhere. I have my suspicions about the cleaning bot."
+            ]
+          }
         }
       },
       "favours": [
@@ -174,7 +211,9 @@
         {"kind": "emote", "en": "{npc} trims the wick of a lantern and sets it back in the alcove."},
         {"kind": "emote", "en": "{npc} sits on a bench and looks up at the dome in silence."},
         {"kind": "say", "en": "Every lantern here is a promise someone means to keep."},
-        {"kind": "emote", "en": "{npc} brushes a speck of dust from the bronze bell."}
+        {"kind": "emote", "en": "{npc} brushes a speck of dust from the bronze bell."},
+        {"kind": "emote", "en": "{npc} straightens a lantern in its alcove and whispers a name to it."},
+        {"kind": "say", "en": "Sit a while, if you like. The benches here were made for slow evenings."}
       ],
       "topics": {
         "way": {
@@ -238,7 +277,9 @@
         {"kind": "emote", "en": "{npc} traces a constellation on the glass with one finger."},
         {"kind": "say", "en": "Every world has its own silence. This one hums."},
         {"kind": "emote", "en": "{npc} checks an old compass that doesn't seem to point north."},
-        {"kind": "say", "en": "Somewhere out there, a note is waiting to be found."}
+        {"kind": "say", "en": "Somewhere out there, a note is waiting to be found."},
+        {"kind": "say", "en": "Out there, past the Gate, the ships wait their turn like birds on a wire."},
+        {"kind": "emote", "en": "{npc} traces a constellation on the glass with one finger."}
       ],
       "topics": {
         "hunt": {
@@ -272,6 +313,14 @@
           "names": {"en": ["secret", "a secret", "the founder"]},
           "min": 30,
           "say": {"en": ["The founder of this simulation hid more than notes. She hid a habit: every riddle, she wrote at night. Think like someone who can't sleep."]}
+        },
+        "gallery": {
+          "names": {"en": ["gallery", "starboard gallery", "telescopes", "ships"]},
+          "say": {
+            "en": [
+              "East of the Gate Hall there's a gallery with telescopes. Look through the one marked Evergrove: it only ever shows clouds shaped like dragons. I've watched for hours."
+            ]
+          }
         }
       }
     },
@@ -293,7 +342,8 @@
       "idle": [
         {"kind": "emote", "en": "{npc} tightens a tiny screw on a scanner and holds it up to the light."},
         {"kind": "say", "en": "Plasma drills! Twenty percent faster, zero percent safer. Kidding. Mostly."},
-        {"kind": "emote", "en": "{npc} tests a headlamp by shining it in his own eyes, and regrets it."}
+        {"kind": "emote", "en": "{npc} tests a headlamp by shining it in his own eyes, and regrets it."},
+        {"kind": "emote", "en": "{npc} spins a drill bit on his fingertip and catches it without looking."}
       ],
       "topics": {
         "special": {
@@ -339,7 +389,11 @@
         {"kind": "emote", "en": "{npc} scratches a sleepy cat behind the ears."},
         {"kind": "say", "en": "Who's a good robot? You are. Yes, you are."},
         {"kind": "emote", "en": "{npc} tops up the glow jellyfish's tank with sparkling water."},
-        {"kind": "emote", "en": "The robot in {npc}'s pocket beeps; she beeps back."}
+        {"kind": "emote", "en": "The robot in {npc}'s pocket beeps; she beeps back."},
+        {
+          "kind": "emote",
+          "en": "{npc} rolls a ball of yarn across the floor for a robot cat, who ignores it grandly."
+        }
       ],
       "topics": {
         "pets": {
@@ -394,7 +448,8 @@
         {"kind": "emote", "en": "{npc} polishes a ring and holds it up to the light, satisfied."},
         {"kind": "say", "en": "Every ring is a small promise you can wear."},
         {"kind": "emote", "en": "{npc} checks a leather-bound booking book and hums."},
-        {"kind": "say", "en": "The Jasmine Pavilion is lovely in the evening, just so you know."}
+        {"kind": "say", "en": "The Jasmine Pavilion is lovely in the evening, just so you know."},
+        {"kind": "emote", "en": "{npc} polishes a ring until the stars in it seem to move."}
       ],
       "topics": {
         "rings": {
@@ -444,7 +499,8 @@
         {"kind": "say", "en": "Ferry to the Moon, Karmina, Glasir and beyond! Leaving soon!"},
         {"kind": "emote", "en": "{npc} checks his pocket watch, then the schedule board, then his watch again."},
         {"kind": "emote", "en": "{npc} gives the Wombat's hull a friendly pat."},
-        {"kind": "say", "en": "Two minutes between departures. You could set a clock by us. Some people do."}
+        {"kind": "say", "en": "Two minutes between departures. You could set a clock by us. Some people do."},
+        {"kind": "say", "en": "The ferry's never late. The universe is sometimes early."}
       ],
       "topics": {
         "ferry": {
@@ -482,7 +538,7 @@
       "names": {"en": ["poppy", "girl", "little girl", "kid"]},
       "role": {"en": "a curious girl who lives on the station"},
       "desc": {"en": "A girl of about nine with a scraped knee, a backpack covered in planet stickers, and a notebook full of questions. She writes down every answer she gets, even the silly ones."},
-      "schedule": [[1, "archive"], [5, "park"], [9, "food_court"], [13, "observation"], [15, null]],
+      "schedule": [[1, "archive"], [3, "reading_room"], [5, "park"], [9, "food_court"], [13, "observation"], [15, null]],
       "home": "cabins_hall",
       "likes": ["kerupuk", "strawberry", "dragonfruit"],
       "greet": {"en": ["Hi! Do you know why the Earth doesn't fall down? I'm still working on it.", "Hello! Can I ask you a question? Just one. Maybe three.", "Oh! A grown-up! Are you an astronaut? Everyone here is, kind of."]},
@@ -495,7 +551,22 @@
         {"kind": "emote", "en": "{npc} hops from one floor tile to the next, avoiding the lines."},
         {"kind": "say", "room": "food_court", "en": "Stuffed pancakes are the best food in the galaxy. I checked."},
         {"kind": "say", "room": "observation", "en": "Look! I can see Grandma's island from here! Hi, Grandma!"},
-        {"kind": "emote", "room": "archive", "en": "{npc} asks the librarian robot a question, and it beeps back a very long answer."}
+        {"kind": "emote", "room": "archive", "en": "{npc} asks the librarian robot a question, and it beeps back a very long answer."},
+        {
+          "kind": "emote",
+          "room": "reading_room",
+          "en": "{npc} reads the field guide under the lamp, lips moving."
+        },
+        {
+          "kind": "say",
+          "room": "reading_room",
+          "en": "This book says never answer a puffcap's riddle with a potato. Why would anybody do that?"
+        },
+        {
+          "kind": "emote",
+          "room": "park",
+          "en": "{npc} rolls down the lawn and gets grass all over her backpack."
+        }
       ],
       "topics": {
         "questions": {
@@ -524,6 +595,14 @@
           "names": {"en": ["secret", "a secret"]},
           "min": 15,
           "say": {"en": ["Okay, a secret: Oskar talks to the reactor, and I think the reactor talks back. Don't tell."]}
+        },
+        "books": {
+          "names": {"en": ["books", "book", "reading room", "library", "reading"]},
+          "say": {
+            "en": [
+              "The Reading Room is behind the Archive, west. My favourite is the field guide. You can read the poems too, and there's a swap shelf: put something on it and someone finds it!"
+            ]
+          }
         }
       }
     },
@@ -544,7 +623,8 @@
       "idle": [
         {"kind": "emote", "en": "{npc} counts something in a pocket without taking it out."},
         {"kind": "say", "en": "No labels, no questions, no refunds."},
-        {"kind": "emote", "en": "{npc} glances at the mouth of the alley, then back into the shadows."}
+        {"kind": "emote", "en": "{npc} glances at the mouth of the alley, then back into the shadows."},
+        {"kind": "say", "en": "Everything's for sale here. Even quiet. Especially quiet."}
       ],
       "topics": {
         "goods": {
@@ -588,7 +668,8 @@
       "idle": [
         {"kind": "say", "en": "Who will be the fastest hand on Pixel Pier? Step up!"},
         {"kind": "emote", "en": "{npc} taps his unplugged microphone. Nothing happens. He nods, satisfied."},
-        {"kind": "say", "en": "Remember: draw means draw. Not almost draw. Draw."}
+        {"kind": "say", "en": "Remember: draw means draw. Not almost draw. Draw."},
+        {"kind": "say", "en": "Who's brave enough for a duel? The big chairs are warm and waiting!"}
       ],
       "topics": {
         "duels": {
@@ -641,7 +722,17 @@
         {"kind": "emote", "room": "cargo", "en": "{npc} stacks crates into a perfect tower, then admires it."},
         {"kind": "say", "room": "cantina", "en": "Rocco! One more iced coffee, and put it on my tab."},
         {"kind": "emote", "room": "cantina", "en": "{npc} tells a story about a runaway crate to anyone who'll listen."},
-        {"kind": "emote", "en": "{npc} stretches his back and groans happily."}
+        {"kind": "emote", "en": "{npc} stretches his back and groans happily."},
+        {
+          "kind": "say",
+          "room": "food_court",
+          "en": "The ramen at the Food Court, the one with the egg in it: that's why I work so hard."
+        },
+        {
+          "kind": "emote",
+          "room": "cargo",
+          "en": "{npc} sits on an upturned crate and eats a sesame bun in three bites."
+        }
       ],
       "topics": {
         "work": {
@@ -651,6 +742,14 @@
         "station": {
           "names": {"en": ["the station", "life here", "home", "station"]},
           "say": {"en": ["Twenty years up here. I can tell the time by which pump is humming. Wouldn't live anywhere else."]}
+        },
+        "food": {
+          "names": {"en": ["food", "ramen", "lunch", "food court"]},
+          "say": {
+            "en": [
+              "Space ramen, the one in a bowl with a straw. The egg floats around in there like a little moon. Then a fruit skewer, for health."
+            ]
+          }
         }
       }
     },
@@ -661,7 +760,14 @@
       "names": {"en": ["hana", "gardener"]},
       "role": {"en": "one of the station's gardeners"},
       "desc": {"en": "A young woman with soil under her nails, a sun hat she wears indoors out of habit, and a watering can she never quite puts down."},
-      "schedule": [[3, "hydroponics"], [8, "park"], [11, "pavilion"], [14, "hydroponics"], [18, "cantina"], [21, null]],
+      "schedule": [
+        [3, "hydroponics"],
+        [8, "willow_nook"],
+        [11, "pavilion"],
+        [14, "hydroponics"],
+        [18, "cantina"],
+        [21, null]
+      ],
       "home": "cabins_hall",
       "likes": ["vanilla", "seed_vanilla", "moonpetal"],
       "greet": {"en": ["Hello! Mind the seedlings, they're shy.", "Oh, hi! Isn't it green in here?"]},
@@ -675,7 +781,18 @@
         {"kind": "emote", "room": "pavilion", "en": "{npc} threads fresh jasmine buds into a long string for the pavilion's roof."},
         {"kind": "say", "room": "pavilion", "en": "The jasmine opens slowly all day. Weddings here smell wonderful."},
         {"kind": "say", "room": "cantina", "en": "A cold iced coffee after a day in the garden. Perfect."},
-        {"kind": "emote", "en": "{npc} brushes soil off her hands."}
+        {"kind": "emote", "en": "{npc} brushes soil off her hands."},
+        {
+          "kind": "emote",
+          "room": "willow_nook",
+          "en": "{npc} scatters a handful of fish food on the pond, and the water boils with perch."
+        },
+        {
+          "kind": "say",
+          "room": "willow_nook",
+          "en": "If a golden koi bites, let it go. It's bad luck to keep it, and worse manners."
+        },
+        {"kind": "emote", "room": "willow_nook", "en": "{npc} sits under the willow and hums to the fish."}
       ],
       "topics": {
         "farming": {
@@ -689,6 +806,15 @@
         "favour": {
           "names": {"en": ["favour", "favor", "help", "errand"]},
           "favour": true
+        },
+        "fishing": {
+          "names": {"en": ["fishing", "fish", "pond", "willow nook", "koi"]},
+          "say": {
+            "en": [
+              "Cast, wait for the tug, then reel, quick! Perch are easy, carp are heavy, and trout are clever. The golden koi is to be let go; she's older than the station's second deck.",
+              "The Spice Market buys perch, carp and trout. Not the koi. Never the koi."
+            ]
+          }
         }
       },
       "favours": [
@@ -717,7 +843,13 @@
         {"kind": "emote", "room": "grove_wood", "en": "{npc} listens to the trees with her eyes closed."},
         {"kind": "say", "room": "grove_wood", "en": "The Whispering Wood always tells the truth. You just have to be patient."},
         {"kind": "emote", "room": "grove_hall", "en": "{npc} warms her hands at the great fire."},
-        {"kind": "emote", "en": "{npc} leans on her stick and hums an old tune."}
+        {"kind": "emote", "en": "{npc} leans on her stick and hums an old tune."},
+        {"kind": "say", "en": "In my day we fished the river with a bent pin and a lot of patience."},
+        {
+          "kind": "emote",
+          "room": "grove_village",
+          "en": "{npc} sits on the well's rim and knits something long and green."
+        }
       ],
       "topics": {
         "woods": {

@@ -31,7 +31,7 @@ for folder in (SERVER_DIR, EXT_DIR):
 import orbit_parse  # noqa: E402
 import orbit_play  # noqa: E402
 from tests.test_orbit import FakeServices  # noqa: E402
-from tests.test_orbit_server import FakeConn, clock, cmd, make_game, secret_of, world  # noqa: E402,F401
+from tests.test_orbit_server import FakeConn, clock, make_game, secret_of, world  # noqa: E402,F401
 
 CLIENT = orbit_play.CLIENT_NAME
 READ_OFF = {key: False for key in ("read_say", "read_whisper", "read_shout", "read_moves", "read_money",
@@ -97,6 +97,16 @@ def own_replies(make_game, clock):
     # An event's find: a meteor shower, collected at the Observation Deck.
     game.receive(game_admin(game), {"t": "cmd", "c": "admin", "op": "event_start", "a": "meteor shower"})
     at("observation", "collect")
+    # 1.6: the room and its things, the jukebox, the new food, the pond.
+    char["inventory"]["coffee"] = char["inventory"].get("coffee", 0) + 2
+    at("cantina", "sit", "stand", "drop 1 coffee", "get coffee", "put 1 coffee on the bar", "get coffee from the bar",
+       "jukebox 3", "buy hot chocolate", "drink hot chocolate", "exits", "time", "roll")
+    at("willow_nook", "fish")
+    before = len(ani.sent)
+    clock.advance(31)
+    game.tick()                                          # the tug on the line
+    replies.extend(("(a tug)", m) for m in ani.sent[before:] if m.get("t") == "ev")
+    at("willow_nook", "reel")
     return game, ani, replies
 
 

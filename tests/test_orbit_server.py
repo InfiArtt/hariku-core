@@ -660,7 +660,7 @@ def test_walking_tells_both_rooms_which_way(make_game):
     assert moved["text"].startswith("You walk east to the Cargo Bay. Cargo Bay. ")
     assert sari.events("leave") == [{"t": "ev", "k": "leave", "actor": "Rafli", "dir": "e",
                                      "text": "Rafli heads east, to the Cargo Bay."}]
-    assert budi.texts("arrive") == ["Rafli comes in from the west, from the Dock."]
+    assert budi.texts("arrive") == ["Rafli arrives from the west."]
     cmd(game, rafli, "move", d="w")
     again = cmd(game, rafli, "move", d="e")
     assert game.world.locations["cargo"]["desc"]["en"][:40] not in again["text"]
@@ -1071,10 +1071,10 @@ def test_the_status_line(make_game):
     assert cmd(game, rafli, "text", a="orbit status")["text"].startswith("Connected as Rafli")
 
 
-def test_the_server_is_version_1_5():
+def test_the_server_is_version_1_6():
     import orbit_server
-    assert orbit_server.VERSION == "1.5"
-    assert orbit_game.NEWS[-1] == ("1.5", "whats_new_15") and orbit_game.SEEN_VERSION == "1.5"
+    assert orbit_server.VERSION == "1.6"
+    assert orbit_game.NEWS[-1] == ("1.6", "whats_new_16") and orbit_game.SEEN_VERSION == "1.6"
 
 
 def test_a_returning_player_hears_whats_new_in_1_5_once(make_game):

@@ -271,7 +271,7 @@ def test_two_players_on_the_station(server, indonesian):
     assert rafli.services.ambiences[-1] == "vent" and rafli.services.sounds[-1] == "step_metal"
     sari.wait_for("Rafli heads east, to the Cargo Bay.")
     sari.do("east", "You walk east to the Cargo Bay.")
-    rafli.wait_for("Sari comes in from the west, from the Dock.")
+    rafli.wait_for("Sari arrives from the west.")
     assert "You walk the station one direction at a time." in sari.do(
         "go to the cantina", "To the Cantina: east, south, up, north, then 2 west.")
     # Indonesian isn't read: the server's hint, in English.
@@ -392,7 +392,7 @@ def test_the_health_check_and_the_short_paths(server):
     with urllib.request.urlopen(f"http://127.0.0.1:{server.port}/orbit/health", timeout=5) as r:
         health = json.loads(r.read())
     assert health["ok"] and health["service"] == "orbit" and health["online"] == 0
-    assert health["version"] == "1.5"
+    assert health["version"] == "1.6"
     with urllib.request.urlopen(f"http://127.0.0.1:{server.port}/health", timeout=5) as r:
         assert json.loads(r.read())["ok"]
     with pytest.raises(urllib.error.HTTPError) as caught:

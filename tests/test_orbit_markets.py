@@ -32,7 +32,7 @@ from tests.test_orbit_worlds import to_world, with_ship  # noqa: E402
 
 STATION_MARKETS = {
     "spice_market": {"coffee", "spices", "kangkung", "chilli", "tomato", "strawberry", "vanilla", "dragonfruit",
-                     "moonmelon", "golden_chilli", "red_quinoa", "moonpetal"},
+                     "moonmelon", "golden_chilli", "red_quinoa", "moonpetal", "perch", "carp", "trout"},
     "ice_depot": {"ice", "helium3", "frostpearl"},
     "mineral_exchange": {"iron", "nickel", "titanium", "platinum", "quantum", "meteorite", "rustsalt",
                          "ember_crystal"},
@@ -178,7 +178,7 @@ def test_prices_away_from_a_market_point_to_the_nearest(make_game):
         "You're not at a market. Nearest market for meteorite: the Mineral Exchange, north, down, west, north, "
         "then west.")
     assert cmd(game, ani, "prices")["text"] == (
-        "You're not at a market. Markets near you: the Spice Market (coffee, spices and crops), north, then 2 west; "
+        "You're not at a market. Markets near you: the Spice Market (coffee, spices, crops and fish), north, then 2 west; "
         "the Ice Depot (comet ice, helium-3 and frost pearls), north, down, west, then north; the Workshop "
         "(salvage and memory chips), north, down, then 2 east; the Mineral Exchange (ores and meteorites), north, "
         "down, west, north, then west.")
@@ -211,8 +211,8 @@ def test_the_promenade_signpost_shows_every_market(make_game):
     look = cmd(game, sari, "look")["text"]
     assert "A signpost in the middle points the way to the station's markets" in look
     sign = cmd(game, sari, "look", a="signpost")["text"]
-    assert sign.startswith("The signpost points to the station's markets: the Spice Market (coffee, spices and "
-                           "crops), north, then 2 west; ")
+    assert sign.startswith("The signpost points to the station's markets: the Spice Market (coffee, spices, crops "
+                           "and fish), north, then 2 west; ")
     assert "the Ice Depot (comet ice, helium-3 and frost pearls), " in sign
     assert "the Workshop (salvage and memory chips)" in sign
 

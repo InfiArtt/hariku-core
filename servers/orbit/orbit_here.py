@@ -102,8 +102,8 @@ class HereMixin:
         for part in (self._here_travel, self._here_market, self._here_shop, self._here_pawn, self._here_farm,
                      self._here_digging, self._here_casino, self._here_arcade, self._here_temple,
                      self._here_desks, self._here_contests, self._here_crew, self._here_work,
-                     self._here_mission, self._here_cabin, self._here_events, self._here_residents,
-                     self._here_things):
+                     self._here_mission, self._here_cabin, self._here_social, self._here_events,
+                     self._here_residents, self._here_things):
             entries.extend(part(session))
         return entries
 
@@ -333,6 +333,40 @@ class HereMixin:
                 entries.append((f"open {obj['names']['en'][0]}", "here_open", {}))
         return entries
 
+    def _here_social(self, session):
+        """Furniture to sit or lie on, what lies about, something to put things on, the jukebox, the pond."""
+        char = session.char
+        entries = []
+        seats = self.seats_here(session)
+        sit = next((s for s, (_names, seat) in seats.items() if self._seat_allows(seat, "sit")), None)
+        lie = next((s for s, (_names, seat) in seats.items() if self._seat_allows(seat, "lie")), None)
+        if sit is not None:
+            entries.append((f"sit on {seats[sit][0][0]}", "here_sit", {"at": self._seat_at(seats[sit][1], "sit")}))
+        if lie is not None:
+            entries.append((f"lie on {seats[lie][0][0]}", "here_lie", {"at": self._seat_at(seats[lie][1], "lie")}))
+        room = self.room_of(char)
+        piles = self.floor.get(room) or []
+        if piles and not self.in_the_dark(char):
+            entries.append((f"get {self.thing_word(piles[0]['id'])}", "here_get",
+                            {"things": [self._count_of(p["id"], p["n"]) for p in piles]}))
+        holders = self._holders(char["location"]) if not self._loc(char).get("airless") else {}
+        mine = next((t for t in sorted(char["inventory"]) if char["inventory"][t] > 0 and self._tradeable(t)
+                     and t not in self.worn(char).values()), None)
+        if holders and mine:
+            oid, obj = next(iter(holders.items()))
+            at = self._holder_words(obj)
+            entries.append((f"put {self.thing_word(mine)} {at.split(' ', 1)[0]} {obj['names']['en'][0]}", "here_put",
+                            {"at": at}))
+        books = [obj["names"]["en"][0] for obj in (self._loc(char).get("objects") or {}).values()
+                 if obj.get("readable")]
+        if books:
+            entries.append((f"read {books[0]}", "here_read", {"things": books}))
+        if self.jukebox_here(char):
+            entries.append(("jukebox", "here_jukebox", {}))
+        if self.fish_here(char):
+            entries.append(("fish", "here_fish", {}))
+        return entries
+
     def _here_events(self, session):
         """The events on in this room: what they scattered, a view, a gathering held here, the drone
         (an event on everywhere, like the station's birthday gift, is left to "events")."""
@@ -396,7 +430,7 @@ class HereMixin:
             found = self._companion_actions(session, text)
             if found is not None:
                 return found
-            found = self._object_named(session, text, fuzzy=False)
+            found = self._object_named(session, text, fuzzy=False) or self._pile_actions(session, text)
             if found is not None:
                 return found
             creature, _here = self.creature_here(char, text)
@@ -460,6 +494,10 @@ class HereMixin:
         else:
             entries.append((f"add friend {name}", "here_t_friend_add", {}))
         entries.append((f"invite {name}", "here_t_invite", {}))
+        if other.leader is None and session.leader is None and not self.followers_of(session):
+            entries.append((f"follow {name}", "here_t_follow", {"name": name}))
+        if (self.pose_of(other) or {}).get("kind") == "sleep":
+            entries.append((f"wake {name}", "here_t_wake", {}))
         if self.casino_here(char):
             flip = self.econ["casino"]["coinflip"]
             entries.append((f"challenge {name} {max(int(flip['min']), min(int(flip['max']), BET))}",
@@ -534,6 +572,17 @@ class HereMixin:
     def _object_actions(self, session, obj):
         word = obj["names"]["en"][0]
         entries = [(f"look at {word}", "here_t_look_thing", {})]
+        seat = obj.get("seat")
+        if seat and self._seat_allows(seat, "sit"):
+            entries.append((f"sit on {word}", "here_t_sit", {}))
+        if seat and self._seat_allows(seat, "lie"):
+            entries.append((f"lie on {word}", "here_t_lie", {}))
+        if obj.get("readable"):
+            entries.append((f"read {word}", "here_t_read", {}))
+        if obj.get("jukebox"):
+            entries.append(("jukebox", "here_jukebox", {}))
+        if obj.get("fishing"):
+            entries.append(("fish", "here_fish", {}))
         if obj.get("capsule"):
             entries.append((f"open {word}", "here_open", {}))
         if obj.get("farm") and self.farm_here(session.char):
@@ -597,3 +646,12 @@ class HereMixin:
         if others and self._tradeable(tid):
             entries.append((f"give {others[0].name} 1 {word}", "here_t_give_thing", {"name": others[0].name}))
         return entries
+
+    def _pile_actions(self, session, text):
+        """(title, entries) for something put down here that `text` names, or None."""
+        pile = self._pile_named(self.room_of(session.char), text, anywhere=True)
+        if pile is None:
+            return None
+        word = self.thing_word(pile["id"])
+        return self.render(session.lang, "here_with", name=f"the {pick(self.world.things[pile['id']]['one'])}"), [
+            (f"get {word}", "here_t_get", {}), (f"look at {word}", "here_t_look_thing", {})]

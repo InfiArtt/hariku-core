@@ -8,6 +8,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
+A frozen copy of Orbit 1.6's command reader (extensions/orbit/orbit_parse.py
+as published in the Extension Store before client 1.7), kept only so
+tests/test_orbit_compat.py can check that players who haven't updated keep
+playing. Don't change it.
+
 What a player typed or said, in English, as an Orbit command (Orbit is
 played in English since 1.5 of this client and 1.4 of the server).
 
@@ -25,8 +30,6 @@ played in English since 1.5 of this client and 1.4 of the server).
     parse("voices off")               -> {"local": "set", "key": "voices", "value": False}
     parse("ignore Sam")               -> {"local": "ignore", "name": "Sam"}
     parse("quit")                     -> {"local": "disconnect"}
-    parse("again")                    -> {"c": "text", "a": "again"}     (your last command once more,
-                                         on the server; "!" too. "repeat" is the last message)
     parse("cantina")                  -> {"c": "text", "a": "cantina"}   (the server guesses)
     parse("u")                        -> {"c": "text", "a": "u"}         (a direction: the server
                                          knows them; "u" is up, "d" down)
@@ -87,7 +90,7 @@ _VERBS = [
     (("fly", "to"), "raw"), (("board", "ship"), "raw"), (("board", "my", "ship"), "raw"),
     (("get", "off"), "raw"), (("take", "the", "ferry"), "raw"), (("take", "a", "gig"), "raw"),
     (("say", "hi", "to"), "raw"), (("say", "hello", "to"), "raw"),
-    (("repeat",), "repeat"), (("again",), "again"), (("!",), "again"),
+    (("repeat",), "repeat"), (("again",), "repeat"),
     # missions, before "look" and "take"
     (("missions",), "missions"), (("mission", "board"), "missions"), (("board",), "missions"),
     (("check", "missions"), "missions"), (("list", "missions"), "missions"),
@@ -177,8 +180,8 @@ def _tokens(text):
     found = []
     for m in _TOKEN_RE.finditer(text):
         word = m.group().lower().strip(_EDGE)
-        if word or m.group() in ("?", "!"):
-            found.append((m.start(), m.end(), word or m.group()))
+        if word or m.group() == "?":
+            found.append((m.start(), m.end(), word or "?"))
     return found
 
 
@@ -341,8 +344,6 @@ def parse(text):
         return {"local": meaning}
     if meaning == "raw":
         return {"c": "text", "a": text}
-    if meaning == "again":
-        return {"c": "text", "a": "again" if not rest else text}
     if meaning == "remind":
         return {"local": "remind", "name": rest}
     if meaning in ("ignore", "unignore"):

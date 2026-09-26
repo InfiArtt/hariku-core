@@ -588,6 +588,8 @@ class EventsMixin:
         self._send(session, "info", text=self._clue(lang, char["location"], target), extra=extra)
 
     def cmd_catch(self, session, message):
+        if self.catch_thrown(session):
+            return                              # something thrown here (orbit_floor)
         self._seek(session, "catch")
 
     def cmd_search(self, session, message):

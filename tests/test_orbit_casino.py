@@ -235,7 +235,8 @@ def test_blackjack_hit_stand_bust_naturals_and_the_dealer_peeks(make_game, monke
     assert cmd(game, ani, "blackjack", n=100)["text"].startswith("You're playing blackjack for 100 credits.")
     lost = cmd(game, ani, "stand")
     assert lost["text"] == "You have 17, the dealer has 18 (10 and 8). You lose. You have 900."
-    assert cmd(game, ani, "stand")["text"].startswith("You're not playing blackjack.")
+    assert cmd(game, ani, "stand")["text"] == "You're already standing."      # no hand: the posture (1.6)
+    assert cmd(game, ani, "hit")["text"].startswith("You're not playing blackjack.")
     # hit and bust
     clock.advance(3)
     feed(monkeypatch, game, "_card", [10, 6, 9, 7, 10])

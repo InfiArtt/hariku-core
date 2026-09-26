@@ -250,7 +250,13 @@
       },
       "landmark": true,
       "acoustics": "hangar",
-      "ferry": true
+      "ferry": true,
+      "ambient": {
+        "en": [
+          "A docking clamp clanks shut somewhere along the ring.",
+          "The departure board chimes and shuffles its lines."
+        ]
+      }
     },
     "cargo": {
       "name": {"en": "Cargo Bay"},
@@ -286,7 +292,8 @@
           "en": "Security: type work to patrol for smugglers."
         }
       },
-      "acoustics": "hangar"
+      "acoustics": "hangar",
+      "ambient": {"en": ["A forklift beeps, reversing very slowly past the containers."]}
     },
     "mineral_exchange": {
       "name": {"en": "Mineral Exchange"},
@@ -481,7 +488,13 @@
           }
         }
       },
-      "acoustics": "hangar"
+      "acoustics": "hangar",
+      "ambient": {
+        "en": [
+          "The reactor's hum rises a note, then settles again.",
+          "A pipe knocks twice, as if someone inside wants to be let out."
+        ]
+      }
     },
     "reactor_core": {
       "name": {"en": "Reactor Core"},
@@ -508,6 +521,12 @@
           },
           "desc": {
             "en": "Don't stare. The shielding is good, but you'll still see spots for a minute."
+          }
+        },
+        "gauges": {
+          "names": {"en": ["gauges", "gauge", "dials", "needles"]},
+          "desc": {
+            "en": "A wall of round gauges, every needle resting in the green. One is labelled FEELINGS in somebody's handwriting; its needle points at CALM."
           }
         }
       },
@@ -579,6 +598,17 @@
           "desc": {
             "en": "Green means the outer door may open. Red means someone is still outside. Blinking means somebody pressed it for fun."
           }
+        },
+        "hooks": {
+          "names": {"en": ["hooks", "hook", "suit hooks", "boots"]},
+          "desc": {
+            "en": "Hooks for spacesuits, most of them empty, and a row of magnetic boots underneath lined up toe to toe like shy dancers."
+          }
+        },
+        "bench": {
+          "names": {"en": ["bench", "suit bench"]},
+          "desc": {"en": "A narrow bench where people sit to pull their boots on before going outside."},
+          "seat": {"n": 3, "at": {"en": "on the suit bench"}}
         }
       },
       "acoustics": "small"
@@ -608,6 +638,14 @@
           "desc": {
             "en": "Warm water, slightly rusty. The drips keep a steady beat: plink, plink, plonk."
           }
+        },
+        "ladder": {
+          "names": {"en": ["ladder", "hatch", "rungs"]},
+          "desc": {"en": "Steel rungs cold with condensation, climbing to a hatch that opens onto the Crew Quarters."}
+        },
+        "arrows": {
+          "names": {"en": ["arrows", "arrow", "markings", "walls"]},
+          "desc": {"en": "Painted arrows, faded to ghosts. One of them might say PUMPS; another, rather firmly, NO."}
         }
       },
       "floor": "wet",
@@ -631,6 +669,18 @@
           "names": {"en": ["bot", "cleaning bot", "robot"]},
           "desc": {
             "en": "It hides behind a pipe and pretends to be a pipe."
+          }
+        },
+        "pipes": {
+          "names": {"en": ["pipes", "pipe", "drips"]},
+          "desc": {
+            "en": "Pipes run close overhead, beaded with water. Every drip rings on the floor like a tiny bell."
+          }
+        },
+        "nest": {
+          "names": {"en": ["nest", "wires", "rags"]},
+          "desc": {
+            "en": "A little nest of old wires and cleaning rags tucked behind a pipe: the cleaning bot's, you'd guess, with a shiny bolt kept in the middle like treasure."
           }
         }
       },
@@ -656,6 +706,16 @@
           "desc": {
             "en": "An old-fashioned keyhole: no card reader will open this door, only a real brass key."
           }
+        },
+        "pumps": {
+          "names": {"en": ["pumps", "pump", "old pumps"]},
+          "desc": {
+            "en": "Huge iron pumps, older than the rest of the station, their paint flaking in long curls. A brass plate says they were retired with thanks."
+          }
+        },
+        "valve": {
+          "names": {"en": ["valve", "wheel", "valve wheel"]},
+          "desc": {"en": "A great valve wheel that won't turn. Someone has tied a faded ribbon to it."}
         }
       },
       "floor": "wet",
@@ -774,10 +834,29 @@
           "desc": {
             "en": "The Main Lift Lobby is just to the south."
           }
+        },
+        "bench": {
+          "names": {"en": ["bench", "benches", "planter"]},
+          "desc": {
+            "en": "Long benches around a planter of dwarf palms, where people wait for friends and watch the Promenade go by."
+          },
+          "seat": {
+            "n": 6,
+            "at": {"en": "on a bench by the planter"},
+            "lie": true,
+            "lie_at": {"en": "along a bench by the planter"}
+          }
         }
       },
       "landmark": true,
-      "acoustics": "hall"
+      "acoustics": "hall",
+      "ambient": {
+        "en": [
+          "A cargo drone hums past overhead, a crate swinging under it.",
+          "The Promenade's lights dim a shade as the station swings into the Earth's shadow.",
+          "A group of new arrivals stops to stare at the signpost, then argues about which way is west."
+        ]
+      }
     },
     "park": {
       "name": {"en": "Sky Park"},
@@ -798,7 +877,8 @@
             "en": "Wheee! You spin down the spiral slide and tumble out into {place}."
           },
           "via": "slide"
-        }
+        },
+        "n": "willow_nook"
       },
       "desc": {
         "en": "A small park under a painted sky. A mango tree grows in a round bed with benches around it, and a children's spiral slide disappears into the floor."
@@ -820,11 +900,33 @@
           "names": {"en": ["benches", "bench"]},
           "desc": {
             "en": "Warm from the grow lights. A good place to sit and chat."
+          },
+          "seat": {"n": 6, "at": {"en": "on a park bench"}},
+          "holds": 4,
+          "holds_at": {"en": "on a park bench"}
+        },
+        "lawn": {
+          "names": {"en": ["lawn", "grass"]},
+          "desc": {
+            "en": "Real grass, kept short by a gardening robot that hums to itself. It's soft, a little damp, and the best place on the station for a nap."
+          },
+          "seat": {
+            "n": 10,
+            "at": {"en": "on the lawn"},
+            "lie": true,
+            "lie_at": {"en": "on the lawn in the sun lamps"}
           }
         }
       },
       "floor": "grass",
-      "acoustics": "open"
+      "acoustics": "open",
+      "ambient": {
+        "en": [
+          "The gardening robot hums to itself as it trims the lawn.",
+          "A leaf drifts down from the tree, slowly, the way things fall up here.",
+          "Somebody whoops their way down the spiral slide."
+        ]
+      }
     },
     "promenade_west": {
       "name": {"en": "West Promenade"},
@@ -843,6 +945,23 @@
           "names": {"en": ["barber", "barbershop"]},
           "desc": {
             "en": "The barber offers zero-gravity haircuts. The hair floats off; he catches it with a little vacuum."
+          }
+        },
+        "chair": {
+          "names": {"en": ["barber's chair", "chair", "barber chair"]},
+          "desc": {
+            "en": "A red leather barber's chair that tilts back with a hiss. A sign taped to it says: no floating trims after nine."
+          },
+          "seat": {
+            "n": 1,
+            "at": {"en": "in the barber's chair"},
+            "full": {"en": "Someone is already in the barber's chair."}
+          }
+        },
+        "cases": {
+          "names": {"en": ["cases", "phone cases", "case shop"]},
+          "desc": {
+            "en": "A shop window full of cases for phones nobody owns any more: glittery ones, rubber ducks, a tiny leather suitcase. The owner insists they'll come back into fashion."
           }
         }
       }
@@ -866,19 +985,43 @@
           "names": {"en": ["bar", "counter"]},
           "desc": {
             "en": "Behind the bar, a robot barista with one squeaky wheel pours iced coffee into cups with lids, so nothing floats away."
-          }
+          },
+          "holds": 6,
+          "holds_at": {"en": "on the bar"}
         },
         "jukebox": {
           "names": {"en": ["jukebox", "music"]},
           "desc": {
-            "en": "Two buttons: SWING and SYNTHWAVE. Someone has scratched a third one: BOTH."
-          }
+            "en": "An old jukebox with two big buttons, SWING and SYNTHWAVE, and a third someone scratched in: BOTH. A coin plays a song for the whole room: type jukebox."
+          },
+          "jukebox": true
         },
         "menu": {
           "names": {"en": ["menu"]},
           "desc": {
             "en": "Iced coffee with milk, instant noodles, fried rice in a pouch, and \"Orbit Special\": nobody knows what it is."
           }
+        },
+        "stools": {
+          "names": {"en": ["bar stools", "bar stool", "stool", "stools"]},
+          "desc": {
+            "en": "Tall chrome stools along the bar, their seats worn shiny. One of them squeaks, and regulars fight not to get it."
+          },
+          "seat": {"n": 6, "at": {"en": "on a bar stool"}, "full": {"en": "Every bar stool is taken."}}
+        },
+        "booth": {
+          "names": {"en": ["booth", "corner booth", "table", "tables"]},
+          "desc": {
+            "en": "A round corner booth with a table bolted down in the middle, and a cushioned bench curving round it. Someone has carved a tiny rocket into the tabletop."
+          },
+          "seat": {
+            "n": 5,
+            "at": {"en": "in the corner booth"},
+            "lie": true,
+            "lie_at": {"en": "along the booth's bench"}
+          },
+          "holds": 6,
+          "holds_at": {"en": "on the booth's table"}
         }
       },
       "landmark": true,
@@ -887,6 +1030,14 @@
         "all": {
           "en": "The bar sells iced coffee and snacks: type list."
         }
+      },
+      "ambient": {
+        "en": [
+          "The jukebox clicks, whirs, and goes on playing {song}.",
+          "The robot barista's squeaky wheel crosses the room and back.",
+          "Somebody at the bar laughs at a joke you didn't quite hear.",
+          "Ice rattles in a cocktail shaker behind the bar."
+        ]
       }
     },
     "casino": {
@@ -927,7 +1078,24 @@
           "desc": {
             "en": "Tickets for this week's draw, every Sunday at 12:00 station time. Type lottery."
           }
+        },
+        "stools": {
+          "names": {"en": ["stools", "stool", "table stools"]},
+          "desc": {
+            "en": "Padded stools around the card table, facing the dealer. The felt is worn pale where elbows rest."
+          },
+          "seat": {
+            "n": 5,
+            "at": {"en": "on a stool at the card table"},
+            "full": {"en": "Every stool at the card table is taken."}
+          }
         }
+      },
+      "ambient": {
+        "en": [
+          "A slot machine somewhere plays its winning jingle to nobody.",
+          "Chips clatter as the dealer squares a stack."
+        ]
       }
     },
     "hydroponics": {
@@ -980,7 +1148,8 @@
         }
       },
       "floor": "grass",
-      "acoustics": "open"
+      "acoustics": "open",
+      "ambient": {"en": ["The misters hiss, and the leaves drip.", "A grow lamp flickers and hums back to life."]}
     },
     "spice_market": {
       "name": {"en": "Spice Market"},
@@ -995,9 +1164,9 @@
       "floor": "wood",
       "exits": {"e": "hydroponics"},
       "market": {
-        "buys": ["coffee", "spices", "crop"],
-        "sells": ["coffee", "spices", "crop"],
-        "about": {"en": "coffee, spices and crops"}
+        "buys": ["coffee", "spices", "crop", "fish"],
+        "sells": ["coffee", "spices", "crop", "fish"],
+        "about": {"en": "coffee, spices, crops and fish"}
       },
       "desc": {
         "en": "A covered market that smells of roasting coffee, cloves and cardamom. Stallholders scoop coffee beans into sacks and spices into jars, and the farmers from Hydroponics, next door, sell their crops by the crate: water spinach, chillies, strawberries, and now and then a moon melon."
@@ -1052,7 +1221,8 @@
           "names": {"en": ["pool", "reflecting pool", "water"]},
           "desc": {
             "en": "Still water with a few floating petals. If you're quiet, you can hear it lapping at the stones."
-          }
+          },
+          "seat": {"n": 6, "at": {"en": "on the edge of the pool, feet in the water"}}
         }
       },
       "floor": "grass",
@@ -1082,6 +1252,11 @@
           "desc": {
             "en": "Today's specials: everything is special. The sign is very proud of itself."
           }
+        },
+        "bench": {
+          "names": {"en": ["bench", "benches"]},
+          "desc": {"en": "A bench beside the cart, sticky in one spot where someone once dropped a mango ice."},
+          "seat": {"n": 4, "at": {"en": "on the bench by the cart"}}
         }
       }
     },
@@ -1155,6 +1330,12 @@
           "names": {"en": ["beds", "bed"]},
           "desc": {
             "en": "Two beds with straps, so patients don't float off in their sleep."
+          },
+          "seat": {
+            "n": 4,
+            "at": {"en": "on the edge of a medbay bed"},
+            "lie": true,
+            "lie_at": {"en": "on a medbay bed"}
           }
         },
         "desk": {
@@ -1207,7 +1388,8 @@
       "exits": {
         "n": "promenade_west",
         "s": {"to": "cabin", "via": "door"},
-        "d": {"to": "maint_1", "lock": "crew", "via": "ladder"}
+        "d": {"to": "maint_1", "lock": "crew", "via": "ladder"},
+        "w": "crew_lounge"
       },
       "desc": {
         "en": "A long carpeted hallway lined with numbered doors. Someone has strung fairy lights along the ceiling, and a maintenance hatch is set into the floor."
@@ -1254,7 +1436,8 @@
           "names": {"en": ["bunk", "bed", "blanket"]},
           "desc": {
             "en": "The blanket from home still smells a little of the laundry soap your family uses."
-          }
+          },
+          "seat": {"n": 2, "at": {"en": "on the edge of the bunk"}, "lie": true, "lie_at": {"en": "in the bunk"}}
         },
         "window": {
           "names": {"en": ["window", "stars"]},
@@ -1327,6 +1510,16 @@
           "names": {"en": ["portraits", "portrait", "captains"]},
           "desc": {
             "en": "Eleven captains, from a stern woman with a monocle to a young man grinning with a pineapple in his hands."
+          }
+        },
+        "carpet": {
+          "names": {"en": ["carpet", "runner", "floor"]},
+          "desc": {"en": "A long blue carpet runner, worn thin down the middle by generations of hurrying officers."}
+        },
+        "plant": {
+          "names": {"en": ["plant", "fern", "pot"]},
+          "desc": {
+            "en": "A fern in a brass pot, the only living thing in the corridor that never seems to be in a hurry."
           }
         }
       },
@@ -1451,9 +1644,22 @@
           "desc": {
             "en": "An old brass telescope, bolted to the rail. Someone has pointed it at the Moon and taped a note to it: \"hi mum\"."
           }
+        },
+        "seats": {
+          "names": {"en": ["window seats", "window seat", "seats", "cushions"]},
+          "desc": {
+            "en": "Deep cushioned seats built into the window's curve, where you can sit with the whole Earth turning below your feet."
+          },
+          "seat": {"n": 6, "at": {"en": "in a window seat"}, "lie": true, "lie_at": {"en": "across a window seat"}}
         }
       },
-      "acoustics": "hall"
+      "acoustics": "hall",
+      "ambient": {
+        "en": [
+          "The Earth's terminator slides across the Pacific: somewhere, it's sunrise.",
+          "A satellite glints below the window and is gone."
+        ]
+      }
     },
     "archive": {
       "name": {"en": "Station Archive"},
@@ -1465,7 +1671,8 @@
       "area": "upper",
       "at": [-1, -1],
       "ambience": "deck",
-      "exits": {"n": "observation", "e": "lift_upper"},
+      "exits": {"n": "observation", "e": "lift_upper",
+      "w": "reading_room"},
       "desc": {
         "en": "Shelves of glowing data crystals hum softly in the dim light. A librarian robot dusts them carefully, although there is no dust in space."
       },
@@ -1572,7 +1779,8 @@
           "names": {"en": ["benches", "bench"]},
           "desc": {
             "en": "Smooth pale wood, worn soft by many quiet visitors."
-          }
+          },
+          "seat": {"n": 10, "at": {"en": "on a bench under the dome"}}
         },
         "dome": {
           "names": {"en": ["dome", "stars", "glass", "sky"]},
@@ -1582,7 +1790,8 @@
         }
       },
       "floor": "stone",
-      "acoustics": "hall"
+      "acoustics": "hall",
+      "ambient": {"en": ["The dome's stars wheel very slowly overhead.", "A lantern flickers in its alcove."]}
     },
     "hull_walk": {
       "name": {"en": "Hull Walkway"},
@@ -1635,6 +1844,12 @@
           "desc": {
             "en": "A small bird-shaped sticker sits on one panel. It must have been put there by someone very tall and very brave."
           }
+        },
+        "sun": {
+          "names": {"en": ["sun", "sunlight", "glare"]},
+          "desc": {
+            "en": "The sun is a white coin with no sky around it. Your visor darkens itself before you can squint."
+          }
         }
       },
       "floor": "suit",
@@ -1658,6 +1873,12 @@
           "names": {"en": ["dishes", "dish"]},
           "desc": {
             "en": "They all point at Earth except one, which points at nothing at all."
+          }
+        },
+        "music": {
+          "names": {"en": ["music", "crackle", "radio"]},
+          "desc": {
+            "en": "A faint crackle of music in your helmet: an old song from Earth, maybe decades late, still travelling. It comes and goes like a tide."
           }
         }
       },
@@ -1684,6 +1905,12 @@
           "names": {"en": ["nets", "net", "scraps"]},
           "desc": {
             "en": "Strong enough to catch a bus. Over the years they've caught a boot, a spanner and a rubber duck."
+          }
+        },
+        "glint": {
+          "names": {"en": ["glint", "glitter", "satellite", "old satellite"]},
+          "desc": {
+            "en": "Half an old weather satellite hangs in the nets, its gold foil peeling like a sweet wrapper. Collect would pick through it."
           }
         }
       },
@@ -1752,6 +1979,12 @@
           "desc": {
             "en": "Richer than inside the dome. Miners come out here for the good stuff, and keep an eye on their air."
           }
+        },
+        "sky": {
+          "names": {"en": ["sky", "stars", "rocks"]},
+          "desc": {
+            "en": "No air, so no twinkle: the stars are hard, still points, and other asteroids tumble past in the distance like slow grey dice."
+          }
         }
       },
       "floor": "rock",
@@ -1778,6 +2011,12 @@
           "desc": {
             "en": "Some of them hum when you tap them, a note so low you feel it in your teeth."
           }
+        },
+        "echo": {
+          "names": {"en": ["echo", "tunnel", "darkness"]},
+          "desc": {
+            "en": "The cave narrows and turns into darkness. In the silence you can hear your own heartbeat in your suit."
+          }
         }
       },
       "floor": "rock",
@@ -1798,7 +2037,8 @@
         "en": "The cockpit of the cargo shuttle Dove. The autopilot hums, and the Moon grows slowly in the window."
       },
       "objects": {},
-      "acoustics": "small"
+      "acoustics": "small",
+      "sit_at": {"en": "in the co-pilot's seat"}
     },
     "kancil": {
       "name": {"en": "Aboard the Wombat"},
@@ -1815,7 +2055,8 @@
         "en": "The little mining shuttle Wombat hums through the dark, its windows full of tumbling rocks."
       },
       "objects": {},
-      "acoustics": "small"
+      "acoustics": "small",
+      "sit_at": {"en": "in a jump seat"}
     },
     "lift_mall": {
       "name": {"en": "Mall Lift Lobby"},
@@ -1875,6 +2116,12 @@
             "en": "West: Gearworks, Orbit Outfitters and Second Orbit (a pawn shop). East: Cosy Corner, Whiskers & Widgets and Starglint Jewellers, with the wedding desk. North: the Food Court."
           }
         }
+      },
+      "ambient": {
+        "en": [
+          "The fountain's water arcs up, hangs, and falls in slow ribbons.",
+          "A shopping trolley glides by on its own, looking for its owner."
+        ]
       }
     },
     "food_court": {
@@ -1887,7 +2134,8 @@
       "area": "mall",
       "at": [0, 1],
       "ambience": "cantina",
-      "exits": {"s": "atrium"},
+      "exits": {"s": "atrium",
+      "n": "terrace"},
       "shop": "food",
       "acoustics": "hall",
       "hints": {
@@ -1904,7 +2152,28 @@
           "desc": {
             "en": "Every counter has a small robot cook with a very serious face."
           }
+        },
+        "tables": {
+          "names": {"en": ["tables", "table", "trays", "chairs"]},
+          "desc": {
+            "en": "Long tables with magnetic trays and chairs that swivel. There's always someone's lunch abandoned at the end of one."
+          },
+          "seat": {"n": 12, "at": {"en": "at a table in the Food Court"}},
+          "holds": 8,
+          "holds_at": {"en": "on a Food Court table"}
+        },
+        "menu": {
+          "names": {"en": ["menu", "board", "menu board"]},
+          "desc": {
+            "en": "A glowing menu board: iced coffee, stuffed pancakes, crackers, baby porridge, space ramen, cheese toasties, fruit skewers and sesame buns. Type list."
+          }
         }
+      },
+      "ambient": {
+        "en": [
+          "Somebody's birthday song starts up again at a corner table.",
+          "A tray clatters, and the whole Food Court says 'ooh' at once."
+        ]
       }
     },
     "mall_west": {
@@ -1926,6 +2195,10 @@
           "desc": {
             "en": "One window shows a mannequin in an EVA suit, posed as if it's dancing."
           }
+        },
+        "kiosk": {
+          "names": {"en": ["kiosk", "keyring kiosk", "keyrings"]},
+          "desc": {"en": "A kiosk of keyrings shaped like planets, shuttles and a surprisingly detailed tax form."}
         }
       }
     },
@@ -1955,6 +2228,12 @@
           "names": {"en": ["racks", "rack"]},
           "desc": {
             "en": "Every price tag has been hand-written by someone with very neat letters."
+          }
+        },
+        "suit": {
+          "names": {"en": ["suit", "spacesuit", "helmet", "stand"]},
+          "desc": {
+            "en": "A spacesuit on a stand. Its empty helmet turns, very slowly, to follow you. It's a motion sensor. Probably."
           }
         }
       }
@@ -1987,6 +2266,17 @@
           "desc": {
             "en": "It says: 'Stunning. Truly. Would you like to try the golden one?'"
           }
+        },
+        "rails": {
+          "names": {"en": ["rails", "rail", "clothes"]},
+          "desc": {
+            "en": "Rails of clothes in every colour, from rocket-print shirts to a very serious captain's coat. Type list."
+          }
+        },
+        "fitting": {
+          "names": {"en": ["fitting room", "curtain", "stool"]},
+          "desc": {"en": "A fitting room with a velvet curtain and a little stool to sit on while you decide."},
+          "seat": {"n": 1, "at": {"en": "on the fitting room stool"}}
         }
       }
     },
@@ -2018,6 +2308,12 @@
           "desc": {
             "en": "She squints through it at everything, including you."
           }
+        },
+        "shelves": {
+          "names": {"en": ["shelves", "shelf", "clutter", "things"]},
+          "desc": {
+            "en": "Shelves of things people didn't need any more: a lava lamp with a crack, a single rollerskate, a box of keycards that open nothing now."
+          }
         }
       }
     },
@@ -2039,6 +2335,18 @@
           "names": {"en": ["bench", "benches"]},
           "desc": {
             "en": "A bench for people waiting for people who are still shopping."
+          },
+          "seat": {
+            "n": 4,
+            "at": {"en": "on the bench in the East Arcade"},
+            "lie": true,
+            "lie_at": {"en": "along the bench"}
+          }
+        },
+        "planters": {
+          "names": {"en": ["planters", "planter", "lemon trees"]},
+          "desc": {
+            "en": "Planters of little lemon trees, each with a real lemon or two that nobody has dared to pick."
           }
         }
       }
@@ -2070,6 +2378,13 @@
           "names": {"en": ["sofas", "sofa"]},
           "desc": {
             "en": "One of them has a sign: 'Try me'. It's very comfortable."
+          },
+          "seat": {"n": 4, "at": {"en": "on a display sofa"}, "lie": true, "lie_at": {"en": "on a display sofa"}}
+        },
+        "lamps": {
+          "names": {"en": ["lamps", "lamp", "rugs", "rug"]},
+          "desc": {
+            "en": "Lamps of paper and brass, and rugs rolled up like sleeping cats. A tag on one says: please do not nap on the display rugs."
           }
         }
       }
@@ -2102,6 +2417,10 @@
           "desc": {
             "en": "One cat opens an eye, decides you're acceptable, and closes it again."
           }
+        },
+        "robots": {
+          "names": {"en": ["robots", "little robots", "robot"]},
+          "desc": {"en": "Little robots roll between the baskets, bumping gently into your ankles and beeping hello."}
         }
       }
     },
@@ -2188,7 +2507,8 @@
       "area": "upper",
       "at": [1, -1],
       "ambience": "gate",
-      "exits": {"w": "lift_upper"},
+      "exits": {"w": "lift_upper",
+      "e": "gallery"},
       "desc": {
         "en": "A tall round hall beside the lifts. In its middle a ring of pale light hangs in the air: the Gate, where the simulation folds space so you can step from one world to another. A board lists the worlds and what the Gate charges to reach each, and the ring hums one low note that seems to come from every direction at once."
       },
@@ -2321,6 +2641,19 @@
           "desc": {
             "en": "Landing pads ringed with blue lights; now and then a ship settles onto one in a puff of grey dust that takes ages to fall."
           }
+        },
+        "desk": {
+          "names": {"en": ["desk", "arrivals desk", "stamp"]},
+          "desc": {
+            "en": "An arrivals desk with a stamp that says WELCOME TO THE MOON in letters that are far too cheerful for the hour."
+          }
+        },
+        "benches": {
+          "names": {"en": ["benches", "bench", "seats"]},
+          "desc": {
+            "en": "Low benches for waiting passengers. Sitting down in lunar gravity takes a lot longer than you'd think."
+          },
+          "seat": {"n": 6, "at": {"en": "on a bench by the arrivals desk"}}
         }
       }
     },
@@ -2344,6 +2677,12 @@
           "desc": {
             "en": "The forklift beeps politely before every turn, even with nobody around."
           }
+        },
+        "crates": {
+          "names": {"en": ["labels", "crate labels", "stencils"]},
+          "desc": {
+            "en": "Crates stencilled with the station's rocket: SEEDS, SPARE PARTS, COFFEE, and one just marked PERSONAL, DO NOT SHAKE."
+          }
         }
       }
     },
@@ -2365,6 +2704,12 @@
           "names": {"en": ["signs", "sign"]},
           "desc": {
             "en": "Signs in six languages. One of them has a small smiley face drawn on it."
+          }
+        },
+        "panels": {
+          "names": {"en": ["panels", "wall panels", "white panels"]},
+          "desc": {
+            "en": "White wall panels covered in fingerprints at exactly the height where people lean to catch their breath after a hop."
           }
         }
       }
@@ -2398,6 +2743,10 @@
           "desc": {
             "en": "Amber numbers scroll past. Type prices to hear them."
           }
+        },
+        "traders": {
+          "names": {"en": ["traders", "trader", "floor"]},
+          "desc": {"en": "Traders in grey coveralls watch the boards and argue about helium in quick, soft voices."}
         }
       }
     },
@@ -2427,6 +2776,12 @@
           "desc": {
             "en": "Drill rigs grind the regolith; the glassy beads are old lava, frozen into droplets long ago."
           }
+        },
+        "bulbs": {
+          "names": {"en": ["bulbs", "bulb", "lights", "string"]},
+          "desc": {
+            "en": "Strings of bulbs sagging along the tunnel roof. Every tenth one flickers in a rhythm the miners swear is Morse code for 'lunch'."
+          }
         }
       }
     },
@@ -2450,8 +2805,21 @@
           "desc": {
             "en": "The whole Earth in one glance: swirls of cloud, a blue ocean, and on its night side the lights of cities strung along the coasts like beads."
           }
+        },
+        "ferns": {
+          "names": {"en": ["ferns", "fern", "garden", "path"]},
+          "desc": {
+            "en": "Lunar ferns, pale and feathery, grown in grey soil. A gravel path winds between them to a bench facing the Earth."
+          },
+          "seat": {
+            "n": 4,
+            "at": {"en": "on the bench facing the Earth"},
+            "lie": true,
+            "lie_at": {"en": "on the gravel among the ferns"}
+          }
         }
-      }
+      },
+      "ambient": {"en": ["The Earth turns, very slowly, above the ferns."]}
     },
     "moon_airlock": {
       "name": {"en": "Surface Airlock"},
@@ -2472,6 +2840,12 @@
           "names": {"en": ["suits", "hooks", "sign"]},
           "desc": {
             "en": "Spare suits for visitors, all a little too big."
+          }
+        },
+        "gauges": {
+          "names": {"en": ["gauges", "gauge", "air gauge"]},
+          "desc": {
+            "en": "A row of air gauges with a laminated note: green is good, yellow is thinking about it, red is coming back in right now."
           }
         }
       }
@@ -2497,6 +2871,10 @@
           "desc": {
             "en": "With no wind to blow them away, every footprint here will last a million years."
           }
+        },
+        "earth": {
+          "names": {"en": ["earth", "planet", "sky"]},
+          "desc": {"en": "The Earth hangs in the black sky, a blue marble that never moves from its spot."}
         }
       }
     },
@@ -2521,6 +2899,10 @@
           "desc": {
             "en": "The crater's floor has never seen sunlight. Ice may be hiding down there."
           }
+        },
+        "base": {
+          "names": {"en": ["base", "pebbles", "lights"]},
+          "desc": {"en": "Far below, the base: a handful of domes like pebbles, with lights that blink a slow hello."}
         }
       }
     },
@@ -2557,6 +2939,13 @@
           "desc": {
             "en": "Customs officers in red jackets check arrivals from the Gate and the ferry; ships less often."
           }
+        },
+        "bench": {
+          "names": {"en": ["bench", "benches", "waiting bench"]},
+          "desc": {
+            "en": "A bench covered in red dust no matter how often it's wiped. The colonists call it the welcome mat."
+          },
+          "seat": {"n": 4, "at": {"en": "on the dusty bench"}}
         }
       }
     },
@@ -2580,8 +2969,22 @@
           "desc": {
             "en": "Dry now. At noon it runs for exactly ten minutes, and everyone comes to watch."
           }
+        },
+        "robot_dog": {
+          "names": {"en": ["robot dog", "dog", "children"]},
+          "desc": {
+            "en": "A patient robot dog, its fur painted with red handprints, being chased by children who never seem to tire."
+          }
+        },
+        "steps": {
+          "names": {"en": ["steps", "step", "fountain steps"]},
+          "desc": {
+            "en": "Wide steps around the fountain, warm from the lamps. Everyone sits here at noon to watch the water run."
+          },
+          "seat": {"n": 8, "at": {"en": "on the fountain steps"}}
         }
-      }
+      },
+      "ambient": {"en": ["The robot dog barks once, and the children shriek with delight."]}
     },
     "kar_market": {
       "name": {"en": "Red Market"},
@@ -2603,6 +3006,12 @@
           "names": {"en": ["stalls", "awnings"]},
           "desc": {
             "en": "Red quinoa, rust salt, and a stall selling ice by the cup. Type prices."
+          }
+        },
+        "jars": {
+          "names": {"en": ["jars", "jar", "rust salt"]},
+          "desc": {
+            "en": "Jars of rust salt, from pale pink to the colour of old brick. A label promises it makes eggs taste like a sunset."
           }
         }
       }
@@ -2635,6 +3044,12 @@
           "desc": {
             "en": "Quinoa heads nod under the lamps like red feathers. Type collect to pick a share."
           }
+        },
+        "sign": {
+          "names": {"en": ["sign", "pickers sign"]},
+          "desc": {
+            "en": "A hand-painted sign: pickers welcome, take a share of what you gather. Someone has added: and please close the dome door."
+          }
         }
       }
     },
@@ -2656,6 +3071,12 @@
           "names": {"en": ["flowers", "window boxes", "homes"]},
           "desc": {
             "en": "Marigolds, mostly: tough little flowers that don't mind thin air."
+          }
+        },
+        "bricks": {
+          "names": {"en": ["bricks", "brick", "walls"]},
+          "desc": {
+            "en": "Red bricks pressed from the planet's own dust, each stamped with the date it was made and the initials of whoever made it."
           }
         }
       }
@@ -2682,8 +3103,16 @@
           "desc": {
             "en": "Well-worn board games; the chess set is missing a knight, replaced by a bolt."
           }
+        },
+        "benches": {
+          "names": {"en": ["benches", "bench", "cots"]},
+          "desc": {
+            "en": "Thick benches and folding cots along the walls, with blankets folded on each. Some have names stitched into the corners."
+          },
+          "seat": {"n": 10, "at": {"en": "on a shelter bench"}, "lie": true, "lie_at": {"en": "on a folding cot"}}
         }
-      }
+      },
+      "ambient": {"en": ["The wind moans against the bunker's thick walls."]}
     },
     "kar_garage": {
       "name": {"en": "Rover Garage"},
@@ -2704,6 +3133,12 @@
           "names": {"en": ["rovers", "tarps"]},
           "desc": {
             "en": "Six-wheeled rovers. One has a name painted on its side: Lucky."
+          }
+        },
+        "tools": {
+          "names": {"en": ["tools", "toolboard", "spanners"]},
+          "desc": {
+            "en": "A toolboard where every spanner has a painted outline, and one outline has a note: WHO TOOK IT."
           }
         }
       }
@@ -2731,6 +3166,10 @@
           "desc": {
             "en": "Rust-coloured salt crusts. Type collect to dig some."
           }
+        },
+        "sky": {
+          "names": {"en": ["sky", "butterscotch sky", "sun"]},
+          "desc": {"en": "A butterscotch sky with a small, cold sun. At sunset, they say, it turns blue."}
         }
       }
     },
@@ -2754,6 +3193,12 @@
           "names": {"en": ["moons", "canyon"]},
           "desc": {
             "en": "Two potato-shaped moons race each other across the sky."
+          }
+        },
+        "edge": {
+          "names": {"en": ["edge", "rim", "drop"]},
+          "desc": {
+            "en": "The rim crumbles away into a drop so deep it looks painted. A pebble you nudge falls for a long time without a sound."
           }
         }
       }
@@ -2789,6 +3234,13 @@
           "desc": {
             "en": "Feathery frost flowers, each one different, grown overnight on the glass."
           }
+        },
+        "heaters": {
+          "names": {"en": ["heaters", "heater", "domes"]},
+          "desc": {
+            "en": "Big orange heaters that roar gently. Travellers stand around them holding their hands out, like at a campfire."
+          },
+          "seat": {"n": 6, "at": {"en": "by the heaters, on an upturned crate"}}
         }
       }
     },
@@ -2812,6 +3264,12 @@
           "names": {"en": ["cores", "ice cores"]},
           "desc": {
             "en": "Ice cores with thin dark bands: each band a year of dust, they say."
+          }
+        },
+        "jumpers": {
+          "names": {"en": ["jumpers", "scientists", "scientist"]},
+          "desc": {
+            "en": "Scientists in thick jumpers with reindeer on them, the fashion here. One of them is asleep on a stack of ice core boxes."
           }
         }
       }
@@ -2840,6 +3298,13 @@
           "desc": {
             "en": "Brass scales for weighing ice. Type prices."
           }
+        },
+        "hut": {
+          "names": {"en": ["hut", "benches", "bench"]},
+          "desc": {
+            "en": "Benches along the hut's walls, crowded with traders thawing out and grumbling about prices."
+          },
+          "seat": {"n": 6, "at": {"en": "on a bench along the wall"}}
         }
       }
     },
@@ -2864,8 +3329,28 @@
           "desc": {
             "en": "The floor is warm enough to fall asleep on, and several people have."
           }
+        },
+        "sofa": {
+          "names": {"en": ["sofa", "sofas", "cushions", "blankets"]},
+          "desc": {
+            "en": "Big squashy sofas over the warm pipes, heaped with blankets. It's very hard to leave one once you're in it."
+          },
+          "seat": {
+            "n": 6,
+            "at": {"en": "on a squashy sofa"},
+            "lie": true,
+            "lie_at": {"en": "under a blanket on a squashy sofa"}
+          }
         }
-      }
+      },
+      "ambient": {
+        "en": [
+          "The warm pipes tick as the water runs through them.",
+          "Someone sighs happily and wriggles deeper under a blanket."
+        ]
+      },
+      "shop": "lodge_kitchen",
+      "hints": {"all": {"en": "The lodge kitchen sells cocoa and cloudberry pie: type list."}}
     },
     "glasir_quarry": {
       "name": {"en": "Ice Quarry"},
@@ -2898,6 +3383,12 @@
           "desc": {
             "en": "Blocks of blue ice, stacked for the taking. Type collect."
           }
+        },
+        "sleds": {
+          "names": {"en": ["sleds", "sled", "cutters"]},
+          "desc": {
+            "en": "Sleds loaded with ice blocks wait by the terraces, and a cutter's saw hangs frozen mid-job."
+          }
         }
       }
     },
@@ -2922,6 +3413,10 @@
           "desc": {
             "en": "A plume rises, hangs glittering, and falls as snow."
           }
+        },
+        "snow": {
+          "names": {"en": ["snow", "glitter", "crystals"]},
+          "desc": {"en": "The plume's snow falls slowly, glittering, and lands on your visor in tiny perfect stars."}
         }
       }
     },
@@ -2952,6 +3447,12 @@
           "names": {"en": ["pearls", "ledges", "walls"]},
           "desc": {
             "en": "Frost pearls on the ledges. Type collect."
+          }
+        },
+        "glow": {
+          "names": {"en": ["glow", "blue", "light"]},
+          "desc": {
+            "en": "The blue glow seems to come from inside the ice itself, as if the moon had swallowed the sky."
           }
         }
       }
@@ -2987,6 +3488,12 @@
           "desc": {
             "en": "Hawkers selling everything from spare fuses to fortune-telling robots."
           }
+        },
+        "board": {
+          "names": {"en": ["board", "notice board", "notices"]},
+          "desc": {
+            "en": "A notice board of scribbled offers: ships for hire, lost cats, WILL TRADE HAT FOR SMALL MOON."
+          }
         }
       }
     },
@@ -3012,7 +3519,18 @@
           "desc": {
             "en": "Paper lanterns and old neon, and a thousand voices haggling. Type prices."
           }
+        },
+        "cushions": {
+          "names": {"en": ["cushions", "cushion", "carpets"]},
+          "desc": {"en": "Carpets and cushions spread between the stalls, where traders sit cross-legged to haggle."},
+          "seat": {"n": 8, "at": {"en": "cross-legged on a cushion"}}
         }
+      },
+      "ambient": {
+        "en": [
+          "A hawker bangs a pan and shouts a price nobody believes.",
+          "The whole cavern tilts a little as the asteroid tumbles, and everyone steadies their stalls."
+        ]
       }
     },
     "spice_row": {
@@ -3035,6 +3553,10 @@
           "desc": {
             "en": "Sacks of cinnamon, clove, nutmeg and pepper, cheapest here of anywhere."
           }
+        },
+        "scales": {
+          "names": {"en": ["scales", "scale", "scoops"]},
+          "desc": {"en": "Old brass scales and a set of scoops, each worn smooth by years of cinnamon."}
         }
       }
     },
@@ -3064,6 +3586,10 @@
           "desc": {
             "en": "Two stalls with their shutters half down, and crates with no labels stacked behind them. Type prices to hear what's for sale, or talk to Shade."
           }
+        },
+        "coat": {
+          "names": {"en": ["coat", "woman", "long coat"]},
+          "desc": {"en": "The woman in the long coat has many pockets, and never seems to open the same one twice."}
         }
       }
     },
@@ -3089,8 +3615,20 @@
           "desc": {
             "en": "Ginger tea in cups with weighted bottoms, so they don't wander off."
           }
+        },
+        "cushions": {
+          "names": {"en": ["cushions", "cushion", "low tables"]},
+          "desc": {
+            "en": "Cushions around low tables bolted to the floor. When the asteroid wobbles, everyone lifts their cups at once without thinking."
+          },
+          "seat": {"n": 8, "at": {"en": "on a cushion by a low table"}},
+          "holds": 6,
+          "holds_at": {"en": "on a low table"}
         }
-      }
+      },
+      "ambient": {"en": ["Cups lift all at once as the asteroid wobbles, then settle."]},
+      "shop": "tea_house",
+      "hints": {"all": {"en": "The Tumbling Cup sells ginger tea, cardamom coffee and date cake: type list."}}
     },
     "bazaar_lookout": {
       "name": {"en": "Lookout"},
@@ -3111,6 +3649,11 @@
           "desc": {
             "en": "The stars wheel round once every few minutes as the asteroid tumbles."
           }
+        },
+        "rail": {
+          "names": {"en": ["rail", "railing", "brass rail"]},
+          "desc": {"en": "A brass rail polished by a thousand elbows. People lean here to wave at passing ships."},
+          "seat": {"n": 4, "at": {"en": "on the ledge by the rail"}}
         }
       }
     },
@@ -3145,6 +3688,11 @@
           "desc": {
             "en": "The standing stones hum when the Gate opens; the boats' cloth wings flap lazily."
           }
+        },
+        "planks": {
+          "names": {"en": ["planks", "plank", "pier"]},
+          "desc": {"en": "Old grey planks, warm from the sun. Between two of them you can see clouds, very far down."},
+          "seat": {"n": 6, "at": {"en": "on the edge of the pier, feet dangling over nothing"}}
         }
       }
     },
@@ -3170,7 +3718,18 @@
           "desc": {
             "en": "The well is wishing-well deep. The market cart sells moonpetals: type prices."
           }
+        },
+        "well_edge": {
+          "names": {"en": ["well's edge", "edge", "stone rim"]},
+          "desc": {"en": "The well's stone rim, worn smooth by villagers sitting to gossip while buckets come up."},
+          "seat": {"n": 4, "at": {"en": "on the well's stone rim"}}
         }
+      },
+      "ambient": {
+        "en": [
+          "A villager hauls up a bucket from the well, singing under her breath.",
+          "Somewhere a goat complains about everything."
+        ]
       }
     },
     "grove_wood": {
@@ -3194,8 +3753,21 @@
           "desc": {
             "en": "Tall murmuring trees. Moss sprites hide in the ferns: face moss sprite."
           }
+        },
+        "trees": {
+          "names": {"en": ["roots", "great tree", "tree", "trunks"]},
+          "desc": {
+            "en": "Trunks too wide to hug, with roots like armchairs. The trees lean in when you speak, as if listening."
+          },
+          "seat": {
+            "n": 4,
+            "at": {"en": "among the roots of a great tree"},
+            "lie": true,
+            "lie_at": {"en": "on the moss between the roots"}
+          }
         }
-      }
+      },
+      "ambient": {"en": ["A moss sprite giggles from inside a fern.", "The trees murmur together, then fall quiet."]}
     },
     "grove_deep": {
       "name": {"en": "Deep Wood"},
@@ -3219,6 +3791,10 @@
           "desc": {
             "en": "Something big snores in the thicket. Ember beetles glow on the branches."
           }
+        },
+        "beetles": {
+          "names": {"en": ["beetles", "beetle", "embers"]},
+          "desc": {"en": "Glow beetles crawl along the branches, blinking like embers breathing."}
         }
       }
     },
@@ -3245,6 +3821,12 @@
           "desc": {
             "en": "Mushroom caps as big as umbrellas; the imps bounce on them like drums."
           }
+        },
+        "imps": {
+          "names": {"en": ["imps", "imp", "puffcaps"]},
+          "desc": {
+            "en": "Puffcap imps, round as dumplings, bouncing from cap to cap and giggling at their own riddles."
+          }
         }
       }
     },
@@ -3267,6 +3849,12 @@
           "names": {"en": ["knight", "stone knight", "banners"]},
           "desc": {
             "en": "The stone knight bows with a grinding noise, and says good day in both languages."
+          }
+        },
+        "moat": {
+          "names": {"en": ["moat", "lilies", "water"]},
+          "desc": {
+            "en": "A moat covered in lilies, where a frog wearing a tiny crown sits very still and pretends not to notice you."
           }
         }
       }
@@ -3291,9 +3879,15 @@
           "desc": {
             "en": "Dragons, or large napping lizards; opinions differ."
           }
+        },
+        "tables": {
+          "names": {"en": ["long tables", "benches", "bench"]},
+          "desc": {"en": "Benches at the long tables, polished by centuries of elbows and feasts."},
+          "seat": {"n": 12, "at": {"en": "on a bench at the long tables"}}
         }
       },
-      "venue": true
+      "venue": true,
+      "ambient": {"en": ["The fire pops, and a log settles in a burst of sparks."]}
     },
     "grove_tower": {
       "name": {"en": "Star Tower"},
@@ -3314,6 +3908,12 @@
           "names": {"en": ["stars", "sky"]},
           "desc": {
             "en": "Look closely and a few stars blink in a pattern, as if someone is signalling."
+          }
+        },
+        "quilt": {
+          "names": {"en": ["quilt", "view", "evergrove"]},
+          "desc": {
+            "en": "Below, Evergrove spreads out like a quilt: dark green woods, gold fields, the silver thread of a river, and the village's smoke."
           }
         }
       }
@@ -3349,6 +3949,10 @@
           "desc": {
             "en": "City drones with polite voices and very good scanners."
           }
+        },
+        "gate_ring": {
+          "names": {"en": ["pink ring", "neon ring", "rain"]},
+          "desc": {"en": "The Gate's ring, done in pink neon, buzzes gently. Rain hisses where it touches the light."}
         }
       }
     },
@@ -3372,8 +3976,20 @@
           "desc": {
             "en": "A koi of light, as long as a ferry, swimming slowly between the towers."
           }
+        },
+        "stalls": {
+          "names": {"en": ["noodle stalls", "stalls", "hovercabs"]},
+          "desc": {
+            "en": "Noodle stalls with steaming pots and plastic stools under the holograms, and hovercabs honking politely overhead."
+          },
+          "seat": {"n": 6, "at": {"en": "on a plastic stool at a noodle stall"}}
         }
-      }
+      },
+      "ambient": {
+        "en": ["The giant koi of light swims overhead, trailing sparks.", "A hovercab honks, politely, twice."]
+      },
+      "shop": "noodle_stall",
+      "hints": {"all": {"en": "The noodle stalls sell neon noodles and rain dumplings: type list."}}
     },
     "lumina_market": {
       "name": {"en": "Night Market"},
@@ -3399,6 +4015,12 @@
           "desc": {
             "en": "Circuit boards by the kilo, chips by the handful. Type prices."
           }
+        },
+        "chips": {
+          "names": {"en": ["chips", "circuit boards", "boards"]},
+          "desc": {
+            "en": "Circuit boards sold by weight from plastic tubs, and a hand-written sign: NO REFUNDS, NO QUESTIONS."
+          }
         }
       }
     },
@@ -3421,6 +4043,12 @@
           "names": {"en": ["cat", "hologram cat", "puddles"]},
           "desc": {
             "en": "The hologram cat flickers, yawns, and ignores you completely."
+          }
+        },
+        "fire_escape": {
+          "names": {"en": ["fire escape", "stairs", "air conditioners"]},
+          "desc": {
+            "en": "A rusty fire escape where the hologram cat sits among dripping air conditioners, flickering whenever a hovercab passes."
           }
         }
       }
@@ -3451,6 +4079,12 @@
           "desc": {
             "en": "Stacks of parcels, each with a glowing address. Type gig to take one."
           }
+        },
+        "dispatcher": {
+          "names": {"en": ["headsets", "headset", "three headsets"]},
+          "desc": {
+            "en": "The dispatcher wears three headsets and talks into all of them at once without ever getting muddled."
+          }
         }
       }
     },
@@ -3476,6 +4110,11 @@
           "desc": {
             "en": "Hover bikes scream past in streaks of light. The races are coming soon."
           }
+        },
+        "grandstand": {
+          "names": {"en": ["grandstand seats", "seats", "stands"]},
+          "desc": {"en": "Plastic seats in the grandstand, sticky with spilled fizz, facing the glowing track."},
+          "seat": {"n": 12, "at": {"en": "in the grandstand"}}
         }
       }
     },
@@ -3499,6 +4138,13 @@
           "desc": {
             "en": "Giant hologram dancers, looping the same eight steps forever."
           }
+        },
+        "fountain": {
+          "names": {"en": ["fountain", "light fountain", "ledge"]},
+          "desc": {
+            "en": "A fountain of light, not water: it splashes colours instead of drops, and there's a ledge to sit on around it."
+          },
+          "seat": {"n": 8, "at": {"en": "on the ledge of the light fountain"}}
         }
       }
     },
@@ -3522,8 +4168,18 @@
           "desc": {
             "en": "The whole city, glittering, and the rain sliding down the glass."
           }
+        },
+        "stools": {
+          "names": {"en": ["stools", "stool", "bar"]},
+          "desc": {"en": "Glass stools at a glass bar. From them, the city looks like it's floating in your drink."},
+          "seat": {
+            "n": 6,
+            "at": {"en": "on a glass stool at the bar"},
+            "full": {"en": "Every stool at the bar is taken."}
+          }
         }
-      }
+      },
+      "ambient": {"en": ["Rain streams down the windows, lit pink and gold from below."]}
     },
     "lumina_tower": {
       "name": {"en": "Tower Lobby"},
@@ -3544,6 +4200,12 @@
           "names": {"en": ["doorman", "robot", "letterboxes"]},
           "desc": {
             "en": "The doorman robot wishes you a happy birthday, just in case."
+          }
+        },
+        "letterboxes": {
+          "names": {"en": ["wall of letterboxes", "letterbox", "slots"]},
+          "desc": {
+            "en": "Hundreds of letterboxes, each with a little light that turns green when a parcel arrives. They blink like a wall of fireflies."
           }
         }
       }
@@ -3574,6 +4236,12 @@
           "desc": {
             "en": "Each pixel chimes a different note; walking plays a tune."
           }
+        },
+        "sea": {
+          "names": {"en": ["sea", "stars", "scrolling stars"]},
+          "desc": {
+            "en": "Below the boardwalk, a sea of stars scrolls by, looping every eight seconds if you watch closely."
+          }
         }
       }
     },
@@ -3597,7 +4265,18 @@
           "desc": {
             "en": "A hundred games, all playing their music at once."
           }
+        },
+        "beanbags": {
+          "names": {"en": ["beanbags", "beanbag", "chill zone"]},
+          "desc": {"en": "A corner of enormous beanbags, where tired players flop down between games."},
+          "seat": {"n": 6, "at": {"en": "on a beanbag"}, "lie": true, "lie_at": {"en": "sprawled across a beanbag"}}
         }
+      },
+      "ambient": {
+        "en": [
+          "A cabinet somewhere plays its game over tune, and someone groans.",
+          "The carpet's little planets glow brighter as the music speeds up."
+        ]
       }
     },
     "pixel_cabinets": {
@@ -3621,6 +4300,12 @@
           },
           "desc": {"en": "Four lit cabinets."},
           "arcade": "cabinets"
+        },
+        "machine": {
+          "names": {"en": ["token machine", "machine", "slot"]},
+          "desc": {
+            "en": "A token machine shaped like a friendly robot. It burps each token out with a little chime. Type list."
+          }
         }
       },
       "arcade": true,
@@ -3646,6 +4331,12 @@
           "desc": {
             "en": "The enormous robot prize waves at you. Nobody has ever won it."
           }
+        },
+        "counter": {
+          "names": {"en": ["counter", "prize counter", "bell"]},
+          "desc": {
+            "en": "A counter with a bell nobody needs to ring, since the robot behind it hears tickets rustle."
+          }
         }
       },
       "shop": "prizes"
@@ -3670,6 +4361,13 @@
           "desc": {
             "en": "The giant screen shows a countdown that never seems to reach zero."
           }
+        },
+        "chairs": {
+          "names": {"en": ["big chairs", "chair", "duel chairs"]},
+          "desc": {
+            "en": "Two big gaming chairs facing the giant screen, one red, one blue. Sitting in one makes you feel very important."
+          },
+          "seat": {"n": 2, "at": {"en": "in one of the big duel chairs"}}
         }
       },
       "arena": true
@@ -3695,6 +4393,11 @@
             "en": "Empty lines at the top, waiting for someone's initials."
           },
           "arcade": "scores"
+        },
+        "bench": {
+          "names": {"en": ["bench", "benches"]},
+          "desc": {"en": "A bench facing the wall, for staring at the top score and plotting revenge."},
+          "seat": {"n": 4, "at": {"en": "on the bench facing the wall"}}
         }
       }
     },
@@ -3712,7 +4415,9 @@
       },
       "acoustics": "room",
       "hidden": true,
-      "ferry_cabin": true
+      "ferry_cabin": true,
+      "sit_at": {"en": "on a bench seat by a porthole"},
+      "lie_at": {"en": "along a bench seat by a porthole"}
     },
     "ship": {
       "name": {"en": "Your ship"},
@@ -3729,7 +4434,272 @@
       "acoustics": "small",
       "hidden": true,
       "private": true,
-      "ship_cabin": true
+      "ship_cabin": true,
+      "sit_at": {"en": "in a passenger seat"},
+      "lie_at": {"en": "on a bunk in the crew cabin"}
+    },
+    "willow_nook": {
+      "name": {"en": "Willow Nook"},
+      "ref": {"en": "Willow Nook"},
+      "in": {"en": "in Willow Nook"},
+      "aliases": {"en": ["willow nook", "nook", "pond", "fishing pond", "garden nook", "the pond"]},
+      "area": "main",
+      "at": [0, 2],
+      "ambience": "garden",
+      "exits": {"s": "park"},
+      "desc": {
+        "en": "A quiet corner past the Sky Park, where a willow bends over a round pond ringed with smooth stones. Fish drift under the lily pads, and a rack of rods by the water invites anyone to try their luck."
+      },
+      "hints": {
+        "all": {"en": "Type fish to cast a line, then reel when it tugs. The Spice Market buys what you catch."}
+      },
+      "objects": {
+        "pond": {
+          "names": {"en": ["pond", "water", "lily pads", "fish"]},
+          "desc": {
+            "en": "Clear green water, deeper than it looks. Speckled perch dart between the lily pads, a fat carp idles near the bottom, and once in a while something golden flashes and is gone."
+          },
+          "fishing": true
+        },
+        "willow": {
+          "names": {"en": ["willow", "tree", "branches"]},
+          "desc": {
+            "en": "An old willow whose branches reach down to touch the water. Under it the grass is soft and shady."
+          },
+          "seat": {
+            "n": 4,
+            "at": {"en": "under the willow"},
+            "lie": true,
+            "lie_at": {"en": "in the shade under the willow"}
+          }
+        },
+        "stones": {
+          "names": {"en": ["stones", "stone", "flat stone"]},
+          "desc": {
+            "en": "Smooth flat stones around the pond's edge, warm from the sun lamps: the best seats for watching a float."
+          },
+          "seat": {"n": 6, "at": {"en": "on a flat stone by the pond"}}
+        },
+        "rods": {
+          "names": {"en": ["rods", "rod", "rack", "rod rack"]},
+          "desc": {
+            "en": "A rack of fishing rods with a sign: borrow one, bring it back, be kind to the fish. Type fish."
+          }
+        }
+      },
+      "floor": "grass",
+      "acoustics": "open",
+      "ambient": {
+        "en": [
+          "A fish rises in the pond with a small, round plop.",
+          "The willow's branches stir, though there's no wind.",
+          "A dragonfly drone skims the water, looking for dust to eat."
+        ]
+      }
+    },
+    "crew_lounge": {
+      "name": {"en": "Crew Lounge"},
+      "ref": {"en": "the Crew Lounge"},
+      "in": {"en": "in the Crew Lounge"},
+      "aliases": {"en": ["crew lounge", "lounge", "common room", "the lounge"]},
+      "area": "main",
+      "at": [-2, -1],
+      "ambience": "vent",
+      "exits": {"e": "cabins_hall"},
+      "desc": {
+        "en": "A low, warm room where the crew unwinds between shifts: a sagging sofa, a game table with a half-finished puzzle, and a kettle that's always on. A porthole shows the Earth sliding by."
+      },
+      "objects": {
+        "sofa": {
+          "names": {"en": ["sofa", "sagging sofa", "couch", "cushions"]},
+          "desc": {
+            "en": "A sofa that has sagged into the exact shape of a tired engineer. Everyone who sits in it sighs."
+          },
+          "seat": {
+            "n": 4,
+            "at": {"en": "on the sagging sofa"},
+            "lie": true,
+            "lie_at": {"en": "full length on the sagging sofa"}
+          }
+        },
+        "table": {
+          "names": {"en": ["game table", "table", "chairs"]},
+          "desc": {
+            "en": "A table bolted to the floor, with magnetic chairs and a board game whose pieces stick where you put them."
+          },
+          "seat": {"n": 4, "at": {"en": "at the game table"}},
+          "holds": 6,
+          "holds_at": {"en": "on the game table"}
+        },
+        "puzzle": {
+          "names": {"en": ["puzzle", "jigsaw", "pieces"]},
+          "desc": {
+            "en": "A thousand-piece jigsaw of the Earth at night. Somebody has finished every city but Jakarta, and left a note: the last piece is somewhere. Good luck."
+          }
+        },
+        "kettle": {
+          "names": {"en": ["kettle", "mugs", "tea"]},
+          "desc": {
+            "en": "A kettle with a sticker that says DO NOT LET IT BOIL DRY, and a row of mugs with names on. One says GUEST, with a little heart."
+          }
+        },
+        "porthole": {
+          "names": {"en": ["porthole", "window", "earth"]},
+          "desc": {"en": "A round porthole full of the Earth, sliding by blue and white. It's hard to look away."}
+        }
+      },
+      "floor": "carpet",
+      "acoustics": "small",
+      "ambient": {
+        "en": [
+          "The kettle clicks off.",
+          "Someone's forgotten mug slides a little on the table as the station trims its spin."
+        ]
+      }
+    },
+    "reading_room": {
+      "name": {"en": "Reading Room"},
+      "ref": {"en": "the Reading Room"},
+      "in": {"en": "in the Reading Room"},
+      "aliases": {"en": ["reading room", "library", "library corner", "the library"]},
+      "area": "upper",
+      "at": [-2, -1],
+      "ambience": "deck",
+      "exits": {"e": "archive"},
+      "desc": {
+        "en": "A small library tucked behind the Archive: shelves of real paper books held in by elastic straps, and two armchairs under a reading lamp. A sign says: take a book, leave a book, read anything."
+      },
+      "hints": {"all": {"en": "Books here can be read: read logbook, read field guide, read poems, read cookbook."}},
+      "objects": {
+        "armchairs": {
+          "names": {"en": ["armchairs", "armchair", "lamp", "reading lamp"]},
+          "desc": {"en": "Two deep armchairs under a brass reading lamp, their arms worn soft by elbows."},
+          "seat": {"n": 2, "at": {"en": "in an armchair under the lamp"}, "full": {"en": "Both armchairs are taken."}}
+        },
+        "swap_shelf": {
+          "names": {"en": ["swap shelf", "shelf", "shelves", "books"]},
+          "desc": {
+            "en": "Shelves of books strapped in with elastic, and one shelf marked SWAP: leave something, take something. Put things on the swap shelf for others to find."
+          },
+          "holds": 8,
+          "holds_at": {"en": "on the swap shelf"}
+        },
+        "logbook": {
+          "names": {"en": ["logbook", "first logbook", "log"]},
+          "desc": {
+            "en": "The station's first logbook, a photocopy. Day 1: \"Everything floats. Especially the soup.\" Day 2: \"Installed soup lids.\" Day 40: \"Planted the first tomato. Named it Gerald.\" Day 41: \"Gerald is thriving.\""
+          },
+          "readable": true
+        },
+        "field_guide": {
+          "names": {"en": ["field guide", "guide", "travellers guide"]},
+          "desc": {
+            "en": "A Traveller's Field Guide to the Simulation. On the Moon: hop, don't run. On Karmina: always bring ice. On Glasir: boots off at the lodge. In Evergrove: never answer a puffcap's riddle with \"a potato\". At the Drift Bazaar: count your fingers after every handshake."
+          },
+          "readable": true
+        },
+        "poems": {
+          "names": {"en": ["poems", "book of poems", "poetry", "night shift"]},
+          "desc": {
+            "en": "A thin book of poems by the station's crew. One, called Night Shift, reads: \"The Earth turns its lights on, city by city, and I count them like sheep until my shift ends.\""
+          },
+          "readable": true
+        },
+        "cookbook": {
+          "names": {"en": ["cookbook", "recipes", "zero g cooking"]},
+          "desc": {
+            "en": "Zero-G Cooking, by Rocco of the Cantina, signed. Chapter one: Why Your Rice Is On The Ceiling. The page for iced coffee is missing; someone has written \"ask Rocco\" in the margin."
+          },
+          "readable": true
+        }
+      },
+      "floor": "carpet",
+      "acoustics": "small",
+      "ambient": {"en": ["A page turns somewhere, very quietly.", "The reading lamp buzzes, dims, and brightens again."]}
+    },
+    "gallery": {
+      "name": {"en": "Starboard Gallery"},
+      "ref": {"en": "the Starboard Gallery"},
+      "in": {"en": "in the Starboard Gallery"},
+      "aliases": {"en": ["starboard gallery", "gallery", "viewing gallery", "the gallery"]},
+      "area": "upper",
+      "at": [2, -1],
+      "ambience": "deck",
+      "exits": {"w": "gate_hall"},
+      "desc": {
+        "en": "A long gallery with a window its whole length, where the Gate's light spills over the hull and ships wait in the distance for their turn. Benches face the glass, and a row of brass telescopes points at the worlds of the simulation."
+      },
+      "objects": {
+        "window": {
+          "names": {"en": ["window", "glass", "ships"]},
+          "desc": {
+            "en": "Ships hang in a patient queue beyond the Gate: a stubby hauler, a sleek courier, and a patched-up freighter from the Drift Bazaar trailing a string of lanterns."
+          }
+        },
+        "benches": {
+          "names": {"en": ["benches", "bench"]},
+          "desc": {
+            "en": "Long padded benches facing the window, where travellers wait for the Gate and couples wait for nothing at all."
+          },
+          "seat": {
+            "n": 8,
+            "at": {"en": "on a bench facing the window"},
+            "lie": true,
+            "lie_at": {"en": "along a bench by the window"}
+          }
+        },
+        "telescopes": {
+          "names": {"en": ["telescopes", "telescope", "brass telescopes"]},
+          "desc": {
+            "en": "Brass telescopes on swivels, each labelled with a world: the Moon's grey domes, Karmina's red dust, the ice of Glasir glinting, and a telescope labelled EVERGROVE that only ever shows clouds shaped like dragons."
+          }
+        }
+      },
+      "floor": "metal",
+      "acoustics": "hall",
+      "ambient": {
+        "en": [
+          "A ship crosses the window, its running lights blinking.",
+          "The Moon slides into the window's corner, pale and close."
+        ]
+      }
+    },
+    "terrace": {
+      "name": {"en": "Sky Terrace"},
+      "ref": {"en": "the Sky Terrace"},
+      "in": {"en": "on the Sky Terrace"},
+      "aliases": {"en": ["sky terrace", "terrace", "rooftop", "the terrace"]},
+      "area": "mall",
+      "at": [0, 2],
+      "ambience": "mall",
+      "exits": {"s": "food_court"},
+      "desc": {
+        "en": "A terrace on the Mall Ring's rim, with café tables under striped parasols and a railing over a long window. People bring their lunch up from the Food Court to eat with the stars."
+      },
+      "objects": {
+        "tables": {
+          "names": {"en": ["tables", "table", "café tables", "chairs"]},
+          "desc": {
+            "en": "Round café tables with folding chairs, each with a little magnet in the middle to keep your cup in place."
+          },
+          "seat": {"n": 12, "at": {"en": "at a café table"}},
+          "holds": 8,
+          "holds_at": {"en": "on a café table"}
+        },
+        "parasols": {
+          "names": {"en": ["parasols", "parasol", "stripes"]},
+          "desc": {"en": "Striped parasols that serve no purpose in space at all. Everyone loves them anyway."}
+        },
+        "railing": {
+          "names": {"en": ["railing", "window", "view", "stars"]},
+          "desc": {
+            "en": "A railing over a long window: the stars wheel past as the Mall Ring turns, and every few minutes the Earth's edge rises like a blue dawn."
+          }
+        }
+      },
+      "floor": "stone",
+      "acoustics": "open",
+      "ambient": {"en": ["The Mall's lift chimes somewhere below.", "A breeze from the vents flutters the parasols."]}
     }
   },
   "jobs": {
@@ -4007,6 +4977,30 @@
       "base": 110,
       "volatility": 0.15,
       "kind": "contraband"
+    },
+    "perch": {
+      "one": {"en": "speckled perch"},
+      "many": {"en": "speckled perch"},
+      "names": {"en": ["perch", "speckled perch", "perches"]},
+      "base": 3,
+      "volatility": 0.05,
+      "kind": "fish"
+    },
+    "carp": {
+      "one": {"en": "pond carp"},
+      "many": {"en": "pond carp"},
+      "names": {"en": ["carp", "pond carp", "carps"]},
+      "base": 6,
+      "volatility": 0.05,
+      "kind": "fish"
+    },
+    "trout": {
+      "one": {"en": "rainbow trout"},
+      "many": {"en": "rainbow trout"},
+      "names": {"en": ["trout", "rainbow trout", "trouts"]},
+      "base": 11,
+      "volatility": 0.05,
+      "kind": "fish"
     }
   },
   "items": {
@@ -4168,6 +5162,164 @@
         "they_at": "{actor} hugs {target}.",
         "at_you": "{actor} hugs you."
       }
+    },
+    "kiss": {
+      "en": {
+        "you": "You blow a kiss into the air.",
+        "they": "{actor} blows a kiss into the air.",
+        "you_at": "You kiss {target} on the cheek.",
+        "they_at": "{actor} kisses {target} on the cheek.",
+        "at_you": "{actor} kisses you on the cheek."
+      },
+      "sound": "emote_hug",
+      "words": ["blow a kiss", "blow kiss", "blow a kiss to", "smooch"]
+    },
+    "wink": {
+      "en": {
+        "you": "You wink.",
+        "they": "{actor} winks.",
+        "you_at": "You wink at {target}.",
+        "they_at": "{actor} winks at {target}.",
+        "at_you": "{actor} winks at you."
+      },
+      "sound": "emote_smile"
+    },
+    "giggle": {
+      "en": {
+        "you": "You giggle.",
+        "they": "{actor} giggles.",
+        "you_at": "You giggle at {target}.",
+        "they_at": "{actor} giggles at {target}.",
+        "at_you": "{actor} giggles at you."
+      },
+      "sound": "emote_laugh",
+      "words": ["chuckle", "snicker"]
+    },
+    "cry": {
+      "en": {
+        "you": "You burst into tears.",
+        "they": "{actor} bursts into tears.",
+        "you_at": "You cry on {target}'s shoulder.",
+        "they_at": "{actor} cries on {target}'s shoulder.",
+        "at_you": "{actor} cries on your shoulder."
+      },
+      "sound": "emote_sigh",
+      "words": ["sob", "weep"]
+    },
+    "yawn": {
+      "en": {
+        "you": "You yawn widely.",
+        "they": "{actor} yawns widely.",
+        "you_at": "You yawn at {target}. How rude.",
+        "they_at": "{actor} yawns at {target}. How rude.",
+        "at_you": "{actor} yawns at you. How rude."
+      },
+      "sound": "emote_sigh"
+    },
+    "blush": {
+      "en": {
+        "you": "You blush.",
+        "they": "{actor} blushes.",
+        "you_at": "You blush at {target}.",
+        "they_at": "{actor} blushes at {target}.",
+        "at_you": "{actor} blushes at you."
+      },
+      "sound": "emote_smile"
+    },
+    "poke": {
+      "en": {
+        "you": "You poke the air, just to check it's there.",
+        "they": "{actor} pokes the air.",
+        "you_at": "You poke {target}.",
+        "they_at": "{actor} pokes {target}.",
+        "at_you": "{actor} pokes you."
+      },
+      "sound": "emote"
+    },
+    "highfive": {
+      "en": {
+        "you": "You hold up a hand for a high five.",
+        "they": "{actor} holds up a hand for a high five.",
+        "you_at": "You high five {target}!",
+        "they_at": "{actor} high fives {target}!",
+        "at_you": "{actor} high fives you!"
+      },
+      "sound": "emote_clap",
+      "words": ["high five", "hi five", "hi5", "high5"]
+    },
+    "thank": {
+      "en": {
+        "you": "You say thank you.",
+        "they": "{actor} says thank you.",
+        "you_at": "You thank {target}.",
+        "they_at": "{actor} thanks {target}.",
+        "at_you": "{actor} thanks you."
+      },
+      "sound": "emote_nod",
+      "words": ["thanks", "thank you", "thank u", "thx"]
+    },
+    "salute": {
+      "en": {
+        "you": "You salute smartly.",
+        "they": "{actor} salutes smartly.",
+        "you_at": "You salute {target}.",
+        "they_at": "{actor} salutes {target}.",
+        "at_you": "{actor} salutes you."
+      },
+      "sound": "emote_bow"
+    },
+    "facepalm": {
+      "en": {
+        "you": "You put your face in your hand.",
+        "they": "{actor} puts their face in their hand.",
+        "you_at": "You look at {target} and put your face in your hand.",
+        "they_at": "{actor} looks at {target} and puts their face in their hand.",
+        "at_you": "{actor} looks at you and puts their face in their hand."
+      },
+      "sound": "emote_sigh"
+    },
+    "stretch": {
+      "en": {
+        "you": "You stretch until something pops.",
+        "they": "{actor} stretches until something pops.",
+        "you_at": "You stretch, and nearly bump into {target}.",
+        "they_at": "{actor} stretches, and nearly bumps into {target}.",
+        "at_you": "{actor} stretches, and nearly bumps into you."
+      },
+      "sound": "emote_sigh"
+    },
+    "ponder": {
+      "en": {
+        "you": "You stroke your chin thoughtfully.",
+        "they": "{actor} strokes their chin thoughtfully.",
+        "you_at": "You look at {target} thoughtfully.",
+        "they_at": "{actor} looks at {target} thoughtfully.",
+        "at_you": "{actor} looks at you thoughtfully."
+      },
+      "words": ["think", "hmm", "hmmm"],
+      "sound": "emote_nod"
+    },
+    "comfort": {
+      "en": {
+        "you": "You look around for someone who needs a hand.",
+        "they": "{actor} looks around for someone who needs a hand.",
+        "you_at": "You put a comforting arm around {target}.",
+        "they_at": "{actor} puts a comforting arm around {target}.",
+        "at_you": "{actor} puts a comforting arm around you."
+      },
+      "sound": "emote_hug",
+      "words": ["console"]
+    },
+    "handshake": {
+      "en": {
+        "you": "You hold out a hand to shake.",
+        "they": "{actor} holds out a hand to shake.",
+        "you_at": "You shake hands with {target}.",
+        "they_at": "{actor} shakes hands with {target}.",
+        "at_you": "{actor} shakes hands with you."
+      },
+      "words": ["shake hands", "shake hands with", "shake hand"],
+      "sound": "emote_clap"
     }
   },
   "earth": {
@@ -4432,7 +5584,8 @@
       "gate": null,
       "customs": 0.0,
       "fuel": 4,
-      "prices": {}
+      "prices": {},
+      "day": {"hours": 4.2, "offset": 2}
     },
     "moon": {
       "name": {"en": "the Moon"},
@@ -4462,7 +5615,8 @@
         "chips": 1.1,
         "iron": 0.8,
         "titanium": 0.9
-      }
+      },
+      "day": {"hours": 708.7, "offset": 150}
     },
     "lumina": {
       "name": {"en": "Lumina City"},
@@ -4488,7 +5642,8 @@
         "ember_crystal": 1.6,
         "frostpearl": 1.5,
         "coffee": 1.1
-      }
+      },
+      "day": {"hours": 26.0, "offset": 20}
     },
     "pixel": {
       "name": {"en": "Pixel Pier"},
@@ -4506,7 +5661,8 @@
       "gate": "pixel_port",
       "customs": 0.5,
       "fuel": 5,
-      "prices": {}
+      "prices": {},
+      "day": {"hours": 20.0, "offset": 5}
     },
     "evergrove": {
       "name": {"en": "Evergrove"},
@@ -4530,7 +5686,8 @@
         "chips": 0.5,
         "iron": 1.4,
         "nickel": 1.3
-      }
+      },
+      "day": {"hours": 24.0, "offset": 9}
     },
     "karmina": {
       "name": {"en": "Karmina"},
@@ -4558,7 +5715,8 @@
         "tomato": 0.8,
         "chilli": 0.8,
         "frostpearl": 1.3
-      }
+      },
+      "day": {"hours": 24.65, "offset": 7}
     },
     "bazaar": {
       "name": {"en": "the Drift Bazaar"},
@@ -4587,7 +5745,8 @@
         "star_orchid": 0.8,
         "ghost_chip": 0.8,
         "rustsalt": 1.3
-      }
+      },
+      "day": {"hours": 6.0, "offset": 1}
     },
     "glasir": {
       "name": {"en": "Glasir"},
@@ -4614,7 +5773,8 @@
         "chilli": 1.4,
         "kangkung": 1.4,
         "strawberry": 1.4
-      }
+      },
+      "day": {"hours": 31.5, "offset": 3}
     }
   },
   "events": {

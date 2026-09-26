@@ -498,6 +498,15 @@ class ItemsMixin:
         thing = self.world.things[tid]
         effects = thing.get("effects") or {}
         self._take_away(char, tid, 1)
+        if effects.get("taste"):                  # food with its own words (1.6): just good to eat
+            self._save(session)
+            sound = effects.get("sound") or "gulp"
+            self._send(session, "info", text=pick(effects["taste"], lang), extra={"sound": sound})
+            if not session.invisible and effects.get("other"):
+                for other in self._in_room(self.room_of(char), exclude=(session,)):
+                    self._send(other, "emote", text=pick(effects["other"], other.lang).format(actor=session.name),
+                               extra={"actor": session.name, "sound": sound if sound == "crunch" else None})
+            return
         if effects.get("xp_boost"):
             char["stats"]["xp_boost"] = {"factor": float(effects["xp_boost"]),
                                          "until": self.now() + float(effects.get("seconds", 600))}

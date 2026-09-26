@@ -58,7 +58,8 @@ NPC_DEFAULTS = {
     "levels": [["stranger", 0], ["acquaintance", 5], ["friend", 15], ["close", 30]],
     "discount": {"friend": 0.05, "close": 0.1},
 }
-FRIENDLY_EMOTES = ("smile", "wave", "bow", "hug", "cheer", "clap", "nod", "laugh", "dance")
+FRIENDLY_EMOTES = ("smile", "wave", "bow", "hug", "cheer", "clap", "nod", "laugh", "dance", "thank", "highfive",
+                   "handshake", "salute", "wink", "giggle", "comfort")
 GREETING_WORDS = ("hi", "hello", "hey", "hiya", "howdy", "greetings", "good morning", "good afternoon",
                   "good evening", "morning", "afternoon", "evening", "yo")
 ABOUT_WORDS = ("about", "on", "regarding", "the")
