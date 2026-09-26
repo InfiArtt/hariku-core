@@ -5,8 +5,9 @@ station orbiting the Earth, and from there you can travel to other worlds. You w
 compass, talk with other players, work a job, farm, mine, trade, play games and raise a
 family, all by typing or speaking short commands. It needs Hariku 2.9 or newer.
 
-Every command works in English and in Indonesian, and you can mix them. This guide gives
-the English words; the Indonesian guide gives the Indonesian ones.
+Orbit is played in English: every command and every name in the game is English, and so
+are its window and its settings. Words in another language aren't understood; the game
+answers them with a hint to type "help".
 
 ## Getting started
 
@@ -25,8 +26,8 @@ address" as it is.
 
 ### Opening the Orbit window
 
-Run "Open Orbit", or tell Aruna "orbit" or "open orbit" ("buka orbit" works too). "Open
-Orbit" has no key by default; give it one in Preferences, Input Gestures. Opening the
+Run "Open Orbit", or tell Aruna "orbit", "open orbit" or "play orbit". "Open Orbit" has
+no key by default; give it one in Preferences, Input Gestures. Opening the
 window connects you if you aren't connected yet, and puts you in the Command field.
 
 ### The window
@@ -54,20 +55,16 @@ Type "help" for the list of help topics, in four groups:
   "help duels", "help progress".
 - Life: "help pets", "help family", "help weddings".
 
-"help settings" lists the settings you can type. "repeat" reads the last message again,
-and "status" says who you're connected as, where you are and how many are online.
+"help settings" lists the settings you can type. "repeat" (or "again") reads the last
+message again, and "status" says who you're connected as, where you are and how many are online.
 
 ## Moving around
 
 ### Walking by compass
 
-You walk one room at a time. Type a direction: n, s, e, w, ne, nw, se, sw, up and down,
-or the whole word: north, south, east, west, northeast, northwest, southeast, southwest.
-
-The Indonesian words work too: utara, selatan, timur, barat, timur laut, barat laut,
-tenggara, barat daya, naik and turun, or short: u, s, t, b, tl, bl, tg, bd. One letter
-differs: "u" is up when Hariku speaks English, and north (utara) when it speaks
-Indonesian.
+You walk one room at a time. Type a direction: n, s, e, w, ne, nw, se, sw, u (up) and
+d (down), or the whole word: north, south, east, west, northeast, northwest, southeast,
+southwest, up and down. "u" is always up.
 
 If there's no way in the direction you typed, Orbit says so and names the exits.
 
@@ -98,10 +95,10 @@ hull outside and the Asteroid Belt have rooms of their own.
   20 seconds. If the air runs out, the station's tow drone brings you back to the Airlock
   for 20 credits.
 
-### The Kancil shuttle
+### The Wombat shuttle
 
-At the Dock, "ride the Kancil" flies the little shuttle to the Asteroid Belt, where you
-can mine. The fare is 5 credits from the Dock (pilots ride free), and the ride back from
+At the Dock, "ride the Wombat" flies the little mining shuttle to the Asteroid Belt, where
+you can mine. The fare is 5 credits from the Dock (pilots ride free), and the ride back from
 the Belt Platform is free.
 
 ## Finding your way
@@ -123,7 +120,7 @@ the Belt Platform is free.
 - "compass" says which way you last walked and which deck you're on.
 
 The way only goes through doors you can open, and one-way exits only their way. It takes
-the Kancil when that's part of it. In a dark tunnel the guide still knows the next step
+the Wombat when that's part of it. In a dark tunnel the guide still knows the next step
 when you can't see it, and it tells you when the next step needs your EVA suit on.
 
 You can always ask the way to the Dock, the Promenade, the Cantina, Star Supply, the
@@ -137,9 +134,9 @@ mapper:
 - A beacon (Star Supply) marks a room: "place beacon" leaves it there, and "way to
   beacon" leads you back from anywhere.
 - A crew scanner (Gearworks): "scan" says who is in the rooms around you.
-- A communicator (Gearworks): "locate Sari" says where Sari is and the way there, and you
-  hear when your friends log in. "friends" lists them; "add friend Sari" and "remove
-  friend Sari" change the list.
+- A communicator (Gearworks): "locate Maya" says where Maya is and the way there, and you
+  hear when your friends log in. "friends" lists them; "add friend Maya" and "remove
+  friend Maya" change the list.
 
 "way to Karmina", or the name of any other world, tells you how to travel there.
 
@@ -148,33 +145,33 @@ mapper:
 ### Saying, whispering and shouting
 
 - "say hello everyone", or start a line with a quote mark: everyone in the room hears it.
-- "whisper Sari see you on the deck": only Sari hears it, wherever she is.
+- "whisper Maya see you on the deck": only Maya hears it, wherever she is.
 - "shout hello everyone": everyone online hears it, once every 10 seconds.
 
 ### Gestures
 
 Type a gesture alone, or with a name: "smile", "wave", "laugh", "nod", "shrug", "clap",
-"cheer", "sigh", "bow", "dance", "hug Sari", "wave to Sari". Each one has its own sound.
+"cheer", "sigh", "bow", "dance", "hug Maya", "wave to Maya". Each one has its own sound.
 
 ### Who is here
 
 - "who" lists the players online.
-- "look at Sari" describes her: her rank, what she wears and the description she wrote.
-- "profile Sari" shows her progress; "profile" alone shows yours.
+- "look at Maya" describes her: her rank, what she wears and the description she wrote.
+- "profile Maya" shows her progress; "profile" alone shows yours.
 - "describe" and a short line sets your own description, the one others hear when they
   look at you; "describe" alone reads it back.
 - "inventory" (or "i") says your credits and what's in your bag.
 
 ### Your cabin and visitors
 
-Your cabin is south of the Crew Quarters on the Main Deck. It's private: "invite Sari"
-lets Sari in for 10 minutes, and she types "visit" and your name from the Crew Quarters.
-"uninvite Sari" takes it back. Furniture you buy is set out in your cabin by itself.
+Your cabin is south of the Crew Quarters on the Main Deck. It's private: "invite Maya"
+lets Maya in for 10 minutes, and she types "visit" and your name from the Crew Quarters.
+"uninvite Maya" takes it back. Furniture you buy is set out in your cabin by itself.
 
 ## Reading and listening
 
-Everything that happens is read aloud as it comes, in your language, and every whole
-line also goes to the Messages box.
+Everything that happens is read aloud as it comes, and every whole line also goes to the
+Messages box.
 
 ### Who reads: the "Read with" setting
 
@@ -186,17 +183,18 @@ the game.
   spoken in Hariku Voice; everything else (rooms, exits, gestures, what your commands
   do) your screen reader reads at once, at its own speed. Typed: "reader mixed".
 - "NVDA only (fastest)": your screen reader reads everything, whole lines, other
-  players' words included. Typed: "reader nvda" or "nvda only".
-- "Hariku Voice for everything": all of it in Hariku Voice. Typed: "reader voices".
+  players' words included. Typed: "reader nvda", "nvda only" or "screen reader".
+- "Hariku Voice for everything": all of it in Hariku Voice. Typed: "reader voices" or
+  "all voices".
 
 Commands you give through Aruna are always answered aloud.
 
 ### Players' voices
 
 When Hariku Voice reads a player's words, each player can have a voice of their own. That
-needs "A different voice for each player (Hariku Voice)" on, and at least two Hariku
-Voice voices in your language. Edge Voices or Piper Voices, from the Extension Store, add
-more.
+needs "A different voice for each player (Hariku Voice)" on, and at least two of Hariku
+Voice's English voices: players' voices are picked among those. Edge Voices or Piper
+Voices, from the Extension Store, add more.
 
 - "my voice 3" chooses the voice others hear for you, from 1 to 10, and plays a sample.
   The same number is always the same voice on one computer, but each computer uses its
@@ -206,14 +204,14 @@ more.
 - A player who hasn't chosen gets a voice picked from their name. The residents have
   voices of their own too.
 
-With fewer than two voices in your language, Orbit tells you so once, and everyone is
-read in your usual voice.
+With fewer than two English voices, Orbit tells you so once, and everyone is read in
+your usual voice.
 
 ### Names before words
 
 When Hariku Voice reads a player's line, the name comes first, briefly, in the usual
-voice ("Budi:", "Budi, whispering:"), and then the words in Budi's voice. Your own words
-are spoken in your own voice too; a whisper first says who it went to ("To Sari:").
+voice ("Sam:", "Sam, whispering:"), and then the words in Sam's voice. Your own words
+are spoken in your own voice too; a whisper first says who it went to ("To Maya:").
 "names off" leaves the names out; "my lines off" only confirms your own lines ("Sent.").
 Your words become speech only on each computer that hears them: Orbit sends the text you
 typed, never your voice.
@@ -243,14 +241,15 @@ Type "work" at your workplace, then answer with numbers.
 
 - Engineers, in Engineering: repeat the reactor's tones as numbers ("3 1 4 2"). The
   Reactor Core, south of Engineering, pays more.
-- Pilots, at the Dock: fly a cargo run to the Moon. It takes about a minute.
+- Pilots, at the Dock: fly the Dove, the cargo shuttle, on a run to the Moon. It takes
+  about a minute.
 - Traders, anywhere: a market report, which trade good is cheap or dear and at which
   market.
 - Scientists, in the Science Lab: find the next number in a row of readings ("18").
 - Security officers, in the Cargo Bay: spot the smuggler among the travellers ("2").
 
-After a shift you rest for 2 minutes (5 after a cargo run). A martabak from the Cantina's
-bar halves your next break, and an iced coffee gives half again as much XP for ten
+After a shift you rest for 2 minutes (5 after a cargo run). A stuffed pancake from the
+Cantina's bar halves your next break, and an iced coffee gives half again as much XP for ten
 minutes.
 
 ### Missions
@@ -314,7 +313,7 @@ You have your own plots in Hydroponics: 2 to start, up to 8.
 - "plant tomato", then "water" once while it grows for one more crop.
 - "harvest" when it's ripe. You must be in Hydroponics to harvest.
 
-Crops grow in real time: kangkung in 10 minutes, chilli in 30, tomatoes in an hour,
+Crops grow in real time: water spinach in 10 minutes, chilli in 30, tomatoes in an hour,
 strawberries in 2, vanilla in 4 (from level 3), dragon fruit in 8 (level 5) and moon
 melons in a day (level 8). Orbit tells you when something is ripe. "buy plot" adds a plot.
 
@@ -334,7 +333,7 @@ Supply holds 30).
 
 - Star Supply, on the East Promenade: the basics (a pocket mapper, a headlamp, a
   beacon, a big bag, seeds, snacks and more farm plots).
-- The Cantina's bar: iced coffee, martabak and crackers.
+- The Cantina's bar: iced coffee, stuffed pancakes and prawn crackers.
 - The Mall Ring, up the lift from the Upper Lift Lobby:
   Gearworks (devices such as the holo mapper, the scanner, the communicator, keycards
   and the EVA suit; better drills; job tools that raise your pay), Orbit Outfitters
@@ -356,13 +355,13 @@ Prices move a little each day, and each shop has one special of the day, cheaper
 
 ### Trading and giving
 
-To trade with another player, wherever they are while they're online: "offer Budi 3 iron
-for 200 credits". Budi types "accept" or "decline" within two minutes, and both sides
+To trade with another player, wherever they are while they're online: "offer Sam 3 iron
+for 200 credits". Sam types "accept" or "decline" within two minutes, and both sides
 change hands at once, or nothing does. "cancel offer" takes your offer back. Goods,
 mission cargo, seeds, food, furniture and clothes can be traded; devices, keycards and
 titles can't.
 
-To give something to someone in the same room: "give Sari 50 credits", "give Sari 2
+To give something to someone in the same room: "give Maya 50 credits", "give Maya 2
 coffee".
 
 ## Ships and other worlds
@@ -404,7 +403,7 @@ for half its price. It docks in the Hangar, west of the Dock.
 - "load 20 ice" moves goods from your bag to the hold; "unload" moves them back.
 - "cargo" tells you the hold, the fuel and where the ship is.
 - "name ship" and a name gives it one.
-- "invite Budi" while aboard lets a friend come along: Budi types "embark" and your name.
+- "invite Sam" while aboard lets a friend come along: Sam types "embark" and your name.
 
 ### Trade runs and customs
 
@@ -529,7 +528,7 @@ The Casino Corner is west of the Cantina; "casino" there lists the games.
 - "dice 50 high" (8 to 12), "dice 50 low" (2 to 6) or "dice 50 seven".
 - "slots 20": three reels, heard stopping from left to right.
 - "blackjack 50", then "hit" or "stand". The dealer stands on 17.
-- "challenge Budi 50": a coin flip with another player in the room, who accepts or
+- "challenge Sam 50": a coin flip with another player in the room, who accepts or
   declines. Stakes are 10 to 1,000 credits.
 - "lottery" tells you about the weekly draw, on Sunday at 12:00 UTC; "buy ticket" buys a
   ticket for 10 credits.
@@ -544,11 +543,11 @@ which have no real-money value.
 
 - "crew create" and a name founds a crew (500 credits, from level 3), and you're its
   captain. A crew holds 12.
-- "crew invite Budi" asks someone in; they answer "accept" or "decline".
+- "crew invite Sam" asks someone in; they answer "accept" or "decline".
 - "crew say" and your words reach every member online, wherever they are. Crew chat is
   read with whispers (the same Read aloud setting).
 - "crew" shows your crew; "crew leave" leaves it.
-- As captain: "crew kick Budi", "crew captain Budi" (hand the captaincy over) and
+- As captain: "crew kick Sam", "crew captain Sam" (hand the captaincy over) and
   "crew motto" and a line.
 
 Every XP a member earns is a point for the crew; "crews" shows the board. North of the
@@ -560,8 +559,8 @@ your crew's points and place.
 In the Zero-G Gym or on Pixel Pier's Tournament Stage, challenge someone there to a quick
 draw.
 
-1. "duel Budi", or "duel Budi 20" for a stake of up to 100 credits each.
-2. Budi answers "accept" or "decline".
+1. "duel Sam", or "duel Sam 20" for a stake of up to 100 credits each.
+2. Sam answers "accept" or "decline".
 3. Each round: "ready", then "Draw!" a few seconds later. Type any number and Enter: the
    first one wins the round. Typing before "Draw!" loses the round.
 
@@ -573,26 +572,29 @@ game loses the duel. "duels" shows your record; "duels off" refuses every challe
 
 Every Sunday at 15:00 UTC, the duel tournament runs for two hours on the Tournament
 Stage. The players with the most duels won there take 500, 200 and 100 credits, and the
-champion the title Tournament Champion. Ask Ciko, the stage's host, who leads.
+champion the title Tournament Champion. Ask Dario, the stage's host, who leads.
 
 ## Residents
 
-The simulation has residents who aren't players, each with a voice and a story. Bang Jali
-keeps the Cantina's bar, Pak Harsa works in Engineering, Ibu Sekar keeps the Star Dome
-Hall, Kapten Bayu flies the ferry from the Dock, the shopkeepers mind their shops, Kelana
-comes to the Observation Deck only at night, and a few walk the station on their daily
+The simulation has residents who aren't players, each with a voice and a story. Rocco
+keeps the Cantina's bar, Oskar works in Engineering, Amara keeps the Star Dome Hall,
+Captain Mateo flies the ferry from the Dock, and Dario hosts the Tournament Stage on Pixel
+Pier. The shopkeepers mind their shops: Felix at Gearworks, Priya at Whiskers & Widgets
+and Celeste at Starglint Jewellers. Soren comes to the Observation Deck only at night,
+Shade sells things without labels in the Drift Bazaar's Back Alley, and Granny Fern lives
+in Evergrove's Mossbrook Village. Poppy, Hana and Gino walk the station on their daily
 rounds.
 
 They're never counted as players: "who" doesn't list them, and "look" names them apart,
 under "Residents here".
 
 - "residents" says where each one is now.
-- "talk to Jali" greets him and says what you can ask about.
-- "ask Jali about gossip" asks. Some answers are live: the gossip, the market, events,
+- "talk to Rocco" greets him and says what you can ask about.
+- "ask Rocco about gossip" asks. Some answers are live: the gossip, the market, events,
   who's online, the time, your own progress.
-- "greet Jali", or a gesture such as "wave to Jali", says hello.
-- "give Jali 3 chillies" gives a gift.
-- "ask Harsa about work" asks for a favour; bring what he needs, then give it to him.
+- "greet Rocco", or a gesture such as "wave to Rocco", says hello.
+- "give Rocco 3 chillies" gives a gift.
+- "ask Oskar about work" asks for a favour; bring what he needs, then give it to him.
 
 They remember you. Talking each day, asking about new things, a small gift they like
 (one a day counts) and their favours make them fonder of you. That opens new topics and
@@ -602,7 +604,8 @@ special errands, and in their own shop, a small discount.
 
 Whiskers & Widgets on the Mall Ring has a little robot, an orange space cat, a robot cat,
 a mini drone, a space fox and a glow jellyfish (600 to 1,600 credits), with pet food and
-treats. The rarer ones sometimes choose a player out on the worlds.
+treats. The rarer ones sometimes choose a player out on the worlds. A new pet has a name
+already (the orange cat is Marmalade, for example) until you give it yours.
 
 - "pet status" says how your pet is.
 - "feed Kiki" (with pet food or a treat), "play with Kiki", "rest Kiki", "pat".
@@ -620,7 +623,7 @@ sound of its own.
 
 ### Partners
 
-- "partner with Budi" asks Budi to be your partner; Budi answers "accept" or "decline".
+- "partner with Sam" asks Sam to be your partner; Sam answers "accept" or "decline".
 - "partner" shows your partnership.
 - To end it: "end partnership", then "confirm end" within a minute. Your partner is told
   kindly.
@@ -633,30 +636,30 @@ adopt on your own.
 
 A child needs:
 
-- food: baby porridge from the Food Court, then "feed Mira" (before the naming rite,
+- food: baby porridge from the Food Court, then "feed Lily" (before the naming rite,
   "feed the baby");
-- play: "play with Mira";
-- rest: "rest Mira";
-- stories: "read a story to Mira".
+- play: "play with Lily";
+- rest: "rest Lily";
+- stories: "read a story to Lily".
 
 With care, a child grows over real days, from baby to toddler to child, and says more as
 it grows. A child left alone gets quiet and asks for you, but is never harmed.
 
-- "bring Mira" takes your child along.
+- "bring Lily" takes your child along.
 - A happy child at your side helps a little with work (a bit more XP).
-- Once a day, "ask Mira for help" brings you something small.
+- Once a day, "ask Lily for help" brings you something small.
 - "family" shows your family.
 
 ### The naming rite
 
-Give your baby its name in the Star Dome Hall, with Ibu Sekar there: "naming rite Mira".
+Give your baby its name in the Star Dome Hall, with Amara there: "naming rite Lily".
 
 ## Weddings
 
 ### Proposing
 
 Buy a ring at Starglint Jewellers on the Mall Ring (500 to 4,000 credits), then "propose
-to Budi" in the same room. A yes makes you engaged; after a no, the ring stays yours.
+to Sam" in the same room. A yes makes you engaged; after a no, the ring stays yours.
 
 ### Booking the wedding
 
@@ -677,7 +680,7 @@ gives all the money back a day or more ahead, and half of it an hour or more ahe
 
 ### Guests
 
-"invite Budi to the wedding" sends an invitation. Guests answer "rsvp yes" or "rsvp no";
+"invite Sam to the wedding" sends an invitation. Guests answer "rsvp yes" or "rsvp no";
 "invitations" lists theirs. At the ceremony, guests can "throw flowers", "cheer" and
 "clap".
 
@@ -703,7 +706,7 @@ Reaching a mark (rooms walked, a level, a first harvest, ore mined, a week of da
 bonuses and more) earns an achievement, some credits and sometimes a title. The big ones
 are news for the whole station.
 
-- "achievements" lists yours and the closest ones; "achievements Budi" lists Budi's.
+- "achievements" lists yours and the closest ones; "achievements Sam" lists Sam's.
 - "leaderboard" shows the leaders of each board.
 - "leaderboard richest" shows one board and your place. The boards are richest, level,
   miners, farmers, streak, casino and duels.
@@ -713,7 +716,7 @@ are news for the whole station.
 Put "orbit" in front of any game command and tell it to Aruna, typed or spoken (with
 Voice Control, the wake phrase works too):
 
-- "orbit north", "orbit say hello", "orbit whisper Sari see you later"
+- "orbit north", "orbit say hello", "orbit whisper Maya see you later"
 - "orbit who is online", "orbit daily", "orbit harvest", "orbit profile"
 - "orbit status", "orbit voices off", "orbit quit"
 
@@ -726,15 +729,15 @@ Hydroponics, and work needs your workplace: Aruna only sends the command.
 Orbit's actions have no keys by default. Give any of them a key in Preferences, Input
 Gestures, or run them from Aruna with these phrases:
 
-- Open Orbit: "orbit", "open orbit", "play orbit", "buka orbit"
-- Look around in Orbit: "orbit look around"
+- Open Orbit: "orbit", "open orbit", "play orbit"
+- Look around in Orbit: "orbit look around", "orbit look"
 - Who is online in Orbit: "orbit who is online", "orbit who"
-- Credits and bag in Orbit: "orbit check credits", "orbit inventory"
+- Credits and bag in Orbit: "orbit check credits", "orbit credits", "orbit inventory"
 - Connect to Orbit: "orbit connect". Already connected, it says so: it never logs you
   out.
 - Disconnect from Orbit: "orbit disconnect".
 - Orbit status: "orbit status"
-- Leave Orbit: "leave orbit", "orbit logout", "orbit log out"
+- Leave Orbit: "leave orbit", "orbit logout", "orbit log out", "orbit quit"
 - Daily bonus in Orbit: "orbit daily"
 - Harvest in Orbit: "orbit harvest"
 - Your profile in Orbit: "orbit profile"
@@ -785,12 +788,10 @@ In the game, or from Aruna with "orbit" in front:
 - "other sounds off" or "other sounds on"
 - "my voice 3" or "my voice auto": the voice others hear for you
 
-The Indonesian words work too, such as "suara pemain mati" or "pembaca nvda".
-
 ### Ignoring a player
 
-"ignore Budi" hides Budi's words, gestures and offers on your computer: they are neither
-shown nor read. "unignore Budi" hears him again, and "ignored" lists who you ignore. The
+"ignore Sam" hides Sam's words, gestures and offers on your computer: they are neither
+shown nor read. "unignore Sam" hears them again, and "ignored" lists who you ignore. The
 list is also in Settings, Ignored players.
 
 ## Leaving or hiding the window
@@ -836,6 +837,26 @@ it with a transfer code.
 The character is moved, not copied: the first computer can't play it any more. If you
 lose your computer, an admin can make a code for you.
 
+## What changed in Orbit 1.4
+
+Orbit 1.4 is played in English only: every command, name and message. Commands in
+another language aren't understood any more, and the game answers them with a hint to
+type "help". "u" is always up. Some names changed, and nothing else did: your character,
+credits, things, pets, family, progress and what the residents remember of you are all
+kept.
+
+- The shuttles: the mining shuttle to the Belt is the Wombat ("ride the Wombat"), and the
+  cargo shuttle to the Moon is the Dove.
+- Food and crops: the Cantina's sweet pancake is a stuffed pancake, its crackers are
+  prawn crackers, and the quickest crop is water spinach.
+- The residents: Rocco at the Cantina, Oskar in Engineering, Amara in the Star Dome Hall,
+  Felix at Gearworks, Priya at Whiskers & Widgets, Celeste at Starglint Jewellers,
+  Captain Mateo at the Dock, Soren on the Observation Deck at night, Shade in the Drift
+  Bazaar, Dario on the Tournament Stage, Poppy, Hana and Gino about the station, and
+  Granny Fern in Evergrove.
+
+A returning player hears the new names once, the first time they connect to 1.4.
+
 ## Privacy
 
 Orbit connects to its game server only when you open it, press Connect or give it a
@@ -843,7 +864,8 @@ command, or when Hariku starts if you turned that on, always over an encrypted
 connection.
 
 - It sends your character's name and job the first time, a secret made on your computer
-  (it stands for a password), Hariku's language and what you type or say in the game.
+  (it stands for a password) and what you type or say in the game. The game is in
+  English whatever Hariku's language is, so your language isn't needed.
 - The server keeps your character: its name, job, description, credits, things,
   progress, what the residents remember of it, and its pets, family and weddings,
   including the vows you write. It keeps only a hash of your secret, and no password or
