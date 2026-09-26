@@ -19,13 +19,27 @@ reply of several parts (a room, your things, who is online, a list) goes to
 clients from 1.6 as lines, one part each, so the Messages box reads them one
 by one (see Protocol: `lines`).
 
+Since 1.6 the rooms and the people in them feel the way the Nova Realm did:
+you sit, lie down, sleep and stand on the rooms' furniture (bar stools,
+benches, the lawn, your bunk and sofa) and others see it; walking stands you
+up first; `exits` (or `ex`) says where each way out leads, a line each, and
+`peer north` glimpses the next room; you follow someone, or lead them, after
+they say yes; there are more gestures (kiss, wink, high five...), your own
+(`emote waves hello`, `:waves hello`), dice for the room (`roll 2d6`), the
+time, `afk`; things can be dropped, picked up, put on a table, thrown and
+caught; `again` repeats your last command, and a near miss gets "did you
+mean". Rooms have more to look at, lines of their own now and then, and new
+places (Willow Nook and its fishing pond, the Crew Lounge, the Reading Room,
+the Starboard Gallery, the Sky Terrace), the Cantina a jukebox, and the food
+counters more to eat. See [The room and its people](#the-room-and-its-people-16).
+
 It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 `/orbit/` on to it:
 
 | Path | What |
 |---|---|
 | `GET /orbit/ws` | the game, over WebSocket |
-| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.5", "protocol": 1, "online": 3}` |
+| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.6", "protocol": 1, "online": 3}` |
 
 `/ws` and `/health` work too, for a proxy that strips the `/orbit` prefix.
 
@@ -54,6 +68,9 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_family.py` | families: partners (both agree), adopting, children growing up, the naming rite |
 | `orbit_weddings.py` | weddings: the ring, booking a hall, invitations, the two ceremonies, the memory |
 | `orbit_here.py` | "x here": what can be done in this room, and "x" and a name: with someone or something |
+| `orbit_social.py` | postures (sit, lie, sleep, stand, wake), following and leading, exits and peering, your own emote, dice, the time, afk, the rooms' own lines |
+| `orbit_floor.py` | things dropped, picked up, put on a table, thrown and caught; the cleaning drone |
+| `orbit_pastimes.py` | the Cantina's jukebox and the fishing pond in Willow Nook |
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
@@ -81,7 +98,7 @@ mkdir -p ~/orbit
 cd ~/orbit
 cp config.example.json config.json        # then put your character's name in "admins"
 python3 orbit_server.py --config config.json
-# "Orbit 1.5 listening on 127.0.0.1:7340"; Ctrl+C stops it
+# "Orbit 1.6 listening on 127.0.0.1:7340"; Ctrl+C stops it
 ```
 
 As a systemd **user** service (no sudo; linger is already on):
@@ -119,6 +136,43 @@ To update: copy the new files over and `systemctl --user restart orbit`.
 Players hear "the station's computer is restarting" and their Orbit reconnects
 by itself. The database is `~/orbit/orbit.db` (with `orbit.db-wal` next to it
 while running).
+
+### Updating to 1.6 (the room and its people; no migration)
+
+1. Copy these files to `~/orbit/`, never `private/`. New in 1.6: `orbit_social.py`,
+   `orbit_floor.py`, `orbit_pastimes.py`. Changed: `orbit_game.py`, `orbit_nav.py`,
+   `orbit_verbs.py`, `orbit_here.py`, `orbit_items.py`, `orbit_work.py`, `orbit_events.py`,
+   `orbit_trade.py`, `orbit_npcs.py`, `orbit_econ.py`, `orbit_world.py`, `orbit_server.py`,
+   `world.json`, `economy.json`, `npcs.json`, `texts.json` (copying the whole folder but
+   `private/`, as before, is just as good). `words.json` and the service files are
+   unchanged, and `config.json` needs no new keys.
+2. `systemctl --user restart orbit` (players hear that the station's computer restarts,
+   and their Orbit reconnects by itself).
+3. **The database stays at version 8: there is nothing to migrate**, so no copy is made
+   and the log has no migration line. What's new is kept like this:
+   - things put down in a room are in the `meta` table, key `floor` (JSON, saved in the
+     same transaction as the character who put them down or picked them up), so a
+     restart keeps them; after half an hour a cleaning drone gives them back to whoever
+     put them down, online or not, and nothing is lost or made;
+   - postures, following and leading, being away from the keyboard, a line in the pond,
+     a thing in the air and the jukebox's song live in memory: a restart stands everyone
+     up (the same as logging out) and forgets them;
+   - the daily count of fish and each player's biggest catch are in the character's
+     `stats` (JSON), like the other counters.
+4. Returning players hear once what's new in 1.6 (`whats_new_16`), after the older notes
+   they missed.
+5. The 1.0 to 1.6 clients keep working: every new command reaches the server from them
+   as plain text (`exits`, `sit on the sofa`, `kiss Maya`, `drop coffee`...), and "take",
+   "get" and "pick up", which every client reads as `take`, now also pick up what lies
+   in the room. "stand" is blackjack's only while you're playing a hand; otherwise it's
+   the posture, from every client. Their own "again" still says the last message again
+   (client 1.7's sends "again" to the server: the last command). Client 1.7 says hello as
+   `"client": "Hariku Orbit 1.7"` and reads your own replies aloud whatever its "Read
+   aloud" boxes say.
+6. Check: `curl -fsS http://127.0.0.1:7340/orbit/health` says `"version": "1.6"`; in the
+   game, `exits` in the Cantina says "Exits from the Cantina: East: the West Promenade;
+   West: the Casino Corner." (line by line with Orbit 1.6 or 1.7), `sit` answers "You sit
+   down on a bar stool.", and `help social` lists the rest.
 
 ### Updating to 1.5 ("x here", replies line by line; no migration)
 
@@ -672,6 +726,88 @@ admin) and spent by sink (shops, market, fares, rescues, lanterns, casino
 bets, lottery, adoption, weddings, admin), so you can see whether money grows
 too fast and adjust these numbers.
 
+## The room and its people (1.6)
+
+What the Nova Realm did, in Orbit's words (`orbit_social.py`, `orbit_floor.py`,
+`orbit_pastimes.py`). Every command is attached to where it works, and says so
+briefly where it doesn't ("The jukebox is in the Cantina."); `x here` lists what's
+attached to the room you're in.
+
+- **The ways out:** `exits` (or `ex`) says each exit on a line of its own with where
+  it leads, in the Nova Realm's order (north, northeast, east... up, down), and
+  what's special: "Southwest: the Maintenance Junction (locked, dark)", "South: the
+  Hull Walkway (vacuum: an EVA suit)", "Down: the Service Corridor (one way)",
+  "North: the Crew Hangar (crew only)", "Ride the Wombat: to the Belt Platform". A
+  secret room you haven't found is "a way you haven't explored yet"; in the dark
+  you only feel the way you came in. `peer north` glimpses the next room: its name,
+  the first sentence of its description, who's there (and sitting or asleep),
+  residents and what lies about; the room sees you peer.
+- **Postures:** `sit`, `sit on the sofa`, `lie down`, `lie on the lawn`, `sleep`,
+  `stand` (or `stand up`, `get up`) and `wake`. A room's furniture is an object's
+  `seat` in world.json: `{"n": how many at once, "at": {"en": "on a bar stool"},
+  "lie": true, "lie_at": {...}, "sit": false, "full": {"en": "Every bar stool is
+  taken."}}`; in a cabin, its owner's sofa and hammock count too (their `seat` in
+  economy.json). Without one you sit on the floor, or the grass, sand, snow, dust or
+  ground by the room's floor (a room's `sit_at` and `lie_at` for the ferry, the
+  shuttles and ships). The room sees the change ("Maya sits down on a bar stool."),
+  and a look shows it ("Maya is sitting on a bar stool."). Walking stands you up
+  ("You stand up and walk north to the Promenade."; the room you leave hears "Maya
+  gets up."). Asleep, a command that does something wakes you first ("You wake
+  up."), looking and asking don't; `wake` gets you up; `wake Maya` wakes someone
+  gently. "stand" is blackjack's only while you're playing a hand.
+- **Following:** `follow Maya` asks Maya, `lead Maya` offers; they answer `accept`
+  or `decline` (a minute, like an offer). The follower walks a step behind the
+  leader: "You follow Sam north to the Promenade.", the room left hears "Maya follows
+  Sam north.", the room reached "Maya arrives, following Sam.", and the leader "Maya
+  follows you.". Nobody follows a follower (no chains). It ends with `stop
+  following`, `stop leading`, `disband`, walking off on your own, a door the follower
+  can't pass or a private room, falling asleep, or the leader leaving the game.
+- **Gestures:** world.json's `emotes` has 26 now: the old eleven, and kiss (on the
+  cheek), wink, giggle, cry, yawn, blush, poke, high five, thank, salute, facepalm,
+  stretch, ponder, comfort and handshake, each with and without someone, and their
+  `words` ("high five", "thank you", "shake hands with"). Each new one reuses one of
+  the old gestures' sounds (`sound`). Residents answer each (`npc_react_*` in
+  texts.json). `emote waves hello` (or `:waves hello`) says your own after your name.
+- **Dice, time, being away:** `roll` (two dice), `roll a die`, `roll 2d6`, `roll d20`
+  (up to 10 dice of up to 100 sides): the server's own generator, the room sees the
+  result, and the log says who rolled what. "roll 20 low" in the casino is still the
+  casino's dice. `time` says the station's time (UTC) and, on another world, its local
+  time (world.json: a world's `day`, its length in hours and where its clock
+  stands). `afk` (or `brb`), with a note if you like: others see it when they look and
+  in `who`, a whisper tells the whisperer, and any command brings you back.
+- **Things:** `drop 2 coffee`, `put down coffee`, `put coffee on the table` (an
+  object's `holds`: how many piles, and `holds_at`), `get coffee`, `take`, `pick up`,
+  `get coffee from the table`, `throw crackers to Maya` and `catch` (anyone in the
+  room, within 5 seconds; nobody does, it lands on the floor). Only what may be given
+  away can be put down, never what you wear, and never in vacuum or aboard. No
+  litter: 12 piles a room, 6 of one player's about the station, and after half an
+  hour a cleaning drone gives a pile back to whoever put it down. Goods on the floor
+  still count in your bag until someone else picks them up, so dropping is never a
+  way round the bag. `undress` takes off your clothes and title.
+- **Again:** `again` (client 1.7 also `!`) runs your last command again. A mistyped
+  first word gets "Did you mean exits?".
+- **The rooms' own lines:** a room's `ambient` lines (29 rooms) come now and then,
+  paced like the residents' idle lines and sharing their gap (at most one a room
+  every 5 minutes, 7 to 15 minutes apart), never while players there have talked in
+  the last 90 seconds, never the same twice running. They're `info` events with
+  `"ambient": true`.
+- **The jukebox** (the Cantina; `jukebox` in economy.json): `jukebox` lists the 8
+  songs, `jukebox 3` or `pick song moonlight` plays one for the room for 2 credits,
+  one a minute; the Cantina's own lines mention it.
+- **The pond** (Willow Nook, north of the Sky Park; `fishing` in economy.json): `fish`
+  casts, a tug comes 10 to 30 seconds later, `reel` within 5 seconds lands a speckled
+  perch (3 credits at the Spice Market, which buys and sells fish now), a pond carp
+  (6) or a rainbow trout (11); a golden koi (2%) is let go, for 15 XP. 30 fish a day
+  at most. That's less an hour than mining the Belt with no drill
+  (tests/test_orbit_social.py checks it), so it's a pastime.
+- **Food:** the Cantina's bar also sells hot chocolate, ginger fizz, instant noodles
+  and the Orbit Special; the Food Court space ramen, a moon cheese toastie, a fruit
+  skewer and a sesame bun; and three new counters sell food on other worlds: the
+  Tumbling Cup at the Drift Bazaar (ginger tea, cardamom coffee, date cake), the
+  noodle stalls on Lumina's Neon Boulevard, and the Thermal Lodge's kitchen on Glasir.
+  They're for the taste (a thing's `taste` and `other` lines), a small money sink,
+  and children eat them too.
+
 ## Crews
 
 `crew create` and a name founds a crew (500 credits, from level 3; a name of
@@ -1088,6 +1224,11 @@ hints released, how many have finished). Every event that runs or is
 scheduled is a row in `events`, with its state and how it ended (the
 tournament's wins and the Lantern Festival's lanterns are its points).
 
+Since 1.6 also: things put down in a room (`meta` key `floor`: what, how many, who put it
+down and when, on the floor or on which table), and in a character's `stats` the fish
+caught today and the biggest of each kind. Postures, following, being away and the
+jukebox's song live only in memory.
+
 Since 1.2 also: what each resident remembers of each character
 (`npc_memory`: affinity, how many talks, gifts and favours, when they first
 and last met, the topics asked, the favours done today); a pet's needs,
@@ -1193,6 +1334,12 @@ commands need no new client:
 | `partner` (`op`: status, ask, end, end_confirm; `to`), `adopt`, `family`, `child` (`op`: feed, play, rest, story, fetch, take, talk; `a`: the child), `naming` (`a`: the name) | | families (a proposal or an adoption is answered with `accept` or `decline`) |
 | `wedding` (`op`: status, propose, book, cancel, schedule, invite, invitations, rsvp_yes, rsvp_no, flowers, vow, join, yes, no, sign, memory; `to`, `a`) | | weddings (a proposal is answered with `accept` or `decline`) |
 | `arcade`, `play` (`a`: a game), `stop_game`, `high_scores` (`a`: a game) | | the arcade; a game's input is `answer` (numbers alone: both clients send them so) |
+| `exits`, `peer` (`a`: a direction) | | the ways out, a line each; a glimpse next door (1.6) |
+| `sit`, `lie`, `sleep` (`a`: a seat), `stand`, `stand_up`, `wake` (`a`: a sleeper) | | postures ("stand": blackjack's only in a hand) (1.6) |
+| `follow`, `lead` (`to`; `op`: stop, disband) | | following, after a yes (1.6) |
+| `pose` (`a`: the words), `roll` (`a`: 2d6...), `time`, `afk` (`a`: a note) | | your own gesture, dice, the time, away (1.6) |
+| `drop` (`item`), `put` (`a`: "coffee on the table"), `throw` (`a`: "crackers to Maya"), `undress` | | things put down (`take` picks up; `catch` catches) (1.6) |
+| `jukebox` (`a`: a song), `fish`, `reel` | | the jukebox, the pond (1.6) |
 | `bye` | | leaving on purpose: gone at once |
 | `away` | `on` | the client's window is hidden and its player idle |
 | `status` | | connected as, where, how many online |
@@ -1228,7 +1375,8 @@ machine's three symbols, left to right) and `outcome` (`win`, `lose`,
 or the reels stop), `event` (on an announcement: the event it belongs to,
 so a client can leave events unread) and `schedule` (with the `events`
 list: `[{"event", "name", "at"}]`, the coming ones as UTC timestamps, for
-the client to show in local time and set reminders), `beats` (Star Beat's
+the client to show in local time and set reminders), `ambient` (1.6: a room's own
+line, now and then), `beats` (Star Beat's
 rhythm at the arcade: the seconds after the event at which each beat
 sounds; the words wait for them). A `sound` with a `dir` is heard on that
 side (a meteor at the arcade, the runaway robot); Orbit 1.0 plays it in
@@ -1273,7 +1421,7 @@ open, the muffled hush outside) as it plays them, keeping those copies in
 | `door`, `airlock`, `lift_up`, `lift_down`, `ladder`, `slide`, `bump`, `locked` | doors, airlocks, lifts, ladders, the slide, walls, a locked door |
 | `arrive`, `leave` | someone comes in or goes, from their side |
 | `say`, `whisper`, `shout`, `sent`, `announce`, `offer` | talking; your own words going out; the Bridge; an invitation |
-| `emote`, `emote_smile`, `emote_wave`, `emote_laugh`, `emote_nod`, `emote_shrug`, `emote_clap`, `emote_cheer`, `emote_sigh`, `emote_bow`, `emote_dance`, `emote_hug` | gestures |
+| `emote`, `emote_smile`, `emote_wave`, `emote_laugh`, `emote_nod`, `emote_shrug`, `emote_clap`, `emote_cheer`, `emote_sigh`, `emote_bow`, `emote_dance`, `emote_hug` | gestures (1.6's new ones reuse these: a kiss is a hug's, a giggle a laugh's...) |
 | `success`, `fail`, `error`, `mission`, `task`, `tone1` to `tone4` | work, a mission, a task starting, the reactor's tones |
 | `coins`, `register`, `trade` | money changing hands; a shop's till; a trade done |
 | `mine`, `rare`, `plant`, `water`, `harvest`, `ripe` | mining, a rare find, the farm |
@@ -1323,7 +1471,7 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_markets.py tests/test_orbit_guide.py tests/test_orbit_compat.py tests/test_orbit_here.py tests/test_orbit_lines.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_markets.py tests/test_orbit_guide.py tests/test_orbit_compat.py tests/test_orbit_here.py tests/test_orbit_lines.py tests/test_orbit_social.py tests/test_orbit_own_replies.py tests/test_orbit_e2e.py -q
 ```
 
 `test_orbit_here.py` goes to every room of every world and types each command
@@ -1335,6 +1483,17 @@ mission, the events held in a room, a ship and the ferry, and the words that
 ask for it from the 1.0 and 1.4 clients. `test_orbit_lines.py` checks that a
 client from 1.6 gets a reply's `lines`, that every client gets the same reply as
 one line in `text`, and that the older clients get no `lines` at all.
+
+`test_orbit_social.py` checks 1.6: exits (doors, vacuum, one way, the dark, a secret way),
+postures and what the room sees, walking up from a seat, "stand" and blackjack, following
+and leading, peering, the new gestures (and the residents' answers), your own emote, dice,
+the time, afk, dropping, picking up, putting on a table, throwing and catching with the
+litter limits and the cleaning drone (across a restart), again and the near misses, the
+rooms' own lines, the jukebox, the pond (and that it earns less than mining), the new food,
+every room having things to look at, and every client (1.0, 1.4, 1.6 and now) reaching the
+new commands. `test_orbit_own_replies.py` sends every reply a real server gives to a
+player's own commands through client 1.7 with every "Read aloud" box off, read by NVDA
+alone and mixed: each is spoken.
 
 `test_orbit_casino.py` computes each game's return exactly from
 economy.json (blackjack with perfect hit-or-stand play), so a change that
@@ -1356,7 +1515,7 @@ one, and that a version 8 database keeps its prices at the new markets;
 detour, arriving, stopping, logging out and travel), past keycard doors,
 through the dark, down the one-way slide and out into vacuum.
 
-## Later (not in 1.5)
+## Later (not in 1.6)
 
 - **Pets shared by two players:** a companion already has any number of
   owners (`companion_owners`), as children do; a pet could be given to a

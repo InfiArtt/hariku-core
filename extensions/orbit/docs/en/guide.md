@@ -78,7 +78,8 @@ If there's no way in the direction you typed, Orbit says so and names the exits.
 - "look" (or "l") describes the room a part to a line: its name, its description, its
   exits ("Exits: north, southwest, down."), who is here, the residents, and the things to
   look at. It's read aloud all at once; in the Messages box each part is its own line.
-- "look north" peeks into the next room without walking there.
+- "look north" peeks into the next room without walking there; "peer north" says a
+  little more (see The room and its people), and "exits" names where each way leads.
 - "look at" and a thing or a person describes it, for example "look at earth" at the
   Observation Deck, where you see the real Earth below as it is right now.
 
@@ -184,7 +185,8 @@ mapper:
 ### Gestures
 
 Type a gesture alone, or with a name: "smile", "wave", "laugh", "nod", "shrug", "clap",
-"cheer", "sigh", "bow", "dance", "hug Maya", "wave to Maya". Each one has its own sound.
+"cheer", "sigh", "bow", "dance", "hug Maya", "wave to Maya", and more: "kiss Maya", "wink",
+"high five Sam" (see The room and its people). Each one has its own sound.
 
 ### Who is here
 
@@ -200,6 +202,84 @@ Type a gesture alone, or with a name: "smile", "wave", "laugh", "nod", "shrug", 
 Your cabin is south of the Crew Quarters on the Main Deck. It's private: "invite Maya"
 lets Maya in for 10 minutes, and she types "visit" and your name from the Crew Quarters.
 "uninvite Maya" takes it back. Furniture you buy is set out in your cabin by itself.
+
+## The room and its people
+
+Every command here belongs to a place or a moment: where it doesn't work, Orbit says so
+briefly, and where it does ("The jukebox is in the Cantina."). "x here" always lists what
+works in the room you're in.
+
+### Sitting, lying down and sleeping
+
+- "sit" sits you down on the room's furniture if it has some (a bar stool in the Cantina,
+  a bench, a window seat, the lawn in the Sky Park, your bunk or sofa in your cabin), or
+  on the floor. "sit on the booth", "sit on a bench" and "sit on the floor" choose.
+- "lie down", "lie on the lawn"; "sleep" lies you down and you fall asleep.
+- "stand" (or "stand up", "get up") gets you up. At the casino's card table, while you're
+  playing a hand, "stand" is blackjack's; anywhere else it's getting up.
+- Everyone in the room hears it ("Maya sits down on a bar stool."), and a look says it
+  ("Maya is sitting on a bar stool."). "who" says who is asleep.
+- Walking stands you up by itself: "You stand up and walk east to the West Promenade."
+- Asleep, doing something wakes you first ("You wake up."); looking and asking don't.
+  "wake" wakes you and gets you up; "wake Maya" wakes a sleeping friend gently.
+- A seat holds so many people: "Every bar stool is taken."
+
+### Following and leading
+
+- "follow Maya" asks Maya if you may follow her; "lead Maya" offers to lead her. She
+  answers "accept" or "decline".
+- Then you walk a step behind her: "You follow Maya north to the Promenade." Both rooms
+  hear it: "Sam follows Maya north.", "Sam arrives, following Maya."
+- "stop following", "stop leading" or "disband" ends it. So does walking off on your own,
+  a door you can't open, a private room, falling asleep, or the leader leaving Orbit.
+
+### The ways out and a glimpse next door
+
+- "exits" (or "ex") says each way out on a line of its own, with where it leads: "North:
+  the Promenade", "Southwest: the Maintenance Junction (locked, dark)", "Ride the Wombat:
+  to the Belt Platform". In the dark you only feel the way you came in.
+- "peer north" glimpses the next room: its name, the start of its description, who is
+  there and what lies about. The room sees you peer.
+
+### Gestures, dice and the time
+
+- Besides smile, wave, laugh, nod, shrug, clap, cheer, sigh, bow, dance and hug: kiss (on
+  the cheek), wink, giggle, cry, yawn, blush, poke, high five, thank (or "thank you"),
+  salute, facepalm, stretch, ponder, comfort and shake hands. Alone or with a name: "kiss
+  Maya", "high five Sam", "shake hands with Rocco". Residents answer.
+- "emote waves hello", or ":waves hello", says your own gesture after your name: "Rafli
+  waves hello."
+- "roll" rolls two dice for the room to see; "roll a die", "roll 2d6", "roll d20". The
+  station's computer rolls them, fairly.
+- "time" says the station's time (UTC) and, on another world, its own local time.
+- "afk making tea" says you're away from the keyboard: others see it, and whoever
+  whispers to you hears it. Any command brings you back.
+
+### Things you put down
+
+- "drop 2 coffee" (or "put down coffee") puts things on the floor; "put coffee on the
+  table" where something holds things (a bar, a table, the Reading Room's swap shelf).
+- "get coffee" (or "take", "pick up") picks up what lies here, anyone's; "get coffee from
+  the table".
+- "throw crackers to Maya": anyone in the room can "catch" it within a few seconds, or it
+  lands on the floor.
+- A look says what lies about: "On the floor: 2 sacks of coffee." After half an hour a
+  cleaning drone gives things back to whoever put them down. Goods on the floor still
+  count in your bag, and what you wear, devices and keycards can't be put down.
+- "undress" takes off your clothes and title.
+
+### The jukebox and the pond
+
+- In the Cantina, "jukebox" lists its songs; "jukebox 3" or "pick song moonlight" plays
+  one for everyone there, for 2 credits.
+- In Willow Nook, north of the Sky Park, "fish" casts a line. When it tugs, "reel", quick!
+  Perch, carp and trout go in your bag, and the Spice Market buys them; a golden koi is let
+  go, for luck. Up to 30 fish a day.
+
+### Again
+
+"again" (or "!") does your last command again. If you mistype a command, Orbit asks "Did
+you mean exits?".
 
 ## Reading and listening
 
@@ -875,6 +955,22 @@ it with a transfer code.
 
 The character is moved, not copied: the first computer can't play it any more. If you
 lose your computer, an admin can make a code for you.
+
+## What changed in Orbit 1.7 (and the server's 1.6)
+
+- A reply to your own command is always read aloud: buying, selling, getting, giving,
+  being paid, winning or losing a bet. The "Read aloud" boxes in Preferences now only
+  leave unread what other players do and the station's news.
+- Lines are read in the order they came, even behind one that waits for its sounds (the
+  dice landing).
+- The room and its people: sitting, lying down, sleeping and standing on the rooms'
+  furniture, following and leading, "exits" and "peer", more gestures and your own, dice,
+  the time, "afk", putting things down and picking them up, throwing and catching,
+  "again" and "!", the jukebox, the fishing pond, new places and food (see The room and
+  its people). "repeat" still reads the last message again.
+
+Older versions of Orbit keep working and reach every new command; their own "again"
+still reads the last message.
 
 ## What changed in Orbit 1.6 (and the server's 1.5)
 

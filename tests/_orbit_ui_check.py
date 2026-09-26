@@ -416,6 +416,18 @@ window.txt_command.ChangeValue("")
 HINT = 'I don\'t understand "pergi ke kantin". Type help for the commands.'
 typed("pergi ke kantin", HINT)
 assert pump(lambda: HINT in spoken), spoken[-3:]
+# A reply to your own command is read whatever the Read aloud boxes say (client 1.7):
+# with "Credits and things others give me" off, buying is still said. The room's
+# furniture and its ways out (server 1.6) are said too.
+main._settings["read_money"] = False
+typed("buy iced coffee", "You buy 1 iced coffee")
+assert pump(lambda: any(s.startswith("You buy 1 iced coffee") for s in spoken)), spoken[-3:]
+typed("sit", "You sit down on a bar stool.")
+assert pump(lambda: "You sit down on a bar stool." in spoken), spoken[-3:]
+typed("exits", "Exits from the Cantina:")
+assert pump(lambda: any(s.startswith("Exits from the Cantina: East: the West Promenade") for s in spoken)), \
+    spoken[-3:]
+main._settings["read_money"] = True
 assert main._client.online() and window.GetTitle() == "Orbit: Connected", window.GetTitle()
 print(f"OK window ({focus_note(focus_ok)})")
 

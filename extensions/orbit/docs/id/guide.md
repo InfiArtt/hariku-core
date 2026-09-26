@@ -90,7 +90,9 @@ keluarnya.
   jalan keluarnya ("Exits: north, southwest, down."), siapa yang ada, para penduduk, dan
   benda yang bisa dilihat. Semuanya dibacakan sekaligus; di kotak Messages tiap bagian
   jadi baris sendiri.
-- "look north" mengintip ruangan sebelah tanpa pergi ke sana.
+- "look north" mengintip ruangan sebelah tanpa pergi ke sana; "peer north" menyebutkan
+  sedikit lebih banyak (lihat Ruangan dan orang-orangnya), dan "exits" menyebutkan ke mana
+  tiap jalan keluar menuju.
 - "look at" dan nama benda atau orang menggambarkannya, misalnya "look at earth" di the
   Observation Deck, tempat kamu melihat Bumi sungguhan di bawah sana seperti keadaannya
   saat ini.
@@ -206,7 +208,8 @@ pemeta:
 ### Gerakan
 
 Ketik gerakannya saja, atau dengan nama: "smile", "wave", "laugh", "nod", "shrug",
-"clap", "cheer", "sigh", "bow", "dance", "hug Maya", "wave to Maya". Tiap gerakan punya
+"clap", "cheer", "sigh", "bow", "dance", "hug Maya", "wave to Maya", dan masih banyak lagi:
+"kiss Maya", "wink", "high five Sam" (lihat Ruangan dan orang-orangnya). Tiap gerakan punya
 bunyinya sendiri.
 
 ### Siapa yang ada
@@ -225,6 +228,91 @@ Kabinmu ada di selatan the Crew Quarters di the Main Deck. Kabin itu pribadi: "i
 Maya" mengizinkan Maya masuk selama 10 menit, lalu dia mengetik "visit" dan namamu dari
 the Crew Quarters. "uninvite Maya" membatalkannya. Perabot yang kamu beli otomatis
 ditata di kabinmu.
+
+## Ruangan dan orang-orangnya
+
+Setiap perintah di sini milik sebuah tempat atau keadaan: di tempat yang tidak bisa,
+Orbit bilang begitu dengan singkat, dan di mana bisanya ("The jukebox is in the
+Cantina."). "x here" selalu menyebutkan apa yang bisa dipakai di ruangan tempatmu berada.
+
+### Duduk, berbaring, dan tidur
+
+- "sit" mendudukkanmu di perabot ruangan kalau ada (bangku bar di the Cantina, bangku
+  panjang, kursi jendela, rumput di the Sky Park, ranjang atau sofa di kabinmu), atau di
+  lantai. "sit on the booth", "sit on a bench", dan "sit on the floor" memilih tempatnya.
+- "lie down", "lie on the lawn"; "sleep" membaringkanmu lalu kamu tertidur.
+- "stand" (atau "stand up", "get up") membuatmu berdiri. Di meja kartu kasino, selama kamu
+  sedang main satu tangan blackjack, "stand" adalah milik blackjack; di tempat lain
+  artinya berdiri.
+- Semua orang di ruangan mendengarnya ("Maya sits down on a bar stool."), dan "look"
+  menyebutkannya ("Maya is sitting on a bar stool."). "who" menyebutkan siapa yang tidur.
+- Berjalan otomatis membuatmu berdiri dulu: "You stand up and walk east to the West
+  Promenade."
+- Saat tidur, perintah yang berbuat sesuatu membangunkanmu dulu ("You wake up."); melihat
+  dan bertanya tidak. "wake" membangunkan dan mendirikanmu; "wake Maya" membangunkan teman
+  yang tidur dengan lembut.
+- Satu tempat duduk muat sekian orang: "Every bar stool is taken."
+
+### Mengikuti dan memimpin
+
+- "follow Maya" meminta izin Maya untuk mengikutinya; "lead Maya" menawarkan diri
+  memimpinnya. Dia menjawab "accept" atau "decline".
+- Sesudah itu kamu berjalan selangkah di belakangnya: "You follow Maya north to the
+  Promenade." Kedua ruangan mendengarnya: "Sam follows Maya north.", "Sam arrives,
+  following Maya."
+- "stop following", "stop leading", atau "disband" mengakhirinya. Begitu juga kalau kamu
+  berjalan sendiri, ada pintu yang tidak bisa kamu buka, ruangan pribadi, kamu tertidur,
+  atau pemimpinnya keluar dari Orbit.
+
+### Jalan keluar dan mengintip ruangan sebelah
+
+- "exits" (atau "ex") menyebutkan tiap jalan keluar di barisnya sendiri, dengan tujuannya:
+  "North: the Promenade", "Southwest: the Maintenance Junction (locked, dark)", "Ride the
+  Wombat: to the Belt Platform". Dalam gelap kamu hanya bisa meraba jalan masukmu tadi.
+- "peer north" mengintip ruangan sebelah: namanya, awal deskripsinya, siapa yang ada di
+  sana, dan barang yang tergeletak. Orang di ruanganmu melihatmu mengintip.
+
+### Gerakan, dadu, dan jam
+
+- Selain smile, wave, laugh, nod, shrug, clap, cheer, sigh, bow, dance, dan hug, sekarang
+  ada kiss (cium pipi), wink, giggle, cry, yawn, blush, poke, high five, thank (atau "thank
+  you"), salute, facepalm, stretch, ponder, comfort, dan shake hands. Sendiri atau dengan
+  nama: "kiss Maya", "high five Sam", "shake hands with Rocco". Para penduduk membalasnya.
+- "emote waves hello", atau ":waves hello", mengucapkan gerakan buatanmu sendiri setelah
+  namamu: "Rafli waves hello."
+- "roll" melempar dua dadu untuk dilihat seisi ruangan; "roll a die", "roll 2d6", "roll
+  d20". Komputer stasiun yang melemparnya, dengan adil.
+- "time" menyebutkan jam stasiun (UTC) dan, di dunia lain, jam setempatnya.
+- "afk making tea" memberi tahu bahwa kamu sedang tidak di depan keyboard: orang lain
+  melihatnya, dan yang berbisik padamu diberi tahu. Perintah apa pun membawamu kembali.
+
+### Barang yang kamu letakkan
+
+- "drop 2 coffee" (atau "put down coffee") menaruh barang di lantai; "put coffee on the
+  table" di tempat yang bisa menampung barang (meja bar, meja, rak tukar di the Reading
+  Room).
+- "get coffee" (atau "take", "pick up") memungut barang yang tergeletak, milik siapa pun;
+  "get coffee from the table".
+- "throw crackers to Maya": siapa pun di ruangan bisa menangkapnya dengan "catch" dalam
+  beberapa detik, kalau tidak barangnya jatuh ke lantai.
+- "look" menyebutkan barang yang tergeletak: "On the floor: 2 sacks of coffee." Setelah
+  setengah jam, drone pembersih mengembalikan barang itu ke yang menaruhnya. Barang
+  dagangan di lantai tetap dihitung di tasmu, dan yang sedang kamu pakai, perangkat, serta
+  kartu kunci tidak bisa ditaruh.
+- "undress" melepas pakaian dan gelarmu.
+
+### Jukebox dan kolam
+
+- Di the Cantina, "jukebox" menyebutkan lagu-lagunya; "jukebox 3" atau "pick song
+  moonlight" memutar satu lagu untuk semua orang di sana, seharga 2 kredit.
+- Di Willow Nook, utara the Sky Park, "fish" melempar kail. Saat terasa tarikan, ketik
+  "reel", cepat! Ikan perch, carp, dan trout masuk ke tasmu dan dibeli the Spice Market;
+  ikan koi emas dilepas lagi, untuk keberuntungan. Paling banyak 30 ikan sehari.
+
+### Ulangi
+
+"again" (atau "!") menjalankan lagi perintah terakhirmu. Kalau kamu salah ketik sebuah
+perintah, Orbit bertanya "Did you mean exits?".
 
 ## Membaca dan mendengarkan
 
@@ -933,6 +1021,22 @@ pindahkan dengan kode pindah (transfer code).
 
 Karakternya dipindah, bukan disalin: komputer pertama tidak bisa memainkannya lagi. Kalau
 komputermu hilang, admin bisa membuatkan kode untukmu.
+
+## Yang berubah di Orbit 1.7 (dan server 1.6)
+
+- Jawaban atas perintahmu sendiri selalu dibacakan: membeli, menjual, mendapat, memberi,
+  dibayar, menang atau kalah taruhan. Kotak-kotak "Read aloud" di Pengaturan sekarang
+  hanya menyaring apa yang dilakukan pemain lain dan kabar stasiun.
+- Baris-baris dibacakan sesuai urutan datangnya, juga di belakang baris yang menunggu
+  bunyinya (dadu yang mendarat).
+- Ruangan dan orang-orangnya: duduk, berbaring, tidur, dan berdiri di perabot ruangan,
+  mengikuti dan memimpin, "exits" dan "peer", gerakan baru dan gerakan buatanmu sendiri,
+  dadu, jam, "afk", menaruh dan memungut barang, melempar dan menangkap, "again" dan "!",
+  jukebox, kolam pancing, tempat dan makanan baru (lihat Ruangan dan orang-orangnya).
+  "repeat" tetap membacakan pesan terakhir.
+
+Versi Orbit yang lebih lama tetap bisa dipakai dan menjangkau semua perintah baru; "again"
+di versi lama tetap membacakan pesan terakhir.
 
 ## Yang berubah di Orbit 1.6 (dan server 1.5)
 
