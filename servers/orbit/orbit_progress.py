@@ -27,20 +27,19 @@ duels won.
 import logging
 
 import orbit_safety
+from orbit_lang import LANGUAGES
 
 logger = logging.getLogger("orbit.game")
 
 BOARDS = {
-    "rich": ("credits", ("rich", "richest", "credits", "money", "wealth", "kaya", "terkaya", "kredit",
-                         "uang", "harta")),
-    "level": ("xp", ("level", "levels", "xp", "experience", "pengalaman", "tertinggi")),
-    "miner": ("mined", ("miner", "miners", "mining", "mined", "ore", "tambang", "penambang", "bijih")),
-    "farmer": ("harvested", ("farmer", "farmers", "farming", "farm", "harvest", "crops", "petani", "panen",
-                             "kebun", "tani")),
-    "streak": ("streak", ("streak", "daily", "harian", "rajin", "beruntun")),
-    "casino": ("casino_net", ("casino", "luck", "lucky", "gambler", "kasino", "hoki", "beruntung", "judi")),
-    "duels": ("duels_won", ("duels", "duel", "duelist", "duelists", "duellist", "duellists", "dueling", "duelling",
-                            "tanding", "jagoan duel")),
+    "rich": ("credits", ("rich", "richest", "credits", "money", "wealth", "wealthiest")),
+    "level": ("xp", ("level", "levels", "xp", "experience", "highest")),
+    "miner": ("mined", ("miner", "miners", "mining", "mined", "ore")),
+    "farmer": ("harvested", ("farmer", "farmers", "farming", "farm", "harvest", "crops")),
+    "streak": ("streak", ("streak", "daily", "streaks")),
+    "casino": ("casino_net", ("casino", "luck", "lucky", "gambler", "gamblers")),
+    "duels": ("duels_won", ("duels", "duel", "duelist", "duelists", "duellist", "duellists", "dueling",
+                            "duelling")),
 }
 BOARD_SIZE = 5
 SHIFT_STATS = ("repairs", "flights", "analyses", "patrols")
@@ -92,7 +91,7 @@ class ProgressMixin:
 
     @staticmethod
     def _title(achievement):
-        return {"en": achievement["en"], "id": achievement["id"]}
+        return {lang: achievement[lang] for lang in LANGUAGES}
 
     def _earned(self, session):
         if session.earned is None:
@@ -161,7 +160,7 @@ class ProgressMixin:
     def cmd_achievements(self, session, message):
         lang, char = session.lang, session.char
         name = self._arg(message, "to", 40)
-        if name and orbit_safety.name_key(name) not in (session.key, "me", "aku", "saya"):
+        if name and orbit_safety.name_key(name) not in (session.key, "me", "myself"):
             other = self._char_by_key(orbit_safety.name_key(name))
             online = self.sessions.get(orbit_safety.name_key(name))
             if other is None or (online is not None and online.invisible and not self.is_admin(session)):
@@ -213,8 +212,8 @@ class ProgressMixin:
         text = self._arg(message, "a", 40)
         board = self.board_for(text) if text else None
         if text and board is None and (self.find_arcade_game(text) or
-                                       orbit_safety.name_key(text) in ("arcade", "arkade")):
-            self.cmd_high_scores(session, {"a": "" if orbit_safety.name_key(text) in ("arcade", "arkade")
+                                       orbit_safety.name_key(text) == "arcade"):
+            self.cmd_high_scores(session, {"a": "" if orbit_safety.name_key(text) == "arcade"
                                            else text})       # "high scores meteor": the arcade's table
             return
         if text and board is None:

@@ -16,7 +16,7 @@ the Spice Market west of Hydroponics (coffee, spices, crops), the Ice Depot
 north of the Cargo Bay (comet ice, helium-3, frost pearls), the Mineral
 Exchange north of the Dock (ores, meteorites) and the Workshop's parts
 counter (salvage, memory chips). A good is traded at one market on each
-world, so a world's prices are its market's. "prices" (harga) and "list"
+world, so a world's prices are its market's. "prices" and "list"
 say what the market you stand in buys and sells, at its prices; anywhere
 else, where the nearest market for what you asked about is, and the way.
 Prices drift every few minutes back towards each good's usual price and move
@@ -27,7 +27,7 @@ less again with a trader's tools), so buying and selling back at once always
 loses.
 
 The farm: your own plots in Hydroponics (2 to start, more to buy). Plant
-seeds, and they ripen in real time, from ten minutes (kangkung) to a day
+seeds, and they ripen in real time, from ten minutes (water spinach) to a day
 (moon melons); water them once while they grow for an extra crop; harvest
 what's ripe. You're told when something ripens.
 
@@ -54,21 +54,21 @@ admins' "economy" report), in the database's meta table.
 import math
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 TRADE_FEES = {"trader": (0.02, 0.04)}    # (added when buying, taken when selling)
 PUBLIC_FEES = (0.10, 0.12)
 PRICE_IMPACT = 0.02                     # each unit bought or sold moves the price this much
 KIND_WORDS = {
-    "trade": ("trade", "trade goods", "dagang", "barang dagangan", "dagangan"),
-    "contraband": ("contraband", "black market", "smuggled", "barang gelap", "selundupan", "gelap"),
-    "crop": ("crop", "crops", "panen", "hasil panen", "sayur", "buah", "hasil kebun", "produce"),
-    "ore": ("ore", "ores", "bijih", "tambang", "hasil tambang", "rocks", "batuan"),
-    "salvage": ("salvage", "rongsok", "rongsokan", "hasil pulung", "junk"),
+    "trade": ("trade", "trade goods"),
+    "contraband": ("contraband", "black market", "smuggled"),
+    "crop": ("crop", "crops", "produce", "vegetables", "fruit"),
+    "ore": ("ore", "ores", "rocks", "minerals"),
+    "salvage": ("salvage", "junk"),
 }
 RARE_ORE = {"platinum", "meteorite", "quantum", "goldfoil", "satchip", "frostpearl", "ember_crystal"}
 KIND_ORDER = ("trade", "crop", "ore", "salvage", "contraband")
-MARKET_WORDS = {"market", "markets", "nearest market", "a market", "pasar", "pasarnya", "pasar terdekat"}
+MARKET_WORDS = {"market", "markets", "nearest market", "a market", "the market", "the nearest market"}
 VOICE_STYLES = 10
 
 
@@ -269,15 +269,15 @@ class EconomyMixin:
                                  self.world.market_factor(lid, gid), self.world.world_of(lid))
 
     def kind_name(self, kind):
-        return {lang: self.render(lang, f"kind_{kind}") for lang in ("en", "id")}
+        return {lang: self.render(lang, f"kind_{kind}") for lang in LANGUAGES}
 
     def good_word(self, gid):
-        """A good as a word ("coffee", "kopi"), not a measure of it ("sacks of coffee")."""
+        """A good as a word ("coffee"), not a measure of it ("sacks of coffee")."""
         names = self.world.goods[gid]["names"]
-        return {lang: names[lang][0] for lang in ("en", "id")}
+        return {lang: names[lang][0] for lang in LANGUAGES}
 
     def asked_goods(self, text):
-        """What a player asks about: (what, goods). `what` names it in both languages (None:
+        """What a player asks about: (what, goods). `what` names it (None:
         everything); `goods` is a set of good ids (every good for nothing typed), or None when
         the words name no good and no kind of goods."""
         key = orbit_safety.name_key(text)
@@ -305,13 +305,13 @@ class EconomyMixin:
                 words.append(self.kind_name(kind))
             else:
                 words.extend(self.good_word(gid) for gid in self.world.goods if gid in dealt & of_kind)
-        return {lang: self.texts.join(lang, words) for lang in ("en", "id")}
+        return {lang: self.texts.join(lang, words) for lang in LANGUAGES}
 
     def markets_for(self, char, goods, side=None):
         """[(market room, the route there or None)]: the markets dealing in any of `goods`
         (side "buys": those that buy them from you; "sells": those that sell them), nearest
         first. The markets of the world you're on; with none there, those you can walk (or ride
-        the Kancil) to."""
+        the Wombat) to."""
         here = char["location"]
         wid = self.world_here(char)
         found = []
@@ -425,7 +425,7 @@ class EconomyMixin:
                    sound="scan")
 
     def cmd_prices(self, session, message):
-        """ "prices" / "harga": at a market, what it buys and sells here; in a shop, its list; at
+        """ "prices": at a market, what it buys and sells here; in a shop, its list; at
         the pawn shop, what it would pay; anywhere else, the way to the nearest market."""
         char = session.char
         text = self._arg(message, "a", 40)
@@ -658,7 +658,7 @@ class EconomyMixin:
         return True
 
     def _crop_for(self, text):
-        """The crop id a player's words name ("tomat", "bibit tomat")."""
+        """The crop id a player's words name ("tomato", "tomato seeds")."""
         tid = self.world.find_thing(text)
         if tid is None:
             return None
@@ -916,7 +916,7 @@ class EconomyMixin:
     def cmd_profile(self, session, message):
         lang = session.lang
         name = self._arg(message, "to", 40)
-        if name and orbit_safety.name_key(name) not in (session.key, "me", "aku", "saya"):
+        if name and orbit_safety.name_key(name) not in (session.key, "me", "myself"):
             char = self._char_by_key(orbit_safety.name_key(name))
             other = self.sessions.get(orbit_safety.name_key(name))
             if char is None or (other is not None and other.invisible and not self.is_admin(session)):
@@ -957,7 +957,7 @@ class EconomyMixin:
             voice = int(char.get("voice") or 0)
             self._info(session, "voice_is_n" if voice else "voice_is_auto", n=voice, max=VOICE_STYLES)
             return
-        if text in ("auto", "acak", "otomatis", "random", "0", "default", "biasa"):
+        if text in ("auto", "automatic", "random", "0", "default"):
             voice = 0
         else:
             try:

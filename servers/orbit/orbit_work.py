@@ -31,12 +31,12 @@ import re
 
 import orbit_safety
 import orbit_travel
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
 REPAIR_MIN, REPAIR_MAX = 3, 6
-CARD_WORDS = {"card", "a card", "kartu", "cards", "another card", "kartu lagi"}
+CARD_WORDS = {"card", "a card", "cards", "another card"}
 
 
 class WorkMixin:
@@ -69,7 +69,7 @@ class WorkMixin:
             if level >= entry["level"]:
                 rank = entry
         job = self.world.job_name(char["job"])
-        return {lang: rank[lang].format(job=pick(job, lang)) for lang in ("en", "id")}
+        return {lang: rank[lang].format(job=pick(job, lang)) for lang in LANGUAGES}
 
     def pay_factor(self, char):
         level = self.level_of(int(char.get("xp") or 0))
@@ -511,7 +511,7 @@ class WorkMixin:
                                   things=pick(self.world.count_of(self.world.items, m["item"], m["count"]), lang),
                                   source=pick(self.world.locations[m["from"]]["ref"], lang),
                                   dest=pick(self.world.locations[m["to"]]["ref"], lang))
-                for lang in ("en", "id")}
+                for lang in LANGUAGES}
 
     def cmd_missions(self, session, message):
         lang = session.lang
@@ -558,17 +558,17 @@ class WorkMixin:
         char = session.char
         text = self._arg(message, "item", 60) or self._arg(message)
         if session.blackjack and orbit_safety.name_key(text) in CARD_WORDS:
-            self.run(session, {"c": "hit"})          # "ambil kartu" at the card table
+            self.run(session, {"c": "hit"})          # "take a card" at the card table
             return
         words = text.split()
-        if words and words[-1].lower() in ("along", "serta", "with", "ikut"):
+        if words and words[-1].lower() in ("along", "with"):
             words = words[:-1]
         child = self._child_named(char, " ".join(words)) if words else None
         if child is not None:
-            self.run(session, {"c": "child", "op": "take", "a": " ".join(words)})   # "take Mira along"
+            self.run(session, {"c": "child", "op": "take", "a": " ".join(words)})   # "take Lily along"
             return
-        if orbit_safety.name_key(text) in ("gig", "a gig", "paket", "parcel"):
-            self.run(session, {"c": "gig"})          # "ambil gig" (read by a client as take)
+        if orbit_safety.name_key(text) in ("gig", "a gig", "parcel", "a parcel"):
+            self.run(session, {"c": "gig"})          # "take a gig" (read by a client as take)
             return
         ferry = orbit_travel._after(text, orbit_travel.FERRY_WORDS)
         if ferry is not None:

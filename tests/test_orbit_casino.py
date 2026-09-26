@@ -167,7 +167,7 @@ def test_dice_pay_by_the_rules_and_the_net_is_kept(make_game, monkeypatch, clock
     assert won["k"] == "paid" and won["sound"] == "dice" and won["outcome"] == "win"
     assert won["text"] == "You bet 100 on high. The dice roll 5 and 6: 11. You win 230 credits! You have 1130."
     clock.advance(3)
-    lost = cmd(game, ani, "dice", a="tinggi", n=100)
+    lost = cmd(game, ani, "dice", a="big", n=100)                  # "big" is a bet on high
     assert lost["k"] == "failed" and lost["outcome"] == "lose" and lost["text"].endswith("You lose. You have 1030.")
     clock.advance(3)
     seven = cmd(game, ani, "dice", a="7", n=10)
@@ -241,11 +241,11 @@ def test_blackjack_hit_stand_bust_naturals_and_the_dealer_peeks(make_game, monke
     feed(monkeypatch, game, "_card", [10, 6, 9, 7, 10])
     cmd(game, ani, "blackjack", n=100)
     assert cmd(game, ani, "hit")["text"] == "Your cards: 10, 6 and 10, 26. Bust! You lose. You have 800."
-    # hit, then the dealer draws and busts ("ambil kartu" is a hit at the table)
+    # hit, then the dealer draws and busts ("take a card" is a hit at the table)
     clock.advance(3)
     feed(monkeypatch, game, "_card", [5, 6, 10, 6, 9, 10])
     cmd(game, ani, "blackjack", n=100)
-    assert cmd(game, ani, "take", item="kartu")["text"] == "You draw 9: 20. Hit or stand?"
+    assert cmd(game, ani, "take", item="a card")["text"] == "You draw 9: 20. Hit or stand?"
     won = cmd(game, ani, "stand")
     assert won["text"] == "You have 20. The dealer's cards: 10, 6 and 10, 26, bust! You win 200 credits. You have 900."
     # a natural pays 3 to 2, and is an achievement
@@ -283,32 +283,32 @@ def test_an_unfinished_hand_is_played_out(make_game, monkeypatch, clock):
 def test_a_coin_flip_between_two_players(make_game, monkeypatch, clock):
     game = make_game()
     ani = at(game, "Ani", "casino")
-    budi = at(game, "Budi", "casino", credits=500, lang="id")
+    budi = at(game, "Budi", "casino", credits=500, lang="id")   # an older client's "id": English all the same
     assert cmd(game, ani, "challenge", to="Nobody", n=50)["text"].startswith("Challenge whom?")
     assert cmd(game, ani, "challenge", to="Budi", n=5)["text"] == "A coin flip is for 10 to 1000 credits each."
-    sent = cmd(game, ani, "challenge", to="Budi", n=100)
+    sent = cmd(game, ani, "text", a="challenge Budi 100")
     assert sent["text"] == "You challenge Budi to a coin flip for 100 credits each. Waiting for an answer."
     ask = budi.last()
     assert ask["k"] == "offer" and ask["ask"] is True and ask["actor"] == "Ani"
-    assert ask["text"].startswith("Ani menantangmu lempar koin, masing-masing 100 kredit.")
+    assert ask["text"].startswith("Ani challenges you to a coin flip for 100 credits each.")
     monkeypatch.setattr(game.rng, "random", lambda: 0.9)        # the challenger wins
-    cmd(game, budi, "accept")
+    cmd(game, budi, "text", a="accept")
     assert ani.last()["text"] == ("The coin spins... you win! You take 190 credits from the flip with Budi "
                                   "(the house keeps 10). You have 1090.")
-    assert budi.last()["text"] == "Koin berputar... Ani menang. Kamu kehilangan 100 kredit. Kreditmu 400."
+    assert budi.last()["text"] == "The coin spins... Ani wins. You lose 100 credits. You have 400."
     assert (char_of(game, "Ani")["casino_net"], char_of(game, "Budi")["casino_net"]) == (90, -100)
     assert game.store.by_name("budi")["credits"] == 400
     # declined, and run out of time
     clock.advance(3)
     cmd(game, ani, "challenge", to="Budi", n=50)
-    assert cmd(game, budi, "decline")["text"] == "Kamu menolak tantangan lempar koin dari Ani."
+    assert cmd(game, budi, "decline")["text"] == "You decline Ani's coin flip."
     assert ani.last()["text"] == "Budi declines your coin flip."
     clock.advance(3)
     cmd(game, ani, "challenge", to="Budi", n=50)
     clock.advance(61)
     game.tick()
     assert ani.last()["text"] == "Budi didn't answer your coin flip in time."
-    assert cmd(game, budi, "accept")["text"].startswith("Misi yang mana?")   # nothing waiting: missions
+    assert cmd(game, budi, "accept")["text"].startswith("Which mission?")   # nothing waiting: missions
 
 
 def test_the_weekly_lottery(make_game, monkeypatch, clock):
@@ -353,12 +353,12 @@ def test_the_weekly_lottery(make_game, monkeypatch, clock):
 def test_trading_is_all_or_nothing(make_game, monkeypatch, clock):
     game = make_game()
     ani = join(game, "Ani")
-    budi = join(game, "Budi", lang="id")
+    budi = join(game, "Budi", lang="id")                  # an older client's "id": English all the same
     for _ in range(3):
         give(game, "ani", "iron")
     give(game, "ani", "batik_shirt", "keycard_crew")
     char_of(game, "Budi")["credits"] = 500
-    wear(game, ani, "batik shirt")
+    wear(game, ani, "rocket-print shirt")
     assert cmd(game, ani, "offer", to="Budi", a="crew keycard for 10 credits")["text"] == \
         "crew keycards can't be traded."
     assert cmd(game, ani, "offer", to="Budi", a="3 iron")["text"].startswith("Say what you give and what you want")
@@ -370,8 +370,8 @@ def test_trading_is_all_or_nothing(make_game, monkeypatch, clock):
     assert sent["text"] == "You offer Budi 3 lumps of iron ore for 200 credits. Waiting for an answer."
     ask = budi.last()
     assert ask["k"] == "offer" and ask["ask"] is True and ask["actor"] == "Ani"
-    assert ask["text"] == "Ani menawarimu 3 bongkah bijih besi untuk 200 kredit. Ketik terima atau tolak (dalam 2 menit)."
-    cmd(game, budi, "text", a="terima")
+    assert ask["text"] == "Ani offers you 3 lumps of iron ore for 200 credits. Type accept or decline (within 2 minutes)."
+    cmd(game, budi, "text", a="accept")
     assert said(ani)["text"] == ("Deal! You trade with Budi: you give 3 lumps of iron ore and get 200 credits. "
                                   "You have 300 credits.")
     assert said(budi)["sound"] == "trade"
@@ -382,17 +382,17 @@ def test_trading_is_all_or_nothing(make_game, monkeypatch, clock):
     assert "handshake" in game.store.achievements_of(a["id"]) and "handshake" in game.store.achievements_of(b["id"])
     # a worn shirt changes hands and comes off; if saving fails, nothing moves
     clock.advance(5)
-    cmd(game, ani, "offer", to="Budi", a="batik shirt for 50 credits")
+    cmd(game, ani, "offer", to="Budi", a="rocket-print shirt for 50 credits")
 
     def broken(chars):
         raise OSError("disk full")
     monkeypatch.setattr(game.store, "save_all", broken)
     before = (dict(a["inventory"]), a["credits"], dict(b["inventory"]), b["credits"], dict(a["stats"]["worn"]))
-    assert cmd(game, budi, "accept")["text"] == "Ada yang tidak beres, jadi tidak ada yang berpindah tangan."
+    assert cmd(game, budi, "accept")["text"] == "Something went wrong, so nothing changed hands."
     assert (dict(a["inventory"]), a["credits"], dict(b["inventory"]), b["credits"], dict(a["stats"]["worn"])) == before
     monkeypatch.undo()
     clock.advance(5)
-    cmd(game, ani, "offer", to="Budi", a="batik shirt for 50 credits")
+    cmd(game, ani, "offer", to="Budi", a="rocket-print shirt for 50 credits")
     cmd(game, budi, "accept")
     assert b["inventory"]["batik_shirt"] == 1 and "batik_shirt" not in a["inventory"]
     assert a["stats"]["worn"] == {}
@@ -403,23 +403,23 @@ def test_offers_can_be_declined_taken_back_and_run_out(make_game, clock):
     ani = join(game, "Ani")
     budi = join(game, "Budi")
     give(game, "ani", "kerupuk")
-    cmd(game, ani, "offer", to="Budi", a="kerupuk for 5 credits")
+    cmd(game, ani, "offer", to="Budi", a="prawn crackers for 5 credits")
     assert cmd(game, budi, "decline")["text"] == "You decline Ani's offer."
     assert ani.last()["text"] == "Budi declines your offer."
     assert cmd(game, budi, "decline")["text"] == "There's nothing to decline."
     clock.advance(5)
-    cmd(game, ani, "offer", to="Budi", a="kerupuk for 5 credits")
+    cmd(game, ani, "offer", to="Budi", a="prawn crackers for 5 credits")
     assert cmd(game, ani, "cancel_offer")["text"] == "You take back your offer to Budi."
     assert budi.last()["text"] == "Ani takes back the offer."
     assert cmd(game, ani, "cancel_offer")["text"] == "You have no offer waiting."
     clock.advance(5)
-    cmd(game, ani, "offer", to="Budi", a="kerupuk for 5 credits")
+    cmd(game, ani, "offer", to="Budi", a="prawn crackers for 5 credits")
     clock.advance(121)
     game.tick()
     assert ani.last()["text"] == "Budi didn't answer your offer in time."
     assert budi.last()["text"] == "The offer from Ani has run out of time."
     clock.advance(5)
-    cmd(game, ani, "offer", to="Budi", a="kerupuk for 5 credits")
+    cmd(game, ani, "offer", to="Budi", a="prawn crackers for 5 credits")
     cmd(game, ani, "bye")
     assert "Ani takes back the offer." in budi.texts("system")
     assert cmd(game, budi, "accept")["text"].startswith("Which mission?")
@@ -511,8 +511,10 @@ def test_leaderboards_leave_the_admins_out(make_game):
     game._save(game.sessions["rafli"])
     board = cmd(game, conns["Ani"], "leaderboard", a="richest")["text"]
     assert board == "Leaderboard, richest: 1. Budi, 900; 2. Ani, 500; 3. Cici, 300. You're number 2."
-    miners = cmd(game, conns["Cici"], "text", a="papan skor penambang")["text"]
-    assert miners == "Papan skor, penambang: 1. Budi, 40; 2. Cici, 12; 3. Ani, 3. Kamu di urutan ke-2."
+    miners = cmd(game, conns["Cici"], "text", a="leaderboard miners")["text"]     # Cici's older client said "id"
+    assert miners == "Leaderboard, miners: 1. Budi, 40; 2. Cici, 12; 3. Ani, 3. You're number 2."
+    assert cmd(game, conns["Cici"], "text", a="papan skor penambang")["text"] == \
+        "I don't understand \"papan skor penambang\". Type help for the commands."
     summary = cmd(game, conns["Ani"], "leaderboard")["text"]
     assert summary.startswith("Leaders: richest, Budi (900); level, ") and "miners, Budi (40)" in summary
     assert cmd(game, conns["Ani"], "leaderboard", a="purple")["text"].startswith("There's no such leaderboard.")
@@ -554,6 +556,6 @@ def test_a_trade_offer_to_someone_link_dead_waits_for_them(make_game):
     budi = join(game, "Budi")
     give(game, "ani", "kerupuk")
     game.dropped(budi)
-    assert cmd(game, ani, "offer", to="Budi", a="kerupuk for 5 credits")["text"] == \
+    assert cmd(game, ani, "offer", to="Budi", a="prawn crackers for 5 credits")["text"] == \
         "Budi isn't on the station right now."
     assert isinstance(FakeConn(), FakeConn)

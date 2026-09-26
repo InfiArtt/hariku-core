@@ -13,22 +13,22 @@ station, the Moon, Karmina, Glasir, the Drift Bazaar, Evergrove, Lumina City,
 Pixel Pier and the Asteroid Belt. Three ways, from quick and dear to slow and
 cheap (economy.json "travel"):
 
-  gate to Karmina / gerbang ke Karmina       the Gate: at once, for a fee
-  ferry to Karmina / feri ke Karmina          the public ferry Starling: it
+  gate to Karmina                             the Gate: at once, for a fee
+  ferry to Karmina                            the public ferry Starling: it
                                               leaves every two minutes, and
                                               is slow, for a small ticket
   your own ship                               bought at the Shipyard; it docks
                                               in the Hangar (other worlds: at
                                               their port)
-    embark / naik kapal (Budi)                go aboard (a friend's ship, when
+    embark (Sam)                              go aboard (a friend's ship, when
                                               invited)
-    fly to Karmina / terbang ke Karmina       from aboard: a timed trip, fuel
-    disembark / turun kapal                   step off where it has docked
-    refuel / isi bahan bakar (10)             at a port; each world's price
-    load / muat 20 ice, unload / bongkar      between your bag and the hold
-    cargo / kargo, my ship / kapalku          the hold, the fuel, where it is
-    name ship ... / namai kapal ...
-  worlds / dunia                              where you can go, and the fares
+    fly to Karmina                            from aboard: a timed trip, fuel
+    disembark                                 step off where it has docked
+    refuel (10)                               at a port; each world's price
+    load 20 ice, unload                       between your bag and the hold
+    cargo, my ship                            the hold, the fuel, where it is
+    name ship ...
+  worlds                                      where you can go, and the fares
 
 A ship is kept in the database (the ships table): its model, name, where it
 is docked or where it's flying, its fuel and its cargo; a flight lands on
@@ -43,14 +43,14 @@ import logging
 import math
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
-GATE_WORDS = ("gate", "the gate", "gerbang", "portal", "the portal", "gate hall")
-FERRY_WORDS = ("ferry", "the ferry", "feri", "kapal feri", "starling", "jalak")
-TO_WORDS = ("to", "ke", "for", "menuju", "into", "ke arah")
-SHIP_WORDS = {"ship", "my ship", "the ship", "kapal", "kapalku", "kapal saya", "pesawatku"}
+GATE_WORDS = ("gate", "the gate", "portal", "the portal", "gate hall")
+FERRY_WORDS = ("ferry", "the ferry", "starling", "the starling")
+TO_WORDS = ("to", "for", "into")
+SHIP_WORDS = {"ship", "my ship", "the ship", "my own ship"}
 SHIP_NAME_LIMIT = 24
 
 
@@ -118,10 +118,10 @@ class TravelMixin:
         return self.world.world_of(ship["dock"]) if ship.get("dock") else None
 
     def ship_title(self, ship):
-        """ "the Swiftlet shuttle Bintang Timur" / "pesawat Walet Bintang Timur"."""
+        """ "the Swiftlet shuttle Morning Star"."""
         model = self.world.things[ship["model"]]["one"]
         name = ship.get("name") or ""
-        return {lang: (f"{model[lang]} {name}".strip()) for lang in ("en", "id")}
+        return {lang: (f"{model[lang]} {name}".strip()) for lang in LANGUAGES}
 
     def ship_aboard(self, char):
         """The ship a character is aboard (their own, or the one they visit)."""
@@ -210,9 +210,9 @@ class TravelMixin:
                    place=self.world.locations[port]["ref"], extra={"sound": "register"})
 
     def _both(self, key, **params):
-        """A line in both languages for _move_to (which fills in {place}: braces escaped)."""
+        """A line for _move_to (which fills in {place}: braces escaped)."""
         return {lang: self.render(lang, key, **params).replace("{", "{{").replace("}", "}}")
-                for lang in ("en", "id")}
+                for lang in LANGUAGES}
 
     def cmd_embark(self, session, message):
         char = session.char
@@ -220,7 +220,7 @@ class TravelMixin:
             self._error(session, "already_aboard")
             return
         name = self._arg(message, "to", 40)
-        if name and orbit_safety.name_key(name) not in (session.key, "my", "ku", "kapalku", "ship", "kapal"):
+        if name and orbit_safety.name_key(name) not in (session.key, "my", "ship", "my ship"):
             owner_session = self._find_session(name)
             owner = owner_session.char if owner_session else self._char_by_key(orbit_safety.name_key(name))
             ship = self.store.ship_of(owner["id"]) if owner else None

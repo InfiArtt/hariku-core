@@ -15,7 +15,7 @@ have no real-money value, can't be bought, and can't be cashed out.
   slots 20                     three reels of stars, moons, comets, planets,
                                rockets and the golden Orbit
   blackjack 50, hit, stand     against the robot dealer (who stands on 17)
-  challenge Budi 50            a coin flip between two players who both agree
+  challenge Sam 50             a coin flip between two players who both agree
   lottery, buy ticket 5        the weekly draw (Sundays, 12:00 UTC)
 
 Every game keeps a house edge (economy.json "casino": about 4 to 8 percent),
@@ -33,20 +33,17 @@ import orbit_safety
 
 logger = logging.getLogger("orbit.game")
 
-SUITS_EN = ("ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king")
-SUITS_ID = ("as", "2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "ratu", "raja")
-SLOT_NAMES = {"star": {"en": "star", "id": "bintang"}, "moon": {"en": "moon", "id": "bulan"},
-              "comet": {"en": "comet", "id": "komet"}, "planet": {"en": "planet", "id": "planet"},
-              "rocket": {"en": "rocket", "id": "roket"}, "orbit": {"en": "Orbit", "id": "Orbit"}}
-DICE_BETS = {"high": ("high", "tinggi", "besar", "big", "atas", "over"),
-             "low": ("low", "rendah", "kecil", "small", "bawah", "under"),
-             "seven": ("seven", "tujuh", "7")}
+CARDS = ("ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king")
+SLOT_NAMES = {"star": "star", "moon": "moon", "comet": "comet", "planet": "planet", "rocket": "rocket",
+              "orbit": "Orbit"}
+DICE_BETS = {"high": ("high", "big", "over"),
+             "low": ("low", "small", "under"),
+             "seven": ("seven", "7")}
 
 
 def times(x):
-    """2.3 as "2.3" in English and "2,3" in Indonesian."""
-    text = f"{float(x):g}"
-    return {"en": text, "id": text.replace(".", ",")}
+    """2.3 as "2.3"."""
+    return f"{float(x):g}"
 
 
 def pays(bet, multiple):
@@ -228,8 +225,7 @@ class CasinoMixin:
         return self.rng.randint(1, 13)
 
     def _cards_text(self, lang, cards):
-        names = SUITS_ID if lang == "id" else SUITS_EN
-        return self.texts.join(lang, [names[c - 1] for c in cards])
+        return self.texts.join(lang, [CARDS[c - 1] for c in cards])
 
     def cmd_blackjack(self, session, message):
         if not self._at_casino(session):

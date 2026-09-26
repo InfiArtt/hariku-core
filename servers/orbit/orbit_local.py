@@ -11,13 +11,13 @@
 What the other worlds have to do besides trading (the Moon's helium tunnels,
 Karmina's farming domes and Glasir's ice use "mine" and "collect"):
 
-  face moss sprite / hadapi peri lumut   Evergrove's creatures: a test of
+  face moss sprite                       Evergrove's creatures: a test of
                                          wits, never a fight. A roll of the
                                          die plus half your level against the
                                          creature's difficulty: win, and it
                                          leaves you a moonpetal or an ember
                                          crystal; lose, and it only laughs.
-  gig / gig                              Lumina City's Courier Hub: carry a
+  gig                                    Lumina City's Courier Hub: carry a
                                          parcel to the room it names, walking
                                          by compass, before the time is up.
 
@@ -27,7 +27,7 @@ economy.json "creatures", "creature_rules" and "gigs" hold the numbers.
 import logging
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -50,7 +50,7 @@ class LocalMixin:
         key = orbit_safety.name_key(text)
         for cid in here:
             names = creatures[cid]["names"]
-            if key in {orbit_safety.name_key(n) for lang in ("en", "id") for n in names[lang]}:
+            if key in {orbit_safety.name_key(n) for lang in LANGUAGES for n in names[lang]}:
                 return cid, here
         return None, here
 

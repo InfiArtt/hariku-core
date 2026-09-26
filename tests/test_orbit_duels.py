@@ -183,7 +183,8 @@ def test_admins_can_stop_a_duel(make_game, clock):
     rafli = join(game, "Rafli")
     start(game, clock, ani, budi, stake=40)
     assert cmd(game, rafli, "admin", op="duel_stop", to="Cici")["text"] == "Cici isn't in a duel."
-    assert cmd(game, rafli, "admin", op="duel_stop", to="Budi")["text"] == "The duel of Ani and Budi is stopped."
+    game.receive(rafli, {"t": "cmd", "c": "text", "a": "stop duel Budi"})
+    assert rafli.sent[-1]["text"] == "The duel of Ani and Budi is stopped."
     assert "The station's admins stop the duel of Ani and Budi: the stakes go back." in texts(ani)
     assert ani.session.char["credits"] == budi.session.char["credits"] == 500 and not game.duels
     assert "stop duel" in {row["action"] for row in game.store.admin_log(10)}
@@ -201,9 +202,15 @@ def test_a_duel_and_the_arcade_dont_mix(make_game, clock):
 def test_the_phrases(make_game, clock):
     game = make_game()
     ani, budi = two_in_the_ring(game)
-    game.receive(ani, {"t": "cmd", "c": "text", "a": "tantang duel Budi 25"})
+    game.receive(ani, {"t": "cmd", "c": "text", "a": "duel Budi 25"})
     assert ani.sent[-1]["text"] == "You challenge Budi to a duel for 25 credits each."
-    game.receive(budi, {"t": "cmd", "c": "text", "a": "matikan duel"})
+    game.receive(budi, {"t": "cmd", "c": "text", "a": "decline"})
+    game.receive(budi, {"t": "cmd", "c": "text", "a": "duels off"})
     assert budi.sent[-1]["text"].startswith("You refuse all duels now.")
     game.receive(budi, {"t": "cmd", "c": "text", "a": "duels on"})
     assert budi.sent[-1]["text"] == "You take duels again."
+    game.receive(budi, {"t": "cmd", "c": "text", "a": "duels"})
+    assert budi.sent[-1]["text"].startswith("Duels: you've won 0 and lost 0.")
+    # Orbit is played in English: the old Indonesian phrase gets the help hint
+    game.receive(ani, {"t": "cmd", "c": "text", "a": "tantang duel Budi 25"})
+    assert ani.sent[-1]["text"] == "I don't understand \"tantang duel Budi 25\". Type help for the commands."

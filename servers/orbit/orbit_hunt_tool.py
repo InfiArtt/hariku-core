@@ -22,27 +22,30 @@ the hunt, and the repository is public. Copy only the built file to the
 server (~/orbit/private/) and point config.json's "hunt" at it.
 
 An authoring file is the season with, for each stage, "accept": every
-answer it takes (both languages, other spellings); "build" replaces them with
+answer it takes (other spellings, and other languages if you like); "build"
+replaces them with
 "answers", HMAC-SHA256 hashes under a new random "salt" (or the authoring
 file's own). Answers are compared lower case, without accents, spaces or
-punctuation: "Time Capsule Room" and "timecapsuleroom" are the same.
+punctuation: "Time Capsule Room" and "timecapsuleroom" are the same. The game
+is played in English, so the texts are {"en": ...}; other languages beside
+"en" are allowed (older seasons have "id") and never said.
 
 {
   "season": 1,
-  "title": {"en": "...", "id": "..."},        the season's name
-  "intro": {"en": "...", "id": "..."},        said before the first riddle
+  "title": {"en": "..."},                     the season's name
+  "intro": {"en": "..."},                     said before the first riddle
   "prize": {"first": 5000, "others": [2500, 1000], "rest": 250,
             "title": "title_chord_keeper"},   credits by place; a thing for the first
-  "rival": {"name": {"en": ..., "id": ...}, "hours": 48},
+  "rival": {"name": {"en": ...}, "hours": 48},
   "stages": [
     {"id": "s1",
-     "riddle": {"en": ..., "id": ...},        what "hunt" says
-     "found": {"en": ..., "id": ...},         said when it's solved
-     "accept": ["answer", "jawaban"],         (authoring only)
-     "clues": [{"room": "archive", "text": {"en": ..., "id": ...},
+     "riddle": {"en": ...},                   what "hunt" says
+     "found": {"en": ...},                    said when it's solved
+     "accept": ["answer", "the answer"],      (authoring only)
+     "clues": [{"room": "archive", "text": {"en": ...},
                 "requires": {"thing": "scanner", "worn": "headlamp", "hours": [22, 4]},
                 "tones": [1, 3, 2, 4]}],      "requires" and "tones" are optional
-     "hints": [{"en": ..., "id": ...}]}       released one at a time by admins
+     "hints": [{"en": ...}]}                  released one at a time by admins
   ]
 }
 """
@@ -59,14 +62,14 @@ import orbit_world  # noqa: E402
 
 TEMPLATE = {
     "season": 2,
-    "title": {"en": "The Lost Chord, season 2", "id": "Nada yang Hilang, musim 2"},
-    "intro": {"en": "Write the season's story here.", "id": "Tulis cerita musimnya di sini."},
+    "title": {"en": "The Lost Chord, season 2"},
+    "intro": {"en": "Write the season's story here."},
     "prize": {"first": 5000, "others": [2500, 1000], "rest": 250, "title": "title_chord_keeper"},
-    "rival": {"name": {"en": "Meridian Grey", "id": "Meridian Kelabu"}, "hours": 48},
-    "stages": [{"id": "s1", "riddle": {"en": "The riddle.", "id": "Teka-tekinya."},
-                "found": {"en": "Found!", "id": "Ketemu!"}, "accept": ["answer", "jawaban"],
-                "clues": [{"room": "archive", "text": {"en": "A clue.", "id": "Sebuah petunjuk."}}],
-                "hints": [{"en": "A hint.", "id": "Sebuah petunjuk tambahan."}]}],
+    "rival": {"name": {"en": "Meridian Grey"}, "hours": 48},
+    "stages": [{"id": "s1", "riddle": {"en": "The riddle."},
+                "found": {"en": "Found!"}, "accept": ["answer", "the answer"],
+                "clues": [{"room": "archive", "text": {"en": "A clue."}}],
+                "hints": [{"en": "A hint."}]}],
 }
 
 

@@ -9,12 +9,13 @@
 
 """
 The station: world.json and economy.json read and checked, and finding
-things in them by what players type, in either language ("kantin", "the
-cantina", "Kantin!").
+things in them by what players type ("cantina", "the cantina", "Cantina!").
+Every text there is an {"en": ...} dict: Orbit is played in English
+(orbit_lang).
 
 world.json
   directions  n, ne, e, se, s, sw, w, nw, u, d: their names and the words for
-              them in both languages ("u" is north in Indonesian, up in English)
+              them ("u" is up, "d" down)
   areas       the decks and places rooms belong to (Main Deck, Asteroid Belt...),
               each in a world
   worlds      the station and the other worlds of the simulation (the Moon,
@@ -45,11 +46,12 @@ import difflib
 import json
 import os
 import re
-import string
 import unicodedata
 
+from orbit_lang import LANGUAGES
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-LANGS = ("en", "id")
+LANGS = LANGUAGES                  # ("en",): the language every text of the data has
 AMBIENCES = ("vent", "cantina", "engine", "garden", "deck", "space", "belt", "venue", "mall", "casino",
              "gate", "moon", "colony", "ice", "bazaar", "forest", "neon", "arcade")
 DIRECTIONS = ("n", "ne", "e", "se", "s", "sw", "w", "nw", "u", "d")
@@ -61,7 +63,7 @@ THING_TYPES = ("good", "cargo", "gear", "tool", "seed", "consumable", "furniture
                "title", "pet", "service", "ship", "arcade")
 GOOD_KINDS = ("trade", "crop", "ore", "salvage", "contraband")
 LEGAL_KINDS = ("trade", "crop", "ore", "salvage")          # what "market": true deals in
-_ARTICLES = {"the", "a", "an", "to", "ke", "di", "my", "ku"}
+_ARTICLES = {"the", "a", "an", "to", "my"}
 _NOT_WORD = re.compile(r"[^\w\s]")
 
 
@@ -80,12 +82,8 @@ def _strip_articles(text):
 
 
 def strip_articles(text):
-    """What a name is compared as: lower case, no punctuation, no "the"/"ke" in front."""
+    """What a name is compared as: lower case, no punctuation, no "the" in front."""
     return _strip_articles(text)
-
-
-def _fields(text):
-    return {name for _lit, name, _spec, _conv in string.Formatter().parse(str(text)) if name}
 
 
 class WorldError(ValueError):
@@ -205,7 +203,7 @@ class World:
                 problems.append(f"{lid}: its market deals in nothing")
             about = market["about"]
             if about is not None and not all(isinstance(about.get(lang), str) for lang in LANGS):
-                problems.append(f"{lid}: its market's about needs en and id")
+                problems.append(f"{lid}: its market's about needs en")
             markets[lid] = market
         # One market for each good on a world: a world's prices are the prices at its market.
         dealer = {}
@@ -252,7 +250,7 @@ class World:
         for lid, loc in self.locations.items():
             for field in ("name", "ref", "in", "desc"):
                 if not all(isinstance(loc.get(field, {}).get(lang), str) for lang in LANGS):
-                    problems.append(f"{lid}: {field} needs en and id")
+                    problems.append(f"{lid}: {field} needs en")
             if loc.get("ambience") not in AMBIENCES:
                 problems.append(f"{lid}: unknown ambience {loc.get('ambience')!r}")
             if loc.get("area") not in self.areas:
@@ -308,7 +306,7 @@ class World:
                 problems.append(f"thing {tid}: unknown type {thing.get('type')!r}")
             for field in ("one", "many"):
                 if not all(isinstance(thing.get(field, {}).get(lang), str) for lang in LANGS):
-                    problems.append(f"thing {tid}: {field} needs en and id")
+                    problems.append(f"thing {tid}: {field} needs en")
         for sid, shop in self.shops.items():
             currency = shop.get("currency")
             if currency and currency not in self.things:
@@ -334,7 +332,7 @@ class World:
         for wid, world in self.worlds.items():
             for field in ("name", "ref", "in", "about"):
                 if not all(isinstance(world.get(field, {}).get(lang), str) for lang in LANGS):
-                    problems.append(f"world {wid}: {field} needs en and id")
+                    problems.append(f"world {wid}: {field} needs en")
             for field in ("port", "ferry", "gate"):
                 lid = world.get(field)
                 if field == "port" and lid is None:
@@ -393,7 +391,7 @@ class World:
                 problems.append(f"event {eid}: unknown action {event.get('action')!r}")
             for field in ("name", "about", "start", "end"):
                 if not all(isinstance(event.get(field, {}).get(lang), str) for lang in LANGS):
-                    problems.append(f"event {eid}: {field} needs en and id")
+                    problems.append(f"event {eid}: {field} needs en")
             if not float(event.get("duration") or 0) > 0:
                 problems.append(f"event {eid}: needs a duration")
             rooms = list(event.get("rooms") or []) + list((event.get("effect") or {}).get("dark") or [])
@@ -425,21 +423,16 @@ class World:
         seen_names = {}
 
         def pair(where, value, need_list=True):
-            """Both languages, the same count and the same {placeholders}."""
+            """The English text: a line, or (need_list) a list of at least one line."""
             if not isinstance(value, dict) or not all(lang in value for lang in LANGS):
-                problems.append(f"{where}: needs en and id")
+                problems.append(f"{where}: needs en")
                 return
-            if need_list:
-                en, idn = value["en"], value["id"]
-                if not isinstance(en, list) or not isinstance(idn, list) or not en or len(en) != len(idn):
-                    problems.append(f"{where}: needs as many lines in en as in id")
-                    return
-                pairs = zip(en, idn)
-            else:
-                pairs = [(value["en"], value["id"])]
-            for a, b in pairs:
-                if not isinstance(a, str) or not isinstance(b, str) or _fields(a) != _fields(b):
-                    problems.append(f"{where}: the languages differ in their {{placeholders}}")
+            for lang in LANGS:
+                lines = value[lang] if need_list else [value[lang]]
+                if not isinstance(lines, list) or not lines:
+                    problems.append(f"{where}: needs a list of lines in {lang}")
+                elif not all(isinstance(line, str) and line for line in lines):
+                    problems.append(f"{where}: a line in {lang} is empty or isn't text")
 
         for nid, npc in (self.npcs.get("npcs") or {}).items():
             where = f"npc {nid}"
@@ -456,7 +449,7 @@ class World:
                     pair(f"{where} {field}", npc[field], need_list=False)
             names = npc.get("names") or {}
             if not all(names.get(lang) for lang in LANGS):
-                problems.append(f"{where}: needs names in en and id")
+                problems.append(f"{where}: needs names in en")
             # Their own names are theirs alone ("shopkeeper" may be anyone's: it's found in a room).
             own = {_strip_articles(npc.get("name", "")), nid} | {
                 _strip_articles(names[lang][0]) for lang in LANGS if names.get(lang)}
@@ -500,7 +493,7 @@ class World:
             for tid, topic in topics.items():
                 tw = f"{where} topic {tid}"
                 if not all(topic.get("names", {}).get(lang) for lang in LANGS):
-                    problems.append(f"{tw}: needs names in en and id")
+                    problems.append(f"{tw}: needs names in en")
                 if topic.get("favour"):
                     if not npc.get("favours"):
                         problems.append(f"{tw}: no favours to ask")
@@ -584,8 +577,8 @@ class World:
             return None
         if key in index:
             return index[key]
-        # A plural or a possessive: "crates", "kantinnya".
-        for suffix in ("s", "es", "nya", "ku", "mu"):
+        # A plural: "crates", "boxes".
+        for suffix in ("s", "es"):
             if key.endswith(suffix) and key[:-len(suffix)] in index:
                 return index[key[:-len(suffix)]]
         if fuzzy and len(key) >= 4:
@@ -595,7 +588,7 @@ class World:
         return None
 
     def find_location(self, text):
-        """A location id for what a player typed ("kantin", "the cantina"), or None."""
+        """A location id for what a player typed ("cantina", "the Cantina"), or None."""
         return self._lookup(self._place_names, text)
 
     def find_good(self, text):
@@ -615,16 +608,14 @@ class World:
         found = self._lookup(index, text)
         return (found, loc["objects"][found]) if found else (None, None)
 
-    def find_direction(self, text, lang="en"):
-        """A direction ("n"...) for a word, the player's own language first:
-        "u" is north (utara) in Indonesian and up in English."""
+    def find_direction(self, text, _lang=None):
+        """A direction ("n"...) for a word: "n", "north", "ne", "u" or "up"..."""
         key = norm(text)
         if not key:
             return None
-        other = "en" if lang == "id" else "id"
-        for table in (self._dir_words.get(lang, {}), self._dir_words[other]):
-            if key in table:
-                return table[key]
+        for lang in LANGS:
+            if key in self._dir_words[lang]:
+                return self._dir_words[lang][key]
         return None
 
     def dir_name(self, d):
@@ -730,7 +721,7 @@ class World:
     # --- names in sentences -------------------------------------------------------------
 
     def count_of(self, table, thing_id, n):
-        """{"en": "3 sacks of coffee", "id": "3 karung kopi"}."""
+        """{"en": "3 sacks of coffee"}."""
         thing = table[thing_id]
         form = thing["one"] if n == 1 else thing["many"]
         return {lang: f"{n} {form[lang]}" for lang in LANGS}
@@ -739,4 +730,4 @@ class World:
         return self.count_of(self.things, thing_id, n)
 
     def job_name(self, job):
-        return self.jobs.get(job, {}).get("name", {"en": job, "id": job})
+        return self.jobs.get(job, {}).get("name", {lang: job for lang in LANGS})

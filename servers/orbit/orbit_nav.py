@@ -9,10 +9,9 @@
 
 """
 Walking the station by compass, like a MUD: n, s, e, w, ne, nw, se, sw, up
-and down (in Indonesian utara, selatan, timur, barat, timur laut, barat laut,
-tenggara, barat daya, naik, turun; "u" is utara in Indonesian and up in
-English). There is no teleporting: "go to the cantina" walks there only when
-the Cantina is next door, and otherwise tells you the way.
+and down (or north, south, east, west, northeast...; "u" is up, "d" down).
+There is no teleporting: "go to the cantina" walks there only when the
+Cantina is next door, and otherwise tells you the way.
 
   look            the room, and its exits: "Exits: north, southwest, down."
   way to X        the steps from here, compact: "2 south, then west". Anyone
@@ -23,19 +22,19 @@ the Cantina is next door, and otherwise tells you the way.
                   "the way to the market": the nearest one. It also starts the
                   guide: after each step, "Then 2 west."; off the route, the
                   way again from there; "You've arrived at the Cantina."
-  guide me to X   the same (pandu ke X); "guide" alone repeats what's left,
-                  "stop guide" (berhenti pandu) ends it
+  guide me to X   the same; "guide" alone repeats what's left, "stop guide"
+                  ends it
   map             this deck in words; more with a mapper
   where am I      the room, the deck and the exits
   compass         the way you last walked, and the deck
   scan            who is in the rooms around you (a scanner)
-  locate Sari     where a player is, and the way (a communicator)
+  locate Maya     where a player is, and the way (a communicator)
 
 Some rooms are dark (the maintenance tunnels, the Crystal Cave): without a
 worn headlamp you only feel the way you came in. Some doors are locked (a
 keycard opens them). Outside the hull and on the Asteroid Surface there is
 no air: an EVA suit only, with a few minutes of air, a warning before it
-runs out, and a tow back to the airlock (a small fee) if it does. The Kancil
+runs out, and a tow back to the airlock (a small fee) if it does. The Wombat
 shuttle flies between the Dock and the Asteroid Belt. Your cabin is private;
 invite someone and they may visit.
 """
@@ -43,7 +42,7 @@ invite someone and they may visit.
 import orbit_safety
 import orbit_world
 from orbit_econ import MARKET_WORDS
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 LONG_ROUTE = 8               # a route of this many steps (in three runs or more) also says how many
 # Arriving where the guide was taking you: the mapper's own chime. Clients from 1.1 fall back
@@ -53,7 +52,7 @@ GUIDE_ARRIVED_SOUND = "gadget_arrived"
 
 def route_groups(path):
     """[(how, n)]: a route's steps with runs of the same direction together
-    (the Kancil is always a run of its own)."""
+    (the Wombat is always a run of its own)."""
     groups = []
     for how, _room in path:
         if groups and groups[-1][0] == how and how != "shuttle":
@@ -347,7 +346,7 @@ class NavMixin:
 
     def find_place(self, session, text):
         key = orbit_safety.name_key(text)
-        if key in ("suar", "beacon", "my beacon", "suarku", "penanda"):
+        if key in ("beacon", "my beacon", "the beacon", "marker", "my marker"):
             return session.char["stats"].get("beacon") or "?beacon"
         if orbit_world.strip_articles(text) in MARKET_WORDS:        # "the way to the market": the nearest
             nearest = self.nearest_market(session.char)
@@ -379,7 +378,7 @@ class NavMixin:
                                 can_pass=lambda room, ex: self.can_pass(char, room, ex))
 
     def group_text(self, lang, how, n):
-        """One run of a route: "east", "2 east", "up 3 levels", "ride the Kancil"."""
+        """One run of a route: "east", "2 east", "up 3 levels", "ride the Wombat"."""
         if how == "shuttle":
             return self.render(lang, "step_kancil")
         word = self.dir_word(lang, how)
@@ -389,7 +388,7 @@ class NavMixin:
         return self.render(lang, key, n=n, dir=word)
 
     def join_steps(self, lang, parts):
-        """ "a", "a, then b" / "a lalu b", "a, b, then c" / "a, b, lalu c"."""
+        """ "a", "a, then b", "a, b, then c"."""
         if len(parts) <= 1:
             return "".join(parts)
         if len(parts) == 2:
@@ -463,8 +462,8 @@ class NavMixin:
     # within the link-dead minute keeps it, a restart of the server forgets it.
 
     def cmd_guide(self, session, message):
-        """ "pandu ke kantin" / "guide me to the cantina" (the way, guided), "pandu" (where the
-        guide is taking you), "berhenti pandu" / "stop guide"."""
+        """ "guide me to the cantina" (the way, guided), "guide" (where the guide is taking
+        you), "stop guide"."""
         if message.get("op") == "stop":
             guide = session.guide
             if guide is None:
@@ -716,7 +715,7 @@ class NavMixin:
                 self._send(other, "arrive", "friend_online", extra={"actor": session.name, "sound": "gadget"},
                            name=session.name)
 
-    # --- the Kancil ---------------------------------------------------------------------
+    # --- the Wombat, the mining shuttle (its room is still "kancil") -----------------------
 
     def ride_seconds(self, char):
         kancil = self.econ["kancil"]
@@ -774,7 +773,7 @@ class NavMixin:
             self._remember_room(char, dest)
             return self.render(session.lang, "kancil_landed_away", place=self.world.locations[dest]["ref"])
         char["location"] = "kancil"
-        self._move_to(session, dest, message={lang: self.render(lang, "kancil_landed") for lang in ("en", "id")},
+        self._move_to(session, dest, message={lang: self.render(lang, "kancil_landed") for lang in LANGUAGES},
                       sound="landing", quiet=True)
         if not session.invisible:
             self._to_room(self.room_of(char), "arrive", "kancil_arrive_other", exclude=(session,),
@@ -869,7 +868,7 @@ class NavMixin:
             return None
         char = self._char_by_key(host)
         name = char["name"] if char else host
-        return {lang: self.render(lang, "cabin_in", name=name) for lang in ("en", "id")}
+        return {lang: self.render(lang, "cabin_in", name=name) for lang in LANGUAGES}
 
     def cabin_name(self, session):
         host = self.cabin_host(session)
@@ -877,7 +876,7 @@ class NavMixin:
             return None
         char = self._char_by_key(host)
         name = char["name"] if char else host
-        return {lang: self.render(lang, "cabin_of", name=name) for lang in ("en", "id")}
+        return {lang: self.render(lang, "cabin_of", name=name) for lang in LANGUAGES}
 
     def cmd_invite(self, session, message):
         op = self._arg(message, "op", 10) or "add"

@@ -87,14 +87,16 @@ def test_every_world_has_its_own_map_joined_to_the_others(world):
             assert world.distance(a, b) == world.distance(b, a) >= 1
     gates = [w for w, info in world.worlds.items() if info.get("gate")]
     ferries = [w for w, info in world.worlds.items() if info.get("ferry")]
-    assert set(gates) == set(ferries) == set(world.worlds) - {"belt"}          # the Kancil serves the Belt
+    assert set(gates) == set(ferries) == set(world.worlds) - {"belt"}          # the Wombat serves the Belt
 
 
 def test_the_worlds_are_found_by_their_names(world):
-    for text, wid in (("bulan", "moon"), ("the Moon", "moon"), ("planet merah", "karmina"), ("Karmina", "karmina"),
-                      ("bulan es", "glasir"), ("pasar apung", "bazaar"), ("drift bazaar", "bazaar"),
-                      ("rimba abadi", "evergrove"), ("neon city", "lumina"), ("kota lumina", "lumina"),
-                      ("arcade world", "pixel"), ("stasiun", "station"), ("atlantis", None)):
+    for text, wid in (("moon", "moon"), ("the Moon", "moon"), ("red planet", "karmina"), ("Karmina", "karmina"),
+                      ("the ice moon", "glasir"), ("asteroid market", "bazaar"), ("drift bazaar", "bazaar"),
+                      ("the realm", "evergrove"), ("neon city", "lumina"), ("lumina city", "lumina"),
+                      ("arcade world", "pixel"), ("the station", "station"), ("atlantis", None),
+                      # Indonesian names are no longer names
+                      ("bulan", None), ("planet merah", None), ("pasar apung", None), ("stasiun", None)):
         assert world.find_world(text) == wid, text
 
 
@@ -127,33 +129,35 @@ def test_the_gate_is_quick_and_dear(make_game):
     assert arrived["k"] == "moved" and arrived["sound"] == "gate" and arrived["amb"] == "colony"
     assert "Ani steps into the Gate's light and is gone, off to Karmina Colony." in budi.texts("leave")
     assert game.flows["spent"]["gate"] == 85
-    # "pergi ke gerbang ke Bulan" (what Orbit 1.0 sends as go) works too
-    cmd(game, ani, "go", a="gerbang ke Bulan")
+    # "go to the gate to the Moon" (what Orbit 1.0 sends as go) works too
+    cmd(game, ani, "go", a="the gate to the Moon")
     assert char["location"] == "moon_port"
 
 
 def test_the_ferry_is_slow_and_cheap(make_game, clock):
     game = make_game()
-    ani = join(game, "Ani", lang="id")
+    ani = join(game, "Ani", lang="id")                   # an older client asking for Indonesian: English
     char = char_of(game, "Ani")
-    cmd(game, ani, "ferry", a="bulan")
+    cmd(game, ani, "ferry", a="the moon")
     assert char["location"] == "ferry" and char["credits"] == 100 - (5 + 3 * 2)
     trip = char["stats"]["ferry"]
     assert trip["depart"] % 120 == 0 and trip["depart"] - clock.now >= 10 and trip["arrive"] - trip["depart"] == 80
-    assert "Feri ke Pangkalan Bulan Tranquility berangkat" in ani.texts("info")[-1]
-    assert "berangkat" in cmd(game, ani, "look")["text"]
+    assert "The ferry to Moon Base Tranquility leaves in" in ani.texts("info")[-1]
+    assert "leaves for Moon Base Tranquility in" in cmd(game, ani, "look")["text"]
     assert cmd(game, ani, "move", d="n")["k"] == "error"                          # no walking about
     clock.now = trip["depart"] + 1
     game.tick()
-    assert ani.texts("flight")[-1].startswith("Feri bertolak menuju Pangkalan Bulan Tranquility")
-    assert cmd(game, ani, "disembark")["text"].startswith("Feri sudah berlayar")
+    assert ani.texts("flight")[-1].startswith("The ferry casts off for Moon Base Tranquility")
+    assert cmd(game, ani, "disembark")["text"].startswith("The ferry is under way")
     clock.now = trip["arrive"] + 1
     game.tick()
     assert char["location"] == "moon_port" and "ferry" not in char["stats"]
     # back again, but getting off before it leaves
-    cmd(game, ani, "text", a="feri ke stasiun")
+    assert cmd(game, ani, "text", a="feri ke stasiun")["text"] == \
+        'I don\'t understand "feri ke stasiun". Type help for the commands.'
+    cmd(game, ani, "text", a="ferry to the station")
     assert char["location"] == "ferry"
-    cmd(game, ani, "text", a="turun feri")
+    cmd(game, ani, "text", a="get off the ferry")
     assert char["location"] == "moon_port"
 
 
@@ -194,7 +198,7 @@ def test_buying_a_ship_boarding_it_and_flying_it(make_game, clock):
     assert char["location"] == "ship" and aboard["text"].startswith("You climb aboard your Swiftlet shuttle.")
     assert "Fuel 24 of 24. Hold 0 of 40: empty." in aboard["text"]
     assert cmd(game, ani, "move", d="n")["text"].startswith("You're aboard a ship")
-    cmd(game, ani, "name_ship", a="Bintang Timur")
+    cmd(game, ani, "name_ship", a="Morning Star")
     took_off = cmd(game, ani, "fly", a="the moon")
     assert took_off["k"] == "flight" and took_off["sound"] == "launch"
     assert took_off["text"] == ("Engines on! You lift off for Moon Base Tranquility: 50 seconds of flight, "
@@ -213,7 +217,7 @@ def test_buying_a_ship_boarding_it_and_flying_it(make_game, clock):
     refuelled = cmd(game, ani, "refuel")
     assert refuelled["text"].startswith("You buy 2 fuel for 4 credits: the tank holds 24 of 24.")
     assert cmd(game, ani, "refuel")["text"] == "Your tank is already full (24)."
-    assert "Swiftlet shuttle Bintang Timur" in cmd(game, ani, "cargo")["text"]
+    assert "Swiftlet shuttle Morning Star" in cmd(game, ani, "cargo")["text"]
 
 
 def test_a_pilot_flies_faster_and_a_ship_lands_without_its_captain(tmp_path, make_game, clock):
@@ -248,7 +252,7 @@ def test_friends_fly_along_when_invited(make_game, clock):
     assert cmd(game, budi, "embark", to="Ani")["text"].startswith("Ani hasn't invited you aboard.")
     cmd(game, ani, "invite", op="add", to="Budi")
     assert budi.last()["text"].startswith("Ani invites you aboard their ship, in the Hangar.")
-    cmd(game, budi, "text", a="naik kapal Ani")
+    cmd(game, budi, "text", a="embark Ani")
     assert char_of(game, "Budi")["location"] == "ship" and char_of(game, "Budi")["stats"]["visit"] == "ani"
     assert cmd(game, budi, "fly", a="moon")["text"] == "Only the ship's captain can do that."
     cmd(game, ani, "fly", a="moon")
@@ -304,7 +308,7 @@ def test_loading_and_unloading_the_hold(make_game):
     walk(game, ani, "hangar")
     assert cmd(game, ani, "load", item="ice", n=2)["text"] == "You're not aboard a ship."
     cmd(game, ani, "embark")
-    loaded = cmd(game, ani, "text", a="muat 3 es")
+    loaded = cmd(game, ani, "text", a="load 3 ice")
     assert loaded["text"] == "You load 3 blocks of comet ice into the hold: 3 of 40." and loaded["sound"] == "cargo"
     cmd(game, ani, "load", item="", n="all")
     assert "ice" not in char["inventory"] and game.store.ship_of(char["id"])["cargo"] == {"ice": 5}
@@ -415,20 +419,20 @@ def test_facing_evergroves_creatures(make_game, monkeypatch, clock):
     ani = join(game, "Ani", lang="id")
     char = char_of(game, "Ani")
     to_world(game, ani, "evergrove")
-    assert cmd(game, ani, "face", a="sprite")["text"] == "Tidak ada makhluk di sini untuk dihadapi."
+    assert cmd(game, ani, "face", a="sprite")["text"] == "There are no creatures here to face."
     walk(game, ani, "grove_wood")
-    assert cmd(game, ani, "look", a="peri lumut")["text"].startswith("Peri seukuran ibu jari")
+    assert cmd(game, ani, "look", a="moss sprite")["text"].startswith("A thumb-sized sprite")
     monkeypatch.setattr(game.rng, "randint", lambda a, b: 3)
-    lost = cmd(game, ani, "text", a="hadapi peri lumut")
-    assert lost["k"] == "failed" and lost["outcome"] == "lose" and "butuh 6" in lost["text"]
-    assert cmd(game, ani, "face", a="peri lumut")["text"].startswith("Makhluk-makhluk itu menjaga jarak")
+    lost = cmd(game, ani, "text", a="face moss sprite")
+    assert lost["k"] == "failed" and lost["outcome"] == "lose" and "it needed 6" in lost["text"]
+    assert cmd(game, ani, "face", a="sprite")["text"].startswith("The creatures keep their distance")
     clock.advance(21)
     monkeypatch.setattr(game.rng, "randint", lambda a, b: 18)
     won = cmd(game, ani, "face", a="moss sprite")
-    assert won["k"] == "paid" and won["sound"] == "creature" and "Kamu mendapat" in won["text"]
+    assert won["k"] == "paid" and won["sound"] == "creature" and "You get " in won["text"]
     assert char["stats"]["creatures"] == 1 and char["xp"] >= 5
     walk(game, ani, "grove_deep")
-    assert cmd(game, ani, "face", a="beetle")["text"].startswith("Terlalu gelap")
+    assert cmd(game, ani, "face", a="beetle")["text"] == "It's too dark to see. A headlamp would help."
 
 
 def test_courier_gigs_in_lumina_city(make_game, monkeypatch, clock):

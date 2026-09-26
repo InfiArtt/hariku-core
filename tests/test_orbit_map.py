@@ -9,11 +9,11 @@
 
 # Tests for Orbit's map and things (servers/orbit): the map itself (every exit
 # has its way back, every room can be reached, the compass agrees with the
-# plan, the words for directions in both languages), walking by compass,
-# "u" in Indonesian and English, the way to places and the mapper, the map,
-# where am I, the compass, dark rooms and the headlamp, locked doors and
-# keycards, vacuum, the EVA suit and the air that runs out, the Kancil
-# shuttle, the scanner, the communicator and friends, the beacon, cabins and
+# plan, the words for directions), walking by compass, "u" is up, the way to
+# places and the mapper, the map, where am I, the compass, dark rooms and the
+# headlamp, locked doors and keycards, vacuum, the EVA suit and the air that
+# runs out, the Wombat shuttle, the scanner, the communicator and friends,
+# the beacon, cabins and
 # guests, the shops, using, wearing and examining things, food, pets (a
 # companion in its own table), the time capsule and the temple. The server
 # parser for plain text is tested here too.
@@ -87,18 +87,21 @@ def test_the_compass_agrees_with_the_plan(world):
     assert max(rooms_at.values()) == 1                      # no two rooms in one spot
 
 
-def test_the_words_for_directions_in_both_languages(world):
+def test_the_words_for_directions(world):
     for d, info in world.directions.items():
-        for lang in ("en", "id"):
-            assert info["name"][lang] and info["words"][lang], (d, lang)
-            for word in info["words"][lang]:
-                assert world.find_direction(word, lang) == d, (word, lang)
+        assert info["name"]["en"] and info["words"]["en"], d
+        for word in info["words"]["en"]:
+            assert world.find_direction(word) == d, word
         assert world.directions[info["back"]]["back"] == d
-    assert world.find_direction("u", "id") == "n" and world.find_direction("u", "en") == "u"
-    assert world.find_direction("s", "id") == "s" == world.find_direction("s", "en")
-    assert world.find_direction("barat daya", "en") == "sw" and world.find_direction("NE", "id") == "ne"
-    assert world.find_direction("naik", "en") == "u" and world.find_direction("d", "id") == "d"
-    assert world.find_direction("kantin", "id") is None
+    assert world.find_direction("u") == "u" == world.find_direction("up") == world.find_direction("upstairs")
+    assert world.find_direction("d") == "d" == world.find_direction("down") == world.find_direction("downstairs")
+    assert world.find_direction("n") == "n" == world.find_direction("North")
+    for word in ("ne", "NE", "northeast", "north east", "north-east"):
+        assert world.find_direction(word) == "ne", word
+    assert world.find_direction("s") == "s" and world.find_direction("southwest") == "sw"
+    assert world.find_direction("u", "id") == "u"          # the language an old client sends changes nothing
+    for word in ("utara", "naik", "barat daya", "turun", "cantina", "kantin"):
+        assert world.find_direction(word) is None, word
 
 
 def test_the_places_everyone_needs_are_open_to_everyone(world):
@@ -129,7 +132,7 @@ def test_a_map_that_breaks_the_rules_is_refused(world):
     import json
     for change in (lambda d: d["locations"]["park"]["exits"].update(d="service"),       # one-way, unmarked
                    lambda d: d["locations"]["cargo"]["exits"].update(s={"to": "dock", "lock": "gold"}),
-                   lambda d: d["directions"]["n"]["words"].update(id=[]),
+                   lambda d: d["directions"]["n"]["words"].update(en=[]),
                    lambda d: d["shuttles"]["links"].append(["dock", "mars"])):
         data = json.loads(json.dumps(world.data))
         change(data)
@@ -141,91 +144,106 @@ def test_a_map_that_breaks_the_rules_is_refused(world):
 # The server reading plain text
 # ------------------------------------------------------------
 
-@pytest.mark.parametrize("text, lang, expected", [
-    ("s", "id", {"c": "move", "d": "s"}),
-    ("u", "id", {"c": "move", "d": "n"}),
-    ("u", "en", {"c": "move", "d": "u"}),
-    ("barat daya", "id", {"c": "move", "d": "sw"}),
-    ("go north", "en", {"c": "move", "d": "n"}),
-    ("naik", "id", {"c": "move", "d": "u"}),
-    ("naik lift", "id", {"c": "move", "d": "u"}),
-    ("naik kancil", "id", {"c": "board"}),
-    ("ride the Kancil", "en", {"c": "board"}),
-    ("arah ke kantin", "id", {"c": "way", "a": "kantin"}),
-    ("way to the cantina", "en", {"c": "way", "a": "the cantina"}),
-    ("pandu ke kantin", "id", {"c": "guide", "a": "kantin"}),
-    ("pandu aku ke kantin", "id", {"c": "guide", "a": "kantin"}),
-    ("guide me to the cantina", "en", {"c": "guide", "a": "the cantina"}),
-    ("guide", "en", {"c": "guide"}),
-    ("status pandu", "id", {"c": "guide"}),
-    ("berhenti pandu", "id", {"c": "guide", "op": "stop"}),
-    ("stop guide", "en", {"c": "guide", "op": "stop"}),
-    ("stop guiding me", "en", {"c": "guide", "op": "stop"}),
-    ("pandu", "id", None),                                   # Pandu is a name too
-    ("arah", "id", {"c": "compass"}),
-    ("peta", "id", {"c": "map"}),
-    ("di mana aku", "id", {"c": "where"}),
-    ("where am I", "en", {"c": "where"}),
-    ("di mana Sari", "id", {"c": "locate", "to": "Sari"}),
-    ("lacak Sari", "id", {"c": "locate", "to": "Sari"}),
-    ("pindai", "id", {"c": "scan"}),
-    ("tambah teman Sari", "id", {"c": "friends", "op": "add", "to": "Sari"}),
-    ("undang Budi", "id", {"c": "invite", "op": "add", "to": "Budi"}),
-    ("kunjungi Rafli", "id", {"c": "visit", "to": "Rafli"}),
-    ("pakai senter", "id", {"c": "use", "item": "senter"}),
-    ("pasang suar", "id", {"c": "use", "item": "suar", "equip": True}),
-    ("take off headlamp", "en", {"c": "unequip", "item": "headlamp"}),
-    ("daftar alat", "id", {"c": "list", "a": "alat"}),
-    ("toko", "id", {"c": "list", "a": ""}),
-    ("buka kapsul", "id", {"c": "open", "a": "kapsul"}),
-    ("bunyikan lonceng", "id", {"c": "ring"}),
-    ("light a lantern", "en", {"c": "lantern"}),
-    ("baca prasasti", "id", {"c": "look", "a": "prasasti"}),
-    ("harian", "id", {"c": "daily"}),
-    ("profil Sari", "id", {"c": "profile", "to": "Sari"}),
-    ("peringkat", "id", {"c": "rank"}),
-    ("tanam 2 tomat", "id", {"c": "plant", "item": "tomat", "n": 2}),
-    ("panen", "id", {"c": "harvest"}),
-    ("siram", "id", {"c": "water"}),
-    ("lahan", "id", {"c": "farm"}),
-    ("tambang", "id", {"c": "mine"}),
-    ("kumpulkan", "id", {"c": "collect"}),
-    ("suaraku 3", "id", {"c": "voice", "a": "3"}),
-    ("my voice auto", "en", {"c": "voice", "a": "auto"}),
-    ("kode pindah", "id", {"c": "transfer"}),
-    ("elus", "id", {"c": "pet", "op": "pat"}),
-    ("namai Bip Bop", "id", {"c": "pet", "op": "name", "a": "Bip Bop"}),
-    ("bantuan toko", "id", {"c": "help", "a": "toko"}),
-    ("beri kredit Budi 500", "id", {"c": "admin", "op": "grant", "to": "Budi", "n": 500}),
-    ("ambil kredit Budi 50", "id", {"c": "admin", "op": "take_credits", "to": "Budi", "n": 50}),
-    ("beri item Budi senter 2", "id", {"c": "admin", "op": "give_item", "to": "Budi", "item": "senter", "n": 2}),
-    ("atur harga kopi 20", "id", {"c": "admin", "op": "set_price", "item": "kopi", "n": 20}),
-    ("reset harian Budi", "id", {"c": "admin", "op": "reset_streak", "to": "Budi"}),
-    ("cabut akses Budi", "id", {"c": "admin", "op": "revoke", "to": "Budi"}),
-    ("kode pindah untuk Budi", "id", {"c": "admin", "op": "transfer_for", "to": "Budi"}),
-    ("ekonomi", "id", {"c": "admin", "op": "economy"}),
-    ("goto the bridge", "en", {"c": "admin", "op": "goto", "a": "the bridge"}),
-    ("hello there", "en", None),
-    ("", "en", None),
+@pytest.mark.parametrize("text, expected", [
+    ("s", {"c": "move", "d": "s"}),
+    ("u", {"c": "move", "d": "u"}),                            # "u" is up, never north
+    ("up", {"c": "move", "d": "u"}),
+    ("upstairs", {"c": "move", "d": "u"}),
+    ("downstairs", {"c": "move", "d": "d"}),
+    ("southwest", {"c": "move", "d": "sw"}),
+    ("north east", {"c": "move", "d": "ne"}),
+    ("north-east", {"c": "move", "d": "ne"}),
+    ("go north", {"c": "move", "d": "n"}),
+    ("head up", {"c": "move", "d": "u"}),
+    ("ride the Wombat", {"c": "board"}),
+    ("board the shuttle", {"c": "board"}),
+    ("way to the cantina", {"c": "way", "a": "the cantina"}),
+    ("how do I get to the cantina", {"c": "way", "a": "the cantina"}),
+    ("guide me to the cantina", {"c": "guide", "a": "the cantina"}),
+    ("guide to the cantina", {"c": "guide", "a": "the cantina"}),
+    ("guide", {"c": "guide"}),
+    ("stop guide", {"c": "guide", "op": "stop"}),
+    ("stop guiding me", {"c": "guide", "op": "stop"}),
+    ("cancel guide", {"c": "guide", "op": "stop"}),
+    ("compass", {"c": "compass"}),
+    ("map", {"c": "map"}),
+    ("where am I", {"c": "where"}),
+    ("where is Sari", {"c": "locate", "to": "Sari"}),
+    ("locate Sari", {"c": "locate", "to": "Sari"}),
+    ("scan", {"c": "scan"}),
+    ("add friend Sari", {"c": "friends", "op": "add", "to": "Sari"}),
+    ("invite Budi", {"c": "invite", "op": "add", "to": "Budi"}),
+    ("visit Rafli", {"c": "visit", "to": "Rafli"}),
+    ("use headlamp", {"c": "use", "item": "headlamp"}),
+    ("place beacon", {"c": "use", "item": "beacon", "equip": True}),
+    ("take off headlamp", {"c": "unequip", "item": "headlamp"}),
+    ("list tools", {"c": "list", "a": "tools"}),
+    ("shop", {"c": "list", "a": ""}),
+    ("open capsule", {"c": "open", "a": "capsule"}),
+    ("ring the bell", {"c": "ring"}),
+    ("light a lantern", {"c": "lantern"}),
+    ("read plaque", {"c": "look", "a": "plaque"}),
+    ("daily", {"c": "daily"}),
+    ("profile Sari", {"c": "profile", "to": "Sari"}),
+    ("rank", {"c": "rank"}),
+    ("plant 2 tomato", {"c": "plant", "item": "tomato", "n": 2}),
+    ("plant water spinach", {"c": "plant", "item": "water spinach"}),
+    ("harvest", {"c": "harvest"}),
+    ("water", {"c": "water"}),
+    ("my plots", {"c": "farm"}),
+    ("mine", {"c": "mine"}),
+    ("collect", {"c": "collect"}),
+    ("my voice 3", {"c": "voice", "a": "3"}),
+    ("my voice auto", {"c": "voice", "a": "auto"}),
+    ("transfer code", {"c": "transfer"}),
+    ("pat", {"c": "pet", "op": "pat"}),
+    ("name pet Bip Bop", {"c": "pet", "op": "name", "a": "Bip Bop"}),
+    ("help shops", {"c": "help", "a": "shops"}),
+    ("grant Budi 500", {"c": "admin", "op": "grant", "to": "Budi", "n": 500}),
+    ("take credits Budi 50", {"c": "admin", "op": "take_credits", "to": "Budi", "n": 50}),
+    ("give item Budi headlamp 2", {"c": "admin", "op": "give_item", "to": "Budi", "item": "headlamp", "n": 2}),
+    ("set price coffee 20", {"c": "admin", "op": "set_price", "item": "coffee", "n": 20}),
+    ("reset streak Budi", {"c": "admin", "op": "reset_streak", "to": "Budi"}),
+    ("revoke Budi", {"c": "admin", "op": "revoke", "to": "Budi"}),
+    ("transfer code for Budi", {"c": "admin", "op": "transfer_for", "to": "Budi"}),
+    ("economy", {"c": "admin", "op": "economy"}),
+    ("goto the bridge", {"c": "admin", "op": "goto", "a": "the bridge"}),
+    ("hello there", None),
+    ("", None),
+    # Orbit is English only: Indonesian isn't read (the game answers it with its help hint).
+    ("utara", None),
+    ("naik", None),
+    ("arah ke kantin", None),
+    ("pandu ke kantin", None),
+    ("berhenti pandu", None),
+    ("tanam 2 tomat", None),
+    ("harian", None),
 ])
-def test_the_server_reads_plain_text(world, text, lang, expected):
-    assert orbit_verbs.parse(text, lang, world.find_direction) == expected
+def test_the_server_reads_plain_text(world, text, expected):
+    assert orbit_verbs.parse(text, None, world.find_direction) == expected
+    assert orbit_verbs.parse(text, "id", world.find_direction) == expected     # an old client's "id" changes nothing
 
 
 # ------------------------------------------------------------
 # Walking
 # ------------------------------------------------------------
 
-def test_u_is_north_in_indonesian_and_up_in_english(make_game):
+def test_u_is_up_for_everyone(make_game):
     game = make_game()
-    ani = join(game, "Ani", lang="id")
+    ani = join(game, "Ani", lang="id")                   # an old client's language changes nothing
     ben = join(game, "Ben", lang="en")
     for conn in (ani, ben):
         walk(game, conn, "lift_main")
-    assert cmd(game, ani, "text", a="u")["room"] == "promenade"
-    assert cmd(game, ben, "text", a="u")["room"] == "lift_upper"
-    assert cmd(game, ani, "text", a="naik")["k"] == "error"        # the Promenade has no way up
+    assert cmd(game, ani, "text", a="u")["room"] == "lift_upper"
+    assert cmd(game, ben, "text", a="north")["room"] == "promenade"
+    assert cmd(game, ben, "text", a="up")["k"] == "error"          # the Promenade has no way up
+    assert cmd(game, ben, "text", a="s")["room"] == "lift_main"
+    assert cmd(game, ben, "text", a="upstairs")["room"] == "lift_upper"
     assert cmd(game, ben, "text", a="north")["room"] == "command"
+    assert cmd(game, ani, "text", a="downstairs")["room"] == "lift_main"
+    utara = cmd(game, ani, "text", a="utara")                        # Indonesian: the help hint
+    assert utara["k"] == "error" and utara["text"] == 'I don\'t understand "utara". Type help for the commands.'
+    assert game.sessions["ani"].char["location"] == "lift_main"
 
 
 def test_look_lists_the_exits_short_and_the_same_every_time(make_game):
@@ -233,11 +251,12 @@ def test_look_lists_the_exits_short_and_the_same_every_time(make_game):
     ani = join(game, "Ani", lang="id")
     walk(game, ani, "service")
     text = cmd(game, ani, "look")["text"]
-    assert "Jalan keluar: timur, selatan, barat daya (terkunci), barat." in text
+    assert "Exits: east, south, southwest (locked), west." in text
+    assert cmd(game, ani, "look")["text"] == text
     assert cmd(game, ani, "move", d="sw") == {
-        "t": "ev", "k": "error", "sound": "locked", "text": "Pintu ke barat daya terkunci: butuh kartu kru."}
+        "t": "ev", "k": "error", "sound": "locked", "text": "The door to the southwest is locked: it needs a crew keycard."}
     give(game, "ani", "keycard_crew")
-    assert "barat daya (terkunci)" not in cmd(game, ani, "look")["text"]
+    assert "southwest (locked)" not in cmd(game, ani, "look")["text"]
 
 
 def test_the_way_needs_a_mapper_beyond_the_landmarks(make_game):
@@ -259,26 +278,26 @@ def test_the_way_needs_a_mapper_beyond_the_landmarks(make_game):
     assert cmd(game, tono, "way", a="gym")["text"].startswith("To the Zero-G Gym:")
     assert cmd(game, tono, "way", a="time capsule room")["k"] == "error"      # secret: no map shows it
     assert cmd(game, tono, "way", a="captain's quarters")["text"].startswith("You can't get to")
-    assert cmd(game, tono, "way", a="the belt")["text"].endswith("ride the Kancil.")
+    assert cmd(game, tono, "way", a="the belt")["text"].endswith("ride the Wombat.")
 
 
 def test_the_map_where_am_i_and_the_compass(make_game):
     game = make_game()
-    ani = join(game, "Ani", lang="id")
+    ani = join(game, "Ani", lang="id")                   # an old client's language: English all the same
     walk(game, ani, "promenade_west")
     text = cmd(game, ani, "map")["text"]
-    assert text.startswith("Kamu di Promenade Barat, di Dek Utama. Di sekitarmu: utara, Kebun Hidroponik; "
-                           "timur, Promenade; selatan, Lorong Kabin Kru; barat, Kantin.")
-    assert text.endswith("Pemeta bisa memberi tahu lebih banyak.")
+    assert text.startswith("You're on the West Promenade, on the Main Deck. Around you: north, Hydroponics; "
+                           "east, the Promenade; south, the Crew Quarters; west, the Cantina.")
+    assert text.endswith("A mapper would tell you more.")
     give(game, "ani", "mapper")
-    assert "Tempat lain yang kamu tahu di sini: Lobi Lift Utama di arah tenggara." in cmd(game, ani, "map")["text"]
+    assert "Other places you know here: the Main Lift Lobby to the southeast." in cmd(game, ani, "map")["text"]
     give(game, "ani", "holomapper")
     full = cmd(game, ani, "map")["text"]
-    assert "Toko Bintang di arah timur" in full and "Di tempat lain: Dek Atas: komando dan sains" in full
+    assert "Star Supply to the east" in full and "Elsewhere: the Upper Deck: command and science" in full
     where = cmd(game, ani, "where")["text"]
-    assert where == "Promenade Barat, di Dek Utama. Jalan keluar: utara, timur, selatan, barat."
+    assert where == "West Promenade, on the Main Deck. Exits: north, east, south, west."
     compass = cmd(game, ani, "compass")
-    assert compass["text"] == "Kompasmu: kamu sedang menghadap ke barat, di Dek Utama." and compass["sound"] == "gadget"
+    assert compass["text"] == "Your compass: you're heading west, on the Main Deck." and compass["sound"] == "gadget"
 
 
 def test_dark_tunnels_need_a_worn_headlamp(make_game):
@@ -361,20 +380,20 @@ def test_the_air_runs_out_while_you_are_away_too(make_game, clock):
     assert back.sent[0]["room"] == "airlock"
 
 
-def test_the_kancil_flies_to_the_belt_and_back(make_game, clock):
+def test_the_wombat_flies_to_the_belt_and_back(make_game, clock):
     game = make_game()
     ani = join(game, "Ani", "engineer")
     budi = join(game, "Budi")
-    board = cmd(game, ani, "board")
+    board = cmd(game, ani, "text", a="ride the Wombat")
     assert board["k"] == "flight" and board["sound"] == "launch" and board["room"] == "kancil"
     assert board["text"].startswith("You pay the 5 credit fare (you have 95 left)") and "about 30 seconds" in board["text"]
-    assert budi.texts("leave")[-1] == "Ani boards the Kancil, and it pulls away."
-    assert cmd(game, ani, "move", d="e")["text"] == "You're aboard the Kancil! Wait until it lands."
+    assert budi.texts("leave")[-1] == "Ani boards the Wombat, and it pulls away."
+    assert cmd(game, ani, "move", d="e")["text"] == "You're aboard the Wombat! Wait until it lands."
     clock.advance(31)
     game.tick()
     landed = ani.last()
     assert landed["k"] == "moved" and landed["room"] == "belt" and landed["amb"] == "belt"
-    assert landed["sound"] == "landing" and landed["text"].startswith("The Kancil touches down at the Belt Platform.")
+    assert landed["sound"] == "landing" and landed["text"].startswith("The Wombat touches down at the Belt Platform.")
     back = cmd(game, ani, "board")
     assert back["text"].startswith("You buckle in") and game.sessions["ani"].char["credits"] == 95   # free back
     pilot = join(game, "Pip", "pilot")
@@ -382,7 +401,7 @@ def test_the_kancil_flies_to_the_belt_and_back(make_game, clock):
     assert "about 8 seconds" in cmd(game, pilot, "board")["text"]          # free, fast, and faster
     assert game.sessions["pip"].char["credits"] == 100
     assert cmd(game, budi, "move", d="e")["room"] == "cargo"
-    assert cmd(game, budi, "board")["text"] == "The Kancil flies from the Dock and from the Belt Platform."
+    assert cmd(game, budi, "board")["text"] == "The Wombat flies from the Dock and from the Belt Platform."
 
 
 def test_the_scanner_the_communicator_and_friends(make_game):
@@ -414,7 +433,8 @@ def test_a_beacon_leads_you_back(make_game):
     placed = cmd(game, ani, "use", item="beacon", equip=True)
     assert placed["text"].startswith("You place your beacon in the Workshop") and placed["sound"] == "gadget"
     walk(game, ani, "dock")
-    assert cmd(game, ani, "way", a="suar")["text"].startswith("To the Workshop: 4 east. I'll guide you")
+    assert cmd(game, ani, "way", a="beacon")["text"].startswith("To the Workshop: 4 east. I'll guide you")
+    assert cmd(game, ani, "text", a="way to my beacon")["text"].startswith("To the Workshop: 4 east.")
 
 
 def test_cabin_guests_by_invitation(make_game):
@@ -448,7 +468,7 @@ def test_the_shop_sells_things_with_levels_and_limits(make_game):
     walk(game, ani, "shop")
     groups = cmd(game, ani, "list")["text"]
     assert groups.startswith("Star Supply sells devices (3), tools (2), food (2) and seeds (7).")
-    devices = cmd(game, ani, "list", a="perangkat")["text"]
+    devices = cmd(game, ani, "list", a="devices")["text"]
     mapper = game.price_of(char, "mapper", "general")
     assert f"pocket mapper, {mapper}" in devices and "holo mapper" not in devices
     headlamp = game.price_of(char, "headlamp", "general")
@@ -511,22 +531,22 @@ def test_using_and_wearing_things(make_game, clock):
     ani = join(game, "Ani", "engineer")
     budi = join(game, "Budi")
     give(game, "ani", "iced_coffee", "martabak", "kerupuk", "batik_shirt", "title_explorer")
-    crunch = cmd(game, ani, "use", item="kerupuk")
+    crunch = cmd(game, ani, "use", item="prawn crackers")
     assert crunch["text"] == "Crunch, crunch, crunch. Very satisfying." and crunch["sound"] == "crunch"
     assert budi.texts("emote")[-1] == "Ani crunches loudly on prawn crackers."
     assert "kerupuk" not in game.sessions["ani"].char["inventory"]
-    wear(game, ani, "batik shirt")
+    wear(game, ani, "rocket-print shirt")
     wear(game, ani, "explorer")
     looked = cmd(game, budi, "look", a="Ani")["text"]
-    assert looked == ("Ani, trainee engineer. Title: Explorer. Wearing a batik shirt with tiny rockets "
-                      "in its pattern. Nothing unusual about them.")
-    assert cmd(game, ani, "unequip", item="batik shirt")["text"] == "You take off your batik shirt."
+    assert looked == ("Ani, trainee engineer. Title: Explorer. Wearing a shirt printed with tiny rockets. "
+                      "Nothing unusual about them.")
+    assert cmd(game, ani, "unequip", item="shirt")["text"] == "You take off your rocket-print shirt."
     cmd(game, ani, "use", item="iced coffee")
-    cmd(game, ani, "use", item="martabak")
+    cmd(game, ani, "use", item="stuffed pancake")
     walk(game, ani, "engineering")
     codes = cmd(game, ani, "work")["codes"]
     paid = cmd(game, ani, "answer", a="".join(map(str, codes)))
-    assert "Next shift in 60 seconds." in paid["text"]                  # the martabak halved the break
+    assert "Next shift in 60 seconds." in paid["text"]                  # the stuffed pancake halved the break
     assert game.sessions["ani"].char["xp"] == 15                        # the coffee: 10 XP and half again
     clock.advance(601)
     assert game.award_xp(game.sessions["ani"], 10) == 10                # the coffee wore off
@@ -557,19 +577,19 @@ def test_a_pet_is_a_companion_of_its_own(make_game, monkeypatch):
 
 def test_the_temple_bell_plaque_and_lanterns(make_game, clock):
     game = make_game()
-    ani = join(game, "Ani", lang="id")
+    ani = join(game, "Ani", lang="id")                   # an old client's language: English all the same
     budi = join(game, "Budi")
-    assert cmd(game, ani, "ring")["text"].startswith("Itu dilakukan di kuil Jalan Cahaya Bintang")
+    assert cmd(game, ani, "ring")["text"].startswith("That's done at the temple of the Way of Starlight")
     for conn in (ani, budi):
         walk(game, conn, "star_hall")
-    rung = cmd(game, ani, "ring")
-    assert rung["sound"] == "bell" and rung["text"].startswith("Kamu membunyikan lonceng bintang.")
+    rung = cmd(game, ani, "text", a="ring the bell")
+    assert rung["sound"] == "bell" and rung["text"].startswith("You ring the star bell.")
     assert budi.last()["text"] == "Ani rings the star bell. Three soft tones float across the dome."
-    assert cmd(game, ani, "ring")["text"] == "Loncengnya masih bergetar. Biarkan sebentar."
-    plaque = cmd(game, ani, "text", a="baca prasasti")["text"]
-    assert plaque.startswith("JALAN CAHAYA BINTANG.") and plaque.count(".") >= 6
+    assert cmd(game, ani, "ring")["text"] == "The bell is still humming. Let it rest a moment."
+    plaque = cmd(game, ani, "text", a="read plaque")["text"]
+    assert plaque.startswith("THE WAY OF STARLIGHT.") and plaque.count(".") >= 6
     lit = cmd(game, ani, "lantern")
-    assert lit["sound"] == "lantern" and "1 lentera dinyalakan di sini hari ini" in lit["text"]
+    assert lit["sound"] == "lantern" and "1 lanterns lit here today" in lit["text"]
     assert game.sessions["ani"].char["credits"] == 97
     assert budi.last()["text"] == "Ani quietly lights a star lantern. 1 lanterns glow here today."
     clock.advance(31)

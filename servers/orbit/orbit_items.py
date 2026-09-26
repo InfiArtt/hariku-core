@@ -15,16 +15,16 @@ Things you own, and what they do (economy.json "things"):
              EVA suit (worn: vacuum) and oxygen tank (more air)
   tools      drills, the turbo thruster, the auto-sprinkler and grow lamp,
              bigger bags, and each job's tools (more pay, lower fees)
-  food       iced coffee (more XP for a while), martabak (a shorter break
-             after your next shift), crackers (just crunchy)
+  food       iced coffee (more XP for a while), a stuffed pancake (a shorter
+             break after your next shift), crackers (just crunchy)
   seeds, furniture for your cabin, clothes, rings, titles, and pets
 
-  list / daftar         what the shop you're in sells
-  buy X / beli X        buy it (and goods at the market that sells them)
-  use X / pakai X       use it: drink, eat, place a beacon, wear...
-  wear X / pasang X     wear it (headlamp, EVA suit, clothes, a title)
-  take off X / lepas X  stop wearing it
-  examine X / periksa X what it is and does
+  list                  what the shop you're in sells
+  buy X                 buy it (and goods at the market that sells them)
+  use X                 use it: drink, eat, place a beacon, wear...
+  wear X                wear it (headlamp, EVA suit, clothes, a title)
+  take off X            stop wearing it
+  examine X             what it is and does
 
 A pet is a companion (a table of its own; orbit_pets.py cares for them).
 Things stay in the inventory; seeds,
@@ -49,15 +49,15 @@ TYPE_GROUPS = {"gear": "devices", "tool": "tools", "seed": "seeds", "furniture":
                "outfit": "clothes", "title": "titles", "pet": "pets", "consumable": "food",
                "service": "tools", "ship": "ships", "arcade": "tools"}
 GROUP_WORDS = {
-    "devices": ("devices", "device", "gadgets", "perangkat", "alat elektronik", "gawai"),
-    "tools": ("tools", "tool", "alat", "perkakas", "upgrades"),
-    "seeds": ("seeds", "seed", "bibit", "benih"),
-    "furniture": ("furniture", "perabot", "perabotan", "mebel", "decor", "dekorasi"),
-    "clothes": ("clothes", "outfits", "pakaian", "baju", "busana"),
-    "titles": ("titles", "title", "gelar"),
-    "pets": ("pets", "pet", "peliharaan", "hewan"),
-    "food": ("food", "makanan", "minuman", "snacks", "camilan", "drinks"),
-    "ships": ("ships", "ship", "kapal", "pesawat", "spaceships"),
+    "devices": ("devices", "device", "gadgets", "gadget"),
+    "tools": ("tools", "tool", "upgrades"),
+    "seeds": ("seeds", "seed"),
+    "furniture": ("furniture", "decor", "decorations"),
+    "clothes": ("clothes", "outfits", "clothing"),
+    "titles": ("titles", "title"),
+    "pets": ("pets", "pet"),
+    "food": ("food", "snacks", "drinks"),
+    "ships": ("ships", "ship", "spaceships"),
 }
 LIST_GROUP_LIMIT = 12
 

@@ -8,11 +8,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Tests for Orbit's way-finding (servers/orbit/orbit_nav.py): the compact
-# route ("2 east, south, up, north, then 2 west"), in both languages; the
-# guide that follows it step by step (the next step, a detour and the way
-# again, arriving, stopping it, and logging out and travel ending it); and
-# routes and the guide past locked doors, through the dark, down one-way
-# exits and out into vacuum.
+# route ("2 east, south, up, north, then 2 west"); the guide that follows it
+# step by step (the next step, a detour and the way again, arriving,
+# stopping it, and logging out and travel ending it), asked for in the old
+# clients' plain text too; and routes and the guide past locked doors,
+# through the dark, down one-way exits and out into vacuum.
 
 import os
 import sys
@@ -51,40 +51,38 @@ def test_runs_of_the_same_direction_are_grouped():
     assert orbit_nav.route_groups(path_of("shuttle")) == [("shuttle", 1)]
 
 
-@pytest.mark.parametrize("hows, en, idn", [
-    (("e",), "east", "timur"),
-    (("e", "e"), "2 east", "2 timur"),
-    (("sw", "sw", "sw", "sw"), "4 southwest", "4 barat daya"),
-    (("n", "w", "w"), "north, then 2 west", "utara lalu 2 barat"),
-    (("e", "e", "s", "u", "n", "w", "w"), "2 east, south, up, north, then 2 west",
-     "2 timur, selatan, naik, utara, lalu 2 barat"),
-    (("u",), "up", "naik"),
-    (("u", "u", "u"), "up 3 levels", "naik 3 tingkat"),
-    (("d", "d"), "down 2 levels", "turun 2 tingkat"),
-    (("s", "d", "d", "n"), "south, down 2 levels, then north", "selatan, turun 2 tingkat, lalu utara"),
-    (("w", "shuttle"), "west, then ride the Kancil", "barat lalu naik kancil"),
-    (("e",) * 12, "12 east", "12 timur"),                                     # long, but one run
-    (("e", "e", "s", "u", "u", "u", "n", "n"), "2 east, south, up 3 levels, then 2 north (8 steps)",
-     "2 timur, selatan, naik 3 tingkat, lalu 2 utara (8 langkah)"),
-    (("e", "e", "e", "e", "n", "n", "n", "n"), "4 east, then 4 north", "4 timur lalu 4 utara"),
+@pytest.mark.parametrize("hows, en", [
+    (("e",), "east"),
+    (("e", "e"), "2 east"),
+    (("sw", "sw", "sw", "sw"), "4 southwest"),
+    (("n", "w", "w"), "north, then 2 west"),
+    (("e", "e", "s", "u", "n", "w", "w"), "2 east, south, up, north, then 2 west"),
+    (("u",), "up"),
+    (("u", "u", "u"), "up 3 levels"),
+    (("d", "d"), "down 2 levels"),
+    (("s", "d", "d", "n"), "south, down 2 levels, then north"),
+    (("w", "shuttle"), "west, then ride the Wombat"),
+    (("e",) * 12, "12 east"),                                     # long, but one run
+    (("e", "e", "s", "u", "u", "u", "n", "n"), "2 east, south, up 3 levels, then 2 north (8 steps)"),
+    (("e", "e", "e", "e", "n", "n", "n", "n"), "4 east, then 4 north"),
+    (("e", "e", "s", "d", "d", "w"), "2 east, south, down 2 levels, then west"),
 ])
-def test_a_route_is_said_compactly_in_both_languages(make_game, hows, en, idn):
+def test_a_route_is_said_compactly(make_game, hows, en):
     game = make_game()
     assert game.steps_text("en", path_of(*hows)) == en
-    assert game.steps_text("id", path_of(*hows)) == idn
 
 
 def test_the_way_is_compact_on_the_station(make_game):
     game = make_game()
     ani = join(game, "Ani")
-    sari = join(game, "Sari", lang="id")
+    sari = join(game, "Sari", lang="id")                 # an old client's language: English all the same
     assert cmd(game, ani, "way", a="cantina")["text"].startswith(
         "To the Cantina: 2 east, south, up, north, then 2 west.")
-    assert cmd(game, sari, "way", a="kantin")["text"].startswith(
-        "Ke Kantin: 2 timur, selatan, naik, utara, lalu 2 barat.")
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "way to the cantina"})
+    assert sari.last()["text"].startswith("To the Cantina: 2 east, south, up, north, then 2 west.")
     walk(game, ani, "promenade")
     assert cmd(game, ani, "way", a="belt")["text"].startswith(
-        "To the Belt Platform: north, down, 2 west, then ride the Kancil.")     # the slide
+        "To the Belt Platform: north, down, 2 west, then ride the Wombat.")     # the slide
     give(game, "ani", "holomapper")
     walk(game, ani, "dock")
     food = cmd(game, ani, "way", a="food court")["text"]
@@ -132,15 +130,19 @@ def test_the_way_guides_you_step_by_step_to_arrival(make_game):
     assert cmd(game, ani, "way", a="dock")["text"] == "To the Dock: north, east, down, then 2 west."   # the slide
 
 
-def test_the_guide_in_indonesian_from_the_old_clients_text(make_game):
+def test_the_guide_from_the_old_clients_text(make_game):
     game = make_game()
-    sari = join(game, "Sari", lang="id")
-    game.receive(sari, {"t": "cmd", "c": "text", "a": "pandu ke kantin"})       # what 1.0 to 1.3 send
-    assert sari.last()["text"] == ("Ke Kantin: 2 timur, selatan, naik, utara, lalu 2 barat. "
-                                   "Aku akan memandumu langkah demi langkah; ketik berhenti pandu untuk berhenti.")
+    sari = join(game, "Sari", lang="id")                 # a 1.0 to 1.4 client, set to Indonesian
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "pandu ke kantin"})       # Indonesian isn't read now
+    hint = sari.last()
+    assert hint["k"] == "error" and hint["text"] == 'I don\'t understand "pandu ke kantin". Type help for the commands.'
+    assert sari.session.guide is None
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "guide me to the cantina"})     # what old clients send
+    assert sari.last()["text"] == ("To the Cantina: 2 east, south, up, north, then 2 west. "
+                                   "I'll guide you step by step; type stop guide to stop.")
     assert [step(game, sari, d)["text"] for d in ("e", "e", "s", "u", "n", "w")] == \
-        ["Lalu timur.", "Lalu selatan.", "Lalu naik.", "Lalu utara.", "Lalu 2 barat.", "Lalu barat."]
-    assert step(game, sari, "w")["text"] == "Sampai di Kantin."
+        ["Then east.", "Then south.", "Then up.", "Then north.", "Then 2 west.", "Then west."]
+    assert step(game, sari, "w")["text"] == "You've arrived at the Cantina."
 
 
 def test_a_detour_finds_the_way_again(make_game):
@@ -169,15 +171,18 @@ def test_asking_the_guide_and_stopping_it(make_game):
     assert cmd(game, ani, "guide")["text"] == "Guiding you to the Cantina: east, south, up, north, then 2 west."
     assert cmd(game, ani, "guide", op="stop")["text"] == "Stopped guiding you to the Cantina."
     assert step(game, ani, "e") is None
-    walk(game, sari, "cargo")
-    game.receive(sari, {"t": "cmd", "c": "text", "a": "pandu aku ke dermaga"})
-    assert sari.last()["text"].startswith("Ke Dermaga: barat. Aku akan memandumu")
-    game.receive(sari, {"t": "cmd", "c": "text", "a": "status pandu"})
-    assert sari.last()["text"] == "Memandu ke Dermaga: barat."
-    game.receive(sari, {"t": "cmd", "c": "text", "a": "berhenti pandu"})
-    assert sari.last()["text"] == "Berhenti memandu ke Dermaga."
+    walk(game, sari, "cargo")                            # the old clients' plain text
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "guide me to the dock"})
+    assert sari.last()["text"].startswith("To the Dock: west. I'll guide you")
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "guide"})
+    assert sari.last()["text"] == "Guiding you to the Dock: west."
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "berhenti pandu"})          # Indonesian: the hint
+    assert sari.last()["text"] == 'I don\'t understand "berhenti pandu". Type help for the commands.'
+    assert sari.session.guide is not None
+    game.receive(sari, {"t": "cmd", "c": "text", "a": "stop guiding me"})
+    assert sari.last()["text"] == "Stopped guiding you to the Dock."
     game.receive(sari, {"t": "cmd", "c": "text", "a": "stop guide"})
-    assert sari.last()["text"] == "Kamu sedang tidak dipandu ke mana pun."
+    assert sari.last()["text"] == "You're not being guided anywhere."
 
 
 def test_a_new_way_replaces_the_old_and_go_to_guides_too(make_game):
@@ -310,13 +315,13 @@ def test_the_guide_says_when_a_suit_is_needed_next(make_game):
     assert step(game, ani, "s")["text"] == "You've arrived at the Debris Field."
 
 
-def test_the_kancil_is_a_step_of_the_way(make_game, clock):
+def test_the_wombat_is_a_step_of_the_way(make_game, clock):
     game = make_game()
     ani = join(game, "Ani")
     walk(game, ani, "cargo")
     cmd(game, ani, "way", a="belt")
-    assert step(game, ani, "w")["text"] == "Then ride the Kancil."
-    cmd(game, ani, "board")
+    assert step(game, ani, "w")["text"] == "Then ride the Wombat."
+    game.receive(ani, {"t": "cmd", "c": "text", "a": "ride the Wombat"})
     clock.advance(31)
     game.tick()
     assert ani.session.char["location"] == "belt"

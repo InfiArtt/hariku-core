@@ -62,7 +62,7 @@ def test_levels_raise_pay_name_ranks_and_hand_out_keycards(make_game):
     assert ani.last()["text"] == "For reaching level 2, you get your crew keycard."
     game.award_xp(session, 120)
     assert "technician keycard" in ani.last()["text"]              # engineers only, at level 3
-    assert game.rank_name(session.char) == {"en": "engineer", "id": "insinyur"}
+    assert game.rank_name(session.char) == {"en": "engineer"}
     session.char["xp"] = game.xp_for_level(10)
     assert game.rank_name(session.char)["en"] == "chief engineer"
     assert game.pay(session.char, 100) == 127
@@ -126,7 +126,7 @@ def test_crops_grow_in_real_time_and_ripen_while_you_watch(make_game, clock):
     game = make_game()
     ani = join(game, "Ani")
     give(game, "ani", "seed_tomato", "seed_tomato", "seed_tomato")
-    assert cmd(game, ani, "plant", item="tomat")["text"] == "Farming is done in Hydroponics."
+    assert cmd(game, ani, "plant", item="tomato")["text"] == "Farming is done in Hydroponics."
     walk(game, ani, "hydroponics")
     planted = cmd(game, ani, "plant", item="tomato")
     assert planted["text"] == ("You plant crates of tomatoes in 2 plots. They'll be ripe in 60 minutes. "
@@ -160,12 +160,13 @@ def test_the_bag_limits_a_harvest_and_the_rest_waits(make_game, clock):
     give(game, "ani", "seed_kangkung", "seed_kangkung")
     char_of(game, "ani")["inventory"]["iron"] = 18
     walk(game, ani, "hydroponics")
-    cmd(game, ani, "plant", item="kangkung")
+    cmd(game, ani, "plant", item="water spinach")
     clock.advance(601)
     harvest = cmd(game, ani, "harvest")
-    assert harvest["text"] == "You harvest 2 bunches of kangkung. Your bag is full; 2 plots still have a crop waiting."
+    assert harvest["text"] == ("You harvest 2 bunches of water spinach. Your bag is full; "
+                               "2 plots still have a crop waiting.")
     char_of(game, "ani")["inventory"].pop("iron")
-    assert "bunches of kangkung" in cmd(game, ani, "harvest")["text"]
+    assert "bunches of water spinach" in cmd(game, ani, "harvest")["text"]
 
 
 def test_farm_tools_and_more_plots(make_game, clock):
@@ -173,14 +174,15 @@ def test_farm_tools_and_more_plots(make_game, clock):
     ani = join(game, "Ani")
     give(game, "ani", "sprinkler", "grow_lamp", "seed_chilli")
     walk(game, ani, "hydroponics")
-    planted = cmd(game, ani, "plant", item="bibit cabai")
+    planted = cmd(game, ani, "plant", item="chilli seeds")
     assert planted["text"] == ("You plant bags of chillies in 1 plots, and your sprinkler waters them. "
                                "They'll be ripe in 24 minutes.")
     char_of(game, "ani")["credits"] = 1000
-    assert cmd(game, ani, "buy", item="petak")["text"].startswith("You buy one more plot in Hydroponics for 150")
+    assert cmd(game, ani, "buy", item="plot")["text"].startswith("You buy one more plot in Hydroponics for 150")
     assert game.plot_count(char_of(game, "ani")) == 3
     give(game, "ani", "seed_moonmelon")
-    assert cmd(game, ani, "plant", item="melon bulan")["text"] == "packet of moon melon seeds needs level 8. Type rank to see yours."
+    assert cmd(game, ani, "plant", item="moon melon")["text"] == "packet of moon melon seeds needs level 8. Type rank to see yours."
+    assert cmd(game, ani, "plant", item="bibit cabai")["text"].startswith("Plant what?")      # not English
 
 
 def test_a_golden_chilli_now_and_then(make_game, clock, monkeypatch):
@@ -188,7 +190,7 @@ def test_a_golden_chilli_now_and_then(make_game, clock, monkeypatch):
     ani = join(game, "Ani")
     give(game, "ani", "seed_kangkung")
     walk(game, ani, "hydroponics")
-    cmd(game, ani, "plant", item="kangkung")
+    cmd(game, ani, "plant", item="spinach")
     clock.advance(601)
     monkeypatch.setattr(game.rng, "random", lambda: 0.0)
     harvest = cmd(game, ani, "harvest")
@@ -210,7 +212,7 @@ def _to_belt(game, conn, clock):
 def test_mining_has_a_break_a_bag_and_better_drills(make_game, clock):
     game = make_game()
     ani = join(game, "Ani", "engineer")
-    assert cmd(game, ani, "mine")["text"] == "Mining is done at the Belt Platform: ride the Kancil from the Dock."
+    assert cmd(game, ani, "mine")["text"] == "Mining is done at the Belt Platform: ride the Wombat from the Dock."
     _to_belt(game, ani, clock)
     mined = cmd(game, ani, "mine")
     assert mined["k"] == "paid" and mined["sound"] in ("mine", "rare") and "Next strike in 25 seconds." in mined["text"]
@@ -283,14 +285,14 @@ def test_selling_everything_and_the_ore_buyer(make_game, clock):
     inv = char_of(game, "ani")["inventory"]
     inv.update({"iron": 4, "titanium": 1, "tomato": 2})
     _to_belt(game, ani, clock)
-    assert cmd(game, ani, "sell", item="tomat", n=1)["text"].startswith("Nobody here buys crates of tomatoes.")
+    assert cmd(game, ani, "sell", item="tomato", n=1)["text"].startswith("Nobody here buys crates of tomatoes.")
     expected = sum(game.market.quote(g, "engineer", "sell", n, factor=0.75) for g, n in (("iron", 4), ("titanium", 1)))
     sold = cmd(game, ani, "sell", item="", n="all")
     assert sold["text"] == f"You sell 4 lumps of iron ore and 1 chunk of titanium for {expected} credits. You now have {100 - 5 + expected}."
     assert inv == {"compass": 1, "tomato": 2}
     # The old miner only buys: iron is sold at the station's Mineral Exchange, a ride away.
     assert cmd(game, ani, "buy", item="iron")["text"] == (
-        "You can't buy lumps of iron ore here. Nearest market for iron: the Mineral Exchange, ride the Kancil, "
+        "You can't buy lumps of iron ore here. Nearest market for iron: the Mineral Exchange, ride the Wombat, "
         "then north.")
 
 
@@ -311,20 +313,20 @@ def test_the_scientist_finds_the_next_number(make_game, clock):
     ani = join(game, "Ani", "scientist", lang="id")
     walk(game, ani, "science_lab")
     task = cmd(game, ani, "work")
-    assert task["k"] == "task" and task["sound"] == "task" and "Berapa angka berikutnya?" in task["text"]
+    assert task["k"] == "task" and task["sound"] == "task" and "What comes next?" in task["text"]
     answer = game.sessions["ani"].task["answer"]
-    assert cmd(game, ani, "work")["text"].startswith("Angkanya sekali lagi:")
+    assert cmd(game, ani, "work")["text"].startswith("The readings again:")
     paid = cmd(game, ani, "answer", a=str(answer))
-    assert paid["k"] == "paid" and "kamu dibayar 50 kredit" in paid["text"]
+    assert paid["k"] == "paid" and "you're paid 50 credits" in paid["text"]
     clock.advance(121)
     cmd(game, ani, "work")
     wrong = cmd(game, ani, "answer", a=str(game.sessions["ani"].task["answer"] + 1))
-    assert wrong["k"] == "failed" and "Coba lagi dalam 30 detik" in wrong["text"]
+    assert wrong["k"] == "failed" and "Try again in 30 seconds" in wrong["text"]
     clock.advance(31)
     cmd(game, ani, "work")
     clock.advance(46)
     game.tick()
-    assert ani.last()["text"].startswith("Terlalu lama: sampelnya keburu kering.")
+    assert ani.last()["text"].startswith("Too slow: the sample dried out.")
 
 
 def test_security_spots_the_smuggler(make_game, clock):
@@ -355,18 +357,19 @@ def test_a_chosen_voice_goes_with_your_words(make_game):
     ani = join(game, "Ani", lang="id")
     budi = join(game, "Budi")
     shown = cmd(game, ani, "voice")
-    assert shown["text"].startswith("Orang lain mendengarmu dengan suara yang dipilih dari namamu.")
+    assert shown["text"].startswith("Others hear you in a voice chosen from your name.")
     chosen = cmd(game, ani, "voice", a="3")
-    assert chosen["voice"] == 3 and chosen["preview"] and chosen["text"].startswith("Beres: orang lain sekarang")
-    cmd(game, ani, "say", a="halo")
-    assert budi.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Ani", "voice": 3, "words": "halo",
-                                      "text": "Ani says: halo"}
+    assert chosen["voice"] == 3 and chosen["preview"] and chosen["text"].startswith("Done: others now hear you")
+    cmd(game, ani, "say", a="hello")
+    assert budi.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Ani", "voice": 3, "words": "hello",
+                                      "text": "Ani says: hello"}
     assert ani.events("said")[-1]["voice"] == 3 and "actor" not in ani.events("said")[-1]
     cmd(game, ani, "whisper", to="Budi", a="psst")
     assert budi.events("whisper")[-1]["voice"] == 3
-    assert cmd(game, ani, "voice", a="11")["text"] == "Pilih suara 1 sampai 10, atau acak."
-    cmd(game, ani, "voice", a="acak")
-    cmd(game, ani, "say", a="lagi")
+    assert cmd(game, ani, "voice", a="11")["text"] == "Choose a voice from 1 to 10, or auto."
+    assert cmd(game, ani, "voice", a="acak")["text"] == "Choose a voice from 1 to 10, or auto."   # not English
+    cmd(game, ani, "voice", a="auto")
+    cmd(game, ani, "say", a="again")
     assert "voice" not in budi.events("say")[-1]
     cmd(game, ani, "voice", a="7")
     game.dropped(ani)
@@ -386,14 +389,14 @@ def test_admins_grant_take_give_and_see_the_economy(make_game, clock):
     assert ani.last()["text"] == "The station's admins give you 500 credits. You now have 600."
     cmd(game, boss, "admin", op="take_credits", to="Ani", n=100)
     assert char_of(game, "ani")["credits"] == 500
-    cmd(game, boss, "admin", op="give_item", to="Ani", item="senter", n=1)
+    cmd(game, boss, "admin", op="give_item", to="Ani", item="headlamp", n=1)
     assert char_of(game, "ani")["inventory"]["headlamp"] == 1
     cmd(game, boss, "admin", op="give_item", to="Ani", item="robot")
     assert game.store.companions_of(char_of(game, "ani")["id"])[0]["kind"] == "robot_pet"
     char_of(game, "ani")["streak"] = 5
     cmd(game, boss, "admin", op="reset_streak", to="Ani")
     assert char_of(game, "ani")["streak"] == 0
-    cmd(game, boss, "admin", op="set_price", item="kopi", n=99)
+    cmd(game, boss, "admin", op="set_price", item="coffee", n=99)
     assert game.market.price("coffee") == 99
     clock.advance(3601)
     game.tick()
@@ -588,14 +591,16 @@ def test_a_migrated_character_plays_on(tmp_path, make_game, clock):
     conn = join(game, "Quilafly", lang="id")
     assert conn.sent[0]["name"] == "Quilafly" and conn.sent[0]["credits"] == 1234 and conn.sent[0]["room"] == "cantina"
     room = conn.sent[1]["text"]
-    assert room.startswith("Selamat datang kembali, Quilafly. Baru di Orbit: sekarang ini sebuah simulasi utuh.")
-    assert "Kantin." in room and "Jalan keluar: timur, barat." in room
+    assert room.startswith("Welcome back, Quilafly. New in Orbit: it's a whole simulation now.")
+    for note in ("New in Orbit 1.2", "New in Orbit 1.3", "New in Orbit 1.4"):     # every note since 1.0
+        assert note in room
+    assert "Cantina." in room and "Exits: east, west." in room
     char = game.sessions["quilafly"].char
     assert char["inventory"]["compass"] == 1 and char["inventory"]["keycard_crew"] == 1   # level 2 already
     assert game.level_of(char["xp"]) == 2
     game.dropped(conn)
     game._remove(game.sessions["quilafly"])
-    assert "Baru di stasiun" not in join(game, "Quilafly", lang="id").sent[1]["text"]      # said once
+    assert "New in Orbit" not in join(game, "Quilafly", lang="id").sent[1]["text"]      # said once
 
 
 def test_a_trade_between_two_characters_is_all_or_nothing(make_game, monkeypatch):

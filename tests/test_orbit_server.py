@@ -8,8 +8,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Tests for the Orbit server (servers/orbit), without a network: the WebSocket
-# codec and handshake, names and the word filter, rate limits, the texts in
-# both languages, the station (world.json), the view from the Observation
+# codec and handshake, names and the word filter, rate limits, the texts (in
+# English: Orbit is played in English), the station (world.json), the view from the Observation
 # Deck, saving (SQLite; secrets only hashed), and the game itself through fake
 # connections with a fake clock: joining and resuming, looking and moving,
 # talking, jobs, missions, the market, admin commands and a restart.
@@ -247,12 +247,23 @@ def test_token_bucket():
 # Texts and the station
 # ------------------------------------------------------------
 
-def test_both_languages_say_everything_with_the_same_placeholders():
+# Words that only an Indonesian line would have.
+INDONESIAN = {"yang", "dengan", "untuk", "kamu", "sudah", "belum", "tidak", "ketik", "sini", "dari"}
+# What the server answers to words it doesn't read (Indonesian ones too).
+HINT = 'I don\'t understand "{}". Type help for the commands.'
+
+
+def test_everything_is_said_in_english():
     with open(os.path.join(SERVER_DIR, "texts.json"), encoding="utf-8") as f:
         data = json.load(f)
-    assert set(data["en"]) == set(data["id"])
-    for key in data["en"]:
-        assert orbit_lang.placeholders(data["en"][key]) == orbit_lang.placeholders(data["id"][key]), key
+    assert set(data) == {"en"}
+    for key, line in data["en"].items():
+        assert isinstance(line, str) and line.strip(), key
+        assert not {w.lower() for w in line.replace(".", " ").replace(",", " ").split()} & INDONESIAN, key
+        for name in orbit_lang.placeholders(line):
+            assert name.isidentifier(), (key, name)
+    for key in ("help", "unknown_text", "whats_new", "whats_new_12", "whats_new_13", "whats_new_14"):
+        assert key in data["en"]
 
 
 def test_no_line_uses_a_name_the_game_needs_itself():
@@ -265,15 +276,19 @@ def test_no_line_uses_a_name_the_game_needs_itself():
         assert not orbit_lang.placeholders(line) & clashes, key
 
 
-def test_values_in_several_languages_and_lists():
+def test_values_and_lists_are_said_in_english_whatever_the_language_asked():
     texts = orbit_lang.Texts()
-    place = {"en": "the Cantina", "id": "Kantin"}
-    assert texts.render("id", "leave_to", actor="Sari", place=place) == "Sari pergi ke Kantin."
+    place = {"en": "the Cantina"}
     assert texts.render("en", "leave_to", actor="Sari", place=place) == "Sari heads to the Cantina."
-    assert texts.join("en", ["a", "b", "c"]) == "a, b and c"
-    assert texts.join("id", ["a", "b", "c"]) == "a, b, dan c"
-    assert texts.render("fr-FR", "say_what") == "Say what?"         # anything else is English
-    assert orbit_lang.language("id-ID") == "id"
+    assert texts.render("id", "leave_to", actor="Sari", place=place) == "Sari heads to the Cantina."
+    # A value with other languages beside English (an older hunt season's text): the English.
+    assert texts.render("id", "leave_to", actor="Sari", place={"en": "the Cantina", "id": "Kantin"}) == \
+        "Sari heads to the Cantina."
+    assert texts.join("en", ["a", "b", "c"]) == texts.join("id", ["a", "b", "c"]) == "a, b and c"
+    assert texts.render("fr-FR", "say_what") == "Say what?"
+    assert orbit_lang.LANGUAGES == ("en",)
+    assert orbit_lang.language("id-ID") == orbit_lang.language("id") == orbit_lang.language(None) == "en"
+    assert set(orbit_lang.Texts(data={"en": {"a": "A"}, "id": {"a": "B"}}).data) == {"en"}
 
 
 @pytest.fixture(scope="module")
@@ -288,21 +303,23 @@ def test_the_station_is_complete_and_connected(world):
     for lid in places:
         loc = world.locations[lid]
         assert loc["objects"], lid
-        for lang in ("en", "id"):
-            assert loc["desc"][lang] and loc["name"][lang] and loc["in"][lang]
+        assert loc["desc"]["en"] and loc["name"]["en"] and loc["in"]["en"]
+        assert set(loc["desc"]) == set(loc["name"]) == set(loc["in"]) == {"en"}
     assert world.locations["cabin"]["private"] and world.locations["observation"]["earth_view"]
     assert {world.locations[l]["ambience"] for l in places} == set(orbit_world.AMBIENCES)
     assert set(world.jobs) == {"pilot", "engineer", "trader", "scientist", "security"}
 
 
 @pytest.mark.parametrize("text, place", [
-    ("kantin", "cantina"), ("the Cantina", "cantina"), ("CANTINA!", "cantina"),
-    ("dek observasi", "observation"), ("obs deck", "observation"), ("ruang mesin", "engineering"),
-    ("engine room", "engineering"), ("kabinku", "cabin"), ("my cabin", "cabin"),
-    ("gudang", "cargo"), ("kantim", "cantina"), ("Klinik", "medbay"), ("anjungan", "bridge"),
+    ("cantina", "cantina"), ("the Cantina", "cantina"), ("CANTINA!", "cantina"),
+    ("observation deck", "observation"), ("obs deck", "observation"), ("engineering", "engineering"),
+    ("engine room", "engineering"), ("my cabin", "cabin"), ("cargo bay", "cargo"),
+    ("warehouse", "cargo"), ("cantna", "cantina"), ("clinic", "medbay"), ("command deck", "bridge"),
     ("atlantis", None), ("", None), ("shuttle", None),
+    # Indonesian names are no longer names
+    ("kantin", None), ("dek observasi", None), ("ruang mesin", None), ("anjungan", None), ("gudang", None),
 ])
-def test_places_by_their_names_in_either_language(world, text, place):
+def test_places_by_their_names(world, text, place):
     assert world.find_location(text) == place
 
 
@@ -315,9 +332,10 @@ def test_routes_and_goods(world):
         "cargo", "service", "maint_1", "cabins_hall", "promenade_west", "cantina"]
     assert world.route("cargo", "cargo") == []
     assert world.route("promenade", "belt")[-1] == ("shuttle", "belt")
-    assert world.find_good("kopi") == "coffee" and world.find_good("sacks of coffee") == "coffee"
-    assert world.find_item("peti") == "crate" and world.find_item("crates") == "crate"
-    assert world.count_of(world.goods, "coffee", 2) == {"en": "2 sacks of coffee", "id": "2 karung kopi"}
+    assert world.find_good("coffee") == "coffee" and world.find_good("sacks of coffee") == "coffee"
+    assert world.find_good("kopi") is None and world.find_item("peti") is None
+    assert world.find_item("crate") == "crate" and world.find_item("crates") == "crate"
+    assert world.count_of(world.goods, "coffee", 2) == {"en": "2 sacks of coffee"}
 
 
 def test_a_broken_world_is_refused(world):
@@ -365,9 +383,8 @@ def test_the_view_names_indonesia_at_night(world):
     texts = orbit_lang.Texts()
     when = datetime.datetime(2026, 9, 25, 12, 30, tzinfo=UTC)
     en = orbit_earth.describe(world.regions, when, lambda key, **p: texts.render("en", key, **p))
-    idn = orbit_earth.describe(world.regions, when, lambda key, **p: texts.render("id", key, **p))
-    assert "Indonesia is at night: Java's lights glitter" in en
-    assert "Di Indonesia sedang malam: lampu-lampu Jawa berkilau" in idn
+    asked_id = orbit_earth.describe(world.regions, when, lambda key, **p: texts.render("id", key, **p))
+    assert "Indonesia is at night: Java's lights glitter" in en and asked_id == en
     assert "The sun stands high over" in en
     noon = datetime.datetime(2026, 9, 25, 5, 0, tzinfo=UTC)
     en = orbit_earth.describe(world.regions, noon, lambda key, **p: texts.render("en", key, **p))
@@ -532,17 +549,17 @@ def walk(game, conn, dest):
 
 def test_joining_welcomes_you_and_tells_the_room(make_game):
     game = make_game()
-    rafli = join(game, "rafli", "pilot", "id")
+    rafli = join(game, "rafli", "pilot", "id")          # an older client asking for Indonesian: English
     welcome = rafli.sent[0]
     assert welcome["t"] == "welcome" and welcome["name"] == "Rafli" and welcome["new"]
     assert welcome["room"] == "dock" and welcome["amb"] == "vent" and welcome["credits"] == 100
     first = rafli.sent[1]
-    assert first["k"] == "room" and first["text"].startswith("Selamat datang di Orbit, Rafli!")
-    assert "Dermaga." in first["text"] and "Pilot: ketik kerja" in first["text"]
-    assert "Jalan keluar: utara, timur, selatan, barat, naik kancil." in first["text"]
+    assert first["k"] == "room" and first["text"].startswith("Welcome to Orbit, Rafli!")
+    assert "Dock." in first["text"] and "Pilots: type work" in first["text"]
+    assert "Exits: north, east, south, west, ride the Wombat." in first["text"]
     sari = join(game, "Sari", "engineer", "en")
     assert rafli.last()["k"] == "arrive" and rafli.last()["actor"] == "Sari"
-    assert rafli.last()["text"] == "Sari baru pertama kali masuk ke stasiun. Sapa, yuk!"
+    assert rafli.last()["text"] == "Sari logs in to the station for the very first time. Say hello!"
     assert "Here: Rafli the pilot." in sari.sent[1]["text"]
     assert game.sessions["rafli"].char["inventory"] == {"compass": 1}        # everyone starts with one
 
@@ -556,7 +573,7 @@ def test_a_known_secret_resumes_the_character_quietly(make_game, clock):
     again = join(game, "SomeoneElse", "trader", "id", secret=secret_of("Rafli"))
     welcome = again.sent[0]
     assert welcome["name"] == "Rafli" and welcome["job"] == "pilot" and welcome["resumed"]
-    assert again.sent[1]["text"].startswith("Tersambung lagi.")
+    assert again.sent[1]["text"].startswith("Reconnected.")
     assert sari.sent == []                    # no leave, no arrive: it was only a moment
     # A second connection with the same secret replaces the first.
     third = join(game, "Rafli", secret=secret_of("Rafli"))
@@ -584,7 +601,10 @@ def test_a_dropped_player_leaves_after_a_minute(make_game, clock):
     ({"secret": "short"}, "bad_secret"),
     ({"name": "x"}, "name_length"),
     ({"name": "Admin"}, "name_reserved"),
-    ({"name": "Kantin"}, "name_reserved"),
+    ({"name": "Cantina"}, "name_reserved"),
+    ({"name": "Rocco"}, "name_reserved"),               # a resident's name
+    ({"name": "Mateo"}, "name_reserved"),
+    ({"name": "Jali"}, "name_reserved"),                # and a resident's id
     ({"name": "Bangsat"}, "name_filtered"),
     ({"job": "wizard"}, "bad_job"),
 ])
@@ -614,16 +634,16 @@ def test_looking_around_at_people_and_things(make_game):
     cmd(game, rafli, "look")
     text = rafli.last()["text"]
     assert text.startswith("Dock. The docking ring hums") and "Here: Sari the engineer." in text
-    assert "Exits: north, east, south, west, ride the Kancil." in text and "Things to look at: shuttle" in text
+    assert "Exits: north, east, south, west, ride the Wombat." in text and "Things to look at: shuttle" in text
     cmd(game, rafli, "look", a="sari")
     assert rafli.last()["text"] == "Sari, trainee engineer. A tall engineer with a red scarf."
     cmd(game, rafli, "look", a="the shuttle")
-    assert rafli.last()["text"].startswith("The Merpati is a stubby cargo shuttle")
+    assert rafli.last()["text"].startswith("The Dove is a stubby cargo shuttle")
     cmd(game, rafli, "look", a="dragon")
     assert rafli.last() == {"t": "ev", "k": "error", "text": "You don't see dragon here."}
     assert cmd(game, rafli, "look", a="east")["text"] == "To the east: the Cargo Bay. Nobody is there."
     walk(game, rafli, "observation")
-    cmd(game, rafli, "look", a="bumi")
+    cmd(game, rafli, "look", a="earth")
     assert "Indonesia is at night: Java's lights" in rafli.last()["text"]
 
 
@@ -637,39 +657,41 @@ def test_walking_tells_both_rooms_which_way(make_game):
     budi.clear()
     moved = cmd(game, rafli, "move", d="e")
     assert moved["k"] == "moved" and moved["room"] == "cargo" and moved["dir"] == "e"
-    assert moved["text"].startswith("Kamu berjalan ke timur, ke Gudang Kargo. Gudang Kargo. Ruang besar")
+    assert moved["text"].startswith("You walk east to the Cargo Bay. Cargo Bay. ")
     assert sari.events("leave") == [{"t": "ev", "k": "leave", "actor": "Rafli", "dir": "e",
                                      "text": "Rafli heads east, to the Cargo Bay."}]
     assert budi.texts("arrive") == ["Rafli comes in from the west, from the Dock."]
     cmd(game, rafli, "move", d="w")
     again = cmd(game, rafli, "move", d="e")
-    assert "Ruang besar" not in again["text"] and "Di sini ada Budi si pilot." in again["text"]
+    assert game.world.locations["cargo"]["desc"]["en"][:40] not in again["text"]
+    assert "Here: Budi the pilot." in again["text"]
     # A wall says which ways there are; the lift goes up and down.
     bump = cmd(game, rafli, "move", d="s")
     assert bump == {"t": "ev", "k": "error", "sound": "bump",
-                    "text": "Tidak bisa ke selatan dari sini. Jalan keluar: utara, timur, barat."}
+                    "text": "You can't go south from here. Exits: north, east, west."}
     cmd(game, rafli, "move", d="e")
     cmd(game, rafli, "move", d="s")
     up = cmd(game, rafli, "move", d="u")
-    assert up["text"].startswith("Kamu naik ke Lobi Lift Utama.") and up["dir"] == "u"
-    assert cmd(game, rafli, "go", a="atlantis")["text"] == "Tidak ada tempat bernama atlantis yang kukenal."
+    assert up["text"].startswith("You go up to the Main Lift Lobby.") and up["dir"] == "u"
+    assert cmd(game, rafli, "go", a="atlantis")["text"] == "There's no place called atlantis that I know of."
 
 
 def test_no_teleporting_only_the_way(make_game):
     game = make_game()
     rafli = join(game, "Tono", lang="id")                  # not an admin: admins may teleport
-    way = cmd(game, rafli, "go", a="kantin")
+    way = cmd(game, rafli, "go", a="the cantina")
     assert way["k"] == "info" and way["text"] == (
-        "Kamu berjalan di stasiun satu arah demi satu arah. Ke Kantin: "
-        "2 timur, selatan, naik, utara, lalu 2 barat. "
-        "Aku akan memandumu langkah demi langkah; ketik berhenti pandu untuk berhenti.")
+        "You walk the station one direction at a time. To the Cantina: "
+        "2 east, south, up, north, then 2 west. "
+        "I'll guide you step by step; type stop guide to stop.")
     assert game.sessions["tono"].char["location"] == "dock"
     walk(game, rafli, "promenade_west")
-    arrived = cmd(game, rafli, "go", a="kantin")            # next door: that's a walk
+    arrived = cmd(game, rafli, "go", a="cantina")            # next door: that's a walk
     moved = rafli.events("moved")[-1]
     assert moved["k"] == "moved" and moved["room"] == "cantina"
-    assert arrived["text"] == "Sampai di Kantin."                # the way asked before guided it
-    assert cmd(game, rafli, "go", a="kantin")["text"] == "Kamu sudah di sini."
+    assert arrived["text"] == "You've arrived at the Cantina."    # the way asked before guided it
+    assert cmd(game, rafli, "go", a="cantina")["text"] == "You're already there."
+    assert cmd(game, rafli, "go", a="kantin")["text"] == "There's no place called kantin that I know of."
 
 
 def test_cabins_are_private(make_game):
@@ -690,17 +712,17 @@ def test_cabins_are_private(make_game):
     assert "Rafli the pilot, in their cabin" in sari.last()["text"]
 
 
-def test_talking_in_each_listeners_language(make_game):
+def test_talking_is_in_english_but_the_words_are_the_players_own(make_game):
     game = make_game()
     rafli = join(game, "Rafli", lang="id")
     sari = join(game, "Sari", lang="en")
-    said = cmd(game, rafli, "say", a="halo Sari, apa kabar?")
-    assert said == {"t": "ev", "k": "said", "text": "Kamu bilang: halo Sari, apa kabar?",
-                    "brief": "Terkirim.", "words": "halo Sari, apa kabar?"}
+    said = cmd(game, rafli, "say", a="halo Sari, apa kabar?")        # players say what they like
+    assert said == {"t": "ev", "k": "said", "text": "You say: halo Sari, apa kabar?",
+                    "brief": "Sent.", "words": "halo Sari, apa kabar?"}
     assert sari.events("say")[-1] == {"t": "ev", "k": "say", "actor": "Rafli", "words": "halo Sari, apa kabar?",
                                       "text": "Rafli says: halo Sari, apa kabar?"}
     cmd(game, sari, "whisper", to="rafli", a="meet me on the deck")
-    assert rafli.events("whisper")[-1]["text"] == "Sari berbisik padamu: meet me on the deck"
+    assert rafli.events("whisper")[-1]["text"] == "Sari whispers to you: meet me on the deck"
     assert sari.last()["brief"] == "Whispered to Rafli."
     assert (sari.last()["words"], sari.last()["to"]) == ("meet me on the deck", "Rafli")
     assert rafli.events("whisper")[-1]["words"] == "meet me on the deck"
@@ -709,9 +731,9 @@ def test_talking_in_each_listeners_language(make_game):
     cmd(game, rafli, "shout", a="ada yang mau ke Bulan?")
     assert sari.texts("shout") == ["Rafli shouts across the station: ada yang mau ke Bulan?"]
     cmd(game, rafli, "shout", a="lagi!")
-    assert rafli.last()["text"].startswith("Suaramu perlu istirahat")
+    assert rafli.last()["text"].startswith("Your voice needs a rest")
     cmd(game, sari, "emote", e="wave", to="raf")
-    assert rafli.texts("emote") == ["Sari melambai padamu."] and sari.last()["text"] == "You wave at Rafli."
+    assert rafli.texts("emote") == ["Sari waves at you."] and sari.last()["text"] == "You wave at Rafli."
     cmd(game, sari, "emote", e="moonwalk")
     assert sari.last()["k"] == "error"
     cmd(game, rafli, "say", a="dasar anjing")
@@ -737,7 +759,7 @@ def test_admins_mute_kick_ban_and_announce(make_game, clock):
     cmd(game, sari, "admin", op="kick", to="Budi")
     assert sari.last()["text"] == "Only the station's admins can do that."
     cmd(game, rafli, "admin", op="mute", to="sari", n=5)
-    assert rafli.last()["text"] == "Sari dibisukan selama 5 menit."
+    assert rafli.last()["text"] == "Sari is muted for 5 minutes."
     assert sari.texts("system") == ["An admin has muted you for 5 minutes."]
     cmd(game, sari, "say", a="hello?")
     assert sari.last()["text"] == "You're muted for 5 minutes more."
@@ -765,23 +787,25 @@ def test_who_inventory_and_giving(make_game):
     rafli = join(game, "Rafli", lang="id")
     sari = join(game, "Sari")
     cmd(game, rafli, "who")
-    assert rafli.last()["text"] == ("2 orang online: Rafli si pilot, di Dermaga; "
-                                    "Sari si pilot, di Dermaga.")
-    cmd(game, rafli, "give", to="Sari", n=30, item="kredit")
+    assert rafli.last()["text"] == ("2 online: Rafli the pilot, at the Dock; "
+                                    "Sari the pilot, at the Dock.")
+    cmd(game, rafli, "give", to="Sari", n=30, item="credits")
     assert rafli.last() == {"t": "ev", "k": "gave",
-                            "text": "Kamu memberi Sari 30 kredit. Sisa kreditmu 70."}
+                            "text": "You give Sari 30 credits. You have 70 left."}
     assert sari.events("received")[-1]["text"] == "Rafli gives you 30 credits. You now have 130."
     cmd(game, rafli, "give", to="Sari", n=500)
-    assert rafli.last()["text"] == "Kreditmu cuma 70."
+    assert rafli.last()["text"] == "You only have 70 credits."
     cmd(game, rafli, "give", to="Budi", n=1)
-    assert rafli.last()["text"] == "Budi tidak ada di sini."
-    cmd(game, rafli, "give", to="Sari", n=1, item="kopi")
-    assert rafli.last()["text"] == "Kamu tidak punya karung kopi."
-    cmd(game, rafli, "give", to="Sari", n=1, item="kompas")
-    assert rafli.last()["text"] == "kompas tidak bisa diberikan."
-    # An older client reads "beri kredit Sari 5" as giving "kredit" a "sari".
-    cmd(game, rafli, "give", to="kredit", n=5, item="sari")
-    assert rafli.last()["text"] == "Kamu memberi Sari 5 kredit. Sisa kreditmu 65."
+    assert rafli.last()["text"] == "Budi isn't here."
+    cmd(game, rafli, "give", to="Sari", n=1, item="coffee")
+    assert rafli.last()["text"] == "You don't have any sacks of coffee."
+    cmd(game, rafli, "give", to="Sari", n=1, item="compass")
+    assert rafli.last()["text"] == "compasses can't be given away."
+    cmd(game, rafli, "give", to="Sari", n=1, item="kredit")      # Indonesian isn't read: no such thing
+    assert rafli.last()["text"] == "You don't have anything called kredit."
+    # "give credits Sari 5", read by a client as giving "credits" a "sari".
+    cmd(game, rafli, "give", to="credits", n=5, item="sari")
+    assert rafli.last()["text"] == "You give Sari 5 credits. You have 65 left."
     cmd(game, sari, "inventory")
     assert sari.last()["text"] == "You have 135 credits. Job: pilot. You carry 1 compass."
 
@@ -819,22 +843,22 @@ def test_the_pilots_cargo_run(make_game, clock):
     sari = join(game, "Sari")
     flight = cmd(game, rafli, "work")
     assert flight["k"] == "flight" and flight["room"] == "shuttle" and flight["sound"] == "launch"
-    assert sari.texts("leave") == ["Rafli climbs into the Merpati, and the shuttle undocks for the Moon."]
-    assert cmd(game, rafli, "go", a="kantin")["text"] == "Kamu sedang menerbangkan Merpati! Tunggu sampai mendarat."
-    assert cmd(game, rafli, "move", d="e")["text"] == "Kamu sedang menerbangkan Merpati! Tunggu sampai mendarat."
+    assert sari.texts("leave") == ["Rafli climbs into the Dove, and the shuttle undocks for the Moon."]
+    assert cmd(game, rafli, "go", a="cantina")["text"] == "You're flying the Dove! Wait until you land."
+    assert cmd(game, rafli, "move", d="e")["text"] == "You're flying the Dove! Wait until you land."
     cmd(game, rafli, "whisper", to="Sari", a="otw bulan")
     assert sari.texts("whisper") == ["Rafli whispers to you: otw bulan"]
     clock.advance(31)
     game.tick()
-    assert rafli.last()["text"].startswith("Sudah setengah jalan.")
+    assert rafli.last()["text"].startswith("Halfway there.")
     clock.advance(30)
     game.tick()
     paid = [m for m in rafli.events("paid")][-1]
     assert paid["room"] == "dock" and paid["sound"] == "landing"
-    assert paid["text"].startswith("Mendarat di Pangkalan Bulan Tranquility.")
+    assert paid["text"].startswith("Touchdown at Moon Base Tranquility.")
     assert game.sessions["rafli"].char["credits"] > 100 and game.sessions["rafli"].char["xp"] == 20
-    assert sari.texts("arrive") == ["The Merpati docks with a clunk, and Rafli climbs out."]
-    assert cmd(game, rafli, "work")["text"].startswith("Kamu baru saja kerja.")
+    assert sari.texts("arrive") == ["The Dove docks with a clunk, and Rafli climbs out."]
+    assert cmd(game, rafli, "work")["text"].startswith("You've just worked.")
 
 
 def test_a_cargo_run_lands_even_while_you_are_away(make_game, clock):
@@ -855,7 +879,7 @@ def test_trading_at_the_markets(make_game, clock):
     game = make_game()
     tina = join(game, "Tina", "trader")
     rafli = join(game, "Rafli", "pilot")
-    cmd(game, tina, "buy", item="kopi", n=2)
+    cmd(game, tina, "buy", item="coffee", n=2)
     assert tina.last()["text"] == ("You're not at a market. Nearest market for coffee: the Spice Market, "
                                    "2 east, south, up, 2 north, then 2 west (8 steps).")
     for conn in (tina, rafli):
@@ -863,10 +887,10 @@ def test_trading_at_the_markets(make_game, clock):
     prices = cmd(game, tina, "prices")["text"]
     assert prices.startswith("Prices at the Spice Market, in credits for one, at your trader's rates. Trade goods: "
                              "sack of coffee, buy ")
-    assert ". Crops: bunch of kangkung, buy " in prices and "Ore" not in prices and "memory chip" not in prices
+    assert ". Crops: bunch of water spinach, buy " in prices and "Ore" not in prices and "memory chip" not in prices
     price_before = game.market.prices["coffee"]
     total = game.market.quote("coffee", "trader", "buy", 2)
-    bought = cmd(game, tina, "buy", item="kopi", n=2)
+    bought = cmd(game, tina, "buy", item="coffee", n=2)
     assert bought["text"] == f"You buy 2 sacks of coffee for {total} credits. You have {100 - total} left."
     assert game.market.prices["coffee"] > price_before
     # No profit from buying and selling at once, even for a trader.
@@ -878,8 +902,8 @@ def test_trading_at_the_markets(make_game, clock):
     assert cmd(game, rafli, "sell", item="tomato")["text"] == "You don't have any crates of tomatoes to sell."
     assert cmd(game, rafli, "buy", item="unicorns")["text"] == "No market sells unicorns."
     game.sessions["rafli"].char["credits"] = 10_000
-    assert cmd(game, rafli, "buy", item="kangkung", n=20)["k"] == "trade"
-    assert cmd(game, rafli, "buy", item="kangkung", n=1)["text"] == "Your bag holds at most 20 goods."
+    assert cmd(game, rafli, "buy", item="water spinach", n=20)["k"] == "trade"
+    assert cmd(game, rafli, "buy", item="spinach", n=1)["text"] == "Your bag holds at most 20 goods."
 
 
 def test_prices_drift_within_bounds_and_are_kept(make_game, clock, tmp_path):
@@ -902,8 +926,9 @@ def test_the_trader_report(make_game):
     game.market.prices["coffee"] = 12 * 0.7
     game.market.prices["chips"] = 60 * 1.4
     report = cmd(game, tina, "work")["text"]           # a report, anywhere: and where each is traded
-    assert report == ("Laporan pasar. Bagus dibeli: karung kopi, 30 persen di bawah harga biasa, di Pasar Rempah. "
-                      "Bagus dijual: chip memori, 40 persen di atas harga biasa, di Bengkel.")
+    assert report == ("Market report. Good to buy: sacks of coffee, 30 percent below the usual price, "
+                      "at the Spice Market. Good to sell: memory chips, 40 percent above the usual price, "
+                      "in the Workshop.")
     budi = join(game, "Budi", "scientist")
     assert cmd(game, budi, "work")["text"] == "You work in the Science Lab: go there first."
 
@@ -962,12 +987,15 @@ def test_a_plain_word_is_guessed(make_game):
     game = make_game()
     rafli = join(game, "Tono", lang="id")
     join(game, "Sari")
-    assert cmd(game, rafli, "text", a="kantin")["text"].startswith("Kamu berjalan di stasiun satu arah")
-    assert cmd(game, rafli, "text", a="Sari")["text"].startswith("Sari, pilot magang.")
-    assert cmd(game, rafli, "text", a="t")["text"] == "Lalu timur."        # "t" is timur: the guide goes on
+    assert cmd(game, rafli, "text", a="cantina")["text"].startswith("You walk the station one direction")
+    assert cmd(game, rafli, "text", a="Sari")["text"].startswith("Sari, trainee pilot.")
+    assert cmd(game, rafli, "text", a="e")["text"] == "Then east."         # "e" is east: the guide goes on
     assert rafli.events("moved")[-1]["room"] == "cargo"
-    assert cmd(game, rafli, "text", a="blah blah")["text"] == ('Aku tidak paham "blah blah". '
-                                                               'Ketik bantuan untuk daftar perintah.')
+    assert cmd(game, rafli, "text", a="blah blah")["text"] == HINT.format("blah blah")
+    # Indonesian isn't read any more: the same hint, in English.
+    for words in ("kantin", "utara", "harian", "bantuan"):
+        assert cmd(game, rafli, "text", a=words) == {"t": "ev", "k": "error", "text": HINT.format(words)}
+    assert rafli.events("moved")[-1]["room"] == "cargo"
 
 
 def test_odd_messages(make_game):
@@ -990,20 +1018,20 @@ def test_everything_survives_a_restart(make_game, clock, tmp_path):
     game = make_game(path)
     rafli = join(game, "Rafli", "pilot", "id")
     walk(game, rafli, "cantina")
-    cmd(game, rafli, "describe", a="Pilot dari Batam, suka kopi.")
+    cmd(game, rafli, "describe", a="A pilot from the coast who loves coffee.")
     game.sessions["rafli"].char["credits"] = 321
     game._save(game.sessions["rafli"])
     game.shutdown()
-    assert rafli.last()["k"] == "system" and "dimulai ulang" in rafli.last()["text"]
+    assert rafli.last()["k"] == "system" and "restarting" in rafli.last()["text"]
     game.store.close()
     again = make_game(path)
     back = join(again, "Rafli", lang="id")
     assert (back.sent[0]["credits"], back.sent[0]["room"], back.sent[0]["new"]) == (321, "cantina", False)
-    assert back.sent[1]["text"].startswith("Selamat datang kembali, Rafli.")
+    assert back.sent[1]["text"].startswith("Welcome back, Rafli.")
     other = join(again, "Sari")
     walk(again, other, "cantina")
     cmd(again, other, "look", a="Rafli")
-    assert other.last()["text"] == "Rafli, trainee pilot. Pilot dari Batam, suka kopi."
+    assert other.last()["text"] == "Rafli, trainee pilot. A pilot from the coast who loves coffee."
 
 
 def test_logging_out_on_purpose_is_immediate(make_game, clock):
@@ -1020,7 +1048,7 @@ def test_logging_out_on_purpose_is_immediate(make_game, clock):
     assert back.sent[0]["room"] == "cargo" and not back.sent[0]["resumed"]
     cmd(game, sari, "move", d="e")
     game.receive(back, {"t": "cmd", "c": "bye"})
-    assert sari.texts("leave")[-1] == "Rafli keluar dari Orbit."
+    assert sari.texts("leave")[-1] == "Rafli logs out."
 
 
 def test_away_is_shown_until_the_next_command(make_game):
@@ -1039,5 +1067,42 @@ def test_the_status_line(make_game):
     game = make_game()
     rafli = join(game, "Rafli", lang="id")
     join(game, "Sari")
-    assert cmd(game, rafli, "status")["text"] == "Tersambung sebagai Rafli, di Dermaga, di Dek Bawah. 2 orang online."
-    assert cmd(game, rafli, "text", a="status orbit")["text"].startswith("Tersambung sebagai Rafli")
+    assert cmd(game, rafli, "status")["text"] == "Connected as Rafli, at the Dock, on the Lower Deck. 2 online."
+    assert cmd(game, rafli, "text", a="orbit status")["text"].startswith("Connected as Rafli")
+
+
+def test_the_server_is_version_1_4():
+    import orbit_server
+    assert orbit_server.VERSION == "1.4"
+    assert orbit_game.NEWS[-1] == ("1.4", "whats_new_14") and orbit_game.SEEN_VERSION == "1.4"
+
+
+def test_a_returning_player_hears_whats_new_in_1_4_once(make_game, tmp_path):
+    path = str(tmp_path / "news.db")
+    game = make_game(path)
+    rafli = join(game, "Rafli")
+    game.sessions["rafli"].char["stats"]["seen_version"] = "1.3"     # last played with Orbit 1.3
+    game.receive(rafli, {"t": "cmd", "c": "bye"})
+    back = join(game, "Rafli", lang="id")
+    text = back.sent[1]["text"]
+    assert "New in Orbit 1.4: Orbit is played in English now" in text
+    assert "New in Orbit 1.3" not in text and "New in Orbit 1.2" not in text
+    for name in ("the Wombat", "the Dove", "stuffed pancake", "water spinach", "Rocco", "Captain Mateo",
+                 "the Spice Market", "the Mineral Exchange"):
+        assert name in text, name
+    game.receive(back, {"t": "cmd", "c": "bye"})
+    again = join(game, "Rafli")
+    assert "New in Orbit" not in again.sent[1]["text"]
+    new = join(game, "Newcomer")
+    assert "New in Orbit" not in new.sent[1]["text"]          # a new character hears none of it
+
+
+def test_u_is_up_and_indonesian_directions_are_not_read(make_game):
+    game = make_game()
+    rafli = join(game, "Tono", lang="id")
+    walk(game, rafli, "lift_lower")
+    moved = cmd(game, rafli, "text", a="u")
+    assert moved["k"] == "moved" and moved["dir"] == "u" and moved["room"] == "lift_main"
+    assert cmd(game, rafli, "text", a="d")["room"] == "lift_lower"
+    assert cmd(game, rafli, "text", a="utara") == {"t": "ev", "k": "error", "text": HINT.format("utara")}
+    assert game.sessions["tono"].char["location"] == "lift_lower"

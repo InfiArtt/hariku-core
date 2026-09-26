@@ -44,9 +44,11 @@ import orbit_server  # noqa: E402
 import orbit_speech  # noqa: E402
 import orbit_ws as ws  # noqa: E402
 
-VOICES = [{"id": "id-ID-ArdiNeural", "name": "Ardi", "language": "id-ID"},
-          {"id": "id-ID-GadisNeural", "name": "Gadis", "language": "id-ID"},
-          {"id": "id-ID-Andika", "name": "Andika", "language": "id-ID"}]
+# Orbit is played in English: players are given English voices (an Indonesian one is left out).
+VOICES = [{"id": "en-GB-Alpha", "name": "Alpha", "language": "en-GB"},
+          {"id": "en-US-Bravo", "name": "Bravo", "language": "en-US"},
+          {"id": "en-AU-Charlie", "name": "Charlie", "language": "en-AU"},
+          {"id": "id-ID-Delta", "name": "Delta", "language": "id-ID"}]
 
 
 @pytest.fixture(autouse=True)
@@ -62,7 +64,7 @@ def only_this_computer(monkeypatch):
 
 @pytest.fixture
 def indonesian(monkeypatch):
-    """Hariku in Indonesian: Orbit's own words too."""
+    """Hariku in Indonesian: Orbit's own words stay English (it has no Indonesian texts)."""
     from core import i18n
     monkeypatch.setattr(i18n, "_current_language", "id")
 
@@ -123,7 +125,7 @@ class Loop:
 class Services:
     """What a player's OrbitClient uses: the real connection, fake everything else."""
 
-    def __init__(self, loop, url, name, job, language="id"):
+    def __init__(self, loop, url, name, job, language="en"):
         self.loop = loop
         self.lang = language
         self.values = {"server": url, "name": name, "job": job, "speak": True, "voices": True,
@@ -212,7 +214,7 @@ class Services:
 
 
 class Player:
-    def __init__(self, loop, url, name, job, language="id"):
+    def __init__(self, loop, url, name, job, language="en"):
         self.loop = loop
         self.services = Services(loop, url, name, job, language)
         self.client = orbit_play.OrbitClient(self.services)
@@ -254,99 +256,103 @@ def test_two_players_on_the_station(server, indonesian):
     # Joining.
     rafli.client.connect()
     assert loop.run_until(rafli.client.online), rafli.client.status
-    rafli.wait_for("Selamat datang di Orbit, Rafli!")
-    assert rafli.client.status == "Tersambung ke Orbit sebagai Rafli, Pilot."
-    assert rafli.heard("Tersambung ke Orbit.") and rafli.services.ambiences[-1] == "vent"
+    rafli.wait_for("Welcome to Orbit, Rafli!")
+    assert rafli.client.status == "Connected to Orbit as Rafli, Pilot."
+    assert rafli.heard("Connected to Orbit.") and rafli.services.ambiences[-1] == "vent"
     sari.client.connect()
     assert loop.run_until(sari.client.online)
-    rafli.wait_for("Sari baru pertama kali masuk ke stasiun. Sapa, yuk!")
+    rafli.wait_for("Sari logs in to the station for the very first time. Say hello!")
     assert "arrive" in rafli.services.sounds
     secret = rafli.services.accounts[url]["secret"]
     assert len(secret) == 64 and rafli.services.accounts[url]["joined"]
 
     # Walking by compass: both rooms are told which way.
-    rafli.do("t", "Kamu berjalan ke timur, ke Gudang Kargo.")
+    rafli.do("e", "You walk east to the Cargo Bay.")
     assert rafli.services.ambiences[-1] == "vent" and rafli.services.sounds[-1] == "step_metal"
-    sari.wait_for("Rafli pergi ke timur, ke Gudang Kargo.")
-    sari.do("timur", "Kamu berjalan ke timur, ke Gudang Kargo.")
-    rafli.wait_for("Sari datang dari arah barat, dari Dermaga.")
-    assert "Kamu berjalan di stasiun satu arah demi satu arah." in sari.do("pergi ke kantin", "Ke Kantin: timur, selatan, naik, utara, lalu 2 barat.")
+    sari.wait_for("Rafli heads east, to the Cargo Bay.")
+    sari.do("east", "You walk east to the Cargo Bay.")
+    rafli.wait_for("Sari comes in from the west, from the Dock.")
+    assert "You walk the station one direction at a time." in sari.do(
+        "go to the cantina", "To the Cantina: east, south, up, north, then 2 west.")
+    # Indonesian isn't read: the server's hint, in English.
+    sari.do("pergi ke kantin", 'I don\'t understand "pergi ke kantin". Type help for the commands.')
 
     # Talking: the others hear the speaker's name, then the words in the speaker's own
     # voice; you hear your own words in your voice.
-    rafli.do("bilang halo Sari, selamat datang!", "Kamu bilang: halo Sari, selamat datang!")
-    sari.wait_for("Rafli bilang: halo Sari, selamat datang!")
-    rafli_voice = orbit_speech.pick_voice("Rafli", orbit_speech.voices_of({"edge": VOICES}, "id"))
-    assert loop.run_until(lambda: sari.voice_of("halo Sari, selamat datang!"))
-    assert sari.voice_of("halo Sari, selamat datang!") == [rafli_voice["id"]]
+    rafli.do("say hello Sari, welcome!", "You say: hello Sari, welcome!")
+    sari.wait_for("Rafli says: hello Sari, welcome!")
+    rafli_voice = orbit_speech.pick_voice("Rafli", orbit_speech.voices_of({"edge": VOICES}, "en"))
+    assert rafli_voice["language"].startswith("en-")
+    assert loop.run_until(lambda: sari.voice_of("hello Sari, welcome!"))
+    assert sari.voice_of("hello Sari, welcome!") == [rafli_voice["id"]]
     assert ("narrator", "Rafli:") in sari.services.spoken
-    assert loop.run_until(lambda: rafli.voice_of("halo Sari, selamat datang!"))
-    assert rafli.voice_of("halo Sari, selamat datang!") == [rafli_voice["id"]]
-    assert not rafli.heard("Terkirim.") and not rafli.heard("Kamu bilang: halo Sari")
+    assert loop.run_until(lambda: rafli.voice_of("hello Sari, welcome!"))
+    assert rafli.voice_of("hello Sari, welcome!") == [rafli_voice["id"]]
+    assert not rafli.heard("Sent.") and not rafli.heard("You say: hello Sari")
     assert "sent" in rafli.services.sounds and "say" in sari.services.sounds
 
-    sari.do("bisik Rafli ketemu di dek observasi ya", "Kamu berbisik ke Rafli: ketemu di dek")
-    rafli.wait_for("Sari berbisik padamu: ketemu di dek observasi ya")
+    sari.do("whisper Rafli meet me on the observation deck", "You whisper to Rafli: meet me on the")
+    rafli.wait_for("Sari whispers to you: meet me on the observation deck")
     assert "whisper" in rafli.services.sounds
-    sari_voice = orbit_speech.pick_voice("Sari", orbit_speech.voices_of({"edge": VOICES}, "id"))
-    assert loop.run_until(lambda: rafli.voice_of("ketemu di dek observasi ya"))
-    assert rafli.voice_of("ketemu di dek observasi ya") == [sari_voice["id"]]
-    assert ("narrator", "Sari berbisik:") in rafli.services.spoken
-    assert loop.run_until(lambda: ("narrator", "Ke Rafli:") in sari.services.spoken)
-    sari.do("senyum ke Rafli", "Kamu tersenyum pada Rafli.")
-    rafli.wait_for("Sari tersenyum padamu.")
-    rafli.do("siapa online", "2 orang online: Rafli si pilot, di Gudang Kargo; Sari si insinyur, di Gudang Kargo.")
+    sari_voice = orbit_speech.pick_voice("Sari", orbit_speech.voices_of({"edge": VOICES}, "en"))
+    assert loop.run_until(lambda: rafli.voice_of("meet me on the observation deck"))
+    assert rafli.voice_of("meet me on the observation deck") == [sari_voice["id"]]
+    assert ("narrator", "Sari, whispering:") in rafli.services.spoken
+    assert loop.run_until(lambda: ("narrator", "To Rafli:") in sari.services.spoken)
+    sari.do("smile at Rafli", "You smile at Rafli.")
+    rafli.wait_for("Sari smiles at you.")
+    rafli.do("who", "2 online: Rafli the pilot, in the Cargo Bay; Sari the engineer, in the Cargo Bay.")
 
     # Work: the engineer repeats the reactor's tones...
-    sari.do("t", "Kamu berjalan ke timur, ke Koridor Servis.")
-    sari.do("t", "Ruang Mesin.")
+    sari.do("e", "You walk east to the Service Corridor.")
+    sari.do("e", "Engineering.")
     assert sari.services.ambiences[-1] == "engine"
-    sari.do("kerja", "Dengarkan 3 nada penstabil")
-    codes = re.search(r"nada penstabil: ([\d, ]+)\.", sari.client.messages[-1]).group(1)
+    sari.do("work", "Listen to the 3 stabiliser tones")
+    codes = re.search(r"stabiliser tones: ([\d, ]+)\.", sari.client.messages[-1]).group(1)
     assert loop.run_until(lambda: sum(s.startswith("tone") for s in sari.services.sounds) == 3)
-    sari.do(codes.replace(",", ""), "Kamu dibayar 40 kredit; kreditmu 140.")
+    sari.do(codes.replace(",", ""), "You're paid 40 credits; you have 140.")
     assert "success" in sari.services.sounds
     # ...and the pilot flies a cargo run to the Moon.
-    rafli.do("b", "Kamu berjalan ke barat, ke Dermaga.")
-    rafli.do("kerja", "Penjepit dilepas.")
+    rafli.do("w", "You walk west to the Dock.")
+    rafli.do("work", "Clamps released.")
     assert "launch" in rafli.services.sounds and rafli.services.ambiences[-1] == "engine"
-    rafli.wait_for("Mendarat di Pangkalan Bulan Tranquility.")
+    rafli.wait_for("Touchdown at Moon Base Tranquility.")
     assert "landing" in rafli.services.sounds and rafli.services.ambiences[-1] == "vent"
     # Things that came later work for every client: they go as plain text.
-    rafli.do("harian", "Bonus harian: 40 kredit")
+    rafli.do("daily", "Daily bonus: 40 credits")
 
     # Giving credits.
-    sari.do("b", "Kamu berjalan ke barat, ke Koridor Servis.")
-    sari.do("b", "Kamu berjalan ke barat, ke Gudang Kargo.")
-    sari.do("b", "Kamu berjalan ke barat, ke Dermaga.")
-    sari.do("beri Rafli 20 kredit", "Kamu memberi Rafli 20 kredit. Sisa kreditmu 120.")
-    rafli.wait_for("Sari memberimu 20 kredit.")
+    sari.do("w", "You walk west to the Service Corridor.")
+    sari.do("w", "You walk west to the Cargo Bay.")
+    sari.do("w", "You walk west to the Dock.")
+    sari.do("give Rafli 20 credits", "You give Rafli 20 credits. You have 120 left.")
+    rafli.wait_for("Sari gives you 20 credits.")
     assert rafli.services.sounds[-1] == "coins"
-    bag = rafli.do("tas", "Pekerjaan: pilot.")
-    credits = int(re.search(r"Kreditmu (\d+)\.", bag).group(1))
+    bag = rafli.do("inventory", "Job: pilot.")
+    credits = int(re.search(r"You have (\d+) credits\.", bag).group(1))
     assert credits > 160
 
     # The connection drops: Rafli comes back by himself, as himself, and
     # nobody else notices anything.
     sari_lines = len(sari.client.messages)
     server.call(lambda: _connection_of(server, "Rafli").writer.transport.abort())
-    assert loop.run_until(lambda: rafli.heard("Orbit sedang offline. Aku coba terus, ya."))
-    assert loop.run_until(lambda: rafli.client.online() and rafli.said("Tersambung lagi."))
-    assert loop.run_until(lambda: rafli.heard("Tersambung lagi."))
+    assert loop.run_until(lambda: rafli.heard("Orbit is offline. I'll keep trying."))
+    assert loop.run_until(lambda: rafli.client.online() and rafli.said("Reconnected."))
+    assert loop.run_until(lambda: rafli.heard("Reconnected."))
     assert rafli.services.accounts[url]["secret"] == secret
-    rafli.do("tas", f"Kreditmu {credits}.")
+    rafli.do("inventory", f"You have {credits} credits.")
     assert not any("Rafli" in line for line in sari.client.messages[sari_lines:])
 
     # Commands from Aruna are always answered aloud.
     rafli.services.values["speak"] = False
-    rafli.client.submit("orbit lihat sekitar", "aruna")
-    assert loop.run_until(lambda: rafli.heard("Dermaga. Cincin dermaga"))
+    rafli.client.submit("orbit look around", "aruna")
+    assert loop.run_until(lambda: rafli.heard("Dock. The docking ring"))
 
     # Leaving: goodbye to the server, and Sari hears it at once (no minute's wait).
     sari_lines = len(sari.client.messages)
-    rafli.client.submit("keluar")
-    assert rafli.client.status == "Belum tersambung." and rafli.services.ambiences[-1] is None
-    sari.wait_for("Rafli keluar dari Orbit.", since=sari_lines)
+    rafli.client.submit("quit")
+    assert rafli.client.status == "Not connected." and rafli.services.ambiences[-1] is None
+    sari.wait_for("Rafli logs out.", since=sari_lines)
     sari.client.shutdown()
 
 
@@ -374,6 +380,7 @@ def test_the_health_check_and_the_short_paths(server):
     with urllib.request.urlopen(f"http://127.0.0.1:{server.port}/orbit/health", timeout=5) as r:
         health = json.loads(r.read())
     assert health["ok"] and health["service"] == "orbit" and health["online"] == 0
+    assert health["version"] == "1.4"
     with urllib.request.urlopen(f"http://127.0.0.1:{server.port}/health", timeout=5) as r:
         assert json.loads(r.read())["ok"]
     with pytest.raises(urllib.error.HTTPError) as caught:

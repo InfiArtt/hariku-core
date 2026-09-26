@@ -43,23 +43,23 @@ def test_the_festival_goal_is_a_gift_for_everyone(make_game, clock):
     light_round(game, clock, players)
     assert players[0].session.char["credits"] == 100 + 25       # free, and the day's thank-you
     assert "Your lantern counts for the festival: 1 of 30 glow now." in players[0].texts()
-    assert cmd(game, players[0], "ask", to="Sekar", a="festival")["words"].startswith(
+    assert cmd(game, players[0], "ask", to="Amara", a="festival")["words"].startswith(
         "The Lantern Festival is today! 6 of 30 lanterns are lit so far.")
     light_round(game, clock, players)
     light_round(game, clock, players)
     halfway = [m for m in far.sent if m.get("event") == "lantern_festival"]
-    assert [m["text"] for m in halfway][1:] == ["Festival Lentera sudah separuh jalan: 15 dari 30 lentera menyala "
-                                            "di Aula Kubah Bintang."]
+    assert [m["text"] for m in halfway][1:] == ["The Lantern Festival is half way there: 15 of 30 lanterns glow "
+                                            "in the Star Dome Hall."]
     credits = far.session.char["credits"]
     light_round(game, clock, players)
     light_round(game, clock, players)
     goal_news = [m for m in far.sent if m.get("event") == "lantern_festival"][-1]
-    assert goal_news["text"].startswith("Aula Kubah Bintang bercahaya dengan 30 lentera: tujuan Festival Lentera "
-                                        "tercapai!")
+    assert goal_news["text"].startswith("The Star Dome Hall glows with 30 lanterns: the Lantern Festival's goal "
+                                        "is reached!")
     assert far.session.char["credits"] == credits + 60
     assert far.session.char["inventory"]["lantern_charm"] == 1
-    assert far.texts()[-1] == "Bagianmu dari hadiah festival: 60 kredit dan jimat lentera festival. Kreditmu " \
-                              f"{credits + 60}."
+    assert far.texts()[-1] == "Your share of the festival's gift: 60 credits and a festival lantern charm. " \
+                              f"You have {credits + 60} credits."
     assert game.store.get_json("lanterns")["count"] == 30
     assert game.store.event_points(row["id"], players[0].session.char["id"]) == 5
     cmd(game, players[0], "lantern")
@@ -68,12 +68,12 @@ def test_the_festival_goal_is_a_gift_for_everyone(make_game, clock):
     clock.advance(31)
     cmd(game, players[1], "lantern")
     assert players[1].session.char["credits"] == before                     # the gift comes once
-    late = join(game, "Hana")
+    late = join(game, "Ina")      # (Hana is a resident now: the name is taken)
     assert late.session.char["credits"] == 100 + 60 and late.session.char["inventory"]["lantern_charm"] == 1
     cmd(game, late, "bye")
-    again = join(game, "Hana")
+    again = join(game, "Ina")
     assert again.session.char["credits"] == 160
-    assert cmd(game, players[0], "ask", to="Sekar", a="lanterns")["words"] == \
+    assert cmd(game, players[0], "ask", to="Amara", a="lanterns")["words"] == \
         "The festival's goal is reached: 30 lanterns glow tonight. What a sight."
 
 
@@ -84,5 +84,5 @@ def test_no_festival_no_goal(make_game, clock):
     cmd(game, ani, "lantern")
     assert not [m for m in ani.sent if "festival" in m.get("text", "").lower()]
     assert ani.session.char["credits"] == 97
-    reply = cmd(game, ani, "ask", to="Sekar", a="festival")["words"]
+    reply = cmd(game, ani, "ask", to="Amara", a="festival")["words"]
     assert reply.startswith("The Lantern Festival comes on the hundredth day of the year, 10-04-2027.")

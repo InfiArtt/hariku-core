@@ -9,10 +9,14 @@
 
 # Players who haven't updated Orbit keep playing: every command that came
 # after Orbit 1.0 must reach the server's right handler from what the 1.0
-# client sends for it (its command reader is frozen in orbit_parse_1_0.py;
-# anything it doesn't know goes as plain text), and from what the current
-# client sends. The new event fields (dir, sound, voice...) are optional, so
-# the old client only misses the new sounds.
+# client sends for it, from what the 1.4 client sends (both command readers
+# are frozen here: orbit_parse_1_0.py and orbit_parse_1_4.py; anything they
+# don't know goes as plain text), and from what the current client sends.
+# Orbit is played in English (server 1.4, client 1.5): the older clients still
+# read some Indonesian themselves, and what they send for it is answered in
+# English (an Indonesian word the server can't read gets its help hint). The
+# new event fields (dir, sound, voice...) are optional, so the old clients
+# only miss the new sounds.
 
 import os
 import sys
@@ -25,176 +29,170 @@ if EXT_DIR not in sys.path:
     sys.path.insert(0, EXT_DIR)
 
 import orbit_parse  # noqa: E402
-from tests import orbit_parse_1_0  # noqa: E402
-from tests.test_orbit_server import FakeConn, clock, join, make_game, world  # noqa: E402,F401
+from tests import orbit_parse_1_0, orbit_parse_1_4  # noqa: E402
+from tests.test_orbit_server import FakeConn, clock, join, make_game, orbit_lang, world  # noqa: E402,F401
 
-# (what a player types, their language, the handler that must end up running)
+UNKNOWN_COMMAND = "The station's computer doesn't know that command."
+
+# (what a player types, the handler that must end up running)
 PHRASEBOOK = [
-    ("s", "id", "move"), ("u", "id", "move"), ("utara", "id", "move"), ("barat daya", "id", "move"),
-    ("naik", "id", "move"), ("turun", "id", "move"), ("tl", "id", "move"),
-    ("n", "en", "move"), ("north", "en", "move"), ("southwest", "en", "move"), ("up", "en", "move"),
-    ("pergi ke utara", "id", "go"), ("go north", "en", "go"), ("ke timur", "id", "go"),
-    ("pergi ke kantin", "id", "go"), ("go to the cantina", "en", "go"),
-    ("arah ke kantin", "id", "way"), ("way to the cantina", "en", "way"),
-    ("peta", "id", "map"), ("map", "en", "map"), ("di mana aku", "id", "where"), ("where am i", "en", "where"),
-    ("kompas", "id", "compass"), ("compass", "en", "compass"), ("pindai", "id", "scan"), ("scan", "en", "scan"),
-    ("lacak Sari", "id", "locate"), ("locate Sari", "en", "locate"), ("where is Sari", "en", "locate"),
-    ("naik kancil", "id", "board"), ("ride the Kancil", "en", "board"),
-    ("lihat utara", "id", "look"), ("look north", "en", "look"),
-    ("harian", "id", "daily"), ("daily", "en", "daily"), ("profil", "id", "profile"),
-    ("profile Sari", "en", "profile"), ("peringkat", "id", "rank"), ("rank", "en", "rank"),
-    ("tanam tomat", "id", "plant"), ("plant tomato", "en", "plant"), ("panen", "id", "harvest"),
-    ("harvest", "en", "harvest"), ("siram", "id", "water"), ("water", "en", "water"),
-    ("lahan", "id", "farm"), ("plots", "en", "farm"), ("tambang", "id", "mine"), ("mine", "en", "mine"),
-    ("kumpulkan", "id", "collect"), ("collect", "en", "collect"),
-    ("daftar", "id", "list"), ("list", "en", "list"), ("daftar alat", "id", "list"),
-    ("beli senter", "id", "buy"), ("buy headlamp", "en", "buy"), ("jual semua bijih", "id", "sell"),
-    ("sell all ore", "en", "sell"),
-    ("pakai senter", "id", "use"), ("use headlamp", "en", "use"), ("wear headlamp", "en", "use"),
-    ("pasang suar", "id", "use"), ("place beacon", "en", "use"), ("minum es kopi", "id", "use"),
-    ("eat martabak", "en", "use"), ("lepas senter", "id", "unequip"), ("remove headlamp", "en", "unequip"),
-    ("periksa senter", "id", "look"), ("examine headlamp", "en", "look"),
-    ("buka kapsul", "id", "open"), ("open capsule", "en", "open"),
-    ("bunyikan lonceng", "id", "ring"), ("ring bell", "en", "ring"),
-    ("nyalakan lentera", "id", "lantern"), ("light lantern", "en", "lantern"),
-    ("baca prasasti", "id", "look"), ("read plaque", "en", "look"),
-    ("undang Budi", "id", "invite"), ("invite Budi", "en", "invite"),
-    ("kunjungi Budi", "id", "visit"), ("visit Budi", "en", "visit"),
-    ("tambah teman Budi", "id", "friends"), ("add friend Budi", "en", "friends"), ("teman", "id", "friends"),
-    ("suaraku 3", "id", "voice"), ("my voice 3", "en", "voice"),
-    ("kode pindah", "id", "transfer"), ("move my character", "en", "transfer"),
-    ("elus", "id", "pet"), ("pat", "en", "pet"), ("namai Kiki", "id", "pet"),
-    ("ekonomi", "id", "admin"), ("economy", "en", "admin"), ("grant Budi 5", "en", "admin"),
-    ("atur harga kopi 20", "id", "admin"), ("cabut akses Budi", "id", "admin"),
+    ("n", "move"), ("s", "move"), ("u", "move"), ("d", "move"), ("ne", "move"),
+    ("north", "move"), ("southwest", "move"), ("northeast", "move"), ("north east", "move"),
+    ("up", "move"), ("down", "move"), ("upstairs", "move"),
+    ("go north", "go"), ("go east", "go"), ("go to the cantina", "go"),
+    ("way to the cantina", "way"), ("route to the cantina", "way"),
+    ("map", "map"), ("where am i", "where"),
+    ("compass", "compass"), ("scan", "scan"),
+    ("locate Sari", "locate"), ("where is Sari", "locate"),
+    ("ride the Wombat", "board"), ("ride the shuttle", "board"),
+    ("look north", "look"),
+    ("daily", "daily"), ("daily bonus", "daily"), ("profile", "profile"), ("profile Sari", "profile"),
+    ("rank", "rank"),
+    ("plant tomato", "plant"), ("harvest", "harvest"), ("water", "water"),
+    ("plots", "farm"), ("my farm", "farm"), ("mine", "mine"), ("collect", "collect"),
+    ("list", "list"), ("list tools", "list"),
+    ("buy headlamp", "buy"), ("sell all ore", "sell"),
+    ("use headlamp", "use"), ("wear headlamp", "use"), ("place beacon", "use"),
+    ("drink iced coffee", "use"), ("eat stuffed pancake", "use"),
+    ("remove headlamp", "unequip"),
+    ("examine headlamp", "look"), ("open capsule", "open"),
+    ("ring bell", "ring"), ("light lantern", "lantern"), ("read plaque", "look"),
+    ("invite Budi", "invite"), ("visit Budi", "visit"),
+    ("add friend Budi", "friends"), ("friends", "friends"),
+    ("my voice 3", "voice"),
+    ("move my character", "transfer"),
+    ("pat", "pet"), ("name pet Kiki", "pet"),
+    ("economy", "admin"), ("grant Budi 5", "admin"), ("set price coffee 20", "admin"),
+    ("revoke Budi", "admin"),
     # the mall, the casino, trading, achievements (stage 2)
-    ("kasino", "id", "casino"), ("casino", "en", "casino"), ("dadu 50 tinggi", "id", "dice"),
-    ("dice 50 high", "en", "dice"), ("lempar dadu 20 tujuh", "id", "dice"), ("roll 20 low", "en", "dice"),
-    ("slot 20", "id", "slots"), ("main slot 20", "id", "slots"), ("slots 20", "en", "slots"),
-    ("blackjack 50", "id", "blackjack"), ("play blackjack 50", "en", "blackjack"),
-    ("tambah kartu", "id", "hit"), ("kartu lagi", "id", "hit"), ("hit", "en", "hit"), ("cukup", "id", "stand"),
-    ("stand", "en", "stand"), ("ambil kartu", "id", "take"),
-    ("tantang Budi 50", "id", "challenge"), ("challenge Budi 50", "en", "challenge"),
-    ("lotre", "id", "lottery"), ("lottery", "en", "lottery"), ("beli 5 tiket", "id", "buy"),
-    ("buy 5 tickets", "en", "buy"),
-    ("tawarkan Budi 3 besi untuk 200 kredit", "id", "offer"), ("offer Budi 3 iron for 200 credits", "en", "offer"),
-    ("tukar Budi senter dengan 2 platina", "id", "offer"),
-    ("terima", "id", "accept"), ("accept", "en", "accept"), ("terima tawaran", "id", "accept"),
-    ("tolak", "id", "decline"), ("decline", "en", "decline"), ("batalkan tawaran", "id", "cancel_offer"),
-    ("cancel offer", "en", "cancel_offer"),
-    ("prestasi", "id", "achievements"), ("achievements", "en", "achievements"),
-    ("prestasi Budi", "id", "achievements"),
-    ("papan skor", "id", "leaderboard"), ("papan skor penambang", "id", "leaderboard"),
-    ("leaderboard", "en", "leaderboard"), ("leaderboard miners", "en", "leaderboard"),
-    ("jual senter", "id", "sell"), ("sell headlamp", "en", "sell"),
+    ("casino", "casino"), ("dice 50 high", "dice"), ("roll 20 low", "dice"), ("roll the dice 20 seven", "dice"),
+    ("slots 20", "slots"), ("play slots 20", "slots"),
+    ("blackjack 50", "blackjack"), ("play blackjack 50", "blackjack"),
+    ("hit", "hit"), ("another card", "hit"), ("stand", "stand"), ("take a card", "take"),
+    ("challenge Budi 50", "challenge"),
+    ("lottery", "lottery"), ("buy 5 tickets", "buy"),
+    ("offer Budi 3 iron for 200 credits", "offer"), ("trade Budi headlamp for 2 platinum", "offer"),
+    ("accept", "accept"), ("accept offer", "accept"),
+    ("decline", "decline"), ("cancel offer", "cancel_offer"),
+    ("achievements", "achievements"), ("achievements Budi", "achievements"),
+    ("leaderboard", "leaderboard"), ("leaderboard miners", "leaderboard"),
+    ("sell headlamp", "sell"),
     # ships and the other worlds (stage 3)
-    ("dunia", "id", "worlds"), ("worlds", "en", "worlds"),
-    ("gerbang ke Karmina", "id", "gate"), ("gate to Karmina", "en", "gate"), ("masuk gerbang ke Bulan", "id", "gate"),
-    ("feri ke Glasir", "id", "ferry"), ("naik feri ke Glasir", "id", "ferry"), ("ferry to Glasir", "en", "ferry"),
-    ("take the ferry to Glasir", "en", "ferry"),
-    ("naik kapal", "id", "embark"), ("masuk kapal", "id", "embark"), ("embark", "en", "embark"),
-    ("turun kapal", "id", "disembark"), ("keluar dari kapal", "id", "disembark"), ("disembark", "en", "disembark"),
-    ("set course for Karmina", "en", "fly"), ("berangkat ke Karmina", "id", "fly"),
-    ("isi bahan bakar", "id", "refuel"), ("refuel", "en", "refuel"), ("muat 20 es", "id", "load"),
-    ("load 20 ice", "en", "load"), ("bongkar semua", "id", "unload"), ("unload all", "en", "unload"),
-    ("kargo", "id", "cargo"), ("my ship", "en", "cargo"), ("namai kapal Bintang", "id", "name_ship"),
-    ("hadapi peri lumut", "id", "face"), ("face moss sprite", "en", "face"),
-    ("gig", "id", "gig"), ("ambil gig", "id", "gig"),
+    ("worlds", "worlds"),
+    ("gate to Karmina", "gate"), ("enter the gate to the Moon", "gate"),
+    ("ferry to Glasir", "ferry"), ("take the ferry to Glasir", "ferry"), ("ride the ferry to Glasir", "ferry"),
+    ("embark", "embark"), ("go to my ship", "embark"), ("enter my ship", "embark"),
+    ("disembark", "disembark"), ("leave the ship", "disembark"),
+    ("set course for Karmina", "fly"),
+    ("refuel", "refuel"), ("load 20 ice", "load"), ("unload all", "unload"),
+    ("cargo", "cargo"), ("my ship", "cargo"), ("name ship Starfinch", "name_ship"),
+    ("face moss sprite", "face"),
+    ("gig", "gig"),
     # events (stage 4)
-    ("acara", "id", "events"), ("events", "en", "events"), ("ikut", "id", "join"), ("join", "en", "join"),
-    ("buka hadiah", "id", "join"), ("dengar", "id", "listen"), ("listen", "en", "listen"),
-    ("tangkap", "id", "catch"), ("catch the robot", "en", "catch"), ("geledah", "id", "search"),
-    ("search", "en", "search"), ("tonton", "id", "watch"), ("watch the comet", "en", "watch"),
-    ("adakan pesta", "id", "party"), ("host a party", "en", "party"), ("perbaiki drone", "id", "work"),
-    ("fix drone", "en", "work"), ("mulai acara hujan meteor", "id", "admin"), ("stop event", "en", "admin"),
-    ("jadwalkan acara 30 Pesta", "id", "admin"),
+    ("events", "events"), ("join", "join"), ("open gift", "join"),
+    ("listen", "listen"), ("catch the robot", "catch"), ("search", "search"),
+    ("watch the comet", "watch"), ("host a party", "party"), ("fix drone", "work"),
+    ("start event meteor shower", "admin"), ("stop event", "admin"), ("schedule event 30 Party", "admin"),
     # the hunt (stage 5)
-    ("perburuan", "id", "hunt"), ("hunt", "en", "hunt"), ("nada yang hilang", "id", "hunt"),
-    ("the lost chord", "en", "hunt"), ("selidiki", "id", "investigate"), ("investigate", "en", "investigate"),
-    ("cari petunjuk", "id", "investigate"), ("look for clues", "en", "look"), ("pecahkan 1234", "id", "solve"),
-    ("solve orbit", "en", "solve"), ("jawaban bintang", "id", "solve"), ("my answer is 42", "en", "solve"),
-    ("papan pemburu", "id", "hunt_board"), ("hunt board", "en", "hunt_board"),
-    ("status perburuan", "id", "admin"), ("hunt status", "en", "admin"), ("musim baru", "id", "admin"),
-    ("umumkan petunjuk 2", "id", "admin"), ("release hint 2", "en", "admin"), ("uji perburuan", "id", "admin"),
+    ("hunt", "hunt"), ("the lost chord", "hunt"), ("investigate", "investigate"),
+    ("look for clues", "look"), ("solve 1234", "solve"), ("solve orbit", "solve"), ("my answer is 42", "solve"),
+    ("hunt board", "hunt_board"), ("hunters", "hunt_board"),
+    ("hunt status", "admin"), ("new season", "admin"), ("release hint 2", "admin"), ("hunt test", "admin"),
     # the arcade
-    ("arkade", "id", "arcade"), ("arcade", "en", "arcade"), ("main gema", "id", "play"),
-    ("main adu cepat", "id", "play"), ("play meteor dodge", "en", "play"), ("play star beat", "en", "play"),
-    ("berhenti main", "id", "stop_game"), ("stop game", "en", "stop_game"), ("skor arkade", "id", "high_scores"),
-    ("arcade scores", "en", "high_scores"), ("high scores meteor", "en", "leaderboard"),
-    ("beli 10 token", "id", "buy"), ("buy 5 tokens", "en", "buy"),
+    ("arcade", "arcade"), ("play echo", "play"), ("play quick draw", "play"),
+    ("play meteor dodge", "play"), ("play star beat", "play"),
+    ("stop game", "stop_game"), ("arcade scores", "high_scores"), ("high scores meteor", "leaderboard"),
+    ("buy 10 tokens", "buy"),
     # crews
-    ("kru", "id", "crew"), ("crew", "en", "crew"), ("buat kru Bintang", "id", "crew_create"),
-    ("crew create Bintang", "en", "crew_create"), ("kru undang Budi", "id", "crew_invite"),
-    ("undang Budi ke kru", "id", "crew_invite"), ("invite Budi to the crew", "en", "crew_invite"),
-    ("kru bilang halo", "id", "crew_say"), ("crew say hi all", "en", "crew_say"), ("tell crew hello", "en", "whisper"),
-    ("keluar kru", "id", "crew_leave"), ("leave crew", "en", "crew_leave"), ("kru keluarkan Budi", "id", "crew_kick"),
-    ("jadikan kapten Budi", "id", "crew_captain"), ("moto kru ke bintang", "id", "crew_motto"),
-    ("papan kru", "id", "crews"), ("crews", "en", "crews"), ("bubarkan kru Bintang", "id", "admin"),
+    ("crew", "crew"), ("crew create Starfinch", "crew_create"), ("create crew Starfinch", "crew_create"),
+    ("crew invite Budi", "crew_invite"), ("invite Budi to the crew", "crew_invite"),
+    ("crew say hi all", "crew_say"), ("tell crew hello", "whisper"),
+    ("leave crew", "crew_leave"), ("crew kick Budi", "crew_kick"),
+    ("make captain Budi", "crew_captain"), ("crew motto to the stars", "crew_motto"),
+    ("crews", "crews"), ("disband crew Starfinch", "admin"),
     # duels
-    ("duel Budi 50", "en", "duel"), ("tantang duel Budi 50", "id", "duel"), ("duel dengan Budi", "id", "duel"),
-    ("duels", "en", "duels"), ("duels off", "en", "duels"), ("matikan duel", "id", "duels"),
-    ("nyalakan duel", "id", "duels"), ("hentikan duel Budi", "id", "admin"),
-    # the residents (1.2; Kapten Bayu keeps the Dock, where these start)
-    ("bicara dengan Bayu", "id", "talk"), ("bicara sama Kapten Bayu", "id", "talk"), ("ngobrol dengan Bayu", "id", "talk"),
-    ("talk to Bayu", "en", "talk"), ("talk with captain bayu", "en", "talk"), ("chat with Bayu", "en", "talk"),
-    ("tanya Bayu tentang feri", "id", "ask"), ("tanya Kapten Bayu soal pabean", "id", "ask"),
-    ("ask Bayu about the ferry", "en", "ask"), ("ask Bayu about recipes", "en", "ask"),
-    ("sapa Bayu", "id", "greet"), ("greet Bayu", "en", "greet"), ("halo Bayu", "id", "greet"),
-    ("hello Bayu", "en", "greet"), ("say hi to Bayu", "en", "greet"),
-    ("lambai ke Bayu", "id", "emote"), ("wave to Bayu", "en", "emote"), ("peluk Bayu", "id", "emote"),
-    ("lihat Bayu", "id", "look"), ("look at Bayu", "en", "look"), ("beri Bayu 1 kerupuk", "id", "give"),
-    ("give Bayu a cracker", "en", "give"),
-    ("penduduk", "id", "residents"), ("residents", "en", "residents"),
+    ("duel Budi 50", "duel"), ("duel with Budi", "duel"),
+    ("duels", "duels"), ("duels off", "duels"), ("duels on", "duels"), ("no duels", "duels"),
+    ("stop duel Budi", "admin"),
+    # the residents (1.2; Captain Mateo keeps the Dock, where these start)
+    ("talk to Mateo", "talk"), ("talk with captain mateo", "talk"), ("chat with Mateo", "talk"),
+    ("speak to Mateo", "talk"),
+    ("ask Mateo about the ferry", "ask"), ("ask Captain Mateo about customs", "ask"),
+    ("ask Mateo about recipes", "ask"),
+    ("greet Mateo", "greet"), ("hello Mateo", "greet"), ("say hi to Mateo", "greet"),
+    ("wave to Mateo", "emote"), ("hug Mateo", "emote"),
+    ("look at Mateo", "look"), ("give Mateo a cracker", "give"),
+    ("residents", "residents"),
     # pets (1.2)
-    ("status hewan", "id", "pet"), ("pet status", "en", "pet"), ("hewanku", "id", "pet"), ("my pets", "en", "pet"),
-    ("beri makan hewan", "id", "pet"), ("kasih makan Kiki", "id", "pet"), ("feed pet", "en", "pet"),
-    ("feed Kiki a treat", "en", "pet"), ("main dengan hewan", "id", "pet"), ("play with pet", "en", "pet"),
-    ("istirahatkan hewan", "id", "pet"), ("tidurkan Kiki", "id", "pet"), ("rest pet", "en", "pet"),
-    ("ajari trik duduk", "id", "pet"), ("teach trick sit", "en", "pet"), ("trik duduk", "id", "pet"),
-    ("do trick sit", "en", "pet"), ("rename pet Kiki", "en", "pet"), ("ganti nama Kiki jadi Momo", "id", "pet"),
+    ("pet status", "pet"), ("my pets", "pet"), ("my pet", "pet"),
+    ("feed pet", "pet"), ("feed Kiki a treat", "pet"), ("play with pet", "pet"),
+    ("rest pet", "pet"), ("teach trick sit", "pet"), ("trick sit", "pet"),
+    ("do trick sit", "pet"), ("rename pet Kiki", "pet"), ("rename Kiki to Momo", "pet"),
     # families (1.2)
-    ("ajak berpasangan Budi", "id", "partner"), ("partner with Budi", "en", "partner"), ("pasangan", "id", "partner"),
-    ("partner", "en", "partner"), ("akhiri kemitraan", "id", "partner"), ("end partnership", "en", "partner"),
-    ("konfirmasi akhiri", "id", "partner"), ("confirm end", "en", "partner"), ("adopsi", "id", "adopt"),
-    ("adopt a baby", "en", "adopt"), ("keluarga", "id", "family"), ("my family", "en", "family"),
-    ("anak", "id", "family"), ("children", "en", "family"), ("bacakan cerita untuk Mira", "id", "child"),
-    ("read a story to Mira", "en", "child"), ("minta tolong Mira", "id", "child"), ("bawa Mira", "id", "child"),
-    ("bring Mira", "en", "child"), ("upacara nama Mira", "id", "naming"), ("naming rite Mira", "en", "naming"),
+    ("partner with Budi", "partner"), ("partner", "partner"),
+    ("end partnership", "partner"), ("confirm end", "partner"),
+    ("adopt", "adopt"), ("adopt a baby", "adopt"),
+    ("family", "family"), ("my family", "family"), ("children", "family"),
+    ("read a story to Lily", "child"), ("read a story", "child"), ("bring Lily", "child"),
+    ("naming rite Lily", "naming"), ("naming ceremony Lily", "naming"),
     # weddings (1.2)
-    ("lamar Budi", "id", "wedding"), ("propose to Budi", "en", "wedding"), ("pernikahan", "id", "wedding"),
-    ("my wedding", "en", "wedding"), ("pesan pernikahan paviliun megah netral 14:00", "id", "wedding"),
-    ("book wedding pavilion grand neutral 14:00", "en", "wedding"), ("batalkan pernikahan", "id", "wedding"),
-    ("cancel wedding", "en", "wedding"), ("jadwal pernikahan", "id", "wedding"), ("wedding schedule", "en", "wedding"),
-    ("undang Budi ke pernikahan", "id", "wedding"), ("invite Budi to the wedding", "en", "wedding"),
-    ("hadir", "id", "wedding"), ("rsvp yes", "en", "wedding"), ("tidak hadir", "id", "wedding"),
-    ("rsvp no", "en", "wedding"), ("undangan", "id", "wedding"), ("invitations", "en", "wedding"),
-    ("lempar bunga", "id", "wedding"), ("throw flowers", "en", "wedding"), ("ikrar aku berjanji", "id", "wedding"),
-    ("vow I promise", "en", "wedding"), ("satukan cahaya", "id", "wedding"), ("join the lights", "en", "wedding"),
-    ("ya", "id", "wedding"), ("yes", "en", "wedding"), ("tidak", "id", "wedding"), ("tanda tangan", "id", "wedding"),
-    ("sign", "en", "wedding"), ("baca kenangan", "id", "wedding"), ("read memory", "en", "wedding"),
+    ("propose to Budi", "wedding"), ("wedding", "wedding"), ("my wedding", "wedding"),
+    ("book wedding pavilion grand neutral 14:00", "wedding"),
+    ("book wedding pavilion simple starlight tomorrow 14:00", "wedding"),
+    ("cancel wedding", "wedding"), ("wedding schedule", "wedding"), ("weddings", "wedding"),
+    ("invite Budi to the wedding", "wedding"),
+    ("rsvp yes", "wedding"), ("i'll come", "wedding"), ("rsvp no", "wedding"), ("can't come", "wedding"),
+    ("invitations", "wedding"), ("throw flowers", "wedding"), ("vow I promise", "wedding"),
+    ("join the lights", "wedding"), ("yes", "wedding"), ("i do", "wedding"), ("no", "wedding"),
+    ("sign", "wedding"), ("read memory", "wedding"),
     # the duels' board, the tournament (1.2)
-    ("papan skor duel", "id", "leaderboard"), ("leaderboard duels", "en", "leaderboard"),
-    ("mulai acara turnamen", "id", "admin"), ("start event tournament", "en", "admin"),
+    ("leaderboard duels", "leaderboard"), ("start event tournament", "admin"),
     # the markets where you stand (server 1.3)
-    ("harga", "id", "prices"), ("harga kopi", "id", "prices"), ("prices coffee", "en", "prices"),
-    ("pasar", "id", "prices"), ("market", "en", "prices"), ("daftar harga", "id", "prices"),
-    ("daftar", "id", "list"), ("list", "en", "list"),
-    ("lihat tiang petunjuk", "id", "look"), ("look at the signpost", "en", "look"),
-    ("arah ke pasar", "id", "way"), ("way to the market", "en", "way"), ("pergi ke pasar", "id", "go"),
-    ("beli 2 kopi", "id", "buy"), ("jual semua bijih", "id", "sell"), ("sell 3 ice", "en", "sell"),
+    ("prices", "prices"), ("prices coffee", "prices"), ("market", "prices"), ("check prices", "prices"),
+    ("price list", "prices"),
+    ("look at the signpost", "look"),
+    ("way to the market", "way"), ("go to the market", "go"),
+    ("buy 2 coffee", "buy"), ("sell 3 ice", "sell"),
     # the guide (server 1.3)
-    ("pandu ke kantin", "id", "guide"), ("pandu aku ke dermaga", "id", "guide"),
-    ("guide me to the cantina", "en", "guide"), ("guide", "en", "guide"), ("status pandu", "id", "guide"),
-    ("berhenti pandu", "id", "guide"), ("stop guide", "en", "guide"), ("cancel guidance", "en", "guide"),
+    ("guide me to the cantina", "guide"), ("guide me to the dock", "guide"), ("guide", "guide"),
+    ("stop guide", "guide"), ("stop guiding", "guide"), ("cancel guidance", "guide"), ("guide off", "guide"),
 ]
-# Only the current client: Orbit 1.0 read these as work, take or the mission board.
+# Only the newer clients: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [
-    ("fly to Karmina", "en", "fly"), ("terbang ke Bulan", "id", "fly"), ("board my ship", "en", "embark"),
-    ("take a gig", "en", "gig"),
+    ("fly to Karmina", "fly"), ("launch to Glasir", "fly"), ("board my ship", "embark"),
+    ("take a gig", "gig"), ("transfer code", "transfer"), ("get off the ship", "disembark"),
 ]
+# Only the current client (1.4 read "board" as the mission board, as 1.0 did).
+PHRASEBOOK_15 = [("board the wombat", "board"), ("board the shuttle", "board")]
+
+# What the older clients still read themselves in Indonesian, and send as plain
+# text: the server doesn't read Indonesian any more, and answers with its hint.
+INDONESIAN_TEXT = [
+    "harian", "arah ke kantin", "pandu ke kantin", "berhenti pandu", "peta", "utara", "barat daya",
+    "prestasi", "papan skor", "tanya Mateo tentang feri", "sapa Mateo", "panen",
+]
+# ...and what they turn into one of the server's commands: it's answered, in English.
+# (what they type, the handler, the English key of the answer and its values)
+INDONESIAN_STRUCTURED = [
+    ("beli 2 kopi", "buy", None, {}),
+    ("lihat utara", "look", "look_what", {"what": "utara"}),
+    ("jual semua bijih", "sell", None, {}),
+    ("siapa online", "who", None, {}),
+    ("tas", "inventory", None, {}),
+]
+# Words that would mean an Indonesian line got through.
+INDONESIAN_WORDS = {"kamu", "tidak", "ketik", "bantuan", "aku", "kredit", "sudah", "yang", "dengan", "untuk"}
+
+READERS = {"1.0": orbit_parse_1_0.parse, "1.4": orbit_parse_1_4.parse, "now": orbit_parse.parse}
 
 
-def _reader(name):
-    return {"1.0": orbit_parse_1_0.parse, "now": orbit_parse.parse}[name]
+def _english(text):
+    return orbit_lang.Texts().render("en", *text) if isinstance(text, tuple) else text
+
+
+def _no_indonesian(text):
+    words = {w.strip(".,!?:;\"'()").lower() for w in text.split()}
+    return not (words & INDONESIAN_WORDS)
 
 
 @pytest.fixture
@@ -212,29 +210,104 @@ def spy(make_game):
     return game, calls
 
 
-@pytest.mark.parametrize("client", ["1.0", "now"])
-@pytest.mark.parametrize("text, lang, handler", PHRASEBOOK)
-def test_every_new_command_reaches_the_server(spy, client, text, lang, handler):
+def test_the_phrasebook_is_english_and_reaches_every_handler_it_did():
+    handlers = {handler for _text, handler in PHRASEBOOK}
+    assert handlers >= {
+        "move", "go", "way", "map", "where", "compass", "scan", "locate", "board", "look", "daily", "profile",
+        "rank", "plant", "harvest", "water", "farm", "mine", "collect", "list", "buy", "sell", "use", "unequip",
+        "open", "ring", "lantern", "invite", "visit", "friends", "voice", "transfer", "pet", "admin", "casino",
+        "dice", "slots", "blackjack", "hit", "stand", "take", "challenge", "lottery", "offer", "accept",
+        "decline", "cancel_offer", "achievements", "leaderboard", "worlds", "gate", "ferry", "embark",
+        "disembark", "fly", "refuel", "load", "unload", "cargo", "name_ship", "face", "gig", "events", "join",
+        "listen", "catch", "search", "watch", "party", "work", "hunt", "investigate", "solve", "hunt_board",
+        "arcade", "play", "stop_game", "high_scores", "crew", "crew_create", "crew_invite", "crew_say",
+        "whisper", "crew_leave", "crew_kick", "crew_captain", "crew_motto", "crews", "duel", "duels", "talk",
+        "ask", "greet", "emote", "give", "residents", "partner", "adopt", "family", "child", "naming",
+        "wedding", "prices", "guide"}
+    assert len({text for text, _handler in PHRASEBOOK}) == len(PHRASEBOOK)       # no case twice
+
+
+@pytest.mark.parametrize("client", ["1.0", "1.4", "now"])
+@pytest.mark.parametrize("text, handler", PHRASEBOOK)
+def test_every_new_command_reaches_the_server(spy, client, text, handler):
     game, calls = spy
-    conn = join(game, "Tono", "engineer", lang)
-    parsed = _reader(client)(text)
+    conn = join(game, "Tono", "engineer")
+    parsed = READERS[client](text)
     assert parsed is not None and "local" not in parsed, parsed
     calls.clear()
     game.receive(conn, dict(parsed, t="cmd"))
     assert calls and calls[-1] == handler, (text, parsed, calls)
     assert conn.sent[-1]["t"] == "ev" and conn.sent[-1]["text"]
-    assert "oops" not in conn.sent[-1]["text"] and conn.sent[-1]["text"] != \
-        "The station's computer doesn't know that command."
+    assert "oops" not in conn.sent[-1]["text"] and conn.sent[-1]["text"] != UNKNOWN_COMMAND
 
 
-@pytest.mark.parametrize("text, lang, handler", PHRASEBOOK_NOW)
-def test_the_current_client_reaches_the_rest(spy, text, lang, handler):
+@pytest.mark.parametrize("client", ["1.4", "now"])
+@pytest.mark.parametrize("text, handler", PHRASEBOOK_NOW)
+def test_the_newer_clients_reach_the_rest(spy, client, text, handler):
     game, calls = spy
-    conn = join(game, "Tono", "engineer", lang)
+    conn = join(game, "Tono", "engineer")
+    parsed = READERS[client](text)
+    calls.clear()
+    game.receive(conn, dict(parsed, t="cmd"))
+    assert calls and calls[-1] == handler, (text, parsed, calls)
+
+
+@pytest.mark.parametrize("text, handler", PHRASEBOOK_15)
+def test_the_current_client_reaches_the_shuttle(spy, text, handler):
+    game, calls = spy
+    conn = join(game, "Tono", "engineer")
     parsed = orbit_parse.parse(text)
     calls.clear()
     game.receive(conn, dict(parsed, t="cmd"))
     assert calls and calls[-1] == handler, (text, parsed, calls)
+
+
+@pytest.mark.parametrize("client", ["1.0", "1.4"])
+@pytest.mark.parametrize("text", INDONESIAN_TEXT)
+def test_indonesian_from_an_old_client_gets_the_english_hint(spy, client, text):
+    game, calls = spy
+    conn = join(game, "Tono", "engineer")
+    parsed = READERS[client](text)
+    assert parsed == {"c": "text", "a": text}, parsed          # the old client sends it as it is
+    calls.clear()
+    game.receive(conn, dict(parsed, t="cmd"))
+    assert calls == ["text"], calls
+    hint = orbit_lang.Texts().render("en", "unknown_text", what=text)
+    assert conn.last() == {"t": "ev", "k": "error", "text": hint}
+    assert hint == f'I don\'t understand "{text}". Type help for the commands.'
+
+
+@pytest.mark.parametrize("client", ["1.0", "1.4"])
+@pytest.mark.parametrize("text, handler, key, values", INDONESIAN_STRUCTURED)
+def test_what_an_old_client_builds_from_indonesian_is_answered_in_english(spy, client, text, handler, key,
+                                                                          values):
+    game, calls = spy
+    conn = join(game, "Tono", "engineer")
+    parsed = READERS[client](text)
+    assert parsed.get("c") not in (None, "text"), parsed
+    calls.clear()
+    game.receive(conn, dict(parsed, t="cmd"))
+    assert calls and calls[-1] == handler, (text, parsed, calls)
+    answer = conn.last()
+    assert answer["t"] == "ev" and answer["text"], answer
+    assert answer["k"] != "error" or "oops" not in answer["text"]
+    assert answer["text"] != UNKNOWN_COMMAND and "Type help for the commands" not in answer["text"]
+    if key:
+        assert answer["text"] == orbit_lang.Texts().render("en", key, **values)
+    assert _no_indonesian(answer["text"]), answer["text"]
+
+
+def test_an_old_clients_indonesian_hello_is_answered_in_english(make_game):
+    """Orbit 1.0 to 1.4 say "lang": "id" when Hariku is in Indonesian: it's ignored."""
+    game = make_game()
+    conn = join(game, "Tono", "engineer", "id")
+    assert conn.sent[0]["t"] == "welcome" and conn.sent[0]["name"] == "Tono"
+    job = game.world.job_name("engineer")
+    welcome = orbit_lang.Texts().render("en", "welcome_new", name="Tono", job=job)
+    assert conn.sent[1]["text"].startswith(welcome)
+    assert "Welcome to Orbit, Tono!" in conn.sent[1]["text"] and _no_indonesian(conn.sent[1]["text"])
+    game.receive(conn, {"t": "cmd", "c": "look"})
+    assert conn.last()["text"].startswith("Dock.")
 
 
 def test_the_old_client_ignores_what_it_doesnt_know(make_game):
@@ -242,12 +315,15 @@ def test_the_old_client_ignores_what_it_doesnt_know(make_game):
     fields are extra keys, which Orbit 1.0 simply doesn't read."""
     game = make_game()
     conn = join(game, "Tono", "engineer")
-    for command in ({"c": "move", "d": "e"}, {"c": "look", "a": "north"}, {"c": "text", "a": "harian"},
-                    {"c": "voice", "a": "2"}, {"c": "text", "a": "peta"}, {"c": "say", "a": "halo"},
-                    {"c": "text", "a": "papan skor"}, {"c": "text", "a": "prestasi"}):
+    for command in ({"c": "move", "d": "e"}, {"c": "look", "a": "north"}, {"c": "text", "a": "daily"},
+                    {"c": "voice", "a": "2"}, {"c": "text", "a": "map"}, {"c": "say", "a": "hello"},
+                    {"c": "text", "a": "leaderboard"}, {"c": "text", "a": "achievements"},
+                    {"c": "text", "a": "harian"}):
         game.receive(conn, dict(command, t="cmd"))
     for message in conn.sent[1:]:
         assert message["t"] == "ev" and isinstance(message["k"], str) and isinstance(message["text"], str)
         assert set(message) <= {"t", "k", "text", "brief", "actor", "room", "amb", "codes", "sound", "floor", "acoustics", "via",
                                 "dir", "voice", "preview", "ask", "transfer_code", "expires", "emote", "words",
                                 "to", "reels", "outcome"}
+    assert conn.last()["k"] == "error" and conn.last()["text"] == \
+        'I don\'t understand "harian". Type help for the commands.'

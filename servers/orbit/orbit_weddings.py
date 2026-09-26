@@ -11,20 +11,20 @@
 Weddings (economy.json "weddings"): festive, and only ever with both
 players' yes.
 
-  propose to Budi / lamar Budi             with a ring from Starglint Jewellers, in the same room;
-                                           Budi says accept (engaged) or decline (the ring stays yours)
-  book wedding pavilion grand neutral 14:00 / pesan pernikahan paviliun megah netral 14:00
+  propose to Sam                           with a ring from Starglint Jewellers, in the same room;
+                                           Sam says accept (engaged) or decline (the ring stays yours)
+  book wedding pavilion grand neutral 14:00
                                            at the jeweller's wedding desk: a hall, a tier, a ceremony
-                                           and a time (station time, UTC; "besok 14:00", "2026-10-03 14:00")
-  wedding / pernikahan                     yours: when, where, who's coming
-  invite Budi to the wedding / undang Budi ke pernikahan
-  rsvp yes, rsvp no / hadir, tidak hadir   a guest's answer (and "invitations" / "undangan")
-  wedding schedule / jadwal pernikahan     the weddings to come
-  cancel wedding / batalkan pernikahan     money back if early enough
-  throw flowers / lempar bunga             (and cheer, clap) as a guest
-  vow ... / ikrar ...                      your own words, in the ceremony
-  join the lights / satukan cahaya, yes / ya, sign / tanda tangan     in the ceremony
-  read memory / baca kenangan              the memory of your wedding (or one you went to)
+                                           and a time (station time, UTC; "tomorrow 14:00", "2026-10-03 14:00")
+  wedding                                  yours: when, where, who's coming
+  invite Sam to the wedding
+  rsvp yes, rsvp no                        a guest's answer (and "invitations")
+  wedding schedule                         the weddings to come
+  cancel wedding                           money back if early enough
+  throw flowers                            (and cheer, clap) as a guest
+  vow ...                                  your own words, in the ceremony
+  join the lights, yes, sign               in the ceremony
+  read memory                              the memory of your wedding (or one you went to)
 
 The halls are the rooms marked "venue" in world.json (the Star Dome Hall,
 the Jasmine Pavilion, the castle's Great Hall in Evergrove), one wedding an
@@ -55,7 +55,7 @@ import logging
 import re
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -70,12 +70,12 @@ WEDDING_DEFAULTS = {
     "titles": {"starlight": "title_starlit", "neutral": "title_wedded"},
     "keepsakes": {"starlight": "keepsake_lantern", "neutral": "keepsake_star"},
 }
-TIER_WORDS = {"simple": ("simple", "sederhana", "basic", "kecil"), "grand": ("grand", "megah", "besar"),
-              "luxurious": ("luxurious", "luxury", "mewah", "deluxe", "lux")}
-STYLE_WORDS = {"starlight": ("starlight", "jalan cahaya bintang", "cahaya bintang", "way of starlight",
-                             "the way of starlight", "bintang", "lantern", "lentera"),
-               "neutral": ("neutral", "netral", "civil", "sipil", "biasa", "registrar")}
-TOMORROW = ("besok", "tomorrow", "esok")
+TIER_WORDS = {"simple": ("simple", "basic", "small"), "grand": ("grand", "big"),
+              "luxurious": ("luxurious", "luxury", "deluxe", "lux")}
+STYLE_WORDS = {"starlight": ("starlight", "way of starlight", "the way of starlight", "starlight rite",
+                             "lantern", "lanterns"),
+               "neutral": ("neutral", "civil", "registrar")}
+TOMORROW = ("tomorrow",)
 UPCOMING = ("booked", "waiting", "ceremony")
 _DATE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
 _TIME = re.compile(r"(\d{1,2})[:.](\d{2})")
@@ -168,7 +168,7 @@ class WeddingsMixin:
             return
         words = self._arg(message, "to", 80).split()
         name = words[0] if words else ""
-        rest = " ".join(w for w in words[1:] if w.lower() not in ("with", "dengan", "pakai", "a", "the"))
+        rest = " ".join(w for w in words[1:] if w.lower() not in ("with", "using", "a", "the"))
         target = self._find_near(session, name) if name else None
         if target is None:
             other = self._find_session(name) if name else None
@@ -279,11 +279,11 @@ class WeddingsMixin:
                 if day is None and not tomorrow and starts <= now:
                     starts += 86400
                 found["starts"] = starts
-        words = [w for w in norm.split() if w not in TOMORROW and w not in ("pukul", "jam", "at", "on", "di", "the")]
+        words = [w for w in norm.split() if w not in TOMORROW and w not in ("at", "on", "the")]
         rest = " ".join(words)
         for style, phrases in STYLE_WORDS.items():
             for phrase in sorted(phrases, key=len, reverse=True):
-                if f" {phrase} " in f" {rest} " and not (phrase == "bintang" and "kubah bintang" in rest):
+                if f" {phrase} " in f" {rest} ":
                     found["style"] = style
                     rest = f" {rest} ".replace(f" {phrase} ", " ").strip()
                     break
@@ -612,7 +612,7 @@ class WeddingsMixin:
     def _say(self, wedding, key, **params):
         a, b = self._couple_names(wedding)
         self.npc_say(self._hall(wedding), self._officiant(wedding),
-                     {lang: self.texts.raw(lang, key) for lang in ("en", "id")}, a=a, b=b, **params)
+                     {lang: self.texts.raw(lang, key) for lang in LANGUAGES}, a=a, b=b, **params)
 
     def _hall_emote(self, wedding, key, sound=None, **params):
         a, b = self._couple_names(wedding)

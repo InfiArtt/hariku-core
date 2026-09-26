@@ -37,7 +37,8 @@ small notes), partnerships between two characters, weddings (their hall,
 tier, ceremony, time, what was paid, their progress and the memory kept
 afterwards) and their guests (invited, answered, came). Orbit 1.3 keeps
 schema 8: its markets keep their prices as before (by good for the station,
-by world for the others), and the guide lives in memory.
+by world for the others), and the guide lives in memory. So does Orbit 1.4
+(English only): every id stays the same, only names and words changed.
 
 The schema has a version (PRAGMA user_version). An older file is migrated
 by itself when the server starts, in one transaction, after a copy of it is

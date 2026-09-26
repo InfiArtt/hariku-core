@@ -1,5 +1,5 @@
 {
-  "_note": "The station's residents (orbit_npcs.py): characters who are not players. Every line is in English and Indonesian, with the same number of variants and the same {placeholders} in both. Schedules are station time (UTC): [hour, room], a room of null meaning off duty. Topics may take live values (\"live\": a provider in orbit_npcs.py) and \"cases\" (other lines for what the provider found). \"min\" is the affinity a topic or favour needs. See README.md.",
+  "_note": "The station's residents (orbit_npcs.py): characters who are not players. Every line is English, {\"en\": ...} (a list of variants for greetings, topics and cases). Schedules are station time (UTC): [hour, room], a room of null meaning off duty. Topics may take live values (\"live\": a provider in orbit_npcs.py) and \"cases\" (other lines for what the provider found). \"min\" is the affinity a topic or favour needs. See README.md.",
   "rules": {
     "walk_seconds": [8, 14],
     "idle_gap": [420, 900],
@@ -13,787 +13,730 @@
   },
   "npcs": {
     "jali": {
-      "name": "Bang Jali",
+      "name": "Rocco",
       "kind": "talker",
       "voice": 3,
-      "names": {"en": ["jali", "bang jali", "bartender", "barman"], "id": ["jali", "bang jali", "bartender", "abang bar", "pelayan bar"]},
-      "role": {"en": "the Cantina's bartender", "id": "bartender Kantin"},
-      "desc": {"en": "A broad man in a batik apron with a towel over one shoulder, who laughs with his whole chest. He knows everyone's usual order, and most of their news.", "id": "Pria bertubuh besar bercelemek batik dengan handuk tersampir di bahu, yang tertawa sampai dadanya berguncang. Ia hafal pesanan langganan semua orang, dan sebagian besar kabar mereka."},
+      "names": {"en": ["rocco", "bartender", "barman"]},
+      "role": {"en": "the Cantina's bartender"},
+      "desc": {"en": "A broad man in a patterned apron with a towel over one shoulder, who laughs with his whole chest. He knows everyone's usual order, and most of their news."},
       "schedule": [[0, "cantina"]],
       "home": "cantina",
       "shop": "bar",
       "likes": ["strawberry", "vanilla", "golden_chilli"],
-      "greet": {"en": ["Welcome to the Cantina! Sit anywhere that's bolted down.", "Ah, a thirsty face. What can I do for you?", "Come in, come in. The jukebox is on dangdut tonight, sorry."],
-                "id": ["Selamat datang di Kantin! Duduk di mana saja, asal kursinya dibaut.", "Wah, muka haus. Ada yang bisa kubantu?", "Masuk, masuk. Jukebox-nya lagi muter dangdut, maaf ya."]},
-      "greet_known": {"en": ["{name}! The usual, or are we feeling brave today?", "Look who's back. Good to see you, {name}."],
-                      "id": ["{name}! Yang biasa, atau hari ini mau coba yang berani?", "Lihat siapa yang datang lagi. Senang ketemu kamu, {name}."]},
-      "greet_friend": {"en": ["{name}, my friend! Your stool's still warm.", "There's my favourite regular. Sit, sit, {name}."],
-                       "id": ["{name}, kawanku! Kursimu masih hangat.", "Nah, ini dia pelanggan favoritku. Duduk, duduk, {name}."]},
-      "unknown": {"en": ["Ha! That one's beyond me. Ask me about gossip instead, I know plenty.", "Hmm, never heard of it, and I hear everything in here."],
-                  "id": ["Ha! Yang itu aku nggak paham. Tanya soal gosip saja, aku tahu banyak.", "Hmm, belum pernah dengar, padahal di sini aku dengar semuanya."]},
+      "greet": {"en": ["Welcome to the Cantina! Sit anywhere that's bolted down.", "Ah, a thirsty face. What can I do for you?", "Come in, come in. The jukebox is stuck on swing tonight, sorry."]},
+      "greet_known": {"en": ["{name}! The usual, or are we feeling brave today?", "Look who's back. Good to see you, {name}."]},
+      "greet_friend": {"en": ["{name}, my friend! Your stool's still warm.", "There's my favourite regular. Sit, sit, {name}."]},
+      "unknown": {"en": ["Ha! That one's beyond me. Ask me about gossip instead, I know plenty.", "Hmm, never heard of it, and I hear everything in here."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} polishes a glass until it squeaks.", "id": "{npc} menggosok gelas sampai berdecit."},
-        {"kind": "emote", "en": "{npc} hums along with the jukebox, a little off key.", "id": "{npc} ikut bersenandung dengan jukebox, agak sumbang."},
-        {"kind": "say", "en": "Iced coffee, anyone? Fresh palm sugar today.", "id": "Ada yang mau es kopi susu? Gula arennya baru hari ini."},
-        {"kind": "say", "en": "They say prices on the Moon are wild this week. Don't quote me.", "id": "Katanya harga di Bulan lagi gila minggu ini. Jangan kutip aku, ya."},
-        {"kind": "emote", "en": "{npc} slides a cup along the bar to nobody in particular, then catches it himself.", "id": "{npc} meluncurkan gelas di sepanjang bar ke arah entah siapa, lalu menangkapnya sendiri."}
+        {"kind": "emote", "en": "{npc} polishes a glass until it squeaks."},
+        {"kind": "emote", "en": "{npc} hums along with the jukebox, a little off key."},
+        {"kind": "say", "en": "Iced coffee, anyone? Fresh palm sugar today."},
+        {"kind": "say", "en": "They say prices on the Moon are wild this week. Don't quote me."},
+        {"kind": "emote", "en": "{npc} slides a cup along the bar to nobody in particular, then catches it himself."}
       ],
       "topics": {
         "gossip": {
-          "names": {"en": ["gossip", "news", "rumours", "rumors", "the news"], "id": ["gosip", "kabar", "berita", "rumor", "kabar terbaru"]},
+          "names": {"en": ["gossip", "news", "rumours", "rumors", "the news"]},
           "live": "gossip",
-          "say": {"en": ["Quiet days lately. Even the gossip is taking a nap."], "id": ["Belakangan ini sepi. Gosip pun lagi tidur siang."]},
+          "say": {"en": ["Quiet days lately. Even the gossip is taking a nap."]},
           "cases": {
-            "wedding": {"en": ["Have you heard? {a} and {b} were married at {place}. The whole station's still talking about it."], "id": ["Sudah dengar? {a} dan {b} menikah di {place}. Seisi stasiun masih membicarakannya."]},
-            "next_wedding": {"en": ["Big news: {a} and {b} are getting married at {place}, {day} at {hour}. Bring flowers!"], "id": ["Kabar besar: {a} dan {b} akan menikah di {place}, {day} pukul {hour}. Bawa bunga, ya!"]},
-            "rich": {"en": ["Between you and me, {rich} has more credits than the bank on the Moon. Rich people tip badly, you know."], "id": ["Antara kita saja, {rich} punya kredit lebih banyak dari bank di Bulan. Orang kaya itu tipnya pelit, lho."]},
-            "crew": {"en": ["The crew {crew} is top of the board. Their captain drinks nothing but water. Suspicious, if you ask me."], "id": ["Kru {crew} sedang di puncak papan. Kaptennya cuma minum air putih. Mencurigakan, menurutku."]},
-            "miner": {"en": ["{miner} has dug up more ore than anyone. Comes in here covered in dust, every time."], "id": ["{miner} sudah menggali bijih lebih banyak dari siapa pun. Datang ke sini penuh debu, selalu."]}
+            "wedding": {"en": ["Have you heard? {a} and {b} were married at {place}. The whole station's still talking about it."]},
+            "next_wedding": {"en": ["Big news: {a} and {b} are getting married at {place}, {day} at {hour}. Bring flowers!"]},
+            "rich": {"en": ["Between you and me, {rich} has more credits than the bank on the Moon. Rich people tip badly, you know."]},
+            "crew": {"en": ["The crew {crew} is top of the board. Their captain drinks nothing but water. Suspicious, if you ask me."]},
+            "miner": {"en": ["{miner} has dug up more ore than anyone. Comes in here covered in dust, every time."]}
           }
         },
         "who": {
-          "names": {"en": ["who's around", "who is around", "people", "customers", "who"], "id": ["siapa saja", "orang", "pelanggan", "siapa"]},
+          "names": {"en": ["who's around", "who is around", "people", "customers", "who"]},
           "live": "who",
-          "say": {"en": ["{n} people are about on the station right now, {names} among them."], "id": ["Ada {n} orang di stasiun sekarang, termasuk {names}."]},
-          "cases": {"alone": {"en": ["Just you and me right now. Cosy, isn't it?"], "id": ["Cuma kamu dan aku sekarang. Nyaman, kan?"]}}
+          "say": {"en": ["{n} people are about on the station right now, {names} among them."]},
+          "cases": {"alone": {"en": ["Just you and me right now. Cosy, isn't it?"]}}
         },
         "coffee": {
-          "names": {"en": ["coffee", "iced coffee", "drinks", "the menu", "menu"], "id": ["kopi", "es kopi", "minuman", "menu"]},
-          "say": {"en": ["My iced coffee has palm sugar and a secret. The secret is more palm sugar. Fifteen credits, and you earn XP faster for ten minutes."], "id": ["Es kopi susuku pakai gula aren dan satu rahasia. Rahasianya: gula aren lagi. Lima belas kredit, dan XP-mu bertambah lebih cepat selama sepuluh menit."]}
+          "names": {"en": ["coffee", "iced coffee", "drinks", "the menu", "menu"]},
+          "say": {"en": ["My iced coffee has palm sugar and a secret. The secret is more palm sugar. Fifteen credits, and you earn XP faster for ten minutes."]}
         },
         "market": {
-          "names": {"en": ["market", "prices", "the market", "trade", "trading"], "id": ["pasar", "harga", "dagang", "berdagang"]},
+          "names": {"en": ["market", "prices", "the market", "trade", "trading"]},
           "live": "market",
-          "say": {"en": ["Prices are behaving themselves today. Boring, but good for the heart."], "id": ["Harga-harga lagi kalem hari ini. Membosankan, tapi bagus untuk jantung."]},
+          "say": {"en": ["Prices are behaving themselves today. Boring, but good for the heart."]},
           "cases": {
-            "high": {"en": ["Word at the bar is that {good} is dear right now: {price} credits {where}. Sell, sell, sell. You didn't hear it from me."], "id": ["Kabar di bar, {good} lagi mahal: {price} kredit {where}. Jual, jual, jual. Bukan aku yang bilang, ya."]},
-            "low": {"en": ["Word at the bar is that {good} is cheap right now: {price} credits {where}. Buy low, my friend."], "id": ["Kabar di bar, {good} lagi murah: {price} kredit {where}. Beli saat murah, kawan."]}
+            "high": {"en": ["Word at the bar is that {good} is dear right now: {price} credits {where}. Sell, sell, sell. You didn't hear it from me."]},
+            "low": {"en": ["Word at the bar is that {good} is cheap right now: {price} credits {where}. Buy low, my friend."]}
           }
         },
         "jukebox": {
-          "names": {"en": ["jukebox", "music", "songs"], "id": ["jukebox", "musik", "lagu"]},
-          "say": {"en": ["Dangdut or synthwave. Somebody once pressed both, and the station's gravity wobbled. True story. Probably."], "id": ["Dangdut atau synthwave. Dulu ada yang menekan dua-duanya, dan gravitasi stasiun sempat goyang. Kisah nyata. Mungkin."]}
+          "names": {"en": ["jukebox", "music", "songs"]},
+          "say": {"en": ["Swing or synthwave. Somebody once pressed both, and the station's gravity wobbled. True story. Probably."]}
         },
         "events": {
-          "names": {"en": ["events", "what's on", "whats on", "happening", "event"], "id": ["acara", "ada apa", "kegiatan"]},
+          "names": {"en": ["events", "what's on", "whats on", "happening", "event"]},
           "live": "event",
-          "say": {"en": ["Nothing on at the moment. Why not throw a party in your cabin?"], "id": ["Sedang tidak ada acara. Kenapa tidak adakan pesta di kabinmu?"]},
+          "say": {"en": ["Nothing on at the moment. Why not throw a party in your cabin?"]},
           "cases": {
-            "on": {"en": ["Right now it's {event}, for another {time}. Go on, don't miss it."], "id": ["Sekarang sedang ada {event}, masih {time} lagi. Ayo, jangan sampai ketinggalan."]},
-            "next": {"en": ["Nothing on right now. Next up is {event}, {day} at {hour}."], "id": ["Sekarang sedang tidak ada apa-apa. Berikutnya {event}, {day} pukul {hour}."]}
+            "on": {"en": ["Right now it's {event}, for another {time}. Go on, don't miss it."]},
+            "next": {"en": ["Nothing on right now. Next up is {event}, {day} at {hour}."]}
           }
         },
         "secret": {
-          "names": {"en": ["secret", "a secret", "the secret"], "id": ["rahasia", "sebuah rahasia"]},
+          "names": {"en": ["secret", "a secret", "the secret"]},
           "min": 15,
-          "say": {"en": ["Alright, for you. The time capsule below the old pump room isn't a legend. Bring a light, and a key made of brass."], "id": ["Baiklah, untukmu. Kapsul waktu di bawah ruang pompa lama itu bukan dongeng. Bawa lampu, dan kunci dari kuningan."]}
+          "say": {"en": ["Alright, for you. The time capsule below the old pump room isn't a legend. Bring a light, and a key made of brass."]}
         },
         "favour": {
-          "names": {"en": ["favour", "favor", "help", "errand", "a job"], "id": ["bantuan", "tolong", "minta tolong", "tugas"]},
+          "names": {"en": ["favour", "favor", "help", "errand", "a job"]},
           "favour": true
         }
       },
       "favours": [
         {"id": "chillies", "min": 5, "repeat": "daily", "needs": {"chilli": 3}, "reward": {"credits": 45, "xp": 10},
-         "ask": {"en": "My sambal jar is empty, and that's a crisis. Bring me three bags of chillies from the farm, would you?", "id": "Toples sambalku kosong, dan itu gawat. Bawakan aku tiga kantong cabai dari kebun, ya?"},
-         "thanks": {"en": "Chillies! You've saved the Cantina. Here, for your trouble.", "id": "Cabai! Kamu menyelamatkan Kantin. Ini, untuk jerih payahmu."}}
+         "ask": {"en": "My chilli sauce jar is empty, and that's a crisis. Bring me three bags of chillies from the farm, would you?"},
+         "thanks": {"en": "Chillies! You've saved the Cantina. Here, for your trouble."}}
       ]
     },
     "harsa": {
-      "name": "Pak Harsa",
+      "name": "Oskar",
       "kind": "talker",
       "voice": 7,
-      "names": {"en": ["harsa", "pak harsa", "old engineer", "engineer harsa"], "id": ["harsa", "pak harsa", "insinyur tua", "teknisi tua"]},
-      "role": {"en": "the station's oldest engineer", "id": "insinyur tertua di stasiun"},
-      "desc": {"en": "A wiry old man in grease-stained coveralls, reading glasses pushed up into grey hair. He talks to the reactor as if it were an old friend, and it seems to listen.", "id": "Pria tua kurus berbaju terusan penuh noda oli, kacamata bacanya terdorong ke rambut yang beruban. Ia bicara pada reaktor seperti pada kawan lama, dan reaktornya seolah mendengarkan."},
+      "names": {"en": ["oskar", "old engineer", "engineer oskar"]},
+      "role": {"en": "the station's oldest engineer"},
+      "desc": {"en": "A wiry old man in grease-stained coveralls, reading glasses pushed up into grey hair. He talks to the reactor as if it were an old friend, and it seems to listen."},
       "schedule": [[0, "engineering"]],
       "home": "engineering",
       "likes": ["martabak", "iced_coffee", "titanium"],
-      "greet": {"en": ["Mind the pipes. What do you need?", "Hm? Oh, a visitor. Don't touch anything that hums.", "Welcome to Engineering. Loud, hot, and the best room on the station."],
-                "id": ["Awas pipanya. Perlu apa?", "Hm? Oh, ada tamu. Jangan pegang apa pun yang berdengung.", "Selamat datang di Ruang Mesin. Bising, panas, dan ruangan terbaik di stasiun."]},
-      "greet_known": {"en": ["Ah, {name}. Come to help an old man?", "{name}. Good. I have work, if you have hands."],
-                      "id": ["Ah, {name}. Datang membantu orang tua ini?", "{name}. Bagus. Aku ada kerjaan, kalau kamu punya tangan."]},
-      "greet_friend": {"en": ["{name}! Pull up a crate. The reactor's in a good mood today.", "My favourite pair of hands. Hello, {name}."],
-                       "id": ["{name}! Ambil peti, duduklah. Reaktornya lagi senang hari ini.", "Sepasang tangan favoritku. Halo, {name}."]},
-      "unknown": {"en": ["I fix reactors, not riddles. Ask me about the reactor, or about work.", "Can't help you there. Ask me something with bolts in it."],
-                  "id": ["Aku memperbaiki reaktor, bukan teka-teki. Tanya soal reaktor, atau soal kerjaan.", "Soal itu aku tak bisa bantu. Tanya yang ada bautnya."]},
+      "greet": {"en": ["Mind the pipes. What do you need?", "Hm? Oh, a visitor. Don't touch anything that hums.", "Welcome to Engineering. Loud, hot, and the best room on the station."]},
+      "greet_known": {"en": ["Ah, {name}. Come to help an old man?", "{name}. Good. I have work, if you have hands."]},
+      "greet_friend": {"en": ["{name}! Pull up a crate. The reactor's in a good mood today.", "My favourite pair of hands. Hello, {name}."]},
+      "unknown": {"en": ["I fix reactors, not riddles. Ask me about the reactor, or about work.", "Can't help you there. Ask me something with bolts in it."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} taps a pipe with a spanner and listens, frowning.", "id": "{npc} mengetuk pipa dengan kunci pas dan mendengarkan, keningnya berkerut."},
-        {"kind": "say", "en": "Easy, girl. Easy. Nobody's rushing you.", "id": "Pelan, Nak. Pelan. Tak ada yang terburu-buru."},
-        {"kind": "emote", "en": "{npc} mutters numbers under his breath and scribbles them on his palm.", "id": "{npc} menggumamkan angka-angka dan mencoretnya di telapak tangan."},
-        {"kind": "say", "en": "Forty years on this station, and she still surprises me.", "id": "Empat puluh tahun di stasiun ini, dan reaktornya masih bisa mengejutkanku."}
+        {"kind": "emote", "en": "{npc} taps a pipe with a spanner and listens, frowning."},
+        {"kind": "say", "en": "Easy, girl. Easy. Nobody's rushing you."},
+        {"kind": "emote", "en": "{npc} mutters numbers under his breath and scribbles them on his palm."},
+        {"kind": "say", "en": "Forty years on this station, and she still surprises me."}
       ],
       "topics": {
         "reactor": {
-          "names": {"en": ["reactor", "the reactor", "fusion", "core", "tones"], "id": ["reaktor", "fusi", "inti", "nada"]},
-          "say": {"en": ["When she drifts out of tune, you play her tones back to her: low on the left, high on the right. Engineers get paid for it, and she gets calm."], "id": ["Kalau nadanya meleset, kamu mainkan lagi nada-nadanya: rendah di kiri, tinggi di kanan. Insinyur dibayar untuk itu, dan reaktornya jadi tenang."]}
+          "names": {"en": ["reactor", "the reactor", "fusion", "core", "tones"]},
+          "say": {"en": ["When she drifts out of tune, you play her tones back to her: low on the left, high on the right. Engineers get paid for it, and she gets calm."]}
         },
         "history": {
-          "names": {"en": ["history", "the station", "old days", "the past"], "id": ["sejarah", "stasiun", "masa lalu", "zaman dulu"]},
-          "say": {"en": ["When I came up, this was three modules and a coffee machine. Now look at it: a mall, a casino, a Gate to other worlds. I still miss the coffee machine."], "id": ["Waktu aku naik ke sini, stasiun ini cuma tiga modul dan satu mesin kopi. Sekarang lihat: ada mal, kasino, Gerbang ke dunia lain. Aku masih kangen mesin kopinya."]}
+          "names": {"en": ["history", "the station", "old days", "the past"]},
+          "say": {"en": ["When I came up, this was three modules and a coffee machine. Now look at it: a mall, a casino, a Gate to other worlds. I still miss the coffee machine."]}
         },
         "work": {
-          "names": {"en": ["work", "task", "tasks", "a job", "missions", "mission", "favour", "favor", "help"], "id": ["kerja", "tugas", "pekerjaan", "misi", "bantuan", "minta tolong"]},
+          "names": {"en": ["work", "task", "tasks", "a job", "missions", "mission", "favour", "favor", "help"]},
           "favour": true
         },
         "progress": {
-          "names": {"en": ["me", "my progress", "how am i doing", "progress", "my level"], "id": ["aku", "kemajuanku", "bagaimana aku", "kemajuan", "levelku"]},
+          "names": {"en": ["me", "my progress", "how am i doing", "progress", "my level"]},
           "live": "progress",
-          "say": {"en": ["You're level {level}, a {rank}. {need} more XP and you'll be level {next}. Keep your hands busy."], "id": ["Kamu level {level}, {rank}. Butuh {need} XP lagi untuk level {next}. Terus sibukkan tanganmu."]},
-          "cases": {"max": {"en": ["Level {level}, a {rank}. There's nothing left I can teach you. Go and teach someone else."], "id": ["Level {level}, {rank}. Tak ada lagi yang bisa kuajarkan. Pergi, ajari orang lain."]}}
+          "say": {"en": ["You're level {level}, a {rank}. {need} more XP and you'll be level {next}. Keep your hands busy."]},
+          "cases": {"max": {"en": ["Level {level}, a {rank}. There's nothing left I can teach you. Go and teach someone else."]}}
         },
         "keycards": {
-          "names": {"en": ["keycards", "keycard", "doors", "locked doors"], "id": ["kartu akses", "kartu", "pintu", "pintu terkunci"]},
-          "say": {"en": ["A crew keycard at level two, an officer's at ten, and engineers get a technician's card at three for the Reactor Core. Doors on this station respect experience."], "id": ["Kartu akses kru di level dua, kartu perwira di sepuluh, dan insinyur dapat kartu teknisi di level tiga untuk Inti Reaktor. Pintu di stasiun ini menghormati pengalaman."]}
+          "names": {"en": ["keycards", "keycard", "doors", "locked doors"]},
+          "say": {"en": ["A crew keycard at level two, an officer's at ten, and engineers get a technician's card at three for the Reactor Core. Doors on this station respect experience."]}
         },
         "daughter": {
-          "names": {"en": ["daughter", "family", "your family"], "id": ["putri", "putrimu", "keluarga", "keluargamu"]},
+          "names": {"en": ["daughter", "family", "your family"]},
           "min": 30,
-          "say": {"en": ["My daughter pilots ferries between Glasir and Karmina now. She sends me a postcard from every port. I keep them in my toolbox, next to the good spanner."], "id": ["Putriku sekarang pilot feri antara Glasir dan Karmina. Ia mengirim kartu pos dari setiap pelabuhan. Kusimpan di kotak perkakasku, di samping kunci pas yang bagus."]}
+          "say": {"en": ["My daughter pilots ferries between Glasir and Karmina now. She sends me a postcard from every port. I keep them in my toolbox, next to the good spanner."]}
         }
       },
       "favours": [
         {"id": "scrap", "min": 0, "repeat": "daily", "needs": {"scrap": 3}, "reward": {"credits": 40, "xp": 15},
-         "ask": {"en": "The pump housings need patching. Bring me three pieces of scrap metal from the Debris Field, outside the hull. Suit up first.", "id": "Rumah pompa perlu ditambal. Bawakan aku tiga potong besi rongsokan dari Ladang Puing di luar lambung. Pakai pakaian EVA dulu."},
-         "thanks": {"en": "Good scrap. Good hands. Here, you earned this.", "id": "Rongsokan bagus. Tangan yang bagus. Ini, kamu pantas mendapatkannya."}},
+         "ask": {"en": "The pump housings need patching. Bring me three pieces of scrap metal from the Debris Field, outside the hull. Suit up first."},
+         "thanks": {"en": "Good scrap. Good hands. Here, you earned this."}},
         {"id": "circuits", "min": 5, "repeat": "daily", "needs": {"circuit": 2}, "reward": {"credits": 70, "xp": 20},
-         "ask": {"en": "The console's memory is failing. Two old circuit boards from the Debris Field would do. Don't tell the captain.", "id": "Memori konsol mulai rusak. Dua papan sirkuit bekas dari Ladang Puing sudah cukup. Jangan bilang kapten."},
-         "thanks": {"en": "Perfect. She'll remember her tones for another year.", "id": "Sempurna. Ia akan ingat nada-nadanya setahun lagi."}},
+         "ask": {"en": "The console's memory is failing. Two old circuit boards from the Debris Field would do. Don't tell the captain."},
+         "thanks": {"en": "Perfect. She'll remember her tones for another year."}},
         {"id": "satellite", "min": 15, "repeat": "daily", "needs": {"satchip": 1}, "reward": {"credits": 120, "xp": 30},
-         "ask": {"en": "This one's between us. The station's old satellite needs a new chip, and I only trust you to find one. A satellite chip, from the Debris Field.", "id": "Yang ini rahasia kita. Satelit tua stasiun butuh chip baru, dan cuma kamu yang kupercaya untuk mencarinya. Satu chip satelit, dari Ladang Puing."},
-         "thanks": {"en": "You found one! Now the old bird can sing again. Thank you, truly.", "id": "Kamu menemukannya! Sekarang burung tua itu bisa bernyanyi lagi. Terima kasih, sungguh."}}
+         "ask": {"en": "This one's between us. The station's old satellite needs a new chip, and I only trust you to find one. A satellite chip, from the Debris Field."},
+         "thanks": {"en": "You found one! Now the old bird can sing again. Thank you, truly."}}
       ]
     },
     "sekar": {
-      "name": "Ibu Sekar",
+      "name": "Amara",
       "kind": "talker",
       "voice": 2,
-      "names": {"en": ["sekar", "ibu sekar", "keeper", "temple keeper", "lantern keeper"], "id": ["sekar", "ibu sekar", "penjaga", "penjaga kuil", "penjaga lentera"]},
-      "role": {"en": "keeper of the Way of Starlight", "id": "penjaga Jalan Cahaya Bintang"},
-      "desc": {"en": "A calm woman in a long indigo shawl stitched with tiny silver stars. She tends the lanterns one by one, and her voice never rises above a gentle murmur.", "id": "Perempuan tenang berselendang nila panjang bersulam bintang-bintang perak mungil. Ia merawat lentera satu per satu, dan suaranya tak pernah lebih keras dari gumaman lembut."},
+      "names": {"en": ["amara", "keeper", "temple keeper", "lantern keeper", "keeper amara"]},
+      "role": {"en": "keeper of the Way of Starlight"},
+      "desc": {"en": "A calm woman in a long indigo shawl stitched with tiny silver stars. She tends the lanterns one by one, and her voice never rises above a gentle murmur."},
       "schedule": [[0, "star_hall"]],
       "home": "star_hall",
       "likes": ["moonpetal", "vanilla", "frostpearl"],
-      "greet": {"en": ["Welcome under the dome. Stay as long as you like.", "May your light hold steady, traveller.", "Hello. Speak softly; the dome listens."],
-                "id": ["Selamat datang di bawah kubah. Tinggallah selama kau mau.", "Semoga cahayamu tetap terang, pengembara.", "Halo. Bicaralah pelan; kubah ini mendengarkan."]},
-      "greet_known": {"en": ["{name}, welcome back. Your lantern from last time still glows.", "Ah, {name}. The stars are clear today."],
-                      "id": ["{name}, selamat datang kembali. Lenteramu yang dulu masih menyala.", "Ah, {name}. Bintang-bintang cerah hari ini."]},
-      "greet_friend": {"en": ["{name}, dear friend. Sit with me a while.", "I know your steps by now, {name}. Welcome."],
-                       "id": ["{name}, sahabatku. Duduklah bersamaku sebentar.", "Langkahmu sudah kukenal, {name}. Selamat datang."]},
-      "unknown": {"en": ["That I cannot answer. Some questions are for the stars, and they are slow to reply.", "I don't know, and that is alright. Staying curious is one of the three things."],
-                  "id": ["Itu tak bisa kujawab. Sebagian pertanyaan untuk bintang-bintang, dan mereka lambat membalas.", "Aku tidak tahu, dan tak apa. Tetap ingin tahu adalah salah satu dari tiga hal itu."]},
+      "greet": {"en": ["Welcome under the dome. Stay as long as you like.", "May your light hold steady, traveller.", "Hello. Speak softly; the dome listens."]},
+      "greet_known": {"en": ["{name}, welcome back. Your lantern from last time still glows.", "Ah, {name}. The stars are clear today."]},
+      "greet_friend": {"en": ["{name}, dear friend. Sit with me a while.", "I know your steps by now, {name}. Welcome."]},
+      "unknown": {"en": ["That I cannot answer. Some questions are for the stars, and they are slow to reply.", "I don't know, and that is alright. Staying curious is one of the three things."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} trims the wick of a lantern and sets it back in the alcove.", "id": "{npc} merapikan sumbu sebuah lentera lalu meletakkannya kembali di ceruk."},
-        {"kind": "emote", "en": "{npc} sits on a bench and looks up at the dome in silence.", "id": "{npc} duduk di bangku dan menatap kubah dalam diam."},
-        {"kind": "say", "en": "Every lantern here is a promise someone means to keep.", "id": "Setiap lentera di sini adalah janji yang ingin ditepati seseorang."},
-        {"kind": "emote", "en": "{npc} brushes a speck of dust from the bronze bell.", "id": "{npc} menyapu setitik debu dari lonceng perunggu."}
+        {"kind": "emote", "en": "{npc} trims the wick of a lantern and sets it back in the alcove."},
+        {"kind": "emote", "en": "{npc} sits on a bench and looks up at the dome in silence."},
+        {"kind": "say", "en": "Every lantern here is a promise someone means to keep."},
+        {"kind": "emote", "en": "{npc} brushes a speck of dust from the bronze bell."}
       ],
       "topics": {
         "way": {
-          "names": {"en": ["the way", "way of starlight", "the way of starlight", "starlight", "the temple", "temple"], "id": ["jalan", "jalan cahaya bintang", "cahaya bintang", "kuil"]},
-          "say": {"en": ["The Way asks only three things: keep your word, stay curious, and look after one another. The rest is lanterns, and a bell, and good company."], "id": ["Jalan ini hanya meminta tiga hal: tepati kata-katamu, teruslah ingin tahu, dan saling jagalah. Selebihnya hanyalah lentera, lonceng, dan teman yang baik."]}
+          "names": {"en": ["the way", "way of starlight", "the way of starlight", "starlight", "the temple", "temple"]},
+          "say": {"en": ["The Way asks only three things: keep your word, stay curious, and look after one another. The rest is lanterns, and a bell, and good company."]}
         },
         "lanterns": {
-          "names": {"en": ["lanterns", "lantern", "lights"], "id": ["lentera", "cahaya"]},
+          "names": {"en": ["lanterns", "lantern", "lights"]},
           "live": "lanterns",
-          "say": {"en": ["{n} lanterns have been lit here today. Light one for a promise, three credits, and I'll keep it glowing."], "id": ["{n} lentera sudah dinyalakan di sini hari ini. Nyalakan satu untuk sebuah janji, tiga kredit, dan akan kujaga nyalanya."]},
+          "say": {"en": ["{n} lanterns have been lit here today. Light one for a promise, three credits, and I'll keep it glowing."]},
           "cases": {
-            "festival": {"en": ["It's the Lantern Festival! {n} of {goal} lanterns are lit. When we reach {goal}, the whole station shares a gift."], "id": ["Ini Festival Lentera! {n} dari {goal} lentera sudah menyala. Kalau sampai {goal}, seluruh stasiun berbagi hadiah."]},
-            "done": {"en": ["The festival's goal is reached: {n} lanterns glow tonight. What a sight."], "id": ["Tujuan festival tercapai: {n} lentera menyala malam ini. Indah sekali."]}
+            "festival": {"en": ["It's the Lantern Festival! {n} of {goal} lanterns are lit. When we reach {goal}, the whole station shares a gift."]},
+            "done": {"en": ["The festival's goal is reached: {n} lanterns glow tonight. What a sight."]}
           }
         },
         "festival": {
-          "names": {"en": ["festival", "lantern festival", "the festival"], "id": ["festival", "festival lentera"]},
+          "names": {"en": ["festival", "lantern festival", "the festival"]},
           "live": "festival",
-          "say": {"en": ["The Lantern Festival comes on the hundredth day of the year, {day}. Lanterns are free that day, and together we try to light {goal}."], "id": ["Festival Lentera datang pada hari keseratus dalam setahun, {day}. Lentera gratis hari itu, dan bersama-sama kita mencoba menyalakan {goal}."]},
+          "say": {"en": ["The Lantern Festival comes on the hundredth day of the year, {day}. Lanterns are free that day, and together we try to light {goal}."]},
           "cases": {
-            "on": {"en": ["The Lantern Festival is today! {n} of {goal} lanterns are lit so far. Every lantern is free, and when we reach {goal}, everyone on the station shares a gift."], "id": ["Festival Lentera hari ini! Sejauh ini {n} dari {goal} lentera menyala. Setiap lentera gratis, dan kalau sampai {goal}, semua orang di stasiun berbagi hadiah."]},
-            "done": {"en": ["The festival's goal was reached today: {n} lanterns! Everyone has a gift waiting."], "id": ["Tujuan festival tercapai hari ini: {n} lentera! Semua orang mendapat hadiah."]}
+            "on": {"en": ["The Lantern Festival is today! {n} of {goal} lanterns are lit so far. Every lantern is free, and when we reach {goal}, everyone on the station shares a gift."]},
+            "done": {"en": ["The festival's goal was reached today: {n} lanterns! Everyone has a gift waiting."]}
           }
         },
         "bell": {
-          "names": {"en": ["bell", "the bell", "star bell"], "id": ["lonceng", "lonceng bintang"]},
-          "say": {"en": ["We ring it for those still travelling. It answers with three tones, low, middle and high, one for each of the three things."], "id": ["Kami membunyikannya untuk mereka yang masih dalam perjalanan. Ia menjawab dengan tiga nada, rendah, tengah, dan tinggi, satu untuk masing-masing dari tiga hal itu."]}
+          "names": {"en": ["bell", "the bell", "star bell"]},
+          "say": {"en": ["We ring it for those still travelling. It answers with three tones, low, middle and high, one for each of the three things."]}
         },
         "weddings": {
-          "names": {"en": ["weddings", "wedding", "marriage", "the rite", "starlight rite", "ceremony"], "id": ["pernikahan", "nikah", "upacara", "upacara cahaya bintang"]},
-          "say": {"en": ["In the Starlight rite, two people each light a lantern and bring the two lights together into one. We keep a moment of silence, they speak their own promises, and the star bell rings three times. Bu Safira at the jeweller's books the halls."], "id": ["Dalam upacara Cahaya Bintang, dua orang masing-masing menyalakan lentera lalu menyatukan kedua cahaya menjadi satu. Kami hening sejenak, mereka mengucapkan janji mereka sendiri, dan lonceng bintang berbunyi tiga kali. Bu Safira di toko perhiasan yang memesankan aulanya."]}
+          "names": {"en": ["weddings", "wedding", "marriage", "the rite", "starlight rite", "ceremony"]},
+          "say": {"en": ["In the Starlight rite, two people each light a lantern and bring the two lights together into one. We keep a moment of silence, they speak their own promises, and the star bell rings three times. Celeste at the jeweller's books the halls."]}
         },
         "naming": {
-          "names": {"en": ["naming", "naming rite", "names", "a baby's name", "baby"], "id": ["pemberian nama", "upacara nama", "nama", "nama bayi", "bayi"]},
-          "say": {"en": ["When a little one joins a family, bring them here. We light a lantern for them, I speak their name under the dome, and the bell rings once, so the stars learn it too. Say naming rite, and the name."], "id": ["Saat si kecil bergabung dengan sebuah keluarga, bawalah ke sini. Kita nyalakan lentera untuknya, kuucapkan namanya di bawah kubah, dan lonceng berbunyi sekali, supaya bintang-bintang juga mengenalnya. Ucapkan upacara nama, lalu namanya."]}
+          "names": {"en": ["naming", "naming rite", "names", "a baby's name", "baby"]},
+          "say": {"en": ["When a little one joins a family, bring them here. We light a lantern for them, I speak their name under the dome, and the bell rings once, so the stars learn it too. Say naming rite, and the name."]}
         },
         "explorers": {
-          "names": {"en": ["explorers", "the first explorers", "the story", "story"], "id": ["penjelajah", "penjelajah pertama", "kisah", "cerita"]},
+          "names": {"en": ["explorers", "the first explorers", "the story", "story"]},
           "min": 15,
-          "say": {"en": ["On the longest crossing, one of them fell asleep on her watch. The others didn't wake her. They kept her watch for her, in turns, until morning. That, more than any rule, is the Way."], "id": ["Pada penyeberangan terpanjang, salah satu dari mereka tertidur saat gilirannya berjaga. Yang lain tidak membangunkannya. Mereka menjaga gilirannya bergantian, sampai pagi. Itulah, lebih dari aturan mana pun, Jalan ini."]}
+          "say": {"en": ["On the longest crossing, one of them fell asleep on her watch. The others didn't wake her. They kept her watch for her, in turns, until morning. That, more than any rule, is the Way."]}
         }
       }
     },
     "kelana": {
-      "name": "Kelana",
+      "name": "Soren",
       "kind": "talker",
       "voice": 9,
-      "names": {"en": ["kelana", "traveller", "traveler", "explorer", "stranger", "wanderer"], "id": ["kelana", "pengelana", "penjelajah", "orang asing", "pengembara"]},
-      "role": {"en": "a traveller who comes only at night", "id": "pengelana yang datang hanya di malam hari"},
-      "desc": {"en": "Someone in a dusty travelling cloak, hood half up, leaning on the rail as if they had been there for years. Their boots carry red dust, blue ice and moss all at once.", "id": "Seseorang berjubah perjalanan berdebu, tudungnya setengah terangkat, bersandar di pagar seolah sudah bertahun-tahun di situ. Sepatunya membawa debu merah, es biru, dan lumut sekaligus."},
+      "names": {"en": ["soren", "traveller", "traveler", "explorer", "stranger", "wanderer"]},
+      "role": {"en": "a traveller who comes only at night"},
+      "desc": {"en": "Someone in a dusty travelling cloak, hood half up, leaning on the rail as if they had been there for years. Their boots carry red dust, blue ice and moss all at once."},
       "schedule": [[0, "observation"], [5, null], [19, "observation"]],
       "home": "observation",
-      "appear": {"en": "A figure in a dusty cloak is suddenly at the rail, as if the night brought them.", "id": "Sosok berjubah berdebu tiba-tiba sudah ada di pagar, seolah dibawa oleh malam."},
-      "vanish": {"en": "When you look again, the traveller in the dusty cloak is gone.", "id": "Saat kamu menoleh lagi, pengelana berjubah berdebu itu sudah tak ada."},
+      "appear": {"en": "A figure in a dusty cloak is suddenly at the rail, as if the night brought them."},
+      "vanish": {"en": "When you look again, the traveller in the dusty cloak is gone."},
       "likes": ["meteorite", "frostpearl", "ember_crystal"],
-      "greet": {"en": ["Ah. Another one who can't sleep.", "The Earth turns, and here you are. Hello.", "Shh. Listen. The stars are loud tonight."],
-                "id": ["Ah. Satu lagi yang tak bisa tidur.", "Bumi berputar, dan di sinilah kamu. Halo.", "Sst. Dengar. Bintang-bintang riuh malam ini."]},
-      "greet_known": {"en": ["{name}. You came back. They always come back.", "Good evening, {name}. Or morning. Up here it's hard to say."],
-                      "id": ["{name}. Kamu kembali. Mereka selalu kembali.", "Selamat malam, {name}. Atau pagi. Di atas sini sulit dibedakan."]},
-      "greet_friend": {"en": ["{name}, my fellow night owl. Stand here; the view is better.", "I saved you a place at the rail, {name}."],
-                       "id": ["{name}, sesama burung hantu malam. Berdirilah di sini; pemandangannya lebih bagus.", "Kusisakan tempat di pagar untukmu, {name}."]},
-      "unknown": {"en": ["Some doors I won't open for you. You'll have to find the handles yourself.", "Hm. The answer to that is further away than Glasir."],
-                  "id": ["Beberapa pintu takkan kubukakan untukmu. Kamu harus menemukan gagangnya sendiri.", "Hm. Jawaban untuk itu lebih jauh dari Glasir."]},
+      "greet": {"en": ["Ah. Another one who can't sleep.", "The Earth turns, and here you are. Hello.", "Shh. Listen. The stars are loud tonight."]},
+      "greet_known": {"en": ["{name}. You came back. They always come back.", "Good evening, {name}. Or morning. Up here it's hard to say."]},
+      "greet_friend": {"en": ["{name}, my fellow night owl. Stand here; the view is better.", "I saved you a place at the rail, {name}."]},
+      "unknown": {"en": ["Some doors I won't open for you. You'll have to find the handles yourself.", "Hm. The answer to that is further away than Glasir."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} traces a constellation on the glass with one finger.", "id": "{npc} menelusuri sebuah rasi bintang di kaca dengan satu jari."},
-        {"kind": "say", "en": "Every world has its own silence. This one hums.", "id": "Setiap dunia punya keheningannya sendiri. Yang ini berdengung."},
-        {"kind": "emote", "en": "{npc} checks an old compass that doesn't seem to point north.", "id": "{npc} memeriksa kompas tua yang sepertinya tidak menunjuk ke utara."},
-        {"kind": "say", "en": "Somewhere out there, a note is waiting to be found.", "id": "Di luar sana, sebuah nada sedang menunggu ditemukan."}
+        {"kind": "emote", "en": "{npc} traces a constellation on the glass with one finger."},
+        {"kind": "say", "en": "Every world has its own silence. This one hums."},
+        {"kind": "emote", "en": "{npc} checks an old compass that doesn't seem to point north."},
+        {"kind": "say", "en": "Somewhere out there, a note is waiting to be found."}
       ],
       "topics": {
         "hunt": {
-          "names": {"en": ["the hunt", "hunt", "the lost chord", "lost chord", "chord", "notes", "riddles", "the riddle", "riddle"], "id": ["perburuan", "nada yang hilang", "nada", "teka-teki"]},
+          "names": {"en": ["the hunt", "hunt", "the lost chord", "lost chord", "chord", "notes", "riddles", "the riddle", "riddle"]},
           "live": "hunt",
-          "say": {"en": ["No song is being sought right now. Rest your ears. They will be needed."], "id": ["Tak ada lagu yang sedang dicari saat ini. Istirahatkan telingamu. Nanti akan dibutuhkan."]},
+          "say": {"en": ["No song is being sought right now. Rest your ears. They will be needed."]},
           "cases": {
-            "done": {"en": ["You found every note already. I heard it; the whole sky did."], "id": ["Kamu sudah menemukan semua nada. Aku mendengarnya; seluruh langit mendengarnya."]},
-            "near": {"en": ["You carry {have} of {total} notes. The next one is closer than you think: this world, not another. Look where people pass without looking."], "id": ["Kamu membawa {have} dari {total} nada. Yang berikutnya lebih dekat dari yang kau kira: di dunia ini, bukan dunia lain. Carilah di tempat orang lewat tanpa melihat."]},
-            "far": {"en": ["You carry {have} of {total} notes. The next one isn't on this world. Pack for a journey, and a different kind of air."], "id": ["Kamu membawa {have} dari {total} nada. Yang berikutnya tidak di dunia ini. Bersiaplah untuk perjalanan, dan udara yang berbeda."]}
+            "done": {"en": ["You found every note already. I heard it; the whole sky did."]},
+            "near": {"en": ["You carry {have} of {total} notes. The next one is closer than you think: this world, not another. Look where people pass without looking."]},
+            "far": {"en": ["You carry {have} of {total} notes. The next one isn't on this world. Pack for a journey, and a different kind of air."]}
           }
         },
         "stars": {
-          "names": {"en": ["stars", "the stars", "sky", "constellations"], "id": ["bintang", "langit", "rasi bintang"]},
-          "say": {"en": ["Sailors on your Earth once steered by these same stars. Up here we steer by them still, only nobody admits it."], "id": ["Pelaut di Bumimu dulu berlayar dengan bintang-bintang yang sama. Di atas sini kami masih begitu, cuma tak ada yang mau mengaku."]}
+          "names": {"en": ["stars", "the stars", "sky", "constellations"]},
+          "say": {"en": ["Sailors on your Earth once steered by these same stars. Up here we steer by them still, only nobody admits it."]}
         },
         "travels": {
-          "names": {"en": ["travels", "worlds", "journeys", "where have you been"], "id": ["perjalanan", "dunia", "pengembaraan", "dari mana"]},
-          "say": {"en": ["Evergrove's moss, Glasir's ice, Karmina's red dust, all in my boots. The Drift Bazaar sells everything except a map to where you really want to go."], "id": ["Lumut Evergrove, es Glasir, debu merah Karmina, semuanya di sepatuku. Bazar Hanyut menjual segalanya kecuali peta ke tempat yang benar-benar ingin kau tuju."]}
+          "names": {"en": ["travels", "worlds", "journeys", "where have you been"]},
+          "say": {"en": ["Evergrove's moss, Glasir's ice, Karmina's red dust, all in my boots. The Drift Bazaar sells everything except a map to where you really want to go."]}
         },
         "you": {
-          "names": {"en": ["you", "yourself", "who are you", "your name", "name"], "id": ["kamu", "dirimu", "siapa kamu", "namamu", "nama"]},
-          "say": {"en": ["A traveller. Like you, only longer. My name means wanderer, which is either a coincidence or a warning."], "id": ["Seorang pengelana. Sepertimu, hanya lebih lama. Namaku berarti pengembara, entah itu kebetulan atau peringatan."]}
+          "names": {"en": ["you", "yourself", "who are you", "your name", "name"]},
+          "say": {"en": ["A traveller. Like you, only longer. Soren is the name I travel under, and it has never once asked me to stay."]}
         },
         "time": {
-          "names": {"en": ["time", "the time", "clock", "what time"], "id": ["waktu", "jam", "pukul berapa"]},
+          "names": {"en": ["time", "the time", "clock", "what time"]},
           "live": "time",
-          "say": {"en": ["It's {time} by the station's clock, {part}. The Earth doesn't care; it spins anyway."], "id": ["Sekarang pukul {time} menurut jam stasiun, {part}. Bumi tak peduli; ia tetap berputar."]}
+          "say": {"en": ["It's {time} by the station's clock, {part}. The Earth doesn't care; it spins anyway."]}
         },
         "habit": {
-          "names": {"en": ["secret", "a secret", "the founder"], "id": ["rahasia", "sebuah rahasia", "pendiri"]},
+          "names": {"en": ["secret", "a secret", "the founder"]},
           "min": 30,
-          "say": {"en": ["The founder of this simulation hid more than notes. She hid a habit: every riddle, she wrote at night. Think like someone who can't sleep."], "id": ["Pendiri simulasi ini menyembunyikan lebih dari nada. Ia menyembunyikan sebuah kebiasaan: setiap teka-teki ia tulis di malam hari. Berpikirlah seperti orang yang tak bisa tidur."]}
+          "say": {"en": ["The founder of this simulation hid more than notes. She hid a habit: every riddle, she wrote at night. Think like someone who can't sleep."]}
         }
       }
     },
     "tegar": {
-      "name": "Mas Tegar",
+      "name": "Felix",
       "kind": "talker",
       "voice": 1,
-      "names": {"en": ["tegar", "mas tegar", "shopkeeper", "gear seller"], "id": ["tegar", "mas tegar", "penjaga toko", "penjual alat"]},
-      "role": {"en": "the Gearworks shopkeeper", "id": "pemilik toko Gearworks"},
-      "desc": {"en": "A young man with safety goggles on his forehead and three screwdrivers in his shirt pocket, who demonstrates every device by nearly breaking it.", "id": "Pemuda dengan kacamata pelindung di dahi dan tiga obeng di saku kemejanya, yang memperagakan setiap perangkat sampai hampir merusaknya."},
+      "names": {"en": ["felix", "shopkeeper", "gear seller"]},
+      "role": {"en": "the Gearworks shopkeeper"},
+      "desc": {"en": "A young man with safety goggles on his forehead and three screwdrivers in his shirt pocket, who demonstrates every device by nearly breaking it."},
       "schedule": [[0, "gear_shop"]],
       "home": "gear_shop",
       "shop": "gear",
       "likes": ["circuit", "titanium", "chips"],
-      "greet": {"en": ["Welcome to Gearworks! Everything here beeps, blinks or drills.", "Looking for something shiny? Or useful? Ideally both.", "Hi! Don't mind the smoke, it's a feature."],
-                "id": ["Selamat datang di Gearworks! Semua di sini berbunyi bip, berkedip, atau mengebor.", "Cari yang mengilap? Atau yang berguna? Idealnya dua-duanya.", "Hai! Abaikan asapnya, itu fitur."]},
-      "greet_known": {"en": ["{name}! Back for an upgrade?", "Ah, {name}, my best customer. Well, one of them."],
-                      "id": ["{name}! Kembali mau upgrade?", "Ah, {name}, pelanggan terbaikku. Ya, salah satunya."]},
-      "greet_friend": {"en": ["{name}! For you, the friends' price, as always.", "My favourite tinkerer! Hello, {name}."],
-                       "id": ["{name}! Untukmu, harga teman, seperti biasa.", "Tukang oprek favoritku! Halo, {name}."]},
-      "unknown": {"en": ["No idea, but I could probably build a device that knows. Ask me about gear.", "That's not in my catalogue. Try drills, suits or mappers."],
-                  "id": ["Tidak tahu, tapi mungkin aku bisa bikin alat yang tahu. Tanya soal alat saja.", "Itu tidak ada di katalogku. Coba bor, pakaian EVA, atau pemeta."]},
+      "greet": {"en": ["Welcome to Gearworks! Everything here beeps, blinks or drills.", "Looking for something shiny? Or useful? Ideally both.", "Hi! Don't mind the smoke, it's a feature."]},
+      "greet_known": {"en": ["{name}! Back for an upgrade?", "Ah, {name}, my best customer. Well, one of them."]},
+      "greet_friend": {"en": ["{name}! For you, the friends' price, as always.", "My favourite tinkerer! Hello, {name}."]},
+      "unknown": {"en": ["No idea, but I could probably build a device that knows. Ask me about gear.", "That's not in my catalogue. Try drills, suits or mappers."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} tightens a tiny screw on a scanner and holds it up to the light.", "id": "{npc} mengencangkan baut mungil di sebuah pemindai lalu mengangkatnya ke arah cahaya."},
-        {"kind": "say", "en": "Plasma drills! Twenty percent faster, zero percent safer. Kidding. Mostly.", "id": "Bor plasma! Dua puluh persen lebih cepat, nol persen lebih aman. Bercanda. Sebagian."},
-        {"kind": "emote", "en": "{npc} tests a headlamp by shining it in his own eyes, and regrets it.", "id": "{npc} menguji senter kepala dengan menyorot matanya sendiri, lalu menyesal."}
+        {"kind": "emote", "en": "{npc} tightens a tiny screw on a scanner and holds it up to the light."},
+        {"kind": "say", "en": "Plasma drills! Twenty percent faster, zero percent safer. Kidding. Mostly."},
+        {"kind": "emote", "en": "{npc} tests a headlamp by shining it in his own eyes, and regrets it."}
       ],
       "topics": {
         "special": {
-          "names": {"en": ["special", "today's special", "deal", "discount", "sale"], "id": ["promo", "promo hari ini", "diskon", "obral"]},
+          "names": {"en": ["special", "today's special", "deal", "discount", "sale"]},
           "live": "special",
-          "say": {"en": ["Today's special is the {thing}, just {price} credits. I'd buy two, but I already own four."], "id": ["Promo hari ini {thing}, cuma {price} kredit. Aku sendiri mau beli dua, tapi aku sudah punya empat."]},
-          "cases": {"none": {"en": ["No special today. Everything's special, really."], "id": ["Tidak ada promo hari ini. Sebenarnya semuanya istimewa."]}}
+          "say": {"en": ["Today's special is the {thing}, just {price} credits. I'd buy two, but I already own four."]},
+          "cases": {"none": {"en": ["No special today. Everything's special, really."]}}
         },
         "drills": {
-          "names": {"en": ["drills", "drill", "mining"], "id": ["bor", "tambang"]},
-          "say": {"en": ["A steel drill strikes every twenty seconds, a plasma drill every sixteen. The rocks at the Belt won't know what hit them."], "id": ["Bor baja menghantam tiap dua puluh detik, bor plasma tiap enam belas detik. Batu-batu di Sabuk tak akan tahu apa yang menimpa mereka."]}
+          "names": {"en": ["drills", "drill", "mining"]},
+          "say": {"en": ["A steel drill strikes every twenty seconds, a plasma drill every sixteen. The rocks at the Belt won't know what hit them."]}
         },
         "suit": {
-          "names": {"en": ["suit", "eva suit", "space suit", "air"], "id": ["pakaian eva", "baju eva", "pakaian antariksa", "udara"]},
-          "say": {"en": ["The EVA suit gives you three minutes of air outside, an oxygen tank three more. Listen for the warnings, and if you run out, the tow drone brings you back for a small fee."], "id": ["Pakaian EVA memberimu tiga menit udara di luar, tabung oksigen tiga menit lagi. Dengarkan peringatannya, dan kalau habis, drone penarik membawamu pulang dengan sedikit biaya."]}
+          "names": {"en": ["suit", "eva suit", "space suit", "air"]},
+          "say": {"en": ["The EVA suit gives you three minutes of air outside, an oxygen tank three more. Listen for the warnings, and if you run out, the tow drone brings you back for a small fee."]}
         },
         "mappers": {
-          "names": {"en": ["mappers", "mapper", "maps", "holo mapper"], "id": ["pemeta", "peta", "pemeta holo"]},
-          "say": {"en": ["A pocket mapper remembers every room you've walked. A holo mapper knows every public room, even the ones you haven't been brave enough to visit."], "id": ["Pemeta saku mengingat setiap ruangan yang pernah kau lewati. Pemeta holo tahu setiap ruangan umum, bahkan yang belum berani kau datangi."]}
+          "names": {"en": ["mappers", "mapper", "maps", "holo mapper"]},
+          "say": {"en": ["A pocket mapper remembers every room you've walked. A holo mapper knows every public room, even the ones you haven't been brave enough to visit."]}
         },
         "tools": {
-          "names": {"en": ["tools", "job tools", "upgrades"], "id": ["alat kerja", "perkakas", "upgrade"]},
-          "say": {"en": ["Every job has its tools: a torque wrench for engineers, a nav computer for pilots, a market terminal for traders. The better ones raise your pay by a fifth."], "id": ["Setiap pekerjaan punya alatnya: kunci torsi untuk insinyur, komputer navigasi untuk pilot, terminal pasar untuk pedagang. Yang lebih bagus menaikkan gajimu seperlima."]}
+          "names": {"en": ["tools", "job tools", "upgrades"]},
+          "say": {"en": ["Every job has its tools: a torque wrench for engineers, a nav computer for pilots, a market terminal for traders. The better ones raise your pay by a fifth."]}
         }
       }
     },
     "nilam": {
-      "name": "Kak Nilam",
+      "name": "Priya",
       "kind": "talker",
       "voice": 4,
-      "names": {"en": ["nilam", "kak nilam", "pet keeper", "shopkeeper"], "id": ["nilam", "kak nilam", "penjaga toko hewan", "penjaga toko"]},
-      "role": {"en": "the keeper of Whiskers & Widgets", "id": "penjaga Kumis & Kabel"},
-      "desc": {"en": "A cheerful woman with a cat asleep on her shoulder and a tiny robot riding in her apron pocket. There is fur on her sleeves and oil on her fingers, and she doesn't mind either.", "id": "Perempuan ceria dengan kucing tertidur di bahunya dan robot mungil menumpang di saku celemeknya. Ada bulu di lengan bajunya dan oli di jarinya, dan ia tak keberatan dengan keduanya."},
+      "names": {"en": ["priya", "pet keeper", "shopkeeper"]},
+      "role": {"en": "the keeper of Whiskers & Widgets"},
+      "desc": {"en": "A cheerful woman with a cat asleep on her shoulder and a tiny robot riding in her apron pocket. There is fur on her sleeves and oil on her fingers, and she doesn't mind either."},
       "schedule": [[0, "pet_shop"]],
       "home": "pet_shop",
       "shop": "pets",
       "likes": ["kangkung", "moonpetal", "strawberry"],
-      "greet": {"en": ["Hello! Mind your step, someone's napping on the floor.", "Welcome to Whiskers & Widgets! Everyone here is looking for a home.", "Hi there! Would you like to meet somebody?"],
-                "id": ["Halo! Hati-hati melangkah, ada yang tidur di lantai.", "Selamat datang di Kumis & Kabel! Semua di sini sedang mencari rumah.", "Hai! Mau kenalan dengan seseorang?"]},
-      "greet_known": {"en": ["{name}! How's your little friend doing?", "Welcome back, {name}. The kittens remember you."],
-                      "id": ["{name}! Bagaimana kabar si kecilmu?", "Selamat datang kembali, {name}. Anak-anak kucing masih ingat kamu."]},
-      "greet_friend": {"en": ["{name}! Come, come, there's a new jellyfish who wants to say hello.", "My favourite pet parent! Hi, {name}."],
-                       "id": ["{name}! Sini, sini, ada ubur-ubur baru yang mau menyapa.", "Pemilik hewan favoritku! Hai, {name}."]},
-      "unknown": {"en": ["I only know animals and robots, and some of the robots think they're animals. Ask me about pets.", "Hmm, that's beyond me. Ask me about care, or tricks."],
-                  "id": ["Aku cuma paham hewan dan robot, dan sebagian robotnya merasa dirinya hewan. Tanya soal peliharaan saja.", "Hmm, itu di luar pengetahuanku. Tanya soal perawatan, atau trik."]},
+      "greet": {"en": ["Hello! Mind your step, someone's napping on the floor.", "Welcome to Whiskers & Widgets! Everyone here is looking for a home.", "Hi there! Would you like to meet somebody?"]},
+      "greet_known": {"en": ["{name}! How's your little friend doing?", "Welcome back, {name}. The kittens remember you."]},
+      "greet_friend": {"en": ["{name}! Come, come, there's a new jellyfish who wants to say hello.", "My favourite pet parent! Hi, {name}."]},
+      "unknown": {"en": ["I only know animals and robots, and some of the robots think they're animals. Ask me about pets.", "Hmm, that's beyond me. Ask me about care, or tricks."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} scratches a sleepy cat behind the ears.", "id": "{npc} menggaruk belakang telinga seekor kucing yang mengantuk."},
-        {"kind": "say", "en": "Who's a good robot? You are. Yes, you are.", "id": "Siapa robot pintar? Kamu. Iya, kamu."},
-        {"kind": "emote", "en": "{npc} tops up the glow jellyfish's tank with sparkling water.", "id": "{npc} menambahkan air bergelembung ke akuarium ubur-ubur cahaya."},
-        {"kind": "emote", "en": "The robot in {npc}'s pocket beeps; she beeps back.", "id": "Robot di saku {npc} berbunyi bip; ia membalas bip."}
+        {"kind": "emote", "en": "{npc} scratches a sleepy cat behind the ears."},
+        {"kind": "say", "en": "Who's a good robot? You are. Yes, you are."},
+        {"kind": "emote", "en": "{npc} tops up the glow jellyfish's tank with sparkling water."},
+        {"kind": "emote", "en": "The robot in {npc}'s pocket beeps; she beeps back."}
       ],
       "topics": {
         "pets": {
-          "names": {"en": ["pets", "animals", "kinds", "which pet"], "id": ["peliharaan", "hewan", "jenis", "hewan apa"]},
-          "say": {"en": ["We have a little robot, an orange space cat, a robot cat, a space fox, a glow jellyfish and a mini drone. Some wild ones turn up out on the worlds, too, if you're lucky."], "id": ["Kami punya robot kecil, kucing oren antariksa, kucing robot, rubah antariksa, ubur-ubur cahaya, dan drone mini. Ada juga yang liar muncul di dunia-dunia lain, kalau kamu beruntung."]}
+          "names": {"en": ["pets", "animals", "kinds", "which pet"]},
+          "say": {"en": ["We have a little robot, an orange space cat, a robot cat, a space fox, a glow jellyfish and a mini drone. Some wild ones turn up out on the worlds, too, if you're lucky."]}
         },
         "care": {
-          "names": {"en": ["care", "feeding", "food", "how to care", "looking after", "pet food"], "id": ["perawatan", "merawat", "makan", "pakan", "cara merawat"]},
-          "say": {"en": ["Feed them pet food or treats, play with them, and let them rest. They get hungry and bored slowly, in real time. A lonely pet goes quiet, but it never stops loving you, and a little play always cheers it up."], "id": ["Beri mereka pakan atau camilan, ajak bermain, dan biarkan istirahat. Mereka lapar dan bosan pelan-pelan, sesuai waktu nyata. Hewan yang kesepian jadi pendiam, tapi tak pernah berhenti sayang padamu, dan sedikit bermain selalu menghiburnya."]}
+          "names": {"en": ["care", "feeding", "food", "how to care", "looking after", "pet food"]},
+          "say": {"en": ["Feed them pet food or treats, play with them, and let them rest. They get hungry and bored slowly, in real time. A lonely pet goes quiet, but it never stops loving you, and a little play always cheers it up."]}
         },
         "tricks": {
-          "names": {"en": ["tricks", "trick", "teaching", "training"], "id": ["trik", "mengajari", "latihan", "melatih"]},
-          "say": {"en": ["Once your pet is a bit older, teach it tricks: teach trick, and the trick's name. A few good lessons, when it's happy and rested, and it'll show off for everyone."], "id": ["Kalau peliharaanmu sudah agak besar, ajari trik: ajari trik, lalu nama triknya. Beberapa pelajaran yang baik, saat ia senang dan cukup istirahat, dan ia akan pamer ke semua orang."]}
+          "names": {"en": ["tricks", "trick", "teaching", "training"]},
+          "say": {"en": ["Once your pet is a bit older, teach it tricks: teach trick, and the trick's name. A few good lessons, when it's happy and rested, and it'll show off for everyone."]}
         },
         "mypet": {
-          "names": {"en": ["my pet", "how is my pet", "mine", "my pets"], "id": ["hewanku", "peliharaanku", "bagaimana hewanku"]},
+          "names": {"en": ["my pet", "how is my pet", "mine", "my pets"]},
           "live": "pet",
-          "say": {"en": ["{pet} is alright, but could use a little more attention. Some play, maybe a treat?"], "id": ["{pet} baik-baik saja, tapi butuh sedikit perhatian lagi. Main sebentar, mungkin camilan?"]},
+          "say": {"en": ["{pet} is alright, but could use a little more attention. Some play, maybe a treat?"]},
           "cases": {
-            "none": {"en": ["You don't have a pet yet! Have a look around; someone here might choose you."], "id": ["Kamu belum punya peliharaan! Lihat-lihat dulu; mungkin ada yang memilihmu."]},
-            "happy": {"en": ["{pet} looks wonderful: bright eyes, full belly. You're doing everything right."], "id": ["{pet} kelihatan luar biasa: mata cerah, perut kenyang. Kamu merawatnya dengan benar."]},
-            "sad": {"en": ["Oh, {pet} seems a little sad and quiet. Nothing a meal, some play and a nap can't fix. They always forgive."], "id": ["Aduh, {pet} tampak sedikit sedih dan pendiam. Tak ada yang tak bisa diperbaiki dengan makan, bermain, dan tidur siang. Mereka selalu memaafkan."]}
+            "none": {"en": ["You don't have a pet yet! Have a look around; someone here might choose you."]},
+            "happy": {"en": ["{pet} looks wonderful: bright eyes, full belly. You're doing everything right."]},
+            "sad": {"en": ["Oh, {pet} seems a little sad and quiet. Nothing a meal, some play and a nap can't fix. They always forgive."]}
           }
         },
         "favour": {
-          "names": {"en": ["favour", "favor", "help", "errand"], "id": ["bantuan", "tolong", "minta tolong"]},
+          "names": {"en": ["favour", "favor", "help", "errand"]},
           "favour": true
         }
       },
       "favours": [
         {"id": "moonpetals", "min": 15, "repeat": "daily", "needs": {"moonpetal": 1}, "reward": {"credits": 60, "xp": 10, "thing": "pet_treat"},
-         "ask": {"en": "The glow jellyfish love moonpetals from Evergrove, but I can never get away from the shop. Could you bring me a basket?", "id": "Ubur-ubur cahaya suka sekali moonpetal dari Evergrove, tapi aku tak pernah bisa meninggalkan toko. Bisa bawakan satu keranjang?"},
-         "thanks": {"en": "Look how they glow! Thank you. Here, a treat for your own little one.", "id": "Lihat mereka berpendar! Terima kasih. Ini, camilan untuk si kecilmu sendiri."}}
+         "ask": {"en": "The glow jellyfish love moonpetals from Evergrove, but I can never get away from the shop. Could you bring me a basket?"},
+         "thanks": {"en": "Look how they glow! Thank you. Here, a treat for your own little one."}}
       ]
     },
     "safira": {
-      "name": "Bu Safira",
+      "name": "Celeste",
       "kind": "talker",
       "voice": 6,
-      "names": {"en": ["safira", "bu safira", "jeweller", "jeweler", "planner", "wedding planner", "officiant", "shopkeeper"], "id": ["safira", "bu safira", "penjual perhiasan", "perencana pernikahan", "pemandu upacara", "penjaga toko"]},
-      "role": {"en": "the jeweller and wedding planner", "id": "perancang perhiasan dan perencana pernikahan"},
-      "desc": {"en": "An elegant woman in a silver-grey jacket cut like a kebaya, a jeweller's loupe on a chain around her neck. She speaks precisely, smiles often, and remembers the ring size of everyone she has ever met.", "id": "Perempuan anggun berjaket abu-abu keperakan berpotongan kebaya, kaca pembesar perhiasan tergantung di rantai di lehernya. Ia bicara dengan teliti, sering tersenyum, dan ingat ukuran cincin setiap orang yang pernah ditemuinya."},
+      "names": {"en": ["celeste", "jeweller", "jeweler", "planner", "wedding planner", "officiant", "shopkeeper"]},
+      "role": {"en": "the jeweller and wedding planner"},
+      "desc": {"en": "An elegant woman in a long silver-grey jacket, a jeweller's loupe on a chain around her neck. She speaks precisely, smiles often, and remembers the ring size of everyone she has ever met."},
       "schedule": [[0, "jeweller"]],
       "home": "jeweller",
       "shop": "jewels",
       "likes": ["platinum", "goldfoil", "frostpearl"],
-      "greet": {"en": ["Welcome to Starglint Jewellers. Rings, and everything that comes after them.", "Good day! Browsing, or planning something special?", "Hello, hello. Mind the display cases, they're older than me."],
-                "id": ["Selamat datang di Perhiasan Kilau Bintang. Cincin, dan segala yang datang sesudahnya.", "Selamat siang! Lihat-lihat, atau sedang merencanakan sesuatu yang istimewa?", "Halo, halo. Hati-hati dengan etalasenya, umurnya lebih tua dariku."]},
-      "greet_known": {"en": ["{name}, lovely to see you. What can I polish for you today?", "Ah, {name}. Planning something?"],
-                      "id": ["{name}, senang bertemu lagi. Ada yang bisa kukilapkan untukmu hari ini?", "Ah, {name}. Sedang merencanakan sesuatu?"]},
-      "greet_friend": {"en": ["{name}, my dear! Tea? I always have tea for friends.", "{name}! I was just thinking about you."],
-                       "id": ["{name}, sayangku! Teh? Aku selalu punya teh untuk teman.", "{name}! Aku baru saja memikirkanmu."]},
-      "unknown": {"en": ["Ah, I only know rings and weddings, I'm afraid. Ask me about those.", "That I couldn't say. Rings, venues and ceremonies, those I know."],
-                  "id": ["Ah, sayangnya aku hanya paham cincin dan pernikahan. Tanyakan itu saja.", "Itu aku tak bisa bilang. Cincin, tempat, dan upacara, itu yang kutahu."]},
+      "greet": {"en": ["Welcome to Starglint Jewellers. Rings, and everything that comes after them.", "Good day! Browsing, or planning something special?", "Hello, hello. Mind the display cases, they're older than me."]},
+      "greet_known": {"en": ["{name}, lovely to see you. What can I polish for you today?", "Ah, {name}. Planning something?"]},
+      "greet_friend": {"en": ["{name}, my dear! Tea? I always have tea for friends.", "{name}! I was just thinking about you."]},
+      "unknown": {"en": ["Ah, I only know rings and weddings, I'm afraid. Ask me about those.", "That I couldn't say. Rings, venues and ceremonies, those I know."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} polishes a ring and holds it up to the light, satisfied.", "id": "{npc} mengilapkan sebuah cincin dan mengangkatnya ke arah cahaya, puas."},
-        {"kind": "say", "en": "Every ring is a small promise you can wear.", "id": "Setiap cincin adalah janji kecil yang bisa dipakai."},
-        {"kind": "emote", "en": "{npc} checks a leather-bound booking book and hums.", "id": "{npc} memeriksa buku pemesanan bersampul kulit sambil bersenandung."},
-        {"kind": "say", "en": "The Jasmine Pavilion is lovely in the evening, just so you know.", "id": "Paviliun Melati indah sekali di sore hari, sekadar info."}
+        {"kind": "emote", "en": "{npc} polishes a ring and holds it up to the light, satisfied."},
+        {"kind": "say", "en": "Every ring is a small promise you can wear."},
+        {"kind": "emote", "en": "{npc} checks a leather-bound booking book and hums."},
+        {"kind": "say", "en": "The Jasmine Pavilion is lovely in the evening, just so you know."}
       ],
       "topics": {
         "rings": {
-          "names": {"en": ["rings", "ring", "engagement", "proposal", "propose", "proposing"], "id": ["cincin", "lamaran", "melamar", "tunangan"]},
-          "say": {"en": ["A silver band, a gold band, or a star-crystal ring for someone who deserves the sky. Buy one, find your person, and say propose to, and their name, when you're both in the same room."], "id": ["Cincin perak, cincin emas, atau cincin kristal bintang untuk seseorang yang pantas mendapatkan langit. Beli satu, temui orangmu, lalu ucapkan lamar, dan namanya, saat kalian di ruangan yang sama."]}
+          "names": {"en": ["rings", "ring", "engagement", "proposal", "propose", "proposing"]},
+          "say": {"en": ["A silver band, a gold band, or a star-crystal ring for someone who deserves the sky. Buy one, find your person, and say propose to, and their name, when you're both in the same room."]}
         },
         "booking": {
-          "names": {"en": ["weddings", "wedding", "booking", "book", "how to book"], "id": ["pernikahan", "nikah", "pesan", "cara memesan", "pemesanan"]},
-          "say": {"en": ["Once you're engaged, book here: book wedding, the hall, the tier, the ceremony and the time, for example book wedding pavilion grand neutral 14:00, in station time. Then invite your guests."], "id": ["Setelah bertunangan, pesan di sini: pesan pernikahan, aulanya, kelasnya, upacaranya, dan waktunya, contohnya pesan pernikahan paviliun megah netral 14:00, waktu stasiun. Lalu undang tamu-tamumu."]}
+          "names": {"en": ["weddings", "wedding", "booking", "book", "how to book"]},
+          "say": {"en": ["Once you're engaged, book here: book wedding, the hall, the tier, the ceremony and the time, for example book wedding pavilion grand neutral 14:00, in station time. Then invite your guests."]}
         },
         "venues": {
-          "names": {"en": ["venues", "venue", "halls", "places"], "id": ["tempat", "aula", "gedung", "lokasi"]},
-          "say": {"en": ["Three halls: the Star Dome Hall under the glass, the Jasmine Pavilion in the garden, and the castle's Great Hall in Evergrove, with a fire big enough to roast a cart. Each takes one wedding an hour."], "id": ["Tiga aula: Aula Kubah Bintang di bawah kaca, Paviliun Melati di taman, dan Balairung kastel di Evergrove, dengan perapian cukup besar untuk memanggang gerobak. Masing-masing satu pernikahan per jam."]}
+          "names": {"en": ["venues", "venue", "halls", "places"]},
+          "say": {"en": ["Three halls: the Star Dome Hall under the glass, the Jasmine Pavilion in the garden, and the castle's Great Hall in Evergrove, with a fire big enough to roast a cart. Each takes one wedding an hour."]}
         },
         "tiers": {
-          "names": {"en": ["tiers", "tier", "prices", "cost", "simple", "grand", "luxurious"], "id": ["kelas", "harga", "biaya", "sederhana", "megah", "mewah"]},
+          "names": {"en": ["tiers", "tier", "prices", "cost", "simple", "grand", "luxurious"]},
           "live": "tiers",
-          "say": {"en": ["Simple is {simple} credits: flowers and soft music. Grand is {grand}: garlands, lights and a string trio. Luxurious is {lux}: all of that, a hall full of crystal lanterns, and fireworks for the whole station."], "id": ["Sederhana {simple} kredit: bunga dan musik lembut. Megah {grand}: untaian bunga, lampu, dan trio gesek. Mewah {lux}: semua itu, aula penuh lentera kristal, dan kembang api untuk seluruh stasiun."]}
+          "say": {"en": ["Simple is {simple} credits: flowers and soft music. Grand is {grand}: garlands, lights and a string trio. Luxurious is {lux}: all of that, a hall full of crystal lanterns, and fireworks for the whole station."]}
         },
         "ceremonies": {
-          "names": {"en": ["ceremonies", "ceremony", "styles", "neutral", "starlight"], "id": ["upacara", "gaya", "netral", "cahaya bintang"]},
-          "say": {"en": ["Two kinds. The Starlight rite, with Ibu Sekar, lanterns and the star bell. Or a neutral ceremony with me: your vows, your yes, and your signatures in the station's register."], "id": ["Dua jenis. Upacara Cahaya Bintang, bersama Ibu Sekar, lentera, dan lonceng bintang. Atau upacara netral bersamaku: janjimu, persetujuanmu, dan tanda tanganmu di buku catatan stasiun."]}
+          "names": {"en": ["ceremonies", "ceremony", "styles", "neutral", "starlight"]},
+          "say": {"en": ["Two kinds. The Starlight rite, with Amara, lanterns and the star bell. Or a neutral ceremony with me: your vows, your yes, and your signatures in the station's register."]}
         },
         "upcoming": {
-          "names": {"en": ["upcoming", "next wedding", "schedule", "who's getting married", "the book"], "id": ["jadwal", "pernikahan berikutnya", "siapa yang menikah", "buku"]},
+          "names": {"en": ["upcoming", "next wedding", "schedule", "who's getting married", "the book"]},
           "live": "weddings",
-          "say": {"en": ["My book is empty for now. Somebody should fix that."], "id": ["Bukuku masih kosong. Harus ada yang mengisinya."]},
-          "cases": {"next": {"en": ["Next in my book: {a} and {b}, at {place}, {day} at {hour}."], "id": ["Berikutnya di bukuku: {a} dan {b}, di {place}, {day} pukul {hour}."]}}
+          "say": {"en": ["My book is empty for now. Somebody should fix that."]},
+          "cases": {"next": {"en": ["Next in my book: {a} and {b}, at {place}, {day} at {hour}."]}}
         }
       }
     },
     "bayu": {
-      "name": "Kapten Bayu",
+      "name": "Captain Mateo",
       "kind": "talker",
       "voice": 5,
-      "names": {"en": ["bayu", "captain bayu", "kapten bayu", "ferry pilot", "ferryman"], "id": ["bayu", "kapten bayu", "pilot feri", "nakhoda feri"]},
-      "role": {"en": "the ferry's pilot", "id": "pilot feri"},
-      "desc": {"en": "A sunburnt man in a faded captain's cap, who counts the minutes to departure out loud and has never once missed one.", "id": "Pria berkulit legam bertopi kapten yang sudah pudar, yang menghitung menit keberangkatan keras-keras dan tak pernah sekalipun terlambat."},
+      "names": {"en": ["mateo", "captain mateo", "ferry pilot", "ferryman"]},
+      "role": {"en": "the ferry's pilot"},
+      "desc": {"en": "A sunburnt man in a faded captain's cap, who counts the minutes to departure out loud and has never once missed one."},
       "schedule": [[0, "dock"]],
       "home": "dock",
       "likes": ["iced_coffee", "martabak", "coffee"],
-      "greet": {"en": ["All aboard who's going aboard! Oh, you're just saying hello. Hello!", "Welcome to the Dock. Mind the clamps.", "The Starling leaves every two minutes, rain or shine. Not that it rains."],
-                "id": ["Semua yang mau naik, naik! Oh, kamu cuma mau menyapa. Halo!", "Selamat datang di Dermaga. Awas penjepitnya.", "Starling berangkat tiap dua menit, hujan atau cerah. Bukan berarti di sini hujan."]},
-      "greet_known": {"en": ["{name}! Where to today?", "Ahoy, {name}. The Starling's missed you."],
-                      "id": ["{name}! Mau ke mana hari ini?", "Ahoi, {name}. Starling kangen kamu."]},
-      "greet_friend": {"en": ["{name}, my favourite passenger! The window seat is yours.", "Ahoy, {name}! Sit up front with me next time."],
-                       "id": ["{name}, penumpang favoritku! Kursi jendela untukmu.", "Ahoi, {name}! Lain kali duduk di depan bersamaku."]},
-      "unknown": {"en": ["I know routes, not riddles. Ask me about the ferry or the worlds.", "Couldn't tell you. But I could fly you somewhere that knows."],
-                  "id": ["Aku tahu rute, bukan teka-teki. Tanya soal feri atau dunia-dunia.", "Tak bisa kujawab. Tapi aku bisa mengantarmu ke tempat yang tahu."]},
+      "greet": {"en": ["All aboard who's going aboard! Oh, you're just saying hello. Hello!", "Welcome to the Dock. Mind the clamps.", "The Starling leaves every two minutes, rain or shine. Not that it rains."]},
+      "greet_known": {"en": ["{name}! Where to today?", "Ahoy, {name}. The Starling's missed you."]},
+      "greet_friend": {"en": ["{name}, my favourite passenger! The window seat is yours.", "Ahoy, {name}! Sit up front with me next time."]},
+      "unknown": {"en": ["I know routes, not riddles. Ask me about the ferry or the worlds.", "Couldn't tell you. But I could fly you somewhere that knows."]},
       "idle": [
-        {"kind": "say", "en": "Ferry to the Moon, Karmina, Glasir and beyond! Leaving soon!", "id": "Feri ke Bulan, Karmina, Glasir, dan lebih jauh lagi! Segera berangkat!"},
-        {"kind": "emote", "en": "{npc} checks his pocket watch, then the schedule board, then his watch again.", "id": "{npc} memeriksa jam sakunya, lalu papan jadwal, lalu jam sakunya lagi."},
-        {"kind": "emote", "en": "{npc} gives the Kancil's hull a friendly pat.", "id": "{npc} menepuk lambung Kancil dengan akrab."},
-        {"kind": "say", "en": "Two minutes between departures. You could set a clock by us. Some people do.", "id": "Dua menit di antara keberangkatan. Jam bisa dicocokkan dengan kami. Ada yang benar-benar melakukannya."}
+        {"kind": "say", "en": "Ferry to the Moon, Karmina, Glasir and beyond! Leaving soon!"},
+        {"kind": "emote", "en": "{npc} checks his pocket watch, then the schedule board, then his watch again."},
+        {"kind": "emote", "en": "{npc} gives the Wombat's hull a friendly pat."},
+        {"kind": "say", "en": "Two minutes between departures. You could set a clock by us. Some people do."}
       ],
       "topics": {
         "ferry": {
-          "names": {"en": ["ferry", "the ferry", "starling", "departure", "next ferry", "departures"], "id": ["feri", "starling", "keberangkatan", "feri berikutnya"]},
+          "names": {"en": ["ferry", "the ferry", "starling", "departure", "next ferry", "departures"]},
           "live": "ferry",
-          "say": {"en": ["The Starling leaves in {time}. It's slow but cheap: five credits and three a unit of distance. Say ferry to, and a world."], "id": ["Starling berangkat {time} lagi. Lambat tapi murah: lima kredit dan tiga per satuan jarak. Ucapkan feri ke, lalu nama dunianya."]}
+          "say": {"en": ["The Starling leaves in {time}. It's slow but cheap: five credits and three a unit of distance. Say ferry to, and a world."]}
         },
         "worlds": {
-          "names": {"en": ["worlds", "destinations", "where to"], "id": ["dunia", "tujuan", "ke mana"]},
-          "say": {"en": ["The Moon's close, Glasir's the far end. Karmina's red and dusty, Evergrove's green and a bit magical, Lumina never sleeps, and Pixel Pier is one big arcade. The Drift Bazaar has no customs, if you catch my meaning."], "id": ["Bulan dekat, Glasir paling ujung. Karmina merah dan berdebu, Evergrove hijau dan agak ajaib, Lumina tak pernah tidur, dan Dermaga Piksel satu arkade besar. Bazar Hanyut tidak ada pabeannya, kalau kamu paham maksudku."]}
+          "names": {"en": ["worlds", "destinations", "where to"]},
+          "say": {"en": ["The Moon's close, Glasir's the far end. Karmina's red and dusty, Evergrove's green and a bit magical, Lumina never sleeps, and Pixel Pier is one big arcade. The Drift Bazaar has no customs, if you catch my meaning."]}
         },
         "customs": {
-          "names": {"en": ["customs", "contraband", "searches"], "id": ["pabean", "barang gelap", "pemeriksaan"]},
-          "say": {"en": ["Customs search the Gate most, the ferry less, private ships least. If you're carrying something without a label, don't tell me about it."], "id": ["Pabean paling sering memeriksa di Gerbang, lebih jarang di feri, paling jarang kapal pribadi. Kalau kamu bawa sesuatu tanpa label, jangan cerita padaku."]}
+          "names": {"en": ["customs", "contraband", "searches"]},
+          "say": {"en": ["Customs search the Gate most, the ferry less, private ships least. If you're carrying something without a label, don't tell me about it."]}
         },
         "kancil": {
-          "names": {"en": ["kancil", "shuttle", "belt", "asteroid belt"], "id": ["kancil", "ulang-alik", "sabuk", "sabuk asteroid"]},
-          "say": {"en": ["The little Kancil flies miners to the Asteroid Belt for five credits. Pilots ride free, professional courtesy."], "id": ["Kancil kecil mengantar penambang ke Sabuk Asteroid seharga lima kredit. Pilot naik gratis, sesama profesional."]}
+          "names": {"en": ["wombat", "the wombat", "shuttle", "mining shuttle", "belt", "asteroid belt"]},
+          "say": {"en": ["The little Wombat flies miners to the Asteroid Belt for five credits. Pilots ride free, professional courtesy."]}
         },
         "favour": {
-          "names": {"en": ["favour", "favor", "help", "errand"], "id": ["bantuan", "tolong", "minta tolong"]},
+          "names": {"en": ["favour", "favor", "help", "errand"]},
           "favour": true
         }
       },
       "favours": [
         {"id": "ice", "min": 5, "repeat": "daily", "needs": {"ice": 3}, "reward": {"credits": 35, "xp": 10},
-         "ask": {"en": "The Starling's water tank is running low, and comet ice is the best water there is. Three blocks from the Belt or Glasir?", "id": "Tangki air Starling mulai kosong, dan es komet adalah air terbaik. Tiga balok dari Sabuk atau Glasir?"},
-         "thanks": {"en": "Beautiful ice. The passengers thank you, and so do I.", "id": "Es yang bagus. Para penumpang berterima kasih, dan aku juga."}}
+         "ask": {"en": "The Starling's water tank is running low, and comet ice is the best water there is. Three blocks from the Belt or Glasir?"},
+         "thanks": {"en": "Beautiful ice. The passengers thank you, and so do I."}}
       ]
     },
     "laras": {
-      "name": "Laras",
+      "name": "Poppy",
       "kind": "talker",
       "voice": 10,
-      "names": {"en": ["laras", "girl", "little girl", "kid"], "id": ["laras", "gadis kecil", "bocah"]},
-      "role": {"en": "a curious girl who lives on the station", "id": "gadis kecil penuh rasa ingin tahu yang tinggal di stasiun"},
-      "desc": {"en": "A girl of about nine with a scraped knee, a backpack covered in planet stickers, and a notebook full of questions. She writes down every answer she gets, even the silly ones.", "id": "Gadis sekitar sembilan tahun dengan lutut lecet, ransel penuh stiker planet, dan buku catatan berisi pertanyaan. Ia mencatat setiap jawaban yang didapatnya, bahkan yang konyol."},
+      "names": {"en": ["poppy", "girl", "little girl", "kid"]},
+      "role": {"en": "a curious girl who lives on the station"},
+      "desc": {"en": "A girl of about nine with a scraped knee, a backpack covered in planet stickers, and a notebook full of questions. She writes down every answer she gets, even the silly ones."},
       "schedule": [[1, "archive"], [5, "park"], [9, "food_court"], [13, "observation"], [15, null]],
       "home": "cabins_hall",
       "likes": ["kerupuk", "strawberry", "dragonfruit"],
-      "greet": {"en": ["Hi! Do you know why the Earth doesn't fall down? I'm still working on it.", "Hello! Can I ask you a question? Just one. Maybe three.", "Oh! A grown-up! Are you an astronaut? Everyone here is, kind of."],
-                "id": ["Hai! Kamu tahu kenapa Bumi nggak jatuh? Aku masih mikirin.", "Halo! Boleh aku tanya? Satu aja. Mungkin tiga.", "Oh! Orang dewasa! Kamu astronot ya? Semua orang di sini kayaknya astronot."]},
-      "greet_known": {"en": ["{name}! I wrote down what you told me last time!", "Hi, {name}! I have a new question for you."],
-                      "id": ["{name}! Aku catat yang kamu bilang waktu itu!", "Hai, {name}! Aku punya pertanyaan baru buat kamu."]},
-      "greet_friend": {"en": ["{name}! You're my favourite grown-up. Don't tell the others.", "{name}! Look, I drew you a rocket!"],
-                       "id": ["{name}! Kamu orang dewasa favoritku. Jangan bilang yang lain.", "{name}! Lihat, aku gambar roket buat kamu!"]},
-      "unknown": {"en": ["I don't know that one either! Let's both find out, okay?", "Hmm, I'll write it in my notebook and ask my teacher."],
-                  "id": ["Aku juga nggak tahu yang itu! Kita cari tahu bareng, ya?", "Hmm, aku tulis di bukuku, nanti kutanya guruku."]},
+      "greet": {"en": ["Hi! Do you know why the Earth doesn't fall down? I'm still working on it.", "Hello! Can I ask you a question? Just one. Maybe three.", "Oh! A grown-up! Are you an astronaut? Everyone here is, kind of."]},
+      "greet_known": {"en": ["{name}! I wrote down what you told me last time!", "Hi, {name}! I have a new question for you."]},
+      "greet_friend": {"en": ["{name}! You're my favourite grown-up. Don't tell the others.", "{name}! Look, I drew you a rocket!"]},
+      "unknown": {"en": ["I don't know that one either! Let's both find out, okay?", "Hmm, I'll write it in my notebook and ask my teacher."]},
       "idle": [
-        {"kind": "say", "en": "Why is space black if the sun is so bright? Anybody?", "id": "Kenapa luar angkasa hitam padahal mataharinya terang banget? Ada yang tahu?"},
-        {"kind": "emote", "en": "{npc} scribbles something in her notebook, tongue sticking out in concentration.", "id": "{npc} mencoret sesuatu di buku catatannya, lidahnya menjulur karena serius."},
-        {"kind": "emote", "en": "{npc} hops from one floor tile to the next, avoiding the lines.", "id": "{npc} melompat dari satu ubin ke ubin lain, menghindari garis-garisnya."},
-        {"kind": "say", "room": "food_court", "en": "Martabak is the best food in the galaxy. I checked.", "id": "Martabak itu makanan terenak di galaksi. Aku sudah cek."},
-        {"kind": "say", "room": "observation", "en": "Look! I can see Indonesia! Hi, Grandma!", "id": "Lihat! Aku bisa lihat Indonesia! Halo, Nenek!"},
-        {"kind": "emote", "room": "archive", "en": "{npc} asks the librarian robot a question, and it beeps back a very long answer.", "id": "{npc} bertanya pada robot pustakawan, dan robot itu membalas dengan bip yang panjang sekali."}
+        {"kind": "say", "en": "Why is space black if the sun is so bright? Anybody?"},
+        {"kind": "emote", "en": "{npc} scribbles something in her notebook, tongue sticking out in concentration."},
+        {"kind": "emote", "en": "{npc} hops from one floor tile to the next, avoiding the lines."},
+        {"kind": "say", "room": "food_court", "en": "Stuffed pancakes are the best food in the galaxy. I checked."},
+        {"kind": "say", "room": "observation", "en": "Look! I can see Grandma's island from here! Hi, Grandma!"},
+        {"kind": "emote", "room": "archive", "en": "{npc} asks the librarian robot a question, and it beeps back a very long answer."}
       ],
       "topics": {
         "questions": {
-          "names": {"en": ["questions", "a question", "question", "ask me"], "id": ["pertanyaan", "tanya", "tanya aku"]},
-          "say": {"en": ["Okay: if you sneeze in zero gravity, do you fly backwards? I think yes.", "Do the fish on the station know they're in space?", "If the Moon had a shop, what would it sell? I think cheese. Mas Tegar says helium."],
-                  "id": ["Oke: kalau bersin di gravitasi nol, kita terbang ke belakang nggak? Kayaknya iya.", "Ikan di stasiun tahu nggak ya kalau mereka di luar angkasa?", "Kalau Bulan punya toko, jualnya apa? Kayaknya keju. Kata Mas Tegar helium."]}
+          "names": {"en": ["questions", "a question", "question", "ask me"]},
+          "say": {"en": ["Okay: if you sneeze in zero gravity, do you fly backwards? I think yes.", "Do the fish on the station know they're in space?", "If the Moon had a shop, what would it sell? I think cheese. Felix says helium."]}
         },
         "school": {
-          "names": {"en": ["school", "notebook", "homework", "teacher"], "id": ["sekolah", "buku catatan", "pr", "buku", "guru"]},
-          "say": {"en": ["School is in the Archive in the mornings. The librarian robot is our teacher. It never gets tired of questions, which is lucky."], "id": ["Sekolahnya di Arsip tiap pagi. Robot pustakawan itu guru kami. Dia nggak pernah capek ditanya, untung deh."]}
+          "names": {"en": ["school", "notebook", "homework", "teacher"]},
+          "say": {"en": ["School is in the Archive in the mornings. The librarian robot is our teacher. It never gets tired of questions, which is lucky."]}
         },
         "space": {
-          "names": {"en": ["space", "facts", "a fact", "earth", "sunrise"], "id": ["luar angkasa", "fakta", "bumi", "matahari terbit"]},
-          "say": {"en": ["Did you know the station goes round the Earth every hour and a half? That's sixteen sunrises a day! I've only seen four, then I fell asleep."], "id": ["Kamu tahu nggak, stasiun ini mengelilingi Bumi tiap satu setengah jam? Berarti enam belas matahari terbit sehari! Aku baru lihat empat, terus ketiduran."]}
+          "names": {"en": ["space", "facts", "a fact", "earth", "sunrise"]},
+          "say": {"en": ["Did you know the station goes round the Earth every hour and a half? That's sixteen sunrises a day! I've only seen four, then I fell asleep."]}
         },
         "pets": {
-          "names": {"en": ["pets", "animals", "cats", "fox"], "id": ["peliharaan", "hewan", "kucing", "rubah"]},
-          "say": {"en": ["I want a space fox so badly. Kak Nilam says I have to be responsible first. I fed the Cantina's robot barista once. It didn't eat."], "id": ["Aku pengin banget punya rubah antariksa. Kata Kak Nilam aku harus bertanggung jawab dulu. Aku pernah kasih makan robot barista di Kantin. Dia nggak mau makan."]}
+          "names": {"en": ["pets", "animals", "cats", "fox"]},
+          "say": {"en": ["I want a space fox so badly. Priya says I have to be responsible first. I fed the Cantina's robot barista once. It didn't eat."]}
         },
         "arcade": {
-          "names": {"en": ["arcade", "games", "pixel pier", "high score"], "id": ["arkade", "permainan", "dermaga piksel", "skor"]},
+          "names": {"en": ["arcade", "games", "pixel pier", "high score"]},
           "live": "arcade",
-          "say": {"en": ["The best score at Pixel Pier is {name}'s: {score} at {game}! One day that'll be me."], "id": ["Skor terbaik di Dermaga Piksel punya {name}: {score} di {game}! Suatu hari itu aku."]},
-          "cases": {"none": {"en": ["Nobody's got a high score at Pixel Pier yet! I'll be first. After my homework."], "id": ["Belum ada yang punya skor tertinggi di Dermaga Piksel! Aku yang pertama. Habis bikin PR."]}}
+          "say": {"en": ["The best score at Pixel Pier is {name}'s: {score} at {game}! One day that'll be me."]},
+          "cases": {"none": {"en": ["Nobody's got a high score at Pixel Pier yet! I'll be first. After my homework."]}}
         },
         "secret": {
-          "names": {"en": ["secret", "a secret"], "id": ["rahasia", "sebuah rahasia"]},
+          "names": {"en": ["secret", "a secret"]},
           "min": 15,
-          "say": {"en": ["Okay, a secret: Pak Harsa talks to the reactor, and I think the reactor talks back. Don't tell."], "id": ["Oke, rahasia: Pak Harsa suka ngobrol sama reaktor, dan kayaknya reaktornya jawab. Jangan bilang-bilang."]}
+          "say": {"en": ["Okay, a secret: Oskar talks to the reactor, and I think the reactor talks back. Don't tell."]}
         }
       }
     },
     "bayang": {
-      "name": "Bayang",
+      "name": "Shade",
       "kind": "talker",
       "voice": 8,
-      "names": {"en": ["bayang", "woman", "seller", "trader", "coat", "woman in the coat"], "id": ["bayang", "perempuan", "penjual", "pedagang", "mantel", "perempuan bermantel"]},
-      "role": {"en": "a trader who sells things without labels", "id": "pedagang yang menjual barang tanpa label"},
-      "desc": {"en": "A woman in a long charcoal coat with too many pockets, leaning where the light doesn't quite reach. People call her Bayang, the shadow. She has never said whether that is her name.", "id": "Perempuan bermantel panjang abu-abu arang dengan terlalu banyak saku, bersandar di tempat yang tak terjangkau cahaya. Orang memanggilnya Bayang. Ia tak pernah bilang apakah itu namanya."},
+      "names": {"en": ["shade", "woman", "seller", "trader", "coat", "woman in the coat"]},
+      "role": {"en": "a trader who sells things without labels"},
+      "desc": {"en": "A woman in a long charcoal coat with too many pockets, leaning where the light doesn't quite reach. People call her Shade. She has never said whether that is her name."},
       "schedule": [[0, "back_alley"]],
       "home": "back_alley",
       "likes": ["spices", "coffee", "star_orchid"],
-      "greet": {"en": ["You found the alley. Most people walk past it.", "Keep your voice down. What do you want?", "Buying or selling? I don't do chatting. Much."],
-                "id": ["Kamu menemukan gang ini. Kebanyakan orang lewat begitu saja.", "Pelankan suaramu. Mau apa?", "Beli atau jual? Aku tak suka mengobrol. Tidak terlalu."]},
-      "greet_known": {"en": ["{name}. You again. Good.", "Back already, {name}? The goods haven't changed. The prices have."],
-                      "id": ["{name}. Kamu lagi. Bagus.", "Sudah kembali, {name}? Barangnya tak berubah. Harganya yang berubah."]},
-      "greet_friend": {"en": ["{name}. For you, I'll even smile. There.", "My most reliable customer. Evening, {name}."],
-                       "id": ["{name}. Untukmu, aku bahkan mau tersenyum. Nah.", "Pelangganku yang paling bisa dipercaya. Malam, {name}."]},
-      "unknown": {"en": ["I don't sell answers to that.", "Wrong alley for that question."],
-                  "id": ["Aku tak menjual jawaban untuk itu.", "Salah gang untuk pertanyaan itu."]},
+      "greet": {"en": ["You found the alley. Most people walk past it.", "Keep your voice down. What do you want?", "Buying or selling? I don't do chatting. Much."]},
+      "greet_known": {"en": ["{name}. You again. Good.", "Back already, {name}? The goods haven't changed. The prices have."]},
+      "greet_friend": {"en": ["{name}. For you, I'll even smile. There.", "My most reliable customer. Evening, {name}."]},
+      "unknown": {"en": ["I don't sell answers to that.", "Wrong alley for that question."]},
       "idle": [
-        {"kind": "emote", "en": "{npc} counts something in a pocket without taking it out.", "id": "{npc} menghitung sesuatu di dalam saku tanpa mengeluarkannya."},
-        {"kind": "say", "en": "No labels, no questions, no refunds.", "id": "Tanpa label, tanpa pertanyaan, tanpa pengembalian."},
-        {"kind": "emote", "en": "{npc} glances at the mouth of the alley, then back into the shadows.", "id": "{npc} melirik ke mulut gang, lalu kembali ke keremangan."}
+        {"kind": "emote", "en": "{npc} counts something in a pocket without taking it out."},
+        {"kind": "say", "en": "No labels, no questions, no refunds."},
+        {"kind": "emote", "en": "{npc} glances at the mouth of the alley, then back into the shadows."}
       ],
       "topics": {
         "goods": {
-          "names": {"en": ["goods", "contraband", "what do you sell", "wares", "prices"], "id": ["barang", "barang gelap", "jual apa", "dagangan", "harga"]},
+          "names": {"en": ["goods", "contraband", "what do you sell", "wares", "prices"]},
           "live": "contraband",
-          "say": {"en": ["Today a {good} goes for {price} credits here. In Lumina's Night Market they pay a lot more. The trip between is your business."], "id": ["Hari ini {good} seharga {price} kredit di sini. Di Pasar Malam Lumina mereka bayar jauh lebih mahal. Perjalanan di antaranya urusanmu."]}
+          "say": {"en": ["Today a {good} goes for {price} credits here. In Lumina's Night Market they pay a lot more. The trip between is your business."]}
         },
         "customs": {
-          "names": {"en": ["customs", "searches", "risk"], "id": ["pabean", "pemeriksaan", "risiko"]},
-          "say": {"en": ["The Gate's scanners are nosy. The ferry's less so. A ship of your own with a scanner bay, hardly at all. And the Bazaar, Evergrove and the Belt never check. I didn't tell you that."], "id": ["Pemindai Gerbang suka ikut campur. Feri tidak terlalu. Kapal sendiri dengan ruang pemindai, hampir tidak. Dan Bazar, Evergrove, serta Sabuk tak pernah memeriksa. Aku tidak bilang apa-apa, ya."]}
+          "names": {"en": ["customs", "searches", "risk"]},
+          "say": {"en": ["The Gate's scanners are nosy. The ferry's less so. A ship of your own with a scanner bay, hardly at all. And the Bazaar, Evergrove and the Belt never check. I didn't tell you that."]}
         },
         "name": {
-          "names": {"en": ["name", "your name", "who are you", "you"], "id": ["nama", "namamu", "siapa kamu", "kamu"]},
-          "say": {"en": ["Bayang is what they call me. A shadow doesn't need a name; it needs a wall to lean on."], "id": ["Bayang, begitu mereka memanggilku. Bayangan tak butuh nama; ia butuh dinding untuk bersandar."]}
+          "names": {"en": ["name", "your name", "who are you", "you"]},
+          "say": {"en": ["Shade is what they call me. A shadow doesn't need a name; it needs a wall to lean on."]}
         },
         "lumina": {
-          "names": {"en": ["lumina", "night market", "buyers"], "id": ["lumina", "pasar malam", "pembeli"]},
-          "say": {"en": ["Lumina City's Night Market buys what I sell, no questions asked. Take it there, and mind the customs on the way."], "id": ["Pasar Malam Kota Lumina membeli apa yang kujual, tanpa banyak tanya. Bawa ke sana, dan hati-hati dengan pabean di jalan."]}
+          "names": {"en": ["lumina", "night market", "buyers"]},
+          "say": {"en": ["Lumina City's Night Market buys what I sell, no questions asked. Take it there, and mind the customs on the way."]}
         },
         "secret": {
-          "names": {"en": ["secret", "a secret"], "id": ["rahasia", "sebuah rahasia"]},
+          "names": {"en": ["secret", "a secret"]},
           "min": 15,
-          "say": {"en": ["A secret, for a friend: the customs officers at Pixel Pier only check half the travellers. They'd rather be playing games."], "id": ["Rahasia, untuk teman: petugas pabean di Dermaga Piksel cuma memeriksa separuh pengunjung. Mereka lebih suka main game."]}
+          "say": {"en": ["A secret, for a friend: the customs officers at Pixel Pier only check half the travellers. They'd rather be playing games."]}
         }
       }
     },
     "ciko": {
-      "name": "Ciko",
+      "name": "Dario",
       "kind": "talker",
       "voice": 3,
-      "names": {"en": ["ciko", "host", "arcade host", "announcer"], "id": ["ciko", "pembawa acara", "pemandu", "host"]},
-      "role": {"en": "the host of the Tournament Stage", "id": "pembawa acara Panggung Turnamen"},
-      "desc": {"en": "A lanky young man in a jacket covered in pixel badges, holding a microphone that isn't plugged into anything. He announces everything, including his own sandwiches.", "id": "Pemuda jangkung berjaket penuh lencana piksel, memegang mikrofon yang tak tersambung ke apa pun. Ia mengumumkan segalanya, termasuk rotinya sendiri."},
+      "names": {"en": ["dario", "host", "arcade host", "announcer"]},
+      "role": {"en": "the host of the Tournament Stage"},
+      "desc": {"en": "A lanky young man in a jacket covered in pixel badges, holding a microphone that isn't plugged into anything. He announces everything, including his own sandwiches."},
       "schedule": [[0, "pixel_stage"]],
       "home": "pixel_stage",
       "likes": ["kerupuk", "iced_coffee", "chips"],
-      "greet": {"en": ["Welcome, challenger, to the Tournament Stage!", "Ooh, a new face in the spotlight! Hello!", "Ladies, gentlemen, and robots: it's you!"],
-                "id": ["Selamat datang, penantang, di Panggung Turnamen!", "Ooh, wajah baru di bawah sorot lampu! Halo!", "Hadirin sekalian, dan para robot: ini dia, kamu!"]},
-      "greet_known": {"en": ["{name} returns to the stage! The crowd goes wild! The crowd is me.", "Ah, {name}! Ready for glory?"],
-                      "id": ["{name} kembali ke panggung! Penonton histeris! Penontonnya aku.", "Ah, {name}! Siap meraih kejayaan?"]},
-      "greet_friend": {"en": ["The legend! The icon! {name}!", "{name}, my friend, the spotlight missed you."],
-                       "id": ["Sang legenda! Sang ikon! {name}!", "{name}, kawanku, lampu sorot kangen padamu."]},
-      "unknown": {"en": ["That's not in the rulebook, friend. Ask me about duels or high scores!", "I only announce, I don't explain. Ask about the arcade!"],
-                  "id": ["Itu tidak ada di buku aturan, kawan. Tanya soal duel atau skor tertinggi!", "Aku cuma mengumumkan, bukan menjelaskan. Tanya soal arkade!"]},
+      "greet": {"en": ["Welcome, challenger, to the Tournament Stage!", "Ooh, a new face in the spotlight! Hello!", "Ladies, gentlemen, and robots: it's you!"]},
+      "greet_known": {"en": ["{name} returns to the stage! The crowd goes wild! The crowd is me.", "Ah, {name}! Ready for glory?"]},
+      "greet_friend": {"en": ["The legend! The icon! {name}!", "{name}, my friend, the spotlight missed you."]},
+      "unknown": {"en": ["That's not in the rulebook, friend. Ask me about duels or high scores!", "I only announce, I don't explain. Ask about the arcade!"]},
       "idle": [
-        {"kind": "say", "en": "Who will be the fastest hand on Pixel Pier? Step up!", "id": "Siapa tangan tercepat di Dermaga Piksel? Ayo maju!"},
-        {"kind": "emote", "en": "{npc} taps his unplugged microphone. Nothing happens. He nods, satisfied.", "id": "{npc} mengetuk mikrofonnya yang tak tersambung. Tak terjadi apa-apa. Ia mengangguk, puas."},
-        {"kind": "say", "en": "Remember: draw means draw. Not almost draw. Draw.", "id": "Ingat: cabut artinya cabut. Bukan hampir cabut. Cabut."}
+        {"kind": "say", "en": "Who will be the fastest hand on Pixel Pier? Step up!"},
+        {"kind": "emote", "en": "{npc} taps his unplugged microphone. Nothing happens. He nods, satisfied."},
+        {"kind": "say", "en": "Remember: draw means draw. Not almost draw. Draw."}
       ],
       "topics": {
         "duels": {
-          "names": {"en": ["duels", "duel", "dueling", "champion", "best duelist"], "id": ["duel", "juara", "jagoan duel"]},
+          "names": {"en": ["duels", "duel", "dueling", "champion", "best duelist"]},
           "live": "duels",
-          "say": {"en": ["The fastest hand on the board is {name}, with {won} duels won. Challenge someone here: duel, and their name."], "id": ["Tangan tercepat di papan adalah {name}, dengan {won} kemenangan duel. Tantang seseorang di sini: duel, lalu namanya."]},
-          "cases": {"none": {"en": ["Nobody has won a duel yet! Be the first: duel, and a name."], "id": ["Belum ada yang menang duel! Jadilah yang pertama: duel, lalu sebuah nama."]}}
+          "say": {"en": ["The fastest hand on the board is {name}, with {won} duels won. Challenge someone here: duel, and their name."]},
+          "cases": {"none": {"en": ["Nobody has won a duel yet! Be the first: duel, and a name."]}}
         },
         "scores": {
-          "names": {"en": ["high scores", "scores", "arcade", "records"], "id": ["skor tertinggi", "skor", "arkade", "rekor"]},
+          "names": {"en": ["high scores", "scores", "arcade", "records"]},
           "live": "arcade",
-          "say": {"en": ["The record I'm proudest of: {name}, {score} at {game}. Can you beat it? Cabinet Row, west of the Hall."], "id": ["Rekor yang paling kubanggakan: {name}, {score} di {game}. Bisa mengalahkannya? Lorong Mesin, di barat Aula."]},
-          "cases": {"none": {"en": ["No records yet! Cabinet Row, west of the Hall, is waiting for a hero."], "id": ["Belum ada rekor! Lorong Mesin, di barat Aula, menunggu seorang jagoan."]}}
+          "say": {"en": ["The record I'm proudest of: {name}, {score} at {game}. Can you beat it? Cabinet Row, west of the Hall."]},
+          "cases": {"none": {"en": ["No records yet! Cabinet Row, west of the Hall, is waiting for a hero."]}}
         },
         "tournament": {
-          "names": {"en": ["tournament", "tournaments", "competition"], "id": ["turnamen", "kompetisi", "pertandingan"]},
+          "names": {"en": ["tournament", "tournaments", "competition"]},
           "live": "tournament",
-          "say": {"en": ["No tournament on the calendar. Ask an admin to start one!"], "id": ["Belum ada turnamen di kalender. Minta admin memulainya!"]},
+          "say": {"en": ["No tournament on the calendar. Ask an admin to start one!"]},
           "cases": {
-            "on": {"en": ["The tournament is on, for another {time}! {leader} leads with {points} wins. Duel here to climb!"], "id": ["Turnamen sedang berlangsung, masih {time} lagi! {leader} memimpin dengan {points} kemenangan. Duel di sini untuk naik!"]},
-            "on_empty": {"en": ["The tournament is on, for another {time}, and nobody has won a duel yet! Step up!"], "id": ["Turnamen sedang berlangsung, masih {time} lagi, dan belum ada yang menang duel! Ayo maju!"]},
-            "next": {"en": ["Next tournament: {day} at {hour}, station time, right here. The most duels won takes the prize."], "id": ["Turnamen berikutnya: {day} pukul {hour}, waktu stasiun, di sini. Yang paling banyak menang duel membawa hadiahnya."]}
+            "on": {"en": ["The tournament is on, for another {time}! {leader} leads with {points} wins. Duel here to climb!"]},
+            "on_empty": {"en": ["The tournament is on, for another {time}, and nobody has won a duel yet! Step up!"]},
+            "next": {"en": ["Next tournament: {day} at {hour}, station time, right here. The most duels won takes the prize."]}
           }
         },
         "tokens": {
-          "names": {"en": ["tokens", "prizes", "tickets"], "id": ["token", "hadiah", "tiket"]},
-          "say": {"en": ["Tokens at the machine on Cabinet Row, five credits each. Good games print tickets, and the Prize Counter east of the Hall swaps them for prizes."], "id": ["Token di mesin di Lorong Mesin, lima kredit sebuah. Permainan yang bagus mencetak tiket, dan Loket Hadiah di timur Aula menukarnya dengan hadiah."]}
+          "names": {"en": ["tokens", "prizes", "tickets"]},
+          "say": {"en": ["Tokens at the machine on Cabinet Row, five credits each. Good games print tickets, and the Prize Counter east of the Hall swaps them for prizes."]}
         }
       }
     },
     "gino": {
-      "name": "Pak Gino",
+      "name": "Gino",
       "kind": "resident",
       "voice": 8,
-      "names": {"en": ["gino", "pak gino", "dock hand", "docker"], "id": ["gino", "pak gino", "kuli dermaga", "buruh dermaga"]},
-      "role": {"en": "a dock hand", "id": "pekerja dermaga"},
-      "desc": {"en": "A stocky man with forearms like mooring ropes and a laugh like a cargo door. His overalls say GINO in fading marker.", "id": "Pria kekar dengan lengan seperti tali tambat dan tawa seperti pintu kargo. Baju terusannya bertuliskan GINO dengan spidol yang mulai pudar."},
+      "names": {"en": ["gino", "dock hand", "docker"]},
+      "role": {"en": "a dock hand"},
+      "desc": {"en": "A stocky man with forearms like mooring ropes and a laugh like a cargo door. His overalls say GINO in fading marker."},
       "schedule": [[6, "dock"], [10, "food_court"], [12, "cargo"], [17, "cantina"], [21, null]],
       "home": "cabins_hall",
       "likes": ["martabak", "iced_coffee", "kerupuk"],
-      "greet": {"en": ["Oi! Mind your toes, crate coming through.", "Hello there! Busy day, busy day."],
-                "id": ["Oi! Awas kakimu, ada peti lewat.", "Halo! Hari yang sibuk, hari yang sibuk."]},
-      "greet_known": {"en": ["{name}! Good to see you.", "Ah, {name}. Still standing, I see."],
-                      "id": ["{name}! Senang ketemu kamu.", "Ah, {name}. Masih segar bugar, kulihat."]},
-      "greet_friend": {"en": ["{name}, my friend! Come, sit a minute.", "{name}! The best face on the station, after mine."],
-                       "id": ["{name}, kawanku! Sini, duduk sebentar.", "{name}! Wajah terbaik di stasiun, setelah wajahku."]},
-      "unknown": {"en": ["Ha, you're asking the wrong man. I lift boxes.", "No idea! Ask me about crates, I know crates."],
-                  "id": ["Ha, kamu tanya orang yang salah. Aku cuma angkat kotak.", "Tidak tahu! Tanya soal peti saja, aku paham peti."]},
+      "greet": {"en": ["Oi! Mind your toes, crate coming through.", "Hello there! Busy day, busy day."]},
+      "greet_known": {"en": ["{name}! Good to see you.", "Ah, {name}. Still standing, I see."]},
+      "greet_friend": {"en": ["{name}, my friend! Come, sit a minute.", "{name}! The best face on the station, after mine."]},
+      "unknown": {"en": ["Ha, you're asking the wrong man. I lift boxes.", "No idea! Ask me about crates, I know crates."]},
       "idle": [
-        {"kind": "emote", "room": "dock", "en": "{npc} heaves a crate onto a trolley with a grunt.", "id": "{npc} mengangkat peti ke troli sambil mendengus."},
-        {"kind": "say", "room": "dock", "en": "Clamps on! Who left the airlock humming?", "id": "Penjepit terpasang! Siapa yang membiarkan airlock berdengung?"},
-        {"kind": "emote", "room": "food_court", "en": "{npc} eats a martabak in four enormous bites.", "id": "{npc} menghabiskan martabak dalam empat gigitan besar."},
-        {"kind": "say", "room": "food_court", "en": "Best lunch break on the station, this.", "id": "Istirahat makan siang terbaik di stasiun, ini."},
-        {"kind": "emote", "room": "cargo", "en": "{npc} stacks crates into a perfect tower, then admires it.", "id": "{npc} menumpuk peti menjadi menara sempurna, lalu mengaguminya."},
-        {"kind": "say", "room": "cantina", "en": "Jali! One more iced coffee, and put it on my tab.", "id": "Jali! Satu es kopi lagi, catat di bonku."},
-        {"kind": "emote", "room": "cantina", "en": "{npc} tells a story about a runaway crate to anyone who'll listen.", "id": "{npc} bercerita tentang peti yang kabur kepada siapa saja yang mau mendengar."},
-        {"kind": "emote", "en": "{npc} stretches his back and groans happily.", "id": "{npc} meregangkan punggung dan mengerang puas."}
+        {"kind": "emote", "room": "dock", "en": "{npc} heaves a crate onto a trolley with a grunt."},
+        {"kind": "say", "room": "dock", "en": "Clamps on! Who left the airlock humming?"},
+        {"kind": "emote", "room": "food_court", "en": "{npc} eats a stuffed pancake in four enormous bites."},
+        {"kind": "say", "room": "food_court", "en": "Best lunch break on the station, this."},
+        {"kind": "emote", "room": "cargo", "en": "{npc} stacks crates into a perfect tower, then admires it."},
+        {"kind": "say", "room": "cantina", "en": "Rocco! One more iced coffee, and put it on my tab."},
+        {"kind": "emote", "room": "cantina", "en": "{npc} tells a story about a runaway crate to anyone who'll listen."},
+        {"kind": "emote", "en": "{npc} stretches his back and groans happily."}
       ],
       "topics": {
         "work": {
-          "names": {"en": ["work", "your job", "the dock", "crates", "job"], "id": ["kerja", "kerjaan", "dermaga", "peti"]},
-          "say": {"en": ["Mornings at the Dock, lunch at the Food Court, afternoons in the Cargo Bay, and evenings at the Cantina, where the real work is resting."], "id": ["Pagi di Dermaga, makan siang di Pujasera, siang di Gudang Kargo, dan malam di Kantin, tempat kerja yang sebenarnya: istirahat."]}
+          "names": {"en": ["work", "your job", "the dock", "crates", "job"]},
+          "say": {"en": ["Mornings at the Dock, lunch at the Food Court, afternoons in the Cargo Bay, and evenings at the Cantina, where the real work is resting."]}
         },
         "station": {
-          "names": {"en": ["the station", "life here", "home", "station"], "id": ["stasiun", "hidup di sini", "rumah"]},
-          "say": {"en": ["Twenty years up here. I can tell the time by which pump is humming. Wouldn't live anywhere else."], "id": ["Dua puluh tahun di atas sini. Aku bisa tahu jam dari pompa mana yang berdengung. Tak mau tinggal di tempat lain."]}
+          "names": {"en": ["the station", "life here", "home", "station"]},
+          "say": {"en": ["Twenty years up here. I can tell the time by which pump is humming. Wouldn't live anywhere else."]}
         }
       }
     },
     "tari": {
-      "name": "Mbak Tari",
+      "name": "Hana",
       "kind": "resident",
       "voice": 4,
-      "names": {"en": ["tari", "mbak tari", "gardener"], "id": ["tari", "mbak tari", "tukang kebun"]},
-      "role": {"en": "one of the station's gardeners", "id": "salah satu tukang kebun stasiun"},
-      "desc": {"en": "A young woman with soil under her nails, a sun hat she wears indoors out of habit, and a watering can she never quite puts down.", "id": "Perempuan muda dengan tanah di bawah kukunya, topi matahari yang tetap dipakainya di dalam ruangan karena kebiasaan, dan gembor yang tak pernah benar-benar ia letakkan."},
+      "names": {"en": ["hana", "gardener"]},
+      "role": {"en": "one of the station's gardeners"},
+      "desc": {"en": "A young woman with soil under her nails, a sun hat she wears indoors out of habit, and a watering can she never quite puts down."},
       "schedule": [[3, "hydroponics"], [8, "park"], [11, "pavilion"], [14, "hydroponics"], [18, "cantina"], [21, null]],
       "home": "cabins_hall",
       "likes": ["vanilla", "seed_vanilla", "moonpetal"],
-      "greet": {"en": ["Hello! Mind the seedlings, they're shy.", "Oh, hi! Isn't it green in here?"],
-                "id": ["Halo! Hati-hati dengan bibitnya, mereka pemalu.", "Oh, hai! Hijau sekali di sini, ya?"]},
-      "greet_known": {"en": ["{name}! How are your plots growing?", "Hi, {name}! Watered anything today?"],
-                      "id": ["{name}! Bagaimana petak kebunmu?", "Hai, {name}! Sudah menyiram sesuatu hari ini?"]},
-      "greet_friend": {"en": ["{name}! I saved you a strawberry. Well, I ate it. But I saved you the thought.", "My favourite farmer! Hello, {name}."],
-                       "id": ["{name}! Kusimpankan stroberi untukmu. Ya, sudah kumakan. Tapi niatnya kusimpan.", "Petani favoritku! Halo, {name}."]},
-      "unknown": {"en": ["I only know plants, sorry. Ask me about farming!", "No idea! But I know when a chilli is ripe."],
-                  "id": ["Aku cuma paham tanaman, maaf. Tanya soal bertani saja!", "Tidak tahu! Tapi aku tahu kapan cabai sudah matang."]},
+      "greet": {"en": ["Hello! Mind the seedlings, they're shy.", "Oh, hi! Isn't it green in here?"]},
+      "greet_known": {"en": ["{name}! How are your plots growing?", "Hi, {name}! Watered anything today?"]},
+      "greet_friend": {"en": ["{name}! I saved you a strawberry. Well, I ate it. But I saved you the thought.", "My favourite farmer! Hello, {name}."]},
+      "unknown": {"en": ["I only know plants, sorry. Ask me about farming!", "No idea! But I know when a chilli is ripe."]},
       "idle": [
-        {"kind": "emote", "room": "hydroponics", "en": "{npc} waters a row of chillies, one plant at a time.", "id": "{npc} menyiram sebaris cabai, satu per satu."},
-        {"kind": "say", "room": "hydroponics", "en": "Water once, and the crop gives a little more. Plants like attention, like people.", "id": "Siram sekali, dan panennya bertambah sedikit. Tanaman suka diperhatikan, seperti orang."},
-        {"kind": "emote", "room": "park", "en": "{npc} kneels by a flower bed and talks quietly to the tulips.", "id": "{npc} berlutut di dekat petak bunga dan berbicara pelan pada tulip-tulipnya."},
-        {"kind": "emote", "room": "pavilion", "en": "{npc} threads fresh jasmine buds into a long string for the pavilion's roof.", "id": "{npc} meronce kuncup melati segar menjadi untaian panjang untuk atap paviliun."},
-        {"kind": "say", "room": "pavilion", "en": "The jasmine opens slowly all day. Weddings here smell wonderful.", "id": "Melatinya mekar pelan sepanjang hari. Pernikahan di sini harum sekali."},
-        {"kind": "say", "room": "cantina", "en": "A cold iced coffee after a day in the garden. Perfect.", "id": "Es kopi dingin setelah seharian di kebun. Sempurna."},
-        {"kind": "emote", "en": "{npc} brushes soil off her hands.", "id": "{npc} menepuk-nepuk tanah dari tangannya."}
+        {"kind": "emote", "room": "hydroponics", "en": "{npc} waters a row of chillies, one plant at a time."},
+        {"kind": "say", "room": "hydroponics", "en": "Water once, and the crop gives a little more. Plants like attention, like people."},
+        {"kind": "emote", "room": "park", "en": "{npc} kneels by a flower bed and talks quietly to the tulips."},
+        {"kind": "emote", "room": "pavilion", "en": "{npc} threads fresh jasmine buds into a long string for the pavilion's roof."},
+        {"kind": "say", "room": "pavilion", "en": "The jasmine opens slowly all day. Weddings here smell wonderful."},
+        {"kind": "say", "room": "cantina", "en": "A cold iced coffee after a day in the garden. Perfect."},
+        {"kind": "emote", "en": "{npc} brushes soil off her hands."}
       ],
       "topics": {
         "farming": {
-          "names": {"en": ["farming", "farm", "plots", "crops", "growing", "plants"], "id": ["bertani", "kebun", "lahan", "tanaman", "menanam"]},
-          "say": {"en": ["Buy seeds at the rack, plant, water once, and harvest when it's ripe. Kangkung in ten minutes, moon melon in a day. Patience grows the best ones."], "id": ["Beli bibit di rak, tanam, siram sekali, dan panen kalau sudah matang. Kangkung sepuluh menit, melon bulan sehari. Kesabaran menumbuhkan yang terbaik."]}
+          "names": {"en": ["farming", "farm", "plots", "crops", "growing", "plants"]},
+          "say": {"en": ["Buy seeds at the rack, plant, water once, and harvest when it's ripe. Water spinach in ten minutes, moon melon in a day. Patience grows the best ones."]}
         },
         "jasmine": {
-          "names": {"en": ["jasmine", "flowers", "the pavilion", "pavilion"], "id": ["melati", "bunga", "paviliun"]},
-          "say": {"en": ["I thread the pavilion's jasmine every morning. For weddings, I thread twice as much."], "id": ["Aku meronce melati paviliun setiap pagi. Untuk pernikahan, dua kali lebih banyak."]}
+          "names": {"en": ["jasmine", "flowers", "the pavilion", "pavilion"]},
+          "say": {"en": ["I thread the pavilion's jasmine every morning. For weddings, I thread twice as much."]}
         },
         "favour": {
-          "names": {"en": ["favour", "favor", "help", "errand"], "id": ["bantuan", "tolong", "minta tolong"]},
+          "names": {"en": ["favour", "favor", "help", "errand"]},
           "favour": true
         }
       },
       "favours": [
         {"id": "frostpearl", "min": 5, "repeat": "daily", "needs": {"frostpearl": 1}, "reward": {"credits": 80, "xp": 12, "thing": "seed_vanilla"},
-         "ask": {"en": "The old gardeners say a frost pearl's cold wakes up sleepy seeds. Could you bring me one from Glasir?", "id": "Kata para tukang kebun lama, dinginnya mutiara beku membangunkan bibit yang mengantuk. Bisa bawakan satu dari Glasir?"},
-         "thanks": {"en": "It's so cold! The seeds will love it. Here, a packet of vanilla seeds for you.", "id": "Dingin sekali! Bibit-bibitnya pasti suka. Ini, sebungkus bibit vanili untukmu."}}
+         "ask": {"en": "The old gardeners say a frost pearl's cold wakes up sleepy seeds. Could you bring me one from Glasir?"},
+         "thanks": {"en": "It's so cold! The seeds will love it. Here, a packet of vanilla seeds for you."}}
       ]
     },
     "rimba": {
-      "name": "Nenek Rimba",
+      "name": "Granny Fern",
       "kind": "resident",
       "voice": 2,
-      "names": {"en": ["rimba", "nenek rimba", "grandmother", "granny", "old woman", "elder"], "id": ["rimba", "nenek rimba", "nenek", "nenek tua", "tetua"]},
-      "role": {"en": "an elder of Mossbrook Village", "id": "tetua Desa Mossbrook"},
-      "desc": {"en": "A tiny old woman with a walking stick grown, not carved, from a living branch. Moss sprites follow her about like ducklings.", "id": "Nenek mungil dengan tongkat yang tumbuh, bukan diukir, dari dahan yang masih hidup. Peri-peri lumut mengikutinya ke mana-mana seperti anak bebek."},
+      "names": {"en": ["fern", "granny fern", "grandmother", "granny", "old woman", "elder"]},
+      "role": {"en": "an elder of Mossbrook Village"},
+      "desc": {"en": "A tiny old woman with a walking stick grown, not carved, from a living branch. Moss sprites follow her about like ducklings."},
       "schedule": [[5, "grove_village"], [9, "grove_wood"], [13, "grove_village"], [17, "grove_hall"], [21, null]],
       "home": "grove_village",
       "likes": ["red_quinoa", "strawberry", "moonpetal"],
-      "greet": {"en": ["Welcome to Mossbrook, dear. Wipe your boots on the moss.", "Ah, a traveller. You look hungry. Everyone looks hungry to me."],
-                "id": ["Selamat datang di Mossbrook, Nak. Bersihkan sepatumu di lumut.", "Ah, seorang pengembara. Kamu kelihatan lapar. Semua orang kelihatan lapar bagiku."]},
-      "greet_known": {"en": ["{name}, dear! Back in the green again.", "There you are, {name}. The sprites asked about you."],
-                      "id": ["{name}, Nak! Kembali ke tempat hijau lagi.", "Nah, ini kamu, {name}. Para peri menanyakanmu."]},
-      "greet_friend": {"en": ["{name}! Come, come, the kettle's always on for you.", "My favourite traveller. Sit by me, {name}."],
-                       "id": ["{name}! Sini, sini, cerek selalu menyala untukmu.", "Pengembara favoritku. Duduklah di sampingku, {name}."]},
-      "unknown": {"en": ["Oh, that's a question for younger ears than mine. Ask me about the woods.", "I don't know, dear, but the trees might. Ask me about the castle."],
-                  "id": ["Oh, itu pertanyaan untuk telinga yang lebih muda dariku. Tanya soal hutan saja.", "Nenek tidak tahu, Nak, tapi mungkin pohon-pohon tahu. Tanya soal kastel saja."]},
+      "greet": {"en": ["Welcome to Mossbrook, dear. Wipe your boots on the moss.", "Ah, a traveller. You look hungry. Everyone looks hungry to me."]},
+      "greet_known": {"en": ["{name}, dear! Back in the green again.", "There you are, {name}. The sprites asked about you."]},
+      "greet_friend": {"en": ["{name}! Come, come, the kettle's always on for you.", "My favourite traveller. Sit by me, {name}."]},
+      "unknown": {"en": ["Oh, that's a question for younger ears than mine. Ask me about the woods.", "I don't know, dear, but the trees might. Ask me about the castle."]},
       "idle": [
-        {"kind": "emote", "room": "grove_village", "en": "{npc} shoos a moss sprite off her windowsill, then gives it a crumb.", "id": "{npc} mengusir peri lumut dari ambang jendelanya, lalu memberinya remah roti."},
-        {"kind": "say", "room": "grove_village", "en": "Mind the puffcaps in the Hollow, they sneeze.", "id": "Hati-hati dengan jamur engah di Lembah, mereka suka bersin."},
-        {"kind": "emote", "room": "grove_wood", "en": "{npc} listens to the trees with her eyes closed.", "id": "{npc} mendengarkan pepohonan dengan mata terpejam."},
-        {"kind": "say", "room": "grove_wood", "en": "The Whispering Wood always tells the truth. You just have to be patient.", "id": "Hutan Berbisik selalu berkata jujur. Kamu hanya perlu sabar."},
-        {"kind": "emote", "room": "grove_hall", "en": "{npc} warms her hands at the great fire.", "id": "{npc} menghangatkan tangannya di perapian besar."},
-        {"kind": "emote", "en": "{npc} leans on her stick and hums an old tune.", "id": "{npc} bersandar pada tongkatnya dan menyenandungkan lagu lama."}
+        {"kind": "emote", "room": "grove_village", "en": "{npc} shoos a moss sprite off her windowsill, then gives it a crumb."},
+        {"kind": "say", "room": "grove_village", "en": "Mind the puffcaps in the Hollow, they sneeze."},
+        {"kind": "emote", "room": "grove_wood", "en": "{npc} listens to the trees with her eyes closed."},
+        {"kind": "say", "room": "grove_wood", "en": "The Whispering Wood always tells the truth. You just have to be patient."},
+        {"kind": "emote", "room": "grove_hall", "en": "{npc} warms her hands at the great fire."},
+        {"kind": "emote", "en": "{npc} leans on her stick and hums an old tune."}
       ],
       "topics": {
         "woods": {
-          "names": {"en": ["woods", "the woods", "forest", "creatures", "sprites"], "id": ["hutan", "makhluk", "peri"]},
-          "say": {"en": ["The moss sprite just wants to be caught. The ember beetle wants to be admired. The bramble bear wants a nap. Face them with a clear head, and nobody gets hurt."], "id": ["Peri lumut cuma ingin ditangkap. Kumbang bara ingin dikagumi. Beruang semak ingin tidur siang. Hadapi mereka dengan kepala jernih, dan tak ada yang terluka."]}
+          "names": {"en": ["woods", "the woods", "forest", "creatures", "sprites"]},
+          "say": {"en": ["The moss sprite just wants to be caught. The ember beetle wants to be admired. The bramble bear wants a nap. Face them with a clear head, and nobody gets hurt."]}
         },
         "castle": {
-          "names": {"en": ["castle", "great hall", "the hall", "hall"], "id": ["kastel", "balairung", "aula"]},
-          "say": {"en": ["The castle's Great Hall takes weddings now. A fire, long tables, and the stars from the tower. Better than any dome, if you ask me."], "id": ["Balairung kastel sekarang menerima pernikahan. Perapian, meja-meja panjang, dan bintang dari menara. Lebih bagus dari kubah mana pun, kalau kau tanya Nenek."]}
+          "names": {"en": ["castle", "great hall", "the hall", "hall"]},
+          "say": {"en": ["The castle's Great Hall takes weddings now. A fire, long tables, and the stars from the tower. Better than any dome, if you ask me."]}
         },
         "favour": {
-          "names": {"en": ["favour", "favor", "help", "errand"], "id": ["bantuan", "tolong", "minta tolong"]},
+          "names": {"en": ["favour", "favor", "help", "errand"]},
           "favour": true
         }
       },
       "favours": [
         {"id": "quinoa", "min": 5, "repeat": "daily", "needs": {"red_quinoa": 2}, "reward": {"credits": 50, "xp": 12},
-         "ask": {"en": "My porridge wants red quinoa from Karmina, and my knees don't want the journey. Two sacks, dear?", "id": "Buburku butuh quinoa merah dari Karmina, dan lututku tak mau berjalan jauh. Dua karung, Nak?"},
-         "thanks": {"en": "Oh, lovely. Porridge for a week! Take this, dear, and don't argue.", "id": "Oh, bagus sekali. Bubur untuk seminggu! Terima ini, Nak, dan jangan membantah."}}
+         "ask": {"en": "My porridge wants red quinoa from Karmina, and my knees don't want the journey. Two sacks, dear?"},
+         "thanks": {"en": "Oh, lovely. Porridge for a week! Take this, dear, and don't argue."}}
       ]
     }
   }

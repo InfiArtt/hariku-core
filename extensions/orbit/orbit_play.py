@@ -19,10 +19,10 @@ ambience of the place) and read aloud when "Speak messages" is on:
 
   * other players' words (say, whisper, shout) in their own voice, when
     "A different voice for each player" is on and Hariku Voice has enough
-    voices of your language: the voice a player chose ("my voice 3"), or
-    one picked from their name (orbit_speech);
+    English voices: the voice a player chose ("my voice 3"), or one picked
+    from their name (orbit_speech);
   * your own actions by their short confirmation ("Sent.", "Whispered to
-    Sari.") while the Messages list keeps the whole line;
+    Maya.") while the Messages list keeps the whole line;
   * everything else by the narrator: Hariku Voice for commands, or the
     screen reader.
 
@@ -30,15 +30,18 @@ What is read can be narrowed (Preferences: chat, whispers, shouts, arrivals
 and departures, work and money, announcements); what isn't read still goes
 to the Messages list. While the window is closed, only whispers, your name
 and station news are read (or everything, or nothing: a setting), and the
-sounds follow. Players you ignore ("abaikan Budi") are neither shown nor
+sounds follow. Players you ignore ("ignore Sam") are neither shown nor
 heard. A command from Aruna (or one of Orbit's actions) is always answered
 aloud, and a line a player's voice reads also goes to Aruna's Last result.
 
 Closing the window keeps you connected in the background (or leaves Orbit:
-a setting); "keluar" ("quit"), the Leave button and quitting Hariku tell the
+a setting); "quit", the Leave button and quitting Hariku tell the
 server goodbye, so you leave at once. With the window closed and nothing
 typed for 5 minutes, others see you as away; after a while longer (a
 setting) Orbit logs you out.
+
+Orbit is played in English: the hello asks the server for English, and
+the server speaks nothing else.
 
 Accounts have no password: the first time you join a server, a random secret
 is made on this computer and kept with the character's name for that server
@@ -54,10 +57,10 @@ import orbit_audio
 import orbit_parse
 import orbit_speech
 import orbit_ws
-from orbit_text import _
+from orbit_text import LANGUAGE, _
 
 PROTOCOL_VERSION = 1
-CLIENT_NAME = "Hariku Orbit 1.4"
+CLIENT_NAME = "Hariku Orbit 1.5"
 MAX_MESSAGES = 500
 TRIM_MESSAGES = 50
 MAX_LINE = 2000
@@ -72,7 +75,6 @@ OWN_TALK_KINDS = ("said", "whispered", "shouted", "crew_sent")
 READERS = ("mixed", "nvda", "voices")
 VOICE_KINDS = TALK_KINDS + OWN_TALK_KINDS + ("announce",)
 JOBS = ("pilot", "engineer", "trader", "scientist", "security")
-LANGUAGES = ("id", "en")
 FAILURES = {"kicked": "fail_kicked", "replaced": "fail_replaced", "banned": "fail_banned"}
 # What each read-aloud setting covers.
 READ_KINDS = {"say": "read_say", "emote": "read_say", "whisper": "read_whisper", "crew": "read_whisper",
@@ -91,7 +93,7 @@ REMIND_BEFORE_SECONDS = 300           # a reminder of an event, five minutes bef
 TICK_SECONDS = 20
 CLOSE_HINTS = 3
 TRANSFER_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ"
-HELP_TOPICS_LOCAL = {"pengaturan", "settings", "setelan", "suara", "voices", "orbit"}
+HELP_TOPICS_LOCAL = {"settings", "voices", "orbit"}
 
 
 def job_name(job):
@@ -288,12 +290,10 @@ class OrbitClient:
 
     def hello(self, account):
         """The hello a connection sends (every time it connects) for `account`:
-        with a transfer code while one waits to be used."""
-        language = self.s.language()
+        with a transfer code while one waits to be used. Orbit is played in English."""
         account = account or {}
         pending = account.get("pending") if isinstance(account.get("pending"), dict) else None
-        message = {"t": "hello", "v": PROTOCOL_VERSION, "client": CLIENT_NAME,
-                   "lang": language if language in LANGUAGES else "en"}
+        message = {"t": "hello", "v": PROTOCOL_VERSION, "client": CLIENT_NAME, "lang": LANGUAGE}
         if pending:
             message.update(secret=pending.get("secret", ""), transfer=pending.get("code", ""))
             return message
@@ -464,7 +464,7 @@ class OrbitClient:
 
     def _parts(self, message, text, settings, aruna):
         """What to say for an event, in parts: [(text, voice or None for the narrator)].
-        Another player's line: their name in the narrator's voice ("Budi:"), then
+        Another player's line: their name in the narrator's voice ("Sam:"), then
         their words in their own voice. Your own line: your words in your voice
         (a whisper says who to first). Without enough voices, or with the words
         missing (an older server), the whole line in one voice."""

@@ -117,7 +117,7 @@ def region_phase(region, when):
 
 def describe(regions, when, render):
     """The view, as sentences. render(key, **params) gives a line in the
-    reader's language (params may be {"en","id"} dicts)."""
+    reader's language (params may be {"en": ...} dicts)."""
     by_id = {r["id"]: r for r in regions}
     lines = []
 

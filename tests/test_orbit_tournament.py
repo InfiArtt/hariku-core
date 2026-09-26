@@ -55,7 +55,7 @@ def test_the_duels_leaderboard(make_game, clock):
     assert game.store.by_name("ani")["duels_won"] == 2
     assert "duels" in cmd(game, ani, "leaderboard")["text"]
     game._move_to(ani.session, "pixel_stage", quiet=True)
-    assert cmd(game, ani, "ask", to="Ciko", a="duels")["words"].startswith("The fastest hand on the board is Ani, "
+    assert cmd(game, ani, "ask", to="Dario", a="duels")["words"].startswith("The fastest hand on the board is Ani, "
                                                                           "with 2 duels won.")
 
 
@@ -65,10 +65,10 @@ def test_the_weekly_tournament(make_game, clock):
     game = make_game()
     ani, budi, ceri = join(game, "Ani"), join(game, "Budi"), join(game, "Ceri", lang="id")
     game._move_to(ani.session, "pixel_stage", quiet=True)
-    assert cmd(game, ani, "ask", to="Ciko", a="tournament")["words"] == \
+    assert cmd(game, ani, "ask", to="Dario", a="tournament")["words"] == \
         "Next tournament: Sunday at 15:00, station time, right here. The most duels won takes the prize."
     game.start_event("tournament")
-    assert cmd(game, ani, "ask", to="Ciko", a="tournament")["words"] == \
+    assert cmd(game, ani, "ask", to="Dario", a="tournament")["words"] == \
         "The tournament is on, for another 2 hours, and nobody has won a duel yet! Step up!"
     duel(game, clock, ani, budi, "pixel_stage")
     assert "Ani wins a tournament duel: 1 so far." in ani.texts()
@@ -76,14 +76,15 @@ def test_the_weekly_tournament(make_game, clock):
     duel(game, clock, budi, ani, "pixel_stage")
     duel(game, clock, budi, ani, "gym")                                    # not on the stage: doesn't count
     game._move_to(ani.session, "pixel_stage", quiet=True)
-    leads = cmd(game, ani, "ask", to="Ciko", a="tournament")["words"]
+    leads = cmd(game, ani, "ask", to="Dario", a="tournament")["words"]
     assert leads.startswith("The tournament is on, for another 1") and "Ani leads with 2 wins." in leads
     credits = (ani.session.char["credits"], budi.session.char["credits"])
     clock.advance(7200)
     game.tick()
     results = [m for m in ceri.sent if m.get("event") == "tournament"][-1]
     assert results["event"] == "tournament" and results["text"] == \
-        "Hasil turnamen duel: 1. Ani, 2 kemenangan, 500 kredit; 2. Budi, 1 kemenangan, 200 kredit. Selamat!"
+        ("The duel tournament's results: 1. Ani, duels won: 2, 500 credits; 2. Budi, duels won: 1, 200 credits. "
+         "Congratulations!")
     assert ani.session.char["credits"] == credits[0] + 500 and budi.session.char["credits"] == credits[1] + 200
     assert ani.session.char["inventory"]["title_champion"] == 1
     assert "title_champion" not in budi.session.char["inventory"]
@@ -92,7 +93,9 @@ def test_the_weekly_tournament(make_game, clock):
 def test_admins_start_a_tournament_by_its_name(make_game):
     game = make_game()
     rafli = join(game, "Rafli", lang="id")
-    cmd(game, rafli, "text", a="mulai acara turnamen")
+    assert cmd(game, rafli, "text", a="mulai acara turnamen")["text"].startswith("I don't understand")
+    assert not game.active_of("tournament")
+    cmd(game, rafli, "text", a="start event tournament")
     assert game.active_of("tournament")
     game.end_event(game.active_of("tournament"))
     cmd(game, rafli, "text", a="start event tournament")
@@ -113,15 +116,15 @@ def test_the_crew_hangar_is_the_crews_own(make_game, clock):
     ani, budi, ceri = join(game, "Ani"), join(game, "Budi"), join(game, "Ceri")
     for conn in (ani, budi):
         conn.session.char.update(credits=1000, xp=game.xp_for_level(3))
-    cmd(game, ani, "crew_create", a="Bintang")
+    cmd(game, ani, "crew_create", a="Nova")
     clock.advance(2)
-    cmd(game, budi, "crew_create", a="Bulan")
+    cmd(game, budi, "crew_create", a="Comet")
     clock.advance(2)
     for conn in (ani, budi, ceri):
         game._move_to(conn.session, "hangar", quiet=True)
     assert cmd(game, ceri, "move", d="n")["text"].startswith("That door opens only for crews.")
     inside = cmd(game, ani, "move", d="n")
-    assert inside["room"] == "crew_hangar" and "The crew board glows: Bintang, 0 points" in inside["text"]
+    assert inside["room"] == "crew_hangar" and "The crew board glows: Nova, 0 points" in inside["text"]
     cmd(game, budi, "move", d="n")
     assert game.room_of(ani.session.char) != game.room_of(budi.session.char)     # each crew its own room
     assert "Budi" not in cmd(game, ani, "look")["text"]

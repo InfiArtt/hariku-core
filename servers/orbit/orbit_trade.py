@@ -10,9 +10,9 @@
 """
 Trading between players, and the pawn shop.
 
-  offer Budi 3 iron for 200 credits      tawarkan Budi 3 besi untuk 200 kredit
-  accept / decline                        terima / tolak
-  cancel offer                            batalkan tawaran
+  offer Sam 3 iron for 200 credits       the other player accepts or declines
+  accept / decline
+  cancel offer
 
 An offer waits two minutes (economy.json "trading") for the other player,
 who has to be online (anywhere on the station) and say yes. Then both sides
@@ -35,8 +35,8 @@ import orbit_safety
 
 logger = logging.getLogger("orbit.game")
 
-SEPARATORS = ("for", "untuk", "seharga", "dengan", "demi", "ganti")
-ARTICLES = {"a", "an", "the", "some", "se", "sebuah", "seekor", "sebiji", "satu"}
+SEPARATORS = ("for",)
+ARTICLES = {"a", "an", "the", "some", "one"}
 _NUMBER_RE = re.compile(r"^\d{1,9}$")
 
 
@@ -79,7 +79,7 @@ class TradeMixin:
     def _side_text(self, side):
         what, n = side
         if what == "credits":
-            return {"en": f"{n} credits", "id": f"{n} kredit"}
+            return {"en": f"{n} credits"}
         return self._count_of(what, n)
 
     def _tradeable(self, tid):
@@ -349,4 +349,4 @@ class TradeMixin:
 
 
 def _credit_words():
-    return {"credit", "credits", "kredit", "cr", "uang", "duit", "money", "coins"}
+    return {"credit", "credits", "cr", "money", "coins"}

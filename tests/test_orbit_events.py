@@ -368,7 +368,9 @@ def test_a_party_in_your_cabin_is_open_to_everyone(events_game, clock):
     budi = join(game, "Budi")
     assert cmd(game, ani, "party")["text"].startswith("Throw a party in your own cabin")
     walk(game, ani, "cabin")
-    cmd(game, ani, "text", a="adakan pesta")
+    assert cmd(game, ani, "text", a="adakan pesta")["text"] == \
+        'I don\'t understand "adakan pesta". Type help for the commands.'          # English only
+    cmd(game, ani, "text", a="host a party")
     invite = news(budi)[-1]
     assert invite["text"].startswith("Ani is throwing a party in their cabin!") and invite["sound"] == "event_party"
     walk(game, budi, "cabins_hall")
@@ -388,7 +390,9 @@ def test_admins_start_stop_and_schedule_events(events_game, clock):
     assert cmd(game, ani, "admin", op="event_start", a="meteor shower")["text"] == \
         "Only the station's admins can do that."
     assert not game.active_of("meteor_shower")
-    started = cmd(game, rafli, "text", a="mulai acara hujan meteor")
+    assert cmd(game, rafli, "text", a="mulai acara hujan meteor")["text"].startswith("I don't understand")
+    assert not game.active_of("meteor_shower")
+    started = cmd(game, rafli, "text", a="start event meteor shower")
     assert started["text"] == "You start the Meteor shower." and game.active_of("meteor_shower")
     assert cmd(game, rafli, "admin", op="event_start", a="meteor")["text"] == "The Meteor shower is already on."
     assert cmd(game, rafli, "admin", op="event_start", a="dragons")["text"].startswith("No such event.")

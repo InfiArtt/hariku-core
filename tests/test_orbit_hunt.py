@@ -55,7 +55,8 @@ def example():
 
 
 def authoring():
-    """A tiny authoring file (plain answers) of a season that doesn't exist."""
+    """A tiny authoring file (plain answers) of a season that doesn't exist. Like the real
+    seasons written before Orbit 1.4, its texts are in two languages; only the English is said."""
     return {
         "season": "t1", "title": {"en": "A test", "id": "Sebuah uji"},
         "intro": {"en": "Test intro.", "id": "Pengantar uji."},
@@ -276,14 +277,62 @@ def test_playing_the_demo_season_from_the_first_riddle_to_the_prize(hunt_game, c
     assert game.store.by_name("ani")["credits"] == char["credits"]
 
 
-def test_the_hunt_speaks_indonesian_too(hunt_game, clock):
+def test_the_hunt_speaks_english_to_every_client(hunt_game, clock):
     game = hunt_game()
-    sari = join(game, "Sari", lang="id")
+    sari = join(game, "Sari", lang="id")                 # an older client asking for Indonesian
     text = cmd(game, sari, "hunt")["text"]
-    assert text.startswith("Nada yang Hilang (demo).") and "Teka-teki 1 dari 2: Apa nama permainan ini?" in text
-    assert "jawabannya orbit" in cmd(game, sari, "investigate")["text"]
+    assert text.startswith("The Lost Chord (a demo).") and "Riddle 1 of 2: What is this game called?" in text
+    assert "the answer is orbit" in cmd(game, sari, "investigate")["text"]
     wrong = solve(game, sari, "salah", clock)["text"]
-    assert wrong.startswith("Bukan itu. Pikirkan lagi:") and wrong.endswith("dalam 60 detik.")
+    assert wrong.startswith("That isn't it. Think again:") and wrong.endswith("in 60 seconds.")
+    assert cmd(game, sari, "text", a="perburuan")["text"].startswith("I don't understand")
+
+
+def test_the_example_season_is_english_only():
+    def walk_texts(value):
+        if isinstance(value, dict):
+            if "en" in value:
+                yield value
+            for inner in value.values():
+                yield from walk_texts(inner)
+        elif isinstance(value, list):
+            for inner in value:
+                yield from walk_texts(inner)
+    texts = list(walk_texts(example()))
+    assert texts and all(set(t) == {"en"} for t in texts)
+
+
+def test_a_season_in_two_languages_says_only_its_english_and_takes_every_answer(hunt_game, tmp_path, clock):
+    world = hunt_game().world
+    season = orbit_hunt.build(dict(authoring(), rival={"name": {"en": "Meridian Grey", "id": "Meridian Kelabu"},
+                                                        "hours": 48}), world)
+    season["stages"][0]["hints"] = [{"en": "Look back in time.", "id": "Lihat ke masa lalu."}]
+    assert orbit_hunt.validate(season, world) == []
+    game = hunt_game(hunt_path=write_season(tmp_path, season))
+    rafli, ani = join(game, "Rafli"), join(game, "Ani", lang="id")
+    assert cmd(game, ani, "hunt")["text"] == "A test. Test intro. Riddle 1 of 1: Q?"
+    cmd(game, rafli, "admin", op="release_hint", n=1)
+    assert announced(ani, "An official hint for riddle 1 of the hunt: Look back in time.")
+    assert "Lihat" not in " ".join(m.get("text", "") for m in ani.sent)
+    assert "Meridian Grey" in cmd(game, ani, "hunt_board")["text"]
+    walk(game, ani, "archive")
+    give(game, "ani", "headlamp")
+    wear(game, ani, "headlamp")
+    assert cmd(game, ani, "investigate")["text"] == "A drawer."
+    # The answers were accepted in both languages when it was built: both are right.
+    hashes = season["stages"][0]["answers"]
+    for answer in ("time capsule", "Kapsul Waktu", "TIME-CAPSULE"):
+        assert orbit_hunt.answer_hash(season["salt"], "t1", "a", answer) in hashes, answer
+    done = solve(game, ani, "Kapsul Waktu", clock)
+    assert done["k"] == "paid" and "Yes." in done["text"] and "Ya." not in done["text"]
+
+
+def test_a_season_without_english_is_refused(world):
+    season = example()
+    season["stages"][0]["riddle"] = {"id": "Apa nama permainan ini?"}
+    season["title"] = {"id": "Nada yang Hilang"}
+    problems = " | ".join(orbit_hunt.validate(season, world))
+    assert "title and an intro in en" in problems and "riddle and a found text in en" in problems
 
 
 def test_look_for_clues_investigates(hunt_game, clock):
@@ -354,9 +403,9 @@ def test_hints_are_released_one_at_a_time_to_everyone(hunt_game, clock):
     assert cmd(game, rafli, "admin", op="release_hint", n=1)["text"] == "Riddle 1 has no more hints."
     assert cmd(game, rafli, "admin", op="release_hint")["text"].startswith("Which riddle?")
     assert cmd(game, rafli, "admin", op="release_hint", n=7)["text"].startswith("Which riddle?")
-    # "umumkan petunjuk 2", as Orbit 1.0 sends it: the hint, not an announcement
+    # "announce hint 2": the hint, not an announcement
     ani.clear()
-    game.receive(rafli, {"t": "cmd", "c": "admin", "op": "announce", "a": "petunjuk 2"})
+    game.receive(rafli, {"t": "cmd", "c": "admin", "op": "announce", "a": "hint 2"})
     assert [m["text"] for m in ani.sent] == ["An official hint for riddle 2 of the hunt: Low to high."]
     assert game.hunt_state()["hints"] == {"d1": 1, "d2": 1}
     assert {"hunt hint"} <= {row["action"] for row in game.store.admin_log(20)}

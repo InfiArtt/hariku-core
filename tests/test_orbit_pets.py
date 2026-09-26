@@ -55,15 +55,19 @@ def test_the_pet_shop_has_six_kinds_and_their_food(make_game, world):
         pet_kind = world.things[tid]["effects"]["pet"]
         assert pet_kind["sound"].startswith("pet_") and len(pet_kind["tricks"]) == 3
         assert {t["stage"] for t in pet_kind["tricks"].values()} == {1, 2}
-        assert len(pet_kind["reactions"]["en"]) == len(pet_kind["reactions"]["id"])
+        assert pet_kind["reactions"]["en"] and set(pet_kind["reactions"]) == {"en"}
+        assert all(set(trick["names"]) == {"en"} for trick in pet_kind["tricks"].values())
+    names = {tid: world.things[tid]["effects"]["pet"]["name"] for tid in kinds}
+    assert names == {"robot_pet": "Bip", "cat_pet": "Marmalade", "robocat_pet": "Tinker", "fox_pet": "Dusk",
+                     "jelly_pet": "Lumi", "minidrone_pet": "Zip"}
     ani = join(game, "Ani")
     ani.session.char["credits"] = 5000
     walk(game, ani, "pet_shop")
     bought = cmd(game, ani, "buy", item="space fox")
     assert bought["text"].startswith("You adopt your new friend, space fox, for")
-    assert pet(game, ani)["kind"] == "fox_pet" and pet(game, ani)["name"] == "Senja"
+    assert pet(game, ani)["kind"] == "fox_pet" and pet(game, ani)["name"] == "Dusk"
     assert cmd(game, ani, "pet", op="status")["text"] == \
-        "Senja, your little space fox: well fed, playful and rested. Senja is happy."
+        "Dusk, your little space fox: well fed, playful and rested. Dusk is happy."
 
 
 def test_needs_fall_gently_and_never_below_nothing(make_game, clock):
@@ -73,50 +77,50 @@ def test_needs_fall_gently_and_never_below_nothing(make_game, clock):
     clock.advance(10 * HOUR)
     assert needs(game, ani) == {"food": 50, "fun": 40, "rest": 60}
     assert cmd(game, ani, "pet", op="status")["text"] == \
-        "Senja, your little space fox: a little peckish, a bit bored and a little tired. Senja is content."
+        "Dusk, your little space fox: a little peckish, a bit bored and a little tired. Dusk is content."
     clock.advance(4 * 24 * HOUR)
     assert needs(game, ani) == {"food": 0, "fun": 0, "rest": 0}
     assert game.pets_of(ani.session.char)                          # still there, always
     assert cmd(game, ani, "pet", op="status")["text"].endswith(
-        "hungry, bored and lonely and sleepy. Senja is sad and quiet, and would love some care.")
+        "hungry, bored and lonely and sleepy. Dusk is sad and quiet, and would love some care.")
     budi = join(game, "Budi")
-    assert "Senja seems sad and quiet." in cmd(game, budi, "look", a="Ani")["text"]
+    assert "Dusk seems sad and quiet." in cmd(game, budi, "look", a="Ani")["text"]
     budi.clear()
     game.pet_reacts(ani.session, chance=1.0)
     assert not budi.events("emote")                                # sad pets are quiet
     played = cmd(game, ani, "pet", op="play")
-    assert played["text"] == "Senja is too tired to run about, so you just cuddle, and Senja cheers up a little."
+    assert played["text"] == "Dusk is too tired to run about, so you just cuddle, and Dusk cheers up a little."
     assert needs(game, ani) == {"food": 0, "fun": 15, "rest": 0}
     clock.advance(301)
     cmd(game, ani, "pet", op="rest")
-    assert cmd(game, ani, "pet", op="play")["text"] == "You play with Senja. Slowly at first, then with " \
-                                                       "everything it has: Senja is cheered right up."
+    assert cmd(game, ani, "pet", op="play")["text"] == "You play with Dusk. Slowly at first, then with " \
+                                                       "everything it has: Dusk is cheered right up."
 
 
 def test_feeding_with_pet_food_and_treats(make_game, clock):
     game = make_game()
-    ani = join(game, "Ani", lang="id")
+    ani = join(game, "Ani", lang="id")                  # an older client asking for Indonesian: English
     adopt(game, ani)
     char = ani.session.char
     clock.advance(20 * HOUR)
-    assert cmd(game, ani, "pet", op="feed")["text"].startswith("Kamu tidak punya pakan untuk Senja.")
+    assert cmd(game, ani, "pet", op="feed")["text"].startswith("You have no pet food for Dusk.")
     char["inventory"].update({"pet_food": 2, "pet_treat": 1})
     fed = cmd(game, ani, "pet", op="feed")
-    assert fed["text"].startswith("Kamu memberi makan Senja: kantong pakan hewan. Senja melahap makanannya")
+    assert fed["text"].startswith("You feed Dusk: bag of pet food. Dusk gulps its food")
     assert fed["sound"] == "pet_fox" and needs(game, ani)["food"] == 55 and char["inventory"]["pet_food"] == 1
     clock.advance(2)
-    game.receive(ani, {"t": "cmd", "c": "give", "to": "makan", "n": 1, "item": "Senja"})   # "beri makan Senja"
+    game.receive(ani, {"t": "cmd", "c": "give", "to": "food", "n": 1, "item": "Dusk"})   # "give food Dusk"
     assert needs(game, ani)["food"] == 90 and "pet_food" not in char["inventory"]
     clock.advance(2)
-    assert cmd(game, ani, "pet", op="feed", a="camilan")["text"].startswith("Kamu memberi makan Senja: camilan")
+    assert cmd(game, ani, "pet", op="feed", a="treat")["text"].startswith("You feed Dusk: pet treat")
     assert needs(game, ani)["food"] == 100 and needs(game, ani)["fun"] == 20
     clock.advance(2)
     char["inventory"]["pet_treat"] = 1
-    assert cmd(game, ani, "pet", op="feed")["text"] == "Senja sudah kenyang, dan menolak makan lagi."
+    assert cmd(game, ani, "pet", op="feed")["text"] == "Dusk is full, and turns its nose up at more food."
     assert char["inventory"]["pet_treat"] == 1
     clock.advance(2)
-    game.receive(ani, {"t": "cmd", "c": "use", "item": "camilan hewan"})         # "pakai camilan hewan"
-    assert ani.sent[-1]["text"] == "Senja sudah kenyang, dan menolak makan lagi."
+    game.receive(ani, {"t": "cmd", "c": "use", "item": "pet treat"})             # "use pet treat"
+    assert ani.sent[-1]["text"] == "Dusk is full, and turns its nose up at more food."
 
 
 def test_play_and_rest(make_game, clock):
@@ -125,14 +129,14 @@ def test_play_and_rest(make_game, clock):
     adopt(game, ani)
     budi = join(game, "Budi")
     played = cmd(game, ani, "pet", op="play")
-    assert played["text"].startswith("You play with Senja") and budi.texts("emote")[-1] == "Ani plays with Senja."
+    assert played["text"].startswith("You play with Dusk") and budi.texts("emote")[-1] == "Ani plays with Dusk."
     assert needs(game, ani) == {"food": 80, "fun": 100, "rest": 72}
-    assert cmd(game, ani, "pet", op="play")["text"].startswith("Senja needs a breather before playing again")
-    assert cmd(game, ani, "pet", op="rest")["text"] == "Senja curls up for a nap, and wakes up refreshed."
+    assert cmd(game, ani, "pet", op="play")["text"].startswith("Dusk needs a breather before playing again")
+    assert cmd(game, ani, "pet", op="rest")["text"] == "Dusk curls up for a nap, and wakes up refreshed."
     assert needs(game, ani)["rest"] == 100
-    assert cmd(game, ani, "pet", op="rest")["text"] == "Senja isn't sleepy right now."
+    assert cmd(game, ani, "pet", op="rest")["text"] == "Dusk isn't sleepy right now."
     clock.advance(45 * HOUR)
-    assert cmd(game, ani, "pet", op="play")["text"].startswith("Senja is too tired to run about")
+    assert cmd(game, ani, "pet", op="play")["text"].startswith("Dusk is too tired to run about")
 
 
 def test_growing_up_takes_days_and_care(make_game, clock):
@@ -149,9 +153,9 @@ def test_growing_up_takes_days_and_care(make_game, clock):
             cmd(game, ani, "pet", op=op)
             grew += [(day, m["text"]) for m in ani.sent if m.get("sound") == "levelup"]
     comp = pet(game, ani)
-    assert grew == [(2, "Senja has grown: Senja is young now!"), (8, "Senja has grown: Senja is grown now!")]
+    assert grew == [(2, "Dusk has grown: Dusk is young now!"), (8, "Dusk has grown: Dusk is grown now!")]
     assert game.pet_stage(comp) == 2 and comp["stats"]["care"] >= 25
-    assert cmd(game, ani, "pet", op="status")["text"].startswith("Senja, your grown space fox:")
+    assert cmd(game, ani, "pet", op="status")["text"].startswith("Dusk, your grown space fox:")
 
 
 def test_tricks_are_taught_in_lessons_and_shown_off(make_game, clock, monkeypatch):
@@ -159,31 +163,29 @@ def test_tricks_are_taught_in_lessons_and_shown_off(make_game, clock, monkeypatc
     ani = join(game, "Ani", lang="id")
     budi = join(game, "Budi")
     comp = adopt(game, ani)
-    assert text(game, ani, "ajari trik duduk")["text"] == \
-        "Senja masih terlalu kecil untuk belajar duduk: tunggu sampai remaja."
+    assert text(game, ani, "teach trick sit")["text"] == "Dusk is too young to learn sit: wait until it's young."
     comp["stats"]["stage"] = 1
     game.store.save_companion(comp)
     monkeypatch.setattr(game.rng, "random", lambda: 0.1)
-    assert text(game, ani, "ajari trik duduk")["text"] == \
-        "Pelajaran yang bagus: Senja mulai paham duduk (1 dari 3)."
-    assert text(game, ani, "ajari trik duduk")["text"].startswith("Senja masih memikirkan pelajaran tadi.")
+    assert text(game, ani, "teach trick sit")["text"] == "A good lesson: Dusk is getting the hang of sit (1 of 3)."
+    assert text(game, ani, "teach trick sit")["text"].startswith("Dusk is still thinking about the last lesson.")
     clock.advance(301)
-    text(game, ani, "ajari Senja duduk")
+    text(game, ani, "teach Dusk sit")
     clock.advance(301)
-    learned = text(game, ani, "teach Senja sit")
-    assert learned["text"] == "Senja sudah bisa duduk! Ucapkan trik duduk untuk menunjukkannya pada semua orang."
+    learned = text(game, ani, "teach Dusk sit")
+    assert learned["text"] == "Dusk has learned sit! Say trick sit to show everyone."
     assert learned["sound"] == "pet_trick"
     budi.clear()
-    shown = text(game, ani, "trik duduk")
-    assert shown["text"].startswith("Senja duduk, ekornya tersapu rapi") and shown["sound"] == "pet_trick"
-    assert budi.texts("emote")[-1].startswith("Senja sits, tail swept neatly")
-    assert text(game, ani, "trik lolong")["text"] == "Senja belum bisa trik itu."
-    assert text(game, ani, "ajari trik lolong")["text"] == \
-        "Senja masih terlalu kecil untuk belajar lolong: tunggu sampai sudah dewasa."
-    assert "Trik: duduk." in text(game, ani, "status hewan")["text"]
+    shown = text(game, ani, "trick sit")
+    assert shown["text"].startswith("Dusk sits, tail swept neatly") and shown["sound"] == "pet_trick"
+    assert budi.texts("emote")[-1].startswith("Dusk sits, tail swept neatly")
+    assert text(game, ani, "trick howl")["text"] == "Dusk doesn't know that trick."
+    assert text(game, ani, "teach trick howl")["text"] == "Dusk is too young to learn howl: wait until it's grown."
+    assert "Tricks: sit." in text(game, ani, "pet status")["text"]
+    assert text(game, ani, "ajari trik duduk")["text"].startswith("I don't understand")      # English only
     clock.advance(5 * 24 * HOUR)
-    assert text(game, ani, "trik duduk")["text"] == "Senja sedang terlalu sedih untuk bermain trik. Perhatikan dulu?"
-    assert text(game, ani, "ajari trik lompat")["text"].startswith("Senja sedang tidak ingin belajar.")
+    assert text(game, ani, "trick sit")["text"] == "Dusk is too sad for tricks right now. Some care first?"
+    assert text(game, ani, "teach trick jump")["text"].startswith("Dusk isn't in the mood for lessons.")
 
 
 def test_names_and_several_pets(make_game):
@@ -191,12 +193,12 @@ def test_names_and_several_pets(make_game):
     ani = join(game, "Ani")
     adopt(game, ani)
     adopt(game, ani, "jelly_pet")
-    assert cmd(game, ani, "pet", op="name", a="Senja to Bara")["text"] == "Your pet's name is Bara now."
+    assert cmd(game, ani, "pet", op="name", a="Dusk to Ember")["text"] == "Your pet's name is Ember now."
     assert cmd(game, ani, "pet", op="name", a="Lumi Nebula")["text"] == "Your pet's name is Nebula now."
-    assert sorted(p["name"] for p in game.pets_of(ani.session.char)) == ["Bara", "Nebula"]
+    assert sorted(p["name"] for p in game.pets_of(ani.session.char)) == ["Ember", "Nebula"]
     status = cmd(game, ani, "pet", op="status")["text"]
-    assert status.startswith("Bara, your little space fox:") and "Nebula, your little glow jellyfish:" in status
-    assert cmd(game, ani, "pet", op="name", a="Bara to f*ck!")["text"] == "A pet's name needs 1 to 16 letters or digits."
+    assert status.startswith("Ember, your little space fox:") and "Nebula, your little glow jellyfish:" in status
+    assert cmd(game, ani, "pet", op="name", a="Ember to f*ck!")["text"] == "A pet's name needs 1 to 16 letters or digits."
     ani.session.char["inventory"]["pet_food"] = 1
     fed = cmd(game, ani, "pet", op="feed", a="Nebula")
     assert fed["sound"] == "pet_jelly"
@@ -210,15 +212,15 @@ def test_pets_follow_and_join_in(make_game, monkeypatch):
     monkeypatch.setattr(game.rng, "random", lambda: 0.0)
     budi.clear()
     cmd(game, ani, "emote", e="dance")
-    assert budi.texts("emote")[-1] == "Oyen dances along with Ani."
+    assert budi.texts("emote")[-1] == "Marmalade dances along with Ani."
     assert budi.sent[-1]["sound"] == "pet_cat"
     budi.clear()
-    cmd(game, ani, "emote", e="hug", to="Oyen")
-    assert budi.texts("emote")[0] == "Ani hugs Oyen." and "Oyen" in budi.texts("emote")[-1]
+    cmd(game, ani, "emote", e="hug", to="Marmalade")
+    assert budi.texts("emote")[0] == "Ani hugs Marmalade." and "Marmalade" in budi.texts("emote")[-1]
     budi.clear()
-    cmd(game, budi, "emote", e="wave", to="Oyen")                   # another player's pet
-    assert budi.texts("emote")[0] == "You wave at Oyen."
-    assert "With them: Oyen the orange space cat." in cmd(game, budi, "look", a="Ani")["text"]
+    cmd(game, budi, "emote", e="wave", to="Marmalade")                   # another player's pet
+    assert budi.texts("emote")[0] == "You wave at Marmalade."
+    assert "With them: Marmalade the orange space cat." in cmd(game, budi, "look", a="Ani")["text"]
 
 
 def test_a_pet_in_need_nudges_its_owner_once_an_hour(make_game, clock):
@@ -229,7 +231,7 @@ def test_a_pet_in_need_nudges_its_owner_once_an_hour(make_game, clock):
     ani.clear()
     game.tick()
     nudges = [m for m in ani.sent if m.get("sound") == "pet_fox"]
-    assert [m["text"] for m in nudges] == ["Senja looks at you hopefully: it's bored. Play with it?"]
+    assert [m["text"] for m in nudges] == ["Dusk looks at you hopefully: it's bored. Play with it?"]
     clock.advance(600)
     game.tick()
     assert len([m for m in ani.sent if m.get("sound") == "pet_fox"]) == 1
@@ -238,7 +240,7 @@ def test_a_pet_in_need_nudges_its_owner_once_an_hour(make_game, clock):
     assert len([m for m in ani.sent if m.get("sound") == "pet_fox"]) == 2
     cmd(game, ani, "bye")
     back = join(game, "Ani")
-    assert "Senja missed you, and would love some care." in back.sent[1]["text"]
+    assert "Dusk missed you, and would love some care." in back.sent[1]["text"]
 
 
 def test_a_pet_may_choose_you_out_on_the_worlds(make_game, clock, monkeypatch):
@@ -249,7 +251,7 @@ def test_a_pet_may_choose_you_out_on_the_worlds(make_game, clock, monkeypatch):
     monkeypatch.setattr(game.rng, "random", lambda: 0.001)
     won = cmd(game, ani, "face", a="moss sprite")
     assert won["text"].endswith("And something small comes along with you: a space fox has chosen you! "
-                                "Its name is Senja; change it with name pet.")
+                                "Its name is Dusk; change it with name pet.")
     assert [p["kind"] for p in game.pets_of(ani.session.char)] == ["fox_pet"]
     clock.advance(21)
     again = cmd(game, ani, "face", a="moss sprite")

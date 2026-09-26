@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Tests for the Orbit extension (extensions/orbit), all on fakes: reading
-# commands in Indonesian and English (and the client's own: quick settings,
+# commands in English, Orbit being played in English (and the client's own: quick settings,
 # the ignore list, leaving, the status), Aruna's "orbit ..." commands,
 # playing (what is shown, played and said, and by whom; what the settings
 # leave unread; what is heard with the window closed; players you ignore),
@@ -49,7 +49,7 @@ import orbit_ws  # noqa: E402
 
 @pytest.fixture
 def lang(monkeypatch):
-    """Switch Hariku's language (Orbit's own words follow it)."""
+    """Switch Hariku's language. Orbit's own words stay English: it's played in English."""
     from core import i18n
 
     def set_lang(code):
@@ -64,128 +64,152 @@ def lang(monkeypatch):
 # ------------------------------------------------------------
 
 @pytest.mark.parametrize("text, expected", [
-    ("pergi ke kantin", {"c": "go", "a": "kantin"}),
     ("go to the cantina", {"c": "go", "a": "the cantina"}),
-    ("ke dek observasi", {"c": "go", "a": "dek observasi"}),
-    ("pulang", {"c": "go", "a": "kabin"}),
-    ("masuk kabin", {"c": "go", "a": "kabin"}),
-    ("bilang halo semua!", {"c": "say", "a": "halo semua!"}),
+    ("walk to the observation deck", {"c": "go", "a": "the observation deck"}),
+    ("go home", {"c": "go", "a": "home"}),
+    ("enter cabin", {"c": "go", "a": "cabin"}),
+    ("say hello everyone!", {"c": "say", "a": "hello everyone!"}),
     ("say Hi, how are you?", {"c": "say", "a": "Hi, how are you?"}),
-    ("'apa kabar", {"c": "say", "a": "apa kabar"}),
-    ("bisik Sari ketemu di dek", {"c": "whisper", "to": "Sari", "a": "ketemu di dek"}),
-    ("berbisik ke Sari: nanti ya", {"c": "whisper", "to": "Sari", "a": "nanti ya"}),
+    ("'how are you", {"c": "say", "a": "how are you"}),
+    ("whisper Sari see you on deck", {"c": "whisper", "to": "Sari", "a": "see you on deck"}),
+    ("whisper to Sari: later", {"c": "whisper", "to": "Sari", "a": "later"}),
     ("whisper to Budi meet me at the dock", {"c": "whisper", "to": "Budi",
                                              "a": "meet me at the dock"}),
     ("tell Budi hi", {"c": "whisper", "to": "Budi", "a": "hi"}),
-    ("teriak ada yang mau ke bulan?", {"c": "shout", "a": "ada yang mau ke bulan?"}),
-    ("senyum", {"c": "emote", "e": "smile"}),
-    ("senyum ke Sari", {"c": "emote", "e": "smile", "to": "Sari"}),
+    ("shout anyone going to the moon?", {"c": "shout", "a": "anyone going to the moon?"}),
+    ("yell hello", {"c": "shout", "a": "hello"}),
+    ("smile", {"c": "emote", "e": "smile"}),
+    ("smile at Sari", {"c": "emote", "e": "smile", "to": "Sari"}),
     ("wave at Budi", {"c": "emote", "e": "wave", "to": "Budi"}),
-    ("angkat bahu", {"c": "emote", "e": "shrug"}),
-    ("tepuk tangan", {"c": "emote", "e": "clap"}),
-    ("wkwkwk", {"c": "emote", "e": "laugh"}),
-    ("peluk Sari", {"c": "emote", "e": "hug", "to": "Sari"}),
-    ("senyum itu ibadah ya", {"c": "text", "a": "senyum itu ibadah ya"}),
-    ("siapa online", {"c": "who"}),
+    ("shrug", {"c": "emote", "e": "shrug"}),
+    ("clap", {"c": "emote", "e": "clap"}),
+    ("applaud", {"c": "emote", "e": "clap"}),
+    ("hahaha", {"c": "emote", "e": "laugh"}),
+    ("lol", {"c": "emote", "e": "laugh"}),
+    ("hug Sari", {"c": "emote", "e": "hug", "to": "Sari"}),
+    ("smile if you are happy", {"c": "text", "a": "smile if you are happy"}),
     ("who is online", {"c": "who"}),
-    ("lihat", {"c": "look"}),
-    ("lihat sekitar", {"c": "look"}),
-    ("lihat Sari", {"c": "look", "a": "Sari"}),
+    ("who", {"c": "who"}),
+    ("look", {"c": "look"}),
+    ("look around", {"c": "look"}),
+    ("look at Sari", {"c": "look", "a": "Sari"}),
     ("look at the reactor", {"c": "look", "a": "the reactor"}),
-    ("cek kredit", {"c": "inventory"}),
-    ("tas", {"c": "inventory"}),
+    ("examine headlamp", {"c": "look", "a": "headlamp"}),
+    ("check credits", {"c": "inventory"}),
+    ("inventory", {"c": "inventory"}),
     ("i", {"c": "inventory"}),
     ("i think so", {"c": "text", "a": "i think so"}),
-    ("beri Sari 50 kredit", {"c": "give", "to": "Sari", "n": 50, "item": "kredit"}),
-    ("kasih ke Sari 2 kopi", {"c": "give", "to": "Sari", "n": 2, "item": "kopi"}),
+    ("give Sari 50 credits", {"c": "give", "to": "Sari", "n": 50, "item": "credits"}),
+    ("give to Sari 2 coffee", {"c": "give", "to": "Sari", "n": 2, "item": "coffee"}),
     ("give 50 credits to Sari", {"c": "give", "to": "Sari", "n": 50, "item": "credits"}),
-    ("bayar Budi 20", {"c": "give", "to": "Budi", "n": 20, "item": "credits"}),
-    ("kerja", {"c": "work"}),
-    ("perbaiki reaktor", {"c": "work"}),
-    ("perbaiki 3142", {"c": "answer", "a": "3142"}),
+    ("pay Budi 20", {"c": "give", "to": "Budi", "n": 20, "item": "credits"}),
+    ("work", {"c": "work"}),
+    ("repair the reactor", {"c": "work"}),
+    ("repair 3142", {"c": "answer", "a": "3142"}),
     ("3, 1, 4, 2", {"c": "answer", "a": "3, 1, 4, 2"}),
-    ("misi", {"c": "missions"}),
-    ("misi 2", {"c": "accept", "n": 2}),
-    ("ambil misi 1", {"c": "accept", "n": 1}),
+    ("missions", {"c": "missions"}),
+    ("board 2", {"c": "accept", "n": 2}),
+    ("accept mission 1", {"c": "accept", "n": 1}),
     ("accept 3", {"c": "accept", "n": 3}),
-    ("ambil 3 peti", {"c": "take", "item": "peti", "n": 3}),
+    ("take 3 crates", {"c": "take", "item": "crates", "n": 3}),
     ("pick up crates", {"c": "take", "item": "crates"}),
-    ("selesaikan misi", {"c": "complete"}),
-    ("batalkan misi", {"c": "abandon"}),
-    ("harga", {"c": "prices"}),
-    ("beli 2 kopi", {"c": "buy", "item": "kopi", "n": 2}),
-    ("jual semua kopi", {"c": "sell", "item": "kopi", "n": "all"}),
+    ("complete mission", {"c": "complete"}),
+    ("abandon mission", {"c": "abandon"}),
+    ("prices", {"c": "prices"}),
+    ("buy 2 coffee", {"c": "buy", "item": "coffee", "n": 2}),
     ("sell all coffee", {"c": "sell", "item": "coffee", "n": "all"}),
-    ("deskripsi aku pilot dari Batam", {"c": "describe", "a": "pilot dari Batam"}),
+    ("describe me a pilot from the coast", {"c": "describe", "a": "a pilot from the coast"}),
     ("describe me", {"c": "describe", "a": ""}),
-    ("bantuan", {"local": "help"}),
     ("help", {"local": "help"}),
-    ("sambungkan", {"local": "connect"}),
-    ("putuskan", {"local": "disconnect"}),
-    ("ulangi", {"local": "repeat"}),
-    ("kantin", {"c": "text", "a": "kantin"}),
-    ("orbit pergi ke dermaga", {"c": "go", "a": "dermaga"}),
-    ("tolong orbit siapa online", {"c": "who"}),
+    ("?", {"local": "help"}),
+    ("connect", {"local": "connect"}),
+    ("disconnect", {"local": "disconnect"}),
+    ("repeat", {"local": "repeat"}), ("again", {"local": "repeat"}),
+    ("cantina", {"c": "text", "a": "cantina"}),
+    ("orbit go to the dock", {"c": "go", "a": "the dock"}),
+    ("please orbit who is online", {"c": "who"}),
     ("mute Budi 5", {"c": "admin", "op": "mute", "to": "Budi", "n": 5}),
-    ("umumkan server restart jam 9", {"c": "admin", "op": "announce", "a": "server restart jam 9"}),
-    ("suara pemain mati", {"local": "set", "key": "voices", "value": False}),
-    ("nyalakan suara pemain", {"local": "set", "key": "voices", "value": True}),
+    ("announce server restart at 9", {"c": "admin", "op": "announce", "a": "server restart at 9"}),
     ("voices off", {"local": "set", "key": "voices", "value": False}),
-    ("bacakan pesan mati", {"local": "set", "key": "speak", "value": False}),
+    ("turn on voices", {"local": "set", "key": "voices", "value": True}),
+    ("player voices on", {"local": "set", "key": "voices", "value": True}),
+    ("speech off", {"local": "set", "key": "speak", "value": False}),
     ("speech on", {"local": "set", "key": "speak", "value": True}),
-    ("ambience mati", {"local": "set", "key": "ambience", "value": False}),
-    ("suasana nyala", {"local": "set", "key": "ambience", "value": True}),
-    ("suara efek mati", {"local": "set", "key": "sounds", "value": False}),
+    ("my lines off", {"local": "set", "key": "speak_own", "value": False}),
+    ("names on", {"local": "set", "key": "speak_names", "value": True}),
+    ("ambience off", {"local": "set", "key": "ambience", "value": False}),
+    ("ambience on", {"local": "set", "key": "ambience", "value": True}),
+    ("sounds off", {"local": "set", "key": "sounds", "value": False}),
     ("turn off sounds", {"local": "set", "key": "sounds", "value": False}),
     ("other sounds off", {"local": "set", "key": "other_sounds", "value": False}),
-    ("volume efek 40", {"local": "set", "key": "effects_volume", "value": 40}),
+    ("effects volume 40", {"local": "set", "key": "effects_volume", "value": 40}),
     ("ambience volume 250", {"local": "set", "key": "ambience_volume", "value": 100}),
-    ("pengaturan", {"local": "settings"}), ("settings", {"local": "settings"}),
-    ("abaikan Budi", {"local": "ignore", "name": "Budi"}),
+    ("reader nvda", {"local": "set", "key": "reader", "value": "nvda"}),
+    ("reader mixed", {"local": "set", "key": "reader", "value": "mixed"}),
+    ("all voices", {"local": "set", "key": "reader", "value": "voices"}),
+    ("preferences", {"local": "settings"}), ("settings", {"local": "settings"}),
     ("ignore Budi", {"local": "ignore", "name": "Budi"}),
-    ("dengar lagi Budi", {"local": "unignore", "name": "Budi"}),
+    ("stop ignoring Budi", {"local": "unignore", "name": "Budi"}),
     ("unignore Budi", {"local": "unignore", "name": "Budi"}),
-    ("daftar abaikan", {"local": "ignored"}),
-    ("keluar", {"local": "disconnect"}), ("orbit keluar", {"local": "disconnect"}),
-    ("quit", {"local": "disconnect"}),
-    ("status", {"local": "status"}), ("status orbit", {"local": "status"}),
-    ("bantuan kasino", {"local": "help", "topic": "kasino"}),
+    ("ignored", {"local": "ignored"}), ("ignore list", {"local": "ignored"}),
+    ("logout", {"local": "disconnect"}), ("orbit quit", {"local": "disconnect"}),
+    ("quit", {"local": "disconnect"}), ("leave orbit", {"local": "disconnect"}),
+    ("status", {"local": "status"}), ("orbit status", {"local": "status"}),
+    ("help casino", {"local": "help", "topic": "casino"}),
     ("help settings", {"local": "help", "topic": "settings"}),
-    ("harga panen", {"c": "prices", "a": "panen"}),
-    ("s", {"c": "text", "a": "s"}), ("u", {"c": "text", "a": "u"}), ("barat daya", {"c": "text", "a": "barat daya"}),
-    ("beri kredit Budi 50", {"c": "text", "a": "beri kredit Budi 50"}),
-    ("ambil kredit Budi 50", {"c": "text", "a": "ambil kredit Budi 50"}),
+    ("prices crops", {"c": "prices", "a": "crops"}),
+    ("remind me of the meteor shower", {"local": "remind", "name": "the meteor shower"}),
+    ("s", {"c": "text", "a": "s"}), ("u", {"c": "text", "a": "u"}), ("d", {"c": "text", "a": "d"}),
+    ("southwest", {"c": "text", "a": "southwest"}),
+    ("take credits Budi 50", {"c": "text", "a": "take credits Budi 50"}),
+    ("give item Budi headlamp", {"c": "text", "a": "give item Budi headlamp"}),
     ("take off headlamp", {"c": "text", "a": "take off headlamp"}),
-    ("board the Kancil", {"c": "text", "a": "board the Kancil"}),
+    ("board the Wombat", {"c": "text", "a": "board the Wombat"}),
+    ("fly to Karmina", {"c": "text", "a": "fly to Karmina"}),
     ("transfer code", {"c": "text", "a": "transfer code"}),
-    ("nyalakan lentera", {"c": "text", "a": "nyalakan lentera"}),
-    ("bicara dengan Bayu", {"c": "text", "a": "bicara dengan Bayu"}),
-    ("beri makan Kiki", {"c": "text", "a": "beri makan Kiki"}),
-    ("say hi to Jali", {"c": "text", "a": "say hi to Jali"}),
-    ("tanya Jali tentang gosip", {"c": "text", "a": "tanya Jali tentang gosip"}),
-    ("lamar Budi", {"c": "text", "a": "lamar Budi"}),
-    ("status hewan", {"c": "text", "a": "status hewan"}),
-    ("peluk Mira", {"c": "emote", "e": "hug", "to": "Mira"}),
+    ("light lantern", {"c": "text", "a": "light lantern"}),
+    ("talk to Rocco", {"c": "text", "a": "talk to Rocco"}),
+    ("feed Kiki", {"c": "text", "a": "feed Kiki"}),
+    ("say hi to Rocco", {"c": "text", "a": "say hi to Rocco"}),
+    ("ask Rocco about gossip", {"c": "text", "a": "ask Rocco about gossip"}),
+    ("propose to Budi", {"c": "text", "a": "propose to Budi"}),
+    ("pet status", {"c": "text", "a": "pet status"}),
+    ("hug Mira", {"c": "emote", "e": "hug", "to": "Mira"}),
     ("", None), ("   ", None),
 ])
-def test_reading_commands_in_both_languages(text, expected):
+def test_reading_commands(text, expected):
     assert orbit_parse.parse(text) == expected
 
 
-def test_both_languages_have_the_same_words_and_placeholders():
+@pytest.mark.parametrize("text", [
+    "pergi ke kantin", "bilang halo semua", "bisik Sari ketemu di dek", "senyum", "siapa online", "lihat",
+    "tas", "beri Sari 50 kredit", "kerja", "misi", "harga", "beli 2 kopi", "harian", "bantuan", "sambungkan",
+    "putuskan", "keluar", "ulangi", "suara pemain mati", "abaikan Budi", "pengaturan", "wkwkwk",
+])
+def test_indonesian_is_not_read_it_goes_to_the_server_as_it_is(text):
+    # Orbit is played in English: the server answers these with its help hint.
+    assert orbit_parse.parse(text) == {"c": "text", "a": text}
+    assert orbit_parse.parse("orbit " + text) == {"c": "text", "a": text}
+
+
+def test_orbits_words_are_english_only_and_cover_every_key(lang):
     import json
     import string
-    texts = {}
-    for code in ("en", "id"):
-        with open(os.path.join(EXT_DIR, "locales", f"{code}.json"), encoding="utf-8") as f:
-            texts[code] = json.load(f)["messages"]
-    assert set(texts["en"]) == set(texts["id"])
-
-    def fields(text):
-        return {name for _l, name, _s, _c in string.Formatter().parse(text) if name}
-
-    for key, line in texts["en"].items():
-        assert fields(line) == fields(texts["id"][key]), key
+    import orbit_text
+    locales = os.path.join(EXT_DIR, "locales")
+    assert sorted(os.listdir(locales)) == ["en.json"]           # no other language
+    with open(os.path.join(locales, "en.json"), encoding="utf-8") as f:
+        data = json.load(f)
+    assert data["manifest"]["language_code"] == "en"
+    texts = data["messages"]
+    for key, line in texts.items():
+        assert isinstance(line, str) and line.strip(), key
+        for _l, name, _s, _c in string.Formatter().parse(line):
+            assert name is None or name.isidentifier(), (key, name)
+    # Hariku in Indonesian (the lang fixture): Orbit's own words fall back to English.
+    assert orbit_text._("say_connected") == texts["say_connected"] == "Connected to Orbit."
+    assert orbit_text._("status_online", name="Rafli", job="Pilot") == "Connected to Orbit as Rafli, Pilot."
+    assert orbit_text.LANGUAGE == "en"
 
 
 # ------------------------------------------------------------
@@ -206,11 +230,11 @@ def omain(monkeypatch, tmp_data_dir, lang):
 
 
 @pytest.mark.parametrize("text, slot", [
-    ("orbit pergi ke kantin", "pergi ke kantin"),
-    ("Aruna, orbit bilang halo semua!", "bilang halo semua!"),
-    ("tolong orbit siapa online", "siapa online"),
-    ("orbit bisik Sari ketemu di dek", "bisik Sari ketemu di dek"),
-    ("orbit lihat sekitar", "lihat sekitar"),
+    ("orbit north", "north"),
+    ("Aruna, orbit say hello everyone!", "say hello everyone!"),
+    ("please orbit who is online", "who is online"),
+    ("orbit whisper Sari see you on deck", "whisper Sari see you on deck"),
+    ("orbit look around", "look around"),
     ("orbit go to the cantina", "go to the cantina"),
 ])
 def test_orbit_sentences_reach_the_game(omain, monkeypatch, text, slot):
@@ -235,7 +259,7 @@ def test_aruna_waits_longer_while_orbit_connects(omain, monkeypatch):
     monkeypatch.setattr(core.commands, "hold_answer", held.append)
     monkeypatch.setattr(omain, "_client", types.SimpleNamespace(
         submit=lambda text, source: None, online=lambda: False))
-    reply = omain._on_play_intent(core.commands.Request("siapa online", "orbit siapa online"))
+    reply = omain._on_play_intent(core.commands.Request("who is online", "orbit who is online"))
     assert reply.wait and held == [omain.CONNECT_HOLD_SECONDS]
 
 
@@ -244,14 +268,15 @@ def test_not_for_orbit(omain, monkeypatch):
     monkeypatch.setattr(core.commands, "_intents", {})
     core.commands.add_intent(omain.PLAY_INTENT, list(omain.PLAY_PATTERNS), omain._on_play_intent)
     assert core.commands.match_intents("orbit") == []
-    assert core.commands.match_intents("pergi ke kantin") == []
+    assert core.commands.match_intents("go to the cantina") == []
     monkeypatch.setattr(omain, "_client", types.SimpleNamespace(submit=lambda *a: None,
                                                                 online=lambda: True))
     request = core.commands.Request
     assert omain._on_play_intent(request("   ", "orbit")) is None
     assert omain._on_play_intent(request("x" * 400, "orbit ...")) is None
-    reply = omain._on_play_intent(request("buka", "orbit buka"))
+    reply = omain._on_play_intent(request("open", "orbit open"))
     assert reply.then is omain.open_window
+    assert omain._on_play_intent(request("play", "orbit play")).then is omain.open_window
 
 
 def _commands(omain):
@@ -259,16 +284,15 @@ def _commands(omain):
     candidates = []
     for name, description, _title, _callback, aliases, _answers in omain.ACTIONS:
         candidates.append(core.commands.Command(f"Orbit.{name}", omain._(description), list(aliases)))
-    for action_id, description in (("Hariku Core.speak_time", "Ucapkan waktu"),
-                                   ("World Trip.where_am_i", "Di mana aku sekarang")):
+    for action_id, description in (("Hariku Core.speak_time", "Speak the time"),
+                                   ("World Trip.where_am_i", "Where am I now")):
         candidates.append(core.commands.Command(action_id, description,
                                                 core.commands.aliases_for(action_id)))
     return candidates
 
 
 @pytest.mark.parametrize("text, action", [
-    ("orbit", "Orbit.open"), ("buka orbit", "Orbit.open"), ("open orbit", "Orbit.open"),
-    ("main orbit", "Orbit.open"),
+    ("orbit", "Orbit.open"), ("open orbit", "Orbit.open"), ("play orbit", "Orbit.open"),
 ])
 def test_what_aruna_runs(omain, text, action):
     import core.commands
@@ -281,9 +305,9 @@ def test_a_sentence_with_orbit_is_a_command_with_content(omain, monkeypatch):
     monkeypatch.setattr(core.commands, "_intents", {})
     intent = core.commands.add_intent(omain.PLAY_INTENT, list(omain.PLAY_PATTERNS),
                                       omain._on_play_intent)
-    decision = core.commands.decide("orbit bilang besok ketemu jam 9", _commands(omain),
+    decision = core.commands.decide("orbit say see you tomorrow at 9", _commands(omain),
                                     parse=lambda text: None, intent_candidates=[intent])
-    assert decision.kind == "intent" and decision.intents[0].text == "bilang besok ketemu jam 9"
+    assert decision.kind == "intent" and decision.intents[0].text == "say see you tomorrow at 9"
 
 
 def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
@@ -304,12 +328,12 @@ def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
     assert core.commands.is_answer_action("Orbit.look") and core.commands.is_answer_action("Orbit.who")
     assert not core.commands.is_answer_action("Orbit.open")                # it opens a window
     assert [i.id for i in core.commands.intents()] == ["Orbit.play"]
-    assert "buka orbit" in core.commands.aliases_for("Orbit.open")
-    assert "orbit keluar" in core.commands.aliases_for("Orbit.leave")
+    assert "open orbit" in core.commands.aliases_for("Orbit.open")
+    assert "orbit quit" in core.commands.aliases_for("Orbit.leave")
     assert "orbit status" in core.commands.aliases_for("Orbit.status")
     assert "orbit connect" in core.commands.aliases_for("Orbit.connect")
     assert "orbit disconnect" not in core.commands.aliases_for("Orbit.connect")
-    assert "orbit putuskan" in core.commands.aliases_for("Orbit.disconnect")
+    assert "orbit disconnect" in core.commands.aliases_for("Orbit.disconnect")
     assert panels[0][0] == "Orbit"
     assert omain._on_before_speak in fresh_event_bus._listeners["on_before_speak"]
     omain.teardown()
@@ -321,7 +345,7 @@ def test_connect_only_connects_and_disconnect_only_disconnects(omain, play):
     s, client = play.services, play.client
     omain._client = client
     omain._disconnect()                                   # not connected: it says so
-    assert s.connections == [] and s.spoken[-1] == ("narrator", "Belum tersambung.")
+    assert s.connections == [] and s.spoken[-1] == ("narrator", "Not connected.")
     omain._connect()                                      # "orbit connect"
     assert len(s.connections) == 1
     s.connections[-1].welcome()
@@ -333,9 +357,15 @@ def test_connect_only_connects_and_disconnect_only_disconnects(omain, play):
     omain._connect()
     assert len(s.connections) == 2
     actions = {name: aliases for name, _d, _t, _fn, aliases, _a in omain.ACTIONS}
-    assert "orbit putuskan" not in actions["connect"] and "orbit disconnect" not in actions["connect"]
-    assert set(actions["disconnect"]) == {"orbit putuskan", "orbit disconnect"}
-    assert "orbit keluar" in actions["leave"]
+    assert "orbit disconnect" not in actions["connect"]
+    assert set(actions["disconnect"]) == {"orbit disconnect"}
+    assert "orbit quit" in actions["leave"]
+    # Every phrase Aruna knows for Orbit is English.
+    phrases = [p for aliases in actions.values() for p in aliases]
+    assert "orbit look" in actions["look"] and "orbit credits" in actions["credits"]
+    for word in ("buka", "lihat", "siapa", "kredit", "keluar", "harian", "panen", "profil", "sambungkan",
+                 "putuskan"):
+        assert not [p for p in phrases if word in p.split()], word
 
 
 def test_settings_are_checked(omain):
@@ -409,10 +439,10 @@ class FakeConnection:
 
 
 class FakeServices:
-    VOICES = {"edge": [{"id": "id-ID-ArdiNeural", "name": "Ardi", "language": "id-ID"},
-                       {"id": "id-ID-GadisNeural", "name": "Gadis", "language": "id-ID"}],
-              "windows": [{"id": "andika", "name": "Andika", "language": "id-ID"},
-                          {"id": "zira", "name": "Zira", "language": "en-US"}]}
+    VOICES = {"edge": [{"id": "en-GB-Alpha", "name": "Alpha", "language": "en-GB"},
+                       {"id": "en-US-Bravo", "name": "Bravo", "language": "en-US"}],
+              "windows": [{"id": "charlie", "name": "Charlie", "language": "en-AU"},
+                          {"id": "dewi", "name": "Dewi", "language": "id-ID"}]}
     # The cues these fakes can play (step_grass has no file: it falls back).
     FILES = {"door", "arrive", "leave", "say", "whisper", "shout", "emote", "emote_wave", "sent",
              "announce", "success", "coins", "fail", "error", "mission", "task", "offer",
@@ -458,7 +488,7 @@ class FakeServices:
         return self.key
 
     def language(self):
-        return "id"
+        return "en"
 
     def account(self, url):
         return dict(self.accounts[url]) if url in self.accounts else None
@@ -512,12 +542,12 @@ class FakeServices:
     def voice_count(self):
         if not self.voices_on:
             return 1
-        return orbit_speech.pool_size(orbit_speech.voices_of(self.VOICES, "id"))
+        return orbit_speech.pool_size(orbit_speech.voices_of(self.VOICES, "en"))
 
     def voice_for(self, name, number=None):
         if not self.voices_on:
             return None
-        return orbit_speech.pick_voice(name, orbit_speech.voices_of(self.VOICES, "id"), number=number)
+        return orbit_speech.pick_voice(name, orbit_speech.voices_of(self.VOICES, "en"), number=number)
 
     def show_answer(self, text):
         self.shown.append(text)
@@ -559,7 +589,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.4", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.5", "lang": "en",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -579,9 +609,9 @@ def test_before_the_first_welcome_the_name_can_still_change(play):
     s, client = play.services, play.client
     client.connect()
     s.connections[-1].on_state("failed", {"t": "err", "code": "name_taken",
-                                         "text": "Sudah ada yang bernama Rafli di stasiun."})
-    assert client.status == "Sudah ada yang bernama Rafli di stasiun."
-    assert ("narrator", "Sudah ada yang bernama Rafli di stasiun.") in s.spoken
+                                         "text": "Someone on the station is already called Rafli. Please choose another name."})
+    assert client.status == "Someone on the station is already called Rafli. Please choose another name."
+    assert ("narrator", "Someone on the station is already called Rafli. Please choose another name.") in s.spoken
     client.connect(name="Rafli2", job="engineer")
     hello = s.connections[-1].hello()
     assert (hello["name"], hello["job"], hello["secret"]) == ("Rafli2", "engineer", "0" * 63 + "1")
@@ -595,14 +625,14 @@ def test_before_the_first_welcome_the_name_can_still_change(play):
 def test_only_encrypted_addresses_leave_this_computer(play, url, ok):
     assert play.client.connect(url) is ok
     if not ok:
-        assert play.client.status.startswith("Alamat server harus diawali wss://")
+        assert play.client.status.startswith("The server address must start with wss://")
         assert play.services.connections == []
 
 
 def test_no_name_no_join(play):
     play.services.values["name"] = "  "
     assert play.client.connect() is False
-    assert play.client.status.startswith("Pilih dulu nama karakter")
+    assert play.client.status.startswith("Choose a character name")
 
 
 def test_what_the_connection_says(play):
@@ -610,22 +640,22 @@ def test_what_the_connection_says(play):
     client.connect()
     conn = s.connections[-1]
     conn.on_state("connecting", {"attempt": 0})
-    assert client.status == "Menyambung ke Orbit..." and s.spoken == [("narrator", "Menyambung ke Orbit...")]
+    assert client.status == "Connecting to Orbit..." and s.spoken == [("narrator", "Connecting to Orbit...")]
     conn.welcome()
-    assert client.status == "Tersambung ke Orbit sebagai Rafli, Pilot."
-    assert s.spoken[-1] == ("narrator", "Tersambung ke Orbit.") and s.ambiences[-1] == ("vent", 25)
+    assert client.status == "Connected to Orbit as Rafli, Pilot."
+    assert s.spoken[-1] == ("narrator", "Connected to Orbit.") and s.ambiences[-1] == ("vent", 25)
     conn.on_state("offline", {"reason": "lost", "retry_in": 4.2})
     conn.on_state("connecting", {"attempt": 1})
     conn.on_state("offline", {"reason": "lost", "retry_in": 8.1})
-    assert client.status == "Terputus, menyambung lagi dalam 8 detik..." and client.title_state == "Terputus"
-    assert [t for _w, t in s.spoken].count("Orbit sedang offline. Aku coba terus, ya.") == 1
+    assert client.status == "Disconnected, reconnecting in 8 seconds..." and client.title_state == "Disconnected"
+    assert [t for _w, t in s.spoken].count("Orbit is offline. I'll keep trying.") == 1
     assert s.ambiences[-1] == (None, None)
     conn.on_state("online", {})
     conn.on_message({"t": "welcome", "name": "Rafli", "job": "pilot", "resumed": True,
                      "room": "cantina", "amb": "cantina"})
-    assert s.spoken[-1] == ("narrator", "Tersambung lagi.") and s.ambiences[-1] == ("cantina", 25)
+    assert s.spoken[-1] == ("narrator", "Reconnected.") and s.ambiences[-1] == ("cantina", 25)
     conn.on_state("failed", {"code": "kicked"})
-    assert client.status == "Admin mengeluarkanmu dari stasiun. Sambungkan lagi nanti."
+    assert client.status == "An admin sent you off the station. Connect again later."
     assert client.conn is None
 
 
@@ -634,7 +664,7 @@ def test_messages_from_an_old_connection_are_ignored(play):
     client.connect()
     old = s.connections[-1]
     client.connect("ws://127.0.0.1:1/orbit/ws")
-    old.event("say", "Hantu bilang: boo", actor="Hantu")
+    old.event("say", "Ghost says: boo", actor="Ghost")
     assert client.messages == []
 
 
@@ -642,39 +672,39 @@ def test_events_are_shown_played_and_said(play):
     s, client = play.services, play.client
     conn = _online(play)
     s.spoken.clear()
-    conn.event("moved", "Kamu berjalan ke Kantin. Kantin.", room="cantina", amb="cantina")
+    conn.event("moved", "You walk to the Cantina. Cantina.", room="cantina", amb="cantina")
     assert s.sounds[-1] == "door" and s.ambiences[-1] == ("cantina", 25)
-    assert s.spoken[-1] == ("narrator", "Kamu berjalan ke Kantin. Kantin.")
-    conn.event("said", "Kamu bilang: halo semua", brief="Terkirim.")
-    assert client.messages[-1] == "Kamu bilang: halo semua" and s.spoken[-1] == ("narrator", "Terkirim.")
+    assert s.spoken[-1] == ("narrator", "You walk to the Cantina. Cantina.")
+    conn.event("said", "You say: hello everyone", brief="Sent.")
+    assert client.messages[-1] == "You say: hello everyone" and s.spoken[-1] == ("narrator", "Sent.")
     assert s.sounds[-1] == "sent"
-    conn.event("say", "Sari bilang: halo Rafli!", actor="Sari")
-    sari = orbit_speech.pick_voice("Sari", orbit_speech.voices_of(FakeServices.VOICES, "id"))
-    assert s.spoken[-1] == (sari["id"], "Sari bilang: halo Rafli!") and s.sounds[-1] == "say"
-    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
+    conn.event("say", "Sari says: hello Rafli!", actor="Sari")
+    sari = orbit_speech.pick_voice("Sari", orbit_speech.voices_of(FakeServices.VOICES, "en"))
+    assert s.spoken[-1] == (sari["id"], "Sari says: hello Rafli!") and s.sounds[-1] == "say"
+    conn.event("whisper", "Budi whispers to you: psst", actor="Budi")
     assert s.sounds[-1] == "whisper" and s.spoken[-1][0] != "narrator"
-    conn.event("emote", "Sari tersenyum padamu.", actor="Sari")
-    assert s.spoken[-1] == ("narrator", "Sari tersenyum padamu.")        # gestures: the narrator
-    conn.event("arrive", "Budi datang dari Promenade.", actor="Budi")
-    conn.event("paid", "Kamu dibayar 40 kredit.")
-    conn.event("error", "Budi tidak ada di sini.")
+    conn.event("emote", "Sari smiles at you.", actor="Sari")
+    assert s.spoken[-1] == ("narrator", "Sari smiles at you.")        # gestures: the narrator
+    conn.event("arrive", "Budi comes in from the Promenade.", actor="Budi")
+    conn.event("paid", "You're paid 40 credits.")
+    conn.event("error", "Budi isn't here.")
     assert s.sounds[-3:] == ["arrive", "success", "error"]
-    assert client.messages[-1] == "Budi tidak ada di sini."
+    assert client.messages[-1] == "Budi isn't here."
 
 
 def test_your_own_name_is_never_read_in_a_player_voice(play):
     s = play.services
     conn = _online(play, name="Rafli")
-    conn.event("shout", "Rafli berteriak: tes", actor="Rafli")
-    assert s.spoken[-1] == ("narrator", "Rafli berteriak: tes")
+    conn.event("shout", "Rafli shouts: test", actor="Rafli")
+    assert s.spoken[-1] == ("narrator", "Rafli shouts: test")
 
 
 def test_one_voice_for_everyone_when_the_setting_is_off(play):
     s = play.services
     s.values["voices"] = False
     conn = _online(play)
-    conn.event("say", "Sari bilang: halo", actor="Sari")
-    assert s.spoken[-1] == ("narrator", "Sari bilang: halo")
+    conn.event("say", "Sari says: hello", actor="Sari")
+    assert s.spoken[-1] == ("narrator", "Sari says: hello")
 
 
 def test_quiet_unless_aruna_asked(play):
@@ -682,32 +712,32 @@ def test_quiet_unless_aruna_asked(play):
     s.values["speak"] = False
     conn = _online(play)
     count = len(s.spoken)
-    conn.event("say", "Sari bilang: halo", actor="Sari")
-    assert len(s.spoken) == count and client.messages[-1] == "Sari bilang: halo"
+    conn.event("say", "Sari says: hello", actor="Sari")
+    assert len(s.spoken) == count and client.messages[-1] == "Sari says: hello"
     assert s.sounds[-1] == "say"
-    client.submit("orbit siapa online", "aruna")
+    client.submit("orbit who is online", "aruna")
     assert conn.sent[-1] == {"t": "cmd", "c": "who"}
-    conn.event("who", "2 orang online: Rafli si pilot, di Dermaga; Sari si pilot, di Dermaga.")
-    assert s.spoken[-1][1].startswith("2 orang online")
-    conn.event("say", "Sari bilang: aku di sini", actor="Sari")
+    conn.event("who", "2 online: Rafli the pilot, at the Dock; Sari the pilot, at the Dock.")
+    assert s.spoken[-1][1].startswith("2 online")
+    conn.event("say", "Sari says: I'm here", actor="Sari")
     assert s.spoken[-1] == (orbit_speech.pick_voice(
-        "Sari", orbit_speech.voices_of(FakeServices.VOICES, "id"))["id"], "Sari bilang: aku di sini")
-    assert s.shown == ["Sari bilang: aku di sini"]          # Aruna's Last result gets it too
+        "Sari", orbit_speech.voices_of(FakeServices.VOICES, "en"))["id"], "Sari says: I'm here")
+    assert s.shown == ["Sari says: I'm here"]          # Aruna's Last result gets it too
     client.aruna_until = 0
-    conn.event("say", "Sari bilang: sudah?", actor="Sari")
-    assert s.spoken[-1][1] != "Sari bilang: sudah?"
+    conn.event("say", "Sari says: done?", actor="Sari")
+    assert s.spoken[-1][1] != "Sari says: done?"
 
 
 def test_the_reactor_tones_play_before_the_line_is_read(play):
     s = play.services
     conn = _online(play)
     s.spoken.clear()
-    conn.event("tones", "Dengarkan 3 nada penstabil: 2, 4, 1.", codes=[2, 4, 1])
+    conn.event("tones", "Listen to the 3 stabiliser tones: 2, 4, 1.", codes=[2, 4, 1])
     assert s.spoken == [] and len([t for t in s.timers if t.fn != play.client._tick]) == 4
     s.timers = [t for t in s.timers if t.fn != play.client._tick]
     s.run_timers()
     assert [x for x in s.sounds if x.startswith("tone")] == ["tone2", "tone4", "tone1"]
-    assert s.spoken == [("narrator", "Dengarkan 3 nada penstabil: 2, 4, 1.")]
+    assert s.spoken == [("narrator", "Listen to the 3 stabiliser tones: 2, 4, 1.")]
 
 
 def test_the_slot_reels_stop_left_middle_right_before_the_result_is_read(play):
@@ -717,24 +747,24 @@ def test_the_slot_reels_stop_left_middle_right_before_the_result_is_read(play):
     s.spoken.clear()
     s.placed.clear()
     s.timers = []
-    conn.event("failed", "bintang, bulan, bintang. Sepasang: taruhanmu kembali.", sound="reel_spin",
+    conn.event("failed", "star, moon, star. A pair: you get your bet back.", sound="reel_spin",
                reels=["star", "moon", "star"], outcome="push")
     assert s.placed == [("reel_spin", 0.0, None)] and s.spoken == []
     assert sorted(round(t.seconds, 2) for t in s.timers) == [0.9, 1.3, 1.7, 2.0, 2.0]
     s.run_timers()
     assert [p[:2] for p in s.placed[1:]] == [("reel_stop", -0.75), ("reel_stop", 0.0), ("reel_stop", 0.75),
                                              ("push", 0.0)]
-    assert s.spoken == [("narrator", "bintang, bulan, bintang. Sepasang: taruhanmu kembali.")]
+    assert s.spoken == [("narrator", "star, moon, star. A pair: you get your bet back.")]
     # the dice land, then you hear whether you won, then the words
     s.placed.clear()
-    conn.event("paid", "Dadu keluar 5 dan 6: 11. Kamu menang 230 kredit!", sound="dice", outcome="win")
+    conn.event("paid", "The dice roll 5 and 6: 11. You win 230 credits!", sound="dice", outcome="win")
     assert s.placed[0][0] == "dice" and [round(t.seconds, 2) for t in s.timers] == [1.2, 1.2]
     s.run_timers()
-    assert s.placed[-1][0] == "win" and s.spoken[-1][1].startswith("Dadu keluar 5 dan 6")
+    assert s.placed[-1][0] == "win" and s.spoken[-1][1].startswith("The dice roll 5 and 6")
     # with the sounds off, nothing waits
     s.values["sounds"] = False
-    conn.event("task", "Blackjack dengan taruhan 50 kredit.", sound="deal")
-    assert not s.timers and s.spoken[-1][1] == "Blackjack dengan taruhan 50 kredit."
+    conn.event("task", "Blackjack for 50 credits.", sound="deal")
+    assert not s.timers and s.spoken[-1][1] == "Blackjack for 50 credits."
 
 
 def test_new_floors_and_places_have_their_sounds():
@@ -765,12 +795,12 @@ def test_the_arcade_places_meteors_and_plays_rhythms(play):
     s.spoken.clear()
     s.placed.clear()
     s.timers = []
-    conn.event("task", "Irama 1 dari 3: 3 ketukan.", beats=[1.2, 1.7, 2.7])
+    conn.event("task", "Rhythm 1 of 3: 3 beats.", beats=[1.2, 1.7, 2.7])
     assert s.placed == [("task", 0.0, None)] and s.spoken == []
     assert sorted(round(t.seconds, 2) for t in s.timers) == [1.2, 1.7, 2.7, 2.7]
     s.run_timers()
     assert [p[0] for p in s.placed[1:]] == ["arcade_beat"] * 3
-    assert s.spoken == [("narrator", "Irama 1 dari 3: 3 ketukan.")]
+    assert s.spoken == [("narrator", "Rhythm 1 of 3: 3 beats.")]
     conn.event("task", "Meteor!", sound="arcade_meteor", dir="e")
     assert s.placed[-1] == ("arcade_meteor", 0.75, None)
 
@@ -778,13 +808,13 @@ def test_the_arcade_places_meteors_and_plays_rhythms(play):
 def test_event_news_can_be_left_unread(play):
     s = play.services
     conn = _online(play)
-    conn.event("announce", "Hujan meteor melintasi stasiun!", event="meteor_shower", sound="event_meteor")
-    assert s.spoken[-1] == ("narrator", "Hujan meteor melintasi stasiun!")
+    conn.event("announce", "A meteor shower sweeps past the station!", event="meteor_shower", sound="event_meteor")
+    assert s.spoken[-1] == ("narrator", "A meteor shower sweeps past the station!")
     s.values["read_events"] = False
-    conn.event("announce", "Komet melintas!", event="comet_flyby")
-    assert s.spoken[-1][1] != "Komet melintas!" and play.client.messages[-1] == "Komet melintas!"
-    conn.event("announce", "Pengumuman dari admin.")                    # station news: still read
-    assert s.spoken[-1] == ("narrator", "Pengumuman dari admin.")
+    conn.event("announce", "A comet flies by!", event="comet_flyby")
+    assert s.spoken[-1][1] != "A comet flies by!" and play.client.messages[-1] == "A comet flies by!"
+    conn.event("announce", "An announcement from the admins.")                    # station news: still read
+    assert s.spoken[-1] == ("narrator", "An announcement from the admins.")
 
 
 def test_remind_me_sets_a_hariku_reminder_five_minutes_before(play):
@@ -793,21 +823,20 @@ def test_remind_me_sets_a_hariku_reminder_five_minutes_before(play):
     conn = _online(play)
     now = datetime.datetime(2026, 9, 25, 12, 30, tzinfo=datetime.timezone.utc).timestamp()
     client.wall_clock = lambda: now
-    client.submit("ingatkan aku")
+    client.submit("remind me")
     assert conn.sent[-1] == {"t": "cmd", "c": "events"} and not s.reminders    # asks what's coming first
     fair = now + 3600
-    conn.event("info", "Akan datang: ...", schedule=[{"event": "jackpot_night", "name": "Malam jackpot",
+    conn.event("info", "Coming: ...", schedule=[{"event": "jackpot_night", "name": "Jackpot night",
                                                      "at": now + 120},
-                                                    {"event": "trading_fair", "name": "Pekan raya dagang",
+                                                    {"event": "trading_fair", "name": "Trading fair",
                                                      "at": fair}])
-    assert s.spoken[-1][1] == "Malam jackpot mulai kurang dari lima menit lagi: tidak perlu pengingat!"
-    client.submit("ingatkan aku pekan raya")                              # by name; the list is known now
+    assert s.spoken[-1][1] == "Jackpot night starts in less than five minutes: no need for a reminder!"
+    client.submit("remind me about trading fair")                              # by name; the list is known now
     title, when = s.reminders[-1]
-    assert title == "Orbit: Pekan raya dagang" and when == datetime.datetime.fromtimestamp(fair - 300)
-    assert s.spoken[-1][1].startswith("Pengingat Hariku dipasang pada ")
+    assert title == "Orbit: Trading fair" and when == datetime.datetime.fromtimestamp(fair - 300)
+    assert s.spoken[-1][1].startswith("A Hariku reminder is set for ")
     client.submit("remind me about the eclipse")
-    assert s.spoken[-1][1] == ("Tidak ada acara mendatang bernama the eclipse. Ketik acara untuk mendengar yang akan "
-                               "datang.")
+    assert s.spoken[-1][1] == "No coming event is called the eclipse. Type events to hear what's coming."
     assert orbit_parse.parse("remind me about trading fair") == {"local": "remind", "name": "trading fair"}
 
 
@@ -815,9 +844,9 @@ def test_sounds_can_be_turned_off(play):
     s = play.services
     s.values["sounds"] = False
     conn = _online(play)
-    conn.event("moved", "Kamu berjalan ke Kantin.", room="cantina", amb="cantina")
-    conn.event("tones", "Dengarkan: 1.", codes=[1])
-    assert s.sounds == [] and s.spoken[-1] == ("narrator", "Dengarkan: 1.")
+    conn.event("moved", "You walk to the Cantina.", room="cantina", amb="cantina")
+    conn.event("tones", "Listen: 1.", codes=[1])
+    assert s.sounds == [] and s.spoken[-1] == ("narrator", "Listen: 1.")
 
 
 def test_the_ambience_follows_the_room_the_window_and_the_settings(play):
@@ -829,43 +858,43 @@ def test_the_ambience_follows_the_room_the_window_and_the_settings(play):
     assert s.ambiences[-1] == (None, None)
     s.window = True
     s.values["ambience_volume"] = 60
-    conn.event("moved", "Ruang Mesin.", room="engineering", amb="engine")
+    conn.event("moved", "Engineering.", room="engineering", amb="engine")
     assert s.ambiences[-1] == ("engine", 60)
     s.values["ambience"] = False
     client.update_ambience()
     assert s.ambiences[-1] == (None, None)
     s.values["ambience"] = True
     client.disconnect()
-    assert s.ambiences[-1] == (None, None) and s.spoken[-1] == ("narrator", "Kamu keluar dari Orbit.")
+    assert s.ambiences[-1] == (None, None) and s.spoken[-1] == ("narrator", "You've left Orbit.")
 
 
 def test_commands_are_sent_or_wait_for_the_connection(play):
     s, client = play.services, play.client
     assert client.submit("   ") == "empty"
-    assert client.submit("pergi ke kantin") == "queued"         # connects first
+    assert client.submit("go to the cantina") == "queued"         # connects first
     conn = s.connections[-1]
-    assert conn.sent == [{"t": "cmd", "c": "go", "a": "kantin"}]
+    assert conn.sent == [{"t": "cmd", "c": "go", "a": "the cantina"}]
     conn.welcome()
-    assert client.submit("bilang halo") == "sent"
-    assert conn.sent[-1] == {"t": "cmd", "c": "say", "a": "halo"}
+    assert client.submit("say hello") == "sent"
+    assert conn.sent[-1] == {"t": "cmd", "c": "say", "a": "hello"}
 
 
 def test_orbits_own_commands(play):
     s, client = play.services, play.client
-    assert client.submit("ulangi") == "local"
-    assert s.spoken[-1] == ("narrator", "Belum ada pesan.")
-    client.submit("bantuan")
-    assert client.messages[-1].startswith("Bantuan Orbit.") and s.spoken[-1][1].startswith("Bantuan Orbit.")
-    client.submit("sambungkan")
+    assert client.submit("repeat") == "local"
+    assert s.spoken[-1] == ("narrator", "Nothing has been said yet.")
+    client.submit("help")
+    assert client.messages[-1].startswith("Orbit's help.") and s.spoken[-1][1].startswith("Orbit's help.")
+    client.submit("connect")
     assert s.connections and s.connections[-1].started
     s.connections[-1].welcome()
-    client.submit("sambungkan")
-    assert s.spoken[-1] == ("narrator", "Tersambung ke Orbit sebagai Rafli, Pilot.")
-    s.connections[-1].event("say", "Sari bilang: hai", actor="Sari")
-    client.submit("ulangi")
-    assert s.spoken[-1] == ("narrator", "Sari bilang: hai")
-    client.submit("putuskan")
-    assert s.connections[-1].stopped and client.status == "Belum tersambung."
+    client.submit("connect")
+    assert s.spoken[-1] == ("narrator", "Connected to Orbit as Rafli, Pilot.")
+    s.connections[-1].event("say", "Sari says: hi", actor="Sari")
+    client.submit("repeat")
+    assert s.spoken[-1] == ("narrator", "Sari says: hi")
+    client.submit("disconnect")
+    assert s.connections[-1].stopped and client.status == "Not connected."
 
 
 def test_the_messages_keep_the_last_500(play):
@@ -890,26 +919,26 @@ def test_the_messages_keep_the_last_500(play):
 # ------------------------------------------------------------
 
 def test_each_player_keeps_a_voice_of_their_own():
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
-    assert [v["id"] for v in voices] == ["id-ID-ArdiNeural", "id-ID-GadisNeural", "andika"]
-    assert orbit_speech.voices_of(FakeServices.VOICES, "en") == [
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
+    assert [v["id"] for v in voices] == ["en-GB-Alpha", "en-US-Bravo", "charlie"]
+    assert orbit_speech.voices_of(FakeServices.VOICES, "id") == [
         dict(FakeServices.VOICES["windows"][1], provider="windows")]
     names = ["Sari", "Budi", "Tono", "Ayu", "Rafli", "Dewi", "Joko", "Maya"]
     picked = {n: orbit_speech.pick_voice(n, voices)["id"] for n in names}
     assert picked["Sari"] == orbit_speech.pick_voice("sari", voices)["id"]
     assert len(set(picked.values())) >= 2                    # not everyone sounds the same
     # The narrator's own voice is left for the narrator when there are others.
-    narrator = ("edge", "id-ID-ArdiNeural")
-    assert all(orbit_speech.pick_voice(n, voices, exclude=narrator)["id"] != "id-ID-ArdiNeural"
+    narrator = ("edge", "en-GB-Alpha")
+    assert all(orbit_speech.pick_voice(n, voices, exclude=narrator)["id"] != "en-GB-Alpha"
                for n in names)
     assert orbit_speech.pick_voice("Sari", voices[:1]) is None       # one voice: the narrator
-    assert orbit_speech.pick_voice("Sari", voices[:2], exclude=("edge", "id-ID-ArdiNeural"))
+    assert orbit_speech.pick_voice("Sari", voices[:2], exclude=("edge", "en-GB-Alpha"))
 
 
 def test_the_same_voices_in_any_order_give_the_same_choice():
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
     shuffled = orbit_speech.voices_of({"windows": FakeServices.VOICES["windows"],
-                                       "edge": list(reversed(FakeServices.VOICES["edge"]))}, "id")
+                                       "edge": list(reversed(FakeServices.VOICES["edge"]))}, "en")
     for name in ("Sari", "Budi", "Rafli"):
         assert orbit_speech.pick_voice(name, voices) == orbit_speech.pick_voice(name, shuffled)
 
@@ -977,44 +1006,44 @@ def test_nobody_talks_over_anybody():
     services = SpeakerServices()
     now = [0.0]
     speaker = orbit_speech.Speaker(services, clock=lambda: now[0])
-    speaker.say("Kamu berjalan ke Kantin.")
-    speaker.say("Sari bilang: halo", voice="gadis")
-    speaker.say("Budi datang.")
-    assert services.log == [("narrator", "Kamu berjalan ke Kantin."), ("gadis", "Sari bilang: halo")]
+    speaker.say("You walk to the Cantina.")
+    speaker.say("Sari says: hello", voice="bravo")
+    speaker.say("Budi comes in.")
+    assert services.log == [("narrator", "You walk to the Cantina."), ("bravo", "Sari says: hello")]
     services.tick()
     assert len(services.log) == 2                   # the narrator waits for Sari's voice
     services.pending.pop()(None)
-    assert services.log[-1] == ("narrator", "Budi datang.") and not speaker.busy()
+    assert services.log[-1] == ("narrator", "Budi comes in.") and not speaker.busy()
     # A player's voice waits while Hariku Voice is busy...
     services.busy = True
-    speaker.say("Budi bilang: hai", voice="ardi")
-    assert services.log[-1] == ("narrator", "Budi datang.")
+    speaker.say("Budi says: hi", voice="alpha")
+    assert services.log[-1] == ("narrator", "Budi comes in.")
     services.busy = False
     services.tick()
-    assert services.log[-1] == ("ardi", "Budi bilang: hai")
+    assert services.log[-1] == ("alpha", "Budi says: hi")
     services.pending.pop()(None)
     # ...and while the screen reader is probably still reading.
     services.voiced = False
-    speaker.say("Satu kalimat panjang dari stasiun untuk dibaca.")
-    speaker.say("Sari bilang: nah", voice="gadis")
+    speaker.say("One long sentence from the station to read.")
+    speaker.say("Sari says: well", voice="bravo")
     assert services.log[-1][0] == "narrator"
     now[0] += 10
     services.tick()
-    assert services.log[-1] == ("gadis", "Sari bilang: nah")
+    assert services.log[-1] == ("bravo", "Sari says: well")
 
 
 def test_a_voice_that_fails_is_read_by_the_narrator():
     services = SpeakerServices()
     services.fail = True
     speaker = orbit_speech.Speaker(services)
-    speaker.say("Sari bilang: halo", voice="gadis")
-    assert services.log == [("narrator", "Sari bilang: halo")]
+    speaker.say("Sari says: hello", voice="bravo")
+    assert services.log == [("narrator", "Sari says: hello")]
 
 
 def test_a_busy_room_drops_the_oldest_waiting_lines():
     services = SpeakerServices()
     speaker = orbit_speech.Speaker(services)
-    speaker.say("first", voice="gadis")
+    speaker.say("first", voice="bravo")
     for i in range(orbit_speech.MAX_WAITING + 5):
         speaker.say(f"line {i}")
     assert len(speaker.waiting) == orbit_speech.MAX_WAITING
@@ -1236,11 +1265,11 @@ WELCOME = '{"t": "welcome", "name": "Rafli"}'
 
 
 def test_the_connection_says_hello_flushes_and_delivers():
-    client = FakeClient([WELCOME, '{"t": "ev", "k": "room", "text": "Dermaga."}', "not json"])
+    client = FakeClient([WELCOME, '{"t": "ev", "k": "room", "text": "Dock."}', "not json"])
     conn, events, made, _hellos = _connection([client])
     conn.send({"t": "cmd", "c": "look"})               # before connecting: waits
     conn.start()
-    assert _wait(lambda: ("message", {"t": "ev", "k": "room", "text": "Dermaga."}) in events)
+    assert _wait(lambda: ("message", {"t": "ev", "k": "room", "text": "Dock."}) in events)
     assert client.sent[0] == {"t": "hello", "n": 1} and client.sent[1] == {"t": "cmd", "c": "look"}
     states = [e[1] for e in events if e[0] == "state"]
     assert states[:2] == ["connecting", "online"]
@@ -1302,16 +1331,16 @@ def test_quick_settings_from_the_game(play):
     s, client = play.services, play.client
     conn = _online(play)
     assert conn.sent == []
-    assert client.submit("suara pemain mati") == "local"
-    assert s.values["voices"] is False and s.spoken[-1] == ("narrator", "Suara pemain mati: semua dibacakan suaramu yang biasa.")
-    client.submit("bacakan pesan mati")
+    assert client.submit("voices off") == "local"
+    assert s.values["voices"] is False and s.spoken[-1] == ("narrator", "Players' voices off: everyone is read by your usual voice.")
+    client.submit("speech off")
     assert s.values["speak"] is False
-    assert s.spoken[-1] == ("narrator", "Pesan tidak dibacakan sekarang; tetap masuk kotak Pesan.")   # said anyway
-    client.submit("volume efek 40")
-    assert s.values["effects_volume"] == 40 and client.messages[-1] == "Volume efek 40 persen."
-    client.submit("ambience mati")
+    assert s.spoken[-1] == ("narrator", "Messages aren't read aloud now; they still go to the Messages box.")   # said anyway
+    client.submit("effects volume 40")
+    assert s.values["effects_volume"] == 40 and client.messages[-1] == "Effects volume 40 percent."
+    client.submit("ambience off")
     assert s.values["ambience"] is False and s.ambiences[-1] == (None, None)
-    client.submit("pengaturan")
+    client.submit("settings")
     assert s.settings_opened == 1
     assert conn.sent == []                                   # none of it went to the server
 
@@ -1321,20 +1350,20 @@ def test_what_is_read_can_be_narrowed(play):
     s.values.update(read_say=False, read_moves=False, read_money=False)
     conn = _online(play)
     count = len(s.spoken)
-    conn.event("say", "Sari bilang: halo", actor="Sari")
-    conn.event("emote", "Sari tersenyum.", actor="Sari", emote="smile")
-    conn.event("arrive", "Budi datang dari arah barat, dari Dermaga.", actor="Budi", dir="w")
-    conn.event("paid", "Kamu dibayar 40 kredit.")
+    conn.event("say", "Sari says: hello", actor="Sari")
+    conn.event("emote", "Sari smiles.", actor="Sari", emote="smile")
+    conn.event("arrive", "Budi comes in from the west, from the Dock.", actor="Budi", dir="w")
+    conn.event("paid", "You're paid 40 credits.")
     assert len(s.spoken) == count                           # not read...
-    assert client.messages[-4:] == ["Sari bilang: halo", "Sari tersenyum.",
-                                    "Budi datang dari arah barat, dari Dermaga.", "Kamu dibayar 40 kredit."]
+    assert client.messages[-4:] == ["Sari says: hello", "Sari smiles.",
+                                    "Budi comes in from the west, from the Dock.", "You're paid 40 credits."]
     assert s.sounds[-4:] == ["say", "emote", "arrive", "success"]               # ...but heard
-    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
-    conn.event("emote", "Kamu tersenyum.", emote="smile")   # your own gesture: always
-    assert s.spoken[-1] == ("narrator", "Kamu tersenyum.") and s.spoken[-2][1] == "Budi berbisik padamu: psst"
-    client.submit("orbit siapa online", "aruna")
-    conn.event("say", "Sari bilang: aku di sini", actor="Sari")
-    assert s.spoken[-1][1] == "Sari bilang: aku di sini"   # Aruna asked: everything is read
+    conn.event("whisper", "Budi whispers to you: psst", actor="Budi")
+    conn.event("emote", "You smile.", emote="smile")   # your own gesture: always
+    assert s.spoken[-1] == ("narrator", "You smile.") and s.spoken[-2][1] == "Budi whispers to you: psst"
+    client.submit("orbit who is online", "aruna")
+    conn.event("say", "Sari says: I'm here", actor="Sari")
+    assert s.spoken[-1][1] == "Sari says: I'm here"   # Aruna asked: everything is read
 
 
 def test_with_the_window_closed_only_what_matters_is_heard(play):
@@ -1343,42 +1372,42 @@ def test_with_the_window_closed_only_what_matters_is_heard(play):
     s.window = False
     s.spoken.clear()
     s.sounds.clear()
-    conn.event("say", "Sari bilang: halo semua", actor="Sari")
-    conn.event("arrive", "Budi datang.", actor="Budi", dir="n")
+    conn.event("say", "Sari says: hello everyone", actor="Sari")
+    conn.event("arrive", "Budi comes in.", actor="Budi", dir="n")
     assert s.spoken == [] and s.sounds == []                # quiet, and shown
-    assert client.messages[-1] == "Budi datang."
-    conn.event("say", "Sari bilang: Rafli, ke kantin yuk", actor="Sari")
-    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
-    conn.event("announce", "Pengumuman dari Anjungan: server restart jam 9")
-    assert [line for _who, line in s.spoken] == ["Sari bilang: Rafli, ke kantin yuk",
-                                                  "Budi berbisik padamu: psst",
-                                                  "Pengumuman dari Anjungan: server restart jam 9"]
+    assert client.messages[-1] == "Budi comes in."
+    conn.event("say", "Sari says: Rafli, to the cantina?", actor="Sari")
+    conn.event("whisper", "Budi whispers to you: psst", actor="Budi")
+    conn.event("announce", "Announcement from the Bridge: server restart at 9")
+    assert [line for _who, line in s.spoken] == ["Sari says: Rafli, to the cantina?",
+                                                  "Budi whispers to you: psst",
+                                                  "Announcement from the Bridge: server restart at 9"]
     assert s.sounds == ["say", "whisper", "announce"]
     s.values["background"] = "none"
-    conn.event("whisper", "Budi berbisik padamu: halo?", actor="Budi")
+    conn.event("whisper", "Budi whispers to you: hello?", actor="Budi")
     assert len(s.spoken) == 3 and len(s.sounds) == 3
     s.values["background"] = "all"
-    conn.event("say", "Sari bilang: dadah", actor="Sari")
-    assert s.spoken[-1][1] == "Sari bilang: dadah"
+    conn.event("say", "Sari says: bye", actor="Sari")
+    assert s.spoken[-1][1] == "Sari says: bye"
 
 
 def test_ignored_players_are_neither_shown_nor_heard(play):
     s, client = play.services, play.client
     conn = _online(play)
-    client.submit("abaikan Budi")
-    assert s.values["ignored"] == ["Budi"] and client.messages[-1].startswith("Mengabaikan Budi")
+    client.submit("ignore Budi")
+    assert s.values["ignored"] == ["Budi"] and client.messages[-1].startswith("Ignoring Budi")
     lines = len(client.messages)
-    conn.event("say", "Budi bilang: hoi", actor="Budi")
-    conn.event("shout", "Budi berteriak: HOI", actor="Budi")
-    conn.event("emote", "Budi melambai padamu.", actor="budi", emote="wave")
-    conn.event("offer", "Budi mengundangmu ke kabinnya.", actor="Budi", ask=True)
+    conn.event("say", "Budi says: hey", actor="Budi")
+    conn.event("shout", "Budi shouts: HEY", actor="Budi")
+    conn.event("emote", "Budi waves at you.", actor="budi", emote="wave")
+    conn.event("offer", "Budi invites you to their cabin.", actor="Budi", ask=True)
     assert len(client.messages) == lines
-    conn.event("arrive", "Budi datang.", actor="Budi")      # where they are still shows
-    assert client.messages[-1] == "Budi datang."
-    client.submit("dengar lagi budi")
+    conn.event("arrive", "Budi comes in.", actor="Budi")      # where they are still shows
+    assert client.messages[-1] == "Budi comes in."
+    client.submit("unignore budi")
     assert s.values["ignored"] == []
-    conn.event("say", "Budi bilang: maaf", actor="Budi")
-    assert client.messages[-1] == "Budi bilang: maaf"
+    conn.event("say", "Budi says: sorry", actor="Budi")
+    assert client.messages[-1] == "Budi says: sorry"
 
 
 def test_other_players_sounds_can_be_turned_off(play):
@@ -1386,10 +1415,10 @@ def test_other_players_sounds_can_be_turned_off(play):
     s.values["other_sounds"] = False
     conn = _online(play)
     s.sounds.clear()
-    conn.event("say", "Sari bilang: halo", actor="Sari")
-    conn.event("arrive", "Budi datang.", actor="Budi", dir="w")
-    conn.event("whisper", "Budi berbisik padamu: psst", actor="Budi")
-    conn.event("paid", "Kamu dibayar.")
+    conn.event("say", "Sari says: hello", actor="Sari")
+    conn.event("arrive", "Budi comes in.", actor="Budi", dir="w")
+    conn.event("whisper", "Budi whispers to you: psst", actor="Budi")
+    conn.event("paid", "You're paid.")
     assert s.sounds == ["whisper", "success"]
 
 
@@ -1397,11 +1426,11 @@ def test_cues_come_from_their_side_with_a_fallback(play):
     s = play.services
     conn = _online(play)
     s.placed.clear()
-    conn.event("moved", "Kamu berjalan ke barat.", dir="w", floor="metal", acoustics="hall", room="x", amb="vent")
-    conn.event("moved", "Kamu berjalan ke timur.", dir="e", floor="grass", room="y", amb="garden")
-    conn.event("arrive", "Budi datang dari arah timur.", actor="Budi", dir="e")
-    conn.event("paid", "Naik level!", sound="levelup")
-    conn.event("paid", "Kamu memanen.", sound="harvest")
+    conn.event("moved", "You walk west.", dir="w", floor="metal", acoustics="hall", room="x", amb="vent")
+    conn.event("moved", "You walk east.", dir="e", floor="grass", room="y", amb="garden")
+    conn.event("arrive", "Budi comes in from the east.", actor="Budi", dir="e")
+    conn.event("paid", "Level up!", sound="levelup")
+    conn.event("paid", "You harvest.", sound="harvest")
     assert s.placed == [("step_metal", -0.75, "hall"), ("door", 0.75, "hall"), ("arrive", 0.75, "hall"),
                         ("levelup", 0.0, None), ("success", 0.0, None)]
 
@@ -1409,135 +1438,135 @@ def test_cues_come_from_their_side_with_a_fallback(play):
 def test_a_chosen_voice_and_its_preview(play):
     s = play.services
     conn = _online(play, name="Rafli")
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
-    conn.event("say", "Sari bilang: halo", actor="Sari", voice=2)
-    assert s.spoken[-1] == (voices[1]["id"], "Sari bilang: halo")
-    conn.event("say", "Budi bilang: halo", actor="Budi", voice=5)
-    assert s.spoken[-1] == (voices[(5 - 1) % 3]["id"], "Budi bilang: halo")
-    conn.event("info", "Beres: orang lain sekarang mendengarmu dengan suara 3.", voice=3, preview=True)
-    assert s.spoken[-1] == (voices[2]["id"], "Beres: orang lain sekarang mendengarmu dengan suara 3.")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
+    conn.event("say", "Sari says: hello", actor="Sari", voice=2)
+    assert s.spoken[-1] == (voices[1]["id"], "Sari says: hello")
+    conn.event("say", "Budi says: hello", actor="Budi", voice=5)
+    assert s.spoken[-1] == (voices[(5 - 1) % 3]["id"], "Budi says: hello")
+    conn.event("info", "Done: others now hear you in voice 3.", voice=3, preview=True)
+    assert s.spoken[-1] == (voices[2]["id"], "Done: others now hear you in voice 3.")
 
 
 def test_a_players_name_and_their_words_come_in_two_voices(play):
     s = play.services
     conn = _online(play, name="Rafli")
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
     sari = orbit_speech.pick_voice("Sari", voices)["id"]
     s.spoken.clear()
-    conn.event("say", "Sari bilang: halo semua", actor="Sari", words="halo semua")
-    assert s.spoken == [("narrator", "Sari:"), (sari, "halo semua")]
-    conn.event("whisper", "Sari berbisik padamu: nanti ya", actor="Sari", words="nanti ya", voice=2)
-    assert s.spoken[-2:] == [("narrator", "Sari berbisik:"), (voices[1]["id"], "nanti ya")]
-    conn.event("shout", "Sari berteriak ke seluruh stasiun: ke Bulan!", actor="Sari", words="ke Bulan!")
-    assert s.spoken[-2:] == [("narrator", "Sari berteriak:"), (sari, "ke Bulan!")]
-    assert play.client.messages[-1] == "Sari berteriak ke seluruh stasiun: ke Bulan!"   # the whole line
+    conn.event("say", "Sari says: hello everyone", actor="Sari", words="hello everyone")
+    assert s.spoken == [("narrator", "Sari:"), (sari, "hello everyone")]
+    conn.event("whisper", "Sari whispers to you: later", actor="Sari", words="later", voice=2)
+    assert s.spoken[-2:] == [("narrator", "Sari, whispering:"), (voices[1]["id"], "later")]
+    conn.event("shout", "Sari shouts across the station: to the Moon!", actor="Sari", words="to the Moon!")
+    assert s.spoken[-2:] == [("narrator", "Sari, shouting:"), (sari, "to the Moon!")]
+    assert play.client.messages[-1] == "Sari shouts across the station: to the Moon!"   # the whole line
     s.values["speak_names"] = False
-    conn.event("say", "Sari bilang: tanpa nama", actor="Sari", words="tanpa nama")
-    assert s.spoken[-1] == (sari, "tanpa nama") and s.spoken[-2] != ("narrator", "Sari:")
+    conn.event("say", "Sari says: no name", actor="Sari", words="no name")
+    assert s.spoken[-1] == (sari, "no name") and s.spoken[-2] != ("narrator", "Sari:")
     # an older server (no "words"): the whole line in the speaker's voice, as before
-    conn.event("say", "Sari bilang: server lama", actor="Sari")
-    assert s.spoken[-1] == (sari, "Sari bilang: server lama")
+    conn.event("say", "Sari says: old server", actor="Sari")
+    assert s.spoken[-1] == (sari, "Sari says: old server")
 
 
 def test_crew_chat_is_voiced_ignorable_and_heard_in_the_background(play):
     s = play.services
     conn = _online(play, name="Rafli")
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
     sari = orbit_speech.pick_voice("Sari", voices)["id"]
     s.spoken.clear()
-    conn.event("crew", "Sari, ke kru Bintang: kumpul di Dek", actor="Sari", words="kumpul di Dek",
+    conn.event("crew", "Sari, to the crew Nova: meet on deck", actor="Sari", words="meet on deck",
                sound="crew_chat")
-    assert s.spoken == [("narrator", "Sari ke kru:"), (sari, "kumpul di Dek")]
-    conn.event("crew_sent", "Kamu bilang ke kru Bintang: siap", brief="Terkirim ke kru.", words="siap", voice=3)
-    assert s.spoken[-1] == (voices[2]["id"], "siap")
+    assert s.spoken == [("narrator", "Sari, to the crew:"), (sari, "meet on deck")]
+    conn.event("crew_sent", "You tell the crew Nova: ready", brief="Told the crew.", words="ready", voice=3)
+    assert s.spoken[-1] == (voices[2]["id"], "ready")
     assert orbit_audio.cues_for({"k": "crew", "sound": "crew_chat"}) == [("crew_chat", 0.0, None, "whisper")]
     assert orbit_audio.cues_for({"k": "crew_sent"}) == [("sent", 0.0, None, None)]
     # ignored players are ignored here too; the "whispers" setting covers crew chat
     s.values["ignored"] = ["sari"]
     before = len(s.spoken)
-    conn.event("crew", "Sari, ke kru Bintang: halo", actor="Sari", words="halo")
+    conn.event("crew", "Sari, to the crew Nova: hello", actor="Sari", words="hello")
     assert len(s.spoken) == before
     s.values["ignored"] = []
     s.values["read_whisper"] = False
-    conn.event("crew", "Sari, ke kru Bintang: halo", actor="Sari", words="halo")
+    conn.event("crew", "Sari, to the crew Nova: hello", actor="Sari", words="hello")
     assert len(s.spoken) == before
     s.values["read_whisper"] = True
     # with the window closed, crew chat is still heard ("whispers, my name and events")
     s.window = False
-    conn.event("crew", "Sari, ke kru Bintang: dengar?", actor="Sari", words="dengar?")
-    assert s.spoken[-1] == (sari, "dengar?")
+    conn.event("crew", "Sari, to the crew Nova: hear me?", actor="Sari", words="hear me?")
+    assert s.spoken[-1] == (sari, "hear me?")
 
 
 def test_your_own_lines_are_spoken_in_your_character_voice(play):
     s = play.services
     conn = _online(play, name="Rafli")
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
     s.spoken.clear()
-    conn.event("said", "Kamu bilang: halo Sari", brief="Terkirim.", words="halo Sari", voice=3)
-    assert s.spoken == [(voices[2]["id"], "halo Sari")]
-    conn.event("said", "Kamu bilang: tanpa nomor", brief="Terkirim.", words="tanpa nomor")
-    assert s.spoken[-1] == (orbit_speech.pick_voice("Rafli", voices)["id"], "tanpa nomor")
-    conn.event("whispered", "Kamu berbisik ke Sari: nanti ya", brief="Dibisikkan ke Sari.", words="nanti ya",
+    conn.event("said", "You say: hello Sari", brief="Sent.", words="hello Sari", voice=3)
+    assert s.spoken == [(voices[2]["id"], "hello Sari")]
+    conn.event("said", "You say: no number", brief="Sent.", words="no number")
+    assert s.spoken[-1] == (orbit_speech.pick_voice("Rafli", voices)["id"], "no number")
+    conn.event("whispered", "You whisper to Sari: later", brief="Whispered to Sari.", words="later",
                to="Sari", voice=3)
-    assert s.spoken[-2:] == [("narrator", "Ke Sari:"), (voices[2]["id"], "nanti ya")]
-    conn.event("shouted", "Kamu berteriak: halo!", brief="Diteriakkan.", words="halo!", voice=3)
-    assert s.spoken[-1] == (voices[2]["id"], "halo!")
-    conn.event("emote", "Kamu tersenyum.", emote="smile")
-    assert s.spoken[-1] == ("narrator", "Kamu tersenyum.")                  # gestures: the narrator
+    assert s.spoken[-2:] == [("narrator", "To Sari:"), (voices[2]["id"], "later")]
+    conn.event("shouted", "You shout: hello!", brief="Shouted.", words="hello!", voice=3)
+    assert s.spoken[-1] == (voices[2]["id"], "hello!")
+    conn.event("emote", "You smile.", emote="smile")
+    assert s.spoken[-1] == ("narrator", "You smile.")                  # gestures: the narrator
     play.client.aruna_until = float("inf")                                  # said through Aruna
-    conn.event("said", "Kamu bilang: dari Aruna", brief="Terkirim.", words="dari Aruna", voice=3)
-    assert s.spoken[-1] == (voices[2]["id"], "dari Aruna") and s.shown[-1] == "Terkirim."
+    conn.event("said", "You say: from Aruna", brief="Sent.", words="from Aruna", voice=3)
+    assert s.spoken[-1] == (voices[2]["id"], "from Aruna") and s.shown[-1] == "Sent."
     play.client.aruna_until = 0
     # the setting off: only the short confirmation, as before
-    play.client.submit("kata-kataku mati")
-    assert s.values["speak_own"] is False and s.spoken[-1] == ("narrator", "Kata-katamu sendiri hanya dikonfirmasi.")
-    conn.event("said", "Kamu bilang: halo lagi", brief="Terkirim.", words="halo lagi", voice=3)
-    assert s.spoken[-1] == ("narrator", "Terkirim.")
+    play.client.submit("my lines off")
+    assert s.values["speak_own"] is False and s.spoken[-1] == ("narrator", "Your own lines are only confirmed.")
+    conn.event("said", "You say: hello again", brief="Sent.", words="hello again", voice=3)
+    assert s.spoken[-1] == ("narrator", "Sent.")
     play.client.submit("my lines on")
     assert s.values["speak_own"] is True
-    play.client.submit("nama pemain mati")
-    assert s.values["speak_names"] is False and s.spoken[-1][1] == "Hanya kata-kata pemain yang diucapkan, tanpa namanya."
+    play.client.submit("names off")
+    assert s.values["speak_names"] is False and s.spoken[-1][1] == "Only players' words are said, without their names."
 
 
 def test_with_too_few_voices_everyone_is_read_by_the_narrator_and_you_are_told_once(play):
     s = play.services
-    s.voices_on = False                          # Hariku Voice has only one voice of this language
+    s.voices_on = False                          # Hariku Voice has only one English voice
     conn = _online(play, name="Rafli")
     s.spoken.clear()
-    conn.event("say", "Sari bilang: halo", actor="Sari", words="halo")
-    hint = ("narrator", "Hariku Voice punya kurang dari dua suara bahasamu, jadi semua pemain terdengar sama. "
-                        "Agar tiap pemain punya suara sendiri, pasang Edge Voices atau Piper Voices dari Toko Ekstensi.")
-    assert s.spoken == [hint, ("narrator", "Sari bilang: halo")]
+    conn.event("say", "Sari says: hello", actor="Sari", words="hello")
+    hint = ("narrator", "Hariku Voice has fewer than two English voices, so every player sounds the same. "
+                        "For voices of their own, get Edge Voices or Piper Voices from the Extension Store.")
+    assert s.spoken == [hint, ("narrator", "Sari says: hello")]
     assert hint[1] in play.client.messages
-    conn.event("said", "Kamu bilang: hai", brief="Terkirim.", words="hai")
-    conn.event("say", "Sari bilang: lagi", actor="Sari", words="lagi")
-    assert s.spoken[2:] == [("narrator", "hai"), ("narrator", "Sari bilang: lagi")]      # told once
+    conn.event("said", "You say: hi", brief="Sent.", words="hi")
+    conn.event("say", "Sari says: again", actor="Sari", words="again")
+    assert s.spoken[2:] == [("narrator", "hi"), ("narrator", "Sari says: again")]      # told once
     # players' voices turned off: no hint needed, the narrator reads
     s.values["voices"] = False
     play.client.voices_hint_said = False
-    conn.event("say", "Sari bilang: tanpa suara", actor="Sari", words="tanpa suara")
-    assert s.spoken[-1] == ("narrator", "Sari bilang: tanpa suara") and hint not in s.spoken[4:]
+    conn.event("say", "Sari says: no voice", actor="Sari", words="no voice")
+    assert s.spoken[-1] == ("narrator", "Sari says: no voice") and hint not in s.spoken[4:]
 
 
 def test_the_narrator_is_hariku_voice_when_it_can_speak(play):
     s = play.services
-    s.narrator = {"provider": "windows", "id": "andika"}
+    s.narrator = {"provider": "windows", "id": "charlie"}
     conn = _online(play, name="Rafli")
     s.spoken.clear()
-    conn.event("room", "Kantin. Meja-meja bundar.")
-    conn.event("say", "Sari bilang: halo", actor="Sari", words="halo")
-    sari = orbit_speech.pick_voice("Sari", orbit_speech.voices_of(FakeServices.VOICES, "id"))["id"]
-    assert s.spoken == [("andika", "Kantin. Meja-meja bundar."), ("andika", "Sari:"), (sari, "halo")]
+    conn.event("room", "Cantina. Round tables.")
+    conn.event("say", "Sari says: hello", actor="Sari", words="hello")
+    sari = orbit_speech.pick_voice("Sari", orbit_speech.voices_of(FakeServices.VOICES, "en"))["id"]
+    assert s.spoken == [("charlie", "Cantina. Round tables."), ("charlie", "Sari:"), (sari, "hello")]
 
 
 def test_a_busy_room_drops_whole_lines_never_half_of_one():
     services = SpeakerServices()
     speaker = orbit_speech.Speaker(services)
-    speaker.say("first", voice="gadis")                  # still speaking
+    speaker.say("first", voice="bravo")                  # still speaking
     for i in range(orbit_speech.MAX_WAITING + 3):
-        speaker.say_parts([("Sari:", None), (f"line {i}", "gadis")])
+        speaker.say_parts([("Sari:", None), (f"line {i}", "bravo")])
     assert len(speaker.waiting) == orbit_speech.MAX_WAITING
-    assert list(speaker.waiting[0]) == [("Sari:", None), ("line 3", "gadis")]
+    assert list(speaker.waiting[0]) == [("Sari:", None), ("line 3", "bravo")]
     while services.pending:
         services.pending.pop(0)(None)
     spoken = [text for _who, text in services.log]
@@ -1545,13 +1574,13 @@ def test_a_busy_room_drops_whole_lines_never_half_of_one():
 
 
 def test_numbered_voices_are_the_same_on_every_turn():
-    voices = orbit_speech.voices_of(FakeServices.VOICES, "id")
+    voices = orbit_speech.voices_of(FakeServices.VOICES, "en")
     assert [orbit_speech.pick_voice("anyone", voices, number=n)["id"] for n in (1, 2, 3, 4)] == \
-        ["id-ID-ArdiNeural", "id-ID-GadisNeural", "andika", "id-ID-ArdiNeural"]
+        ["en-GB-Alpha", "en-US-Bravo", "charlie", "en-GB-Alpha"]
     assert orbit_speech.pick_voice("Sari", voices, number=0) == orbit_speech.pick_voice("Sari", voices)
     assert orbit_speech.pick_voice("Sari", voices[:1], number=2) is None
-    narrator = ("edge", "id-ID-ArdiNeural")
-    assert orbit_speech.pick_voice("x", voices, exclude=narrator, number=1)["id"] == "id-ID-GadisNeural"
+    narrator = ("edge", "en-GB-Alpha")
+    assert orbit_speech.pick_voice("x", voices, exclude=narrator, number=1)["id"] == "en-US-Bravo"
 
 
 # ------------------------------------------------------------
@@ -1563,15 +1592,15 @@ def test_closing_the_window_stays_connected_and_says_how_to_come_back(play):
     conn = _online(play)
     for _i in range(3):
         assert client.window_closing() is False
-        assert s.spoken[-1] == ("narrator", "Orbit tetap tersambung. Buka lagi dengan Ctrl + Shift + O, "
-                                            "atau bilang ke Aruna: buka orbit. Untuk keluar, ketik keluar.")
+        assert s.spoken[-1] == ("narrator", "Orbit stays connected. Open it again with Ctrl + Shift + O, "
+                                            "or tell Aruna: open orbit. To leave, type quit.")
     client.window_closing()
-    assert s.spoken[-1] == ("narrator", "Orbit di latar belakang.") and s.values["close_hints"] == 3
+    assert s.spoken[-1] == ("narrator", "Orbit in the background.") and s.values["close_hints"] == 3
     assert not conn.stopped and client.online()
     s.values.update(close_hints=0)
     s.key = ""
     client.window_closing()
-    assert "bilang ke Aruna: buka orbit" in s.spoken[-1][1] and "dengan ," not in s.spoken[-1][1]
+    assert "by telling Aruna: open orbit" in s.spoken[-1][1] and "with ," not in s.spoken[-1][1]
 
 
 def test_closing_the_window_can_leave_orbit(play):
@@ -1580,15 +1609,15 @@ def test_closing_the_window_can_leave_orbit(play):
     conn = _online(play)
     assert client.window_closing() is True
     assert conn.sent[-1] == {"t": "cmd", "c": "bye"} and conn.stopped
-    assert client.status == "Belum tersambung." and client.title_state == "Keluar"
+    assert client.status == "Not connected." and client.title_state == "Left"
 
 
 def test_leaving_says_goodbye_to_the_server(play):
     s, client = play.services, play.client
     conn = _online(play)
-    client.submit("keluar")
+    client.submit("quit")
     assert conn.sent == [{"t": "cmd", "c": "bye"}] and conn.stopped
-    assert s.spoken[-1] == ("narrator", "Kamu keluar dari Orbit.")
+    assert s.spoken[-1] == ("narrator", "You've left Orbit.")
     conn = _online(play)
     client.shutdown()                                         # Hariku is closing
     assert conn.sent[-1] == {"t": "cmd", "c": "bye"} and conn.stopped
@@ -1614,11 +1643,11 @@ def test_away_then_logged_out_when_idle_with_the_window_closed(play):
     assert client.away is True and conn.sent[-1] == {"t": "cmd", "c": "away", "on": True}
     client.check_idle()
     assert conn.sent.count({"t": "cmd", "c": "away", "on": True}) == 1
-    client.submit("lihat")
+    client.submit("look")
     assert client.away is False and conn.sent[-1] == {"t": "cmd", "c": "look"}
     now[0] += 30 * 60
     client.check_idle()
-    assert "Kamu otomatis keluar dari Orbit karena lama tidak aktif." in [t for _w, t in s.spoken]
+    assert "You've been logged out of Orbit because you were away for a long time." in [t for _w, t in s.spoken]
     assert conn.sent[-1] == {"t": "cmd", "c": "bye"} and client.conn is None
     s.values["auto_logout"] = 0                               # never
     client.connect()
@@ -1631,15 +1660,15 @@ def test_away_then_logged_out_when_idle_with_the_window_closed(play):
 def test_the_status_everywhere(play):
     s, client = play.services, play.client
     assert client.submit("status") == "local"
-    assert s.spoken[-1] == ("narrator", "Belum tersambung.")
+    assert s.spoken[-1] == ("narrator", "Not connected.")
     conn = _online(play)
     client.submit("orbit status", "aruna")
     assert conn.sent[-1] == {"t": "cmd", "c": "status"}
-    assert client.title_state == "Tersambung"
+    assert client.title_state == "Connected"
     conn.on_state("offline", {"reason": "lost", "retry_in": 8})
-    assert client.title_state == "Terputus"
+    assert client.title_state == "Disconnected"
     client.submit("status")
-    assert s.spoken[-1] == ("narrator", "Terputus, menyambung lagi dalam 8 detik...")
+    assert s.spoken[-1] == ("narrator", "Disconnected, reconnecting in 8 seconds...")
 
 
 # ------------------------------------------------------------
@@ -1653,7 +1682,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert client.request_transfer_code() is False            # not connected
     conn = _online(play)
     assert client.request_transfer_code() is True and conn.sent[-1] == {"t": "cmd", "c": "transfer"}
-    conn.event("info", "Kode pindahmu: A B C D, ...", transfer_code="ABCD-EFGH-JKLM-NPQR", expires=600)
+    conn.event("info", "Your transfer code: A B C D, ...", transfer_code="ABCD-EFGH-JKLM-NPQR", expires=600)
     assert client.transfer_code == "ABCD-EFGH-JKLM-NPQR" and ("transfer", "ABCD-EFGH-JKLM-NPQR") in notes
     # The other computer.
     other = FakeServices()
@@ -1662,7 +1691,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert other.connections == []
     assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
     hello = other.connections[-1].hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.4", "lang": "id",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.5", "lang": "en",
                      "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
     other.connections[-1].welcome(name="Rafli")
     account = other.accounts["wss://infiartt.com/orbit/ws"]
@@ -1676,9 +1705,9 @@ def test_a_refused_transfer_keeps_the_old_character(play):
     old = dict(s.accounts[s.values["server"]])
     client.redeem_transfer("ABCD-EFGH-JKLM-NPQR")
     s.connections[-1].on_state("failed", {"t": "err", "code": "transfer_bad",
-                                          "text": "Kode pindah itu tidak berlaku."})
+                                          "text": "That transfer code doesn't work."})
     assert s.accounts[s.values["server"]] == old
-    assert client.status == "Kode pindah itu tidak berlaku."
+    assert client.status == "That transfer code doesn't work."
 
 
 # ------------------------------------------------------------
@@ -1931,17 +1960,17 @@ def test_mixed_reading_gives_talk_to_voices_and_the_rest_to_the_screen_reader(pl
     s.values["reader"] = "mixed"
     conn = _online(play)
     s.spoken.clear()
-    conn.event("moved", "Kamu berjalan ke Kantin. Kantin. Jalan keluar: utara, barat daya.",
+    conn.event("moved", "You walk to the Cantina. Cantina. Exits: north, southwest.",
                room="cantina", amb="cantina")
-    assert s.spoken[-1] == ("reader", "Kamu berjalan ke Kantin. Kantin. Jalan keluar: utara, barat daya.")
+    assert s.spoken[-1] == ("reader", "You walk to the Cantina. Cantina. Exits: north, southwest.")
     s.spoken.clear()
-    conn.event("say", "Sari bilang: halo Rafli!", actor="Sari", words="halo Rafli!")
-    assert s.spoken[0] == ("narrator", "Sari bilang:") or s.spoken[0][0] not in ("reader",)
+    conn.event("say", "Sari says: hello Rafli!", actor="Sari", words="hello Rafli!")
+    assert s.spoken[0] == ("narrator", "Sari:") or s.spoken[0][0] not in ("reader",)
     assert all(who != "reader" for who, _line in s.spoken)          # a voice, not NVDA
     s.spoken.clear()
-    conn.event("announce", "Pengumuman: server restart jam 3.", words="server restart jam 3.")
+    conn.event("announce", "Announcement: server restart at 3.", words="server restart at 3.")
     assert s.spoken and all(who != "reader" for who, _line in s.spoken)
-    assert client.messages[-1] == "Pengumuman: server restart jam 3."
+    assert client.messages[-1] == "Announcement: server restart at 3."
 
 
 def test_nvda_reading_reads_everything_at_once_and_whole(play):
@@ -1949,17 +1978,17 @@ def test_nvda_reading_reads_everything_at_once_and_whole(play):
     s.values["reader"] = "nvda"
     conn = _online(play)
     s.spoken.clear()
-    conn.event("say", "Sari bilang: halo Rafli!", actor="Sari", words="halo Rafli!")
-    conn.event("moved", "Kamu berjalan ke Dek Observasi.", room="observation")
-    assert s.spoken == [("reader", "Sari bilang: halo Rafli!"), ("reader", "Kamu berjalan ke Dek Observasi.")]
+    conn.event("say", "Sari says: hello Rafli!", actor="Sari", words="hello Rafli!")
+    conn.event("moved", "You walk to the Observation Deck.", room="observation")
+    assert s.spoken == [("reader", "Sari says: hello Rafli!"), ("reader", "You walk to the Observation Deck.")]
 
 
 def test_the_reader_can_be_changed_from_the_game(play):
-    assert orbit_parse.parse("pembaca nvda") == {"local": "set", "key": "reader", "value": "nvda"}
+    assert orbit_parse.parse("reader nvda") == {"local": "set", "key": "reader", "value": "nvda"}
     assert orbit_parse.parse("reader mixed") == {"local": "set", "key": "reader", "value": "mixed"}
-    assert orbit_parse.parse("pembaca suara") == {"local": "set", "key": "reader", "value": "voices"}
+    assert orbit_parse.parse("reader voices") == {"local": "set", "key": "reader", "value": "voices"}
     s, client = play.services, play.client
     conn = _online(play)
-    assert client.submit("pembaca nvda") == "local"
-    assert s.values["reader"] == "nvda" and s.spoken[-1] == ("reader", "Semua dibacakan NVDA.")
+    assert client.submit("reader nvda") == "local"
+    assert s.values["reader"] == "nvda" and s.spoken[-1] == ("reader", "NVDA reads everything.")
     assert conn.sent == []

@@ -19,7 +19,7 @@ does). Kinds:
   weekly    at fixed UTC times (config game.events_weekly)
   seasonal  on a day of the year (the station's birthday on 25 September,
             New Year, the Lantern Festival on the hundredth day)
-  hosted    a player's party ("adakan pesta"), at most once in two hours
+  hosted    a player's party ("host party"), at most once in two hours
   custom    an admin's announcement at a time they choose
 
 Actions: collect (in the event's rooms, "collect" finds things), seek (a
@@ -34,9 +34,9 @@ jackpots, courier pay, free temple lanterns.
 
 Every event is announced to everyone with a sound of its own ("announce"
 events with an "event" field, so a client can let players hear fewer), and
-so is its end and who won or helped. "events" / "acara" lists what's on
-and what's coming (with the times as UTC timestamps for the client to show
-in local time); "join" / "ikut" takes part where that's needed.
+so is its end and who won or helped. "events" lists what's on and what's
+coming (with the times as UTC timestamps for the client to show in local
+time); "join" takes part where that's needed.
 
 All of it is in the database: the events table (every event that runs or
 is scheduled, its state and outcome) and event_players (who took part, and
@@ -48,7 +48,7 @@ import datetime
 import logging
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -170,7 +170,7 @@ class EventsMixin:
         row = self.active_of("tournament")
         now = self.now()
         if row is not None:
-            left = {lang: self._duration(lang, float(row["ends"]) - now) for lang in ("en", "id")}
+            left = {lang: self._duration(lang, float(row["ends"]) - now) for lang in LANGUAGES}
             players = self.store.event_players(row["id"])
             if not players:
                 return "on_empty", {"time": left}
@@ -180,7 +180,7 @@ class EventsMixin:
             if entry.get("event") == "tournament":
                 start = self.weekly_start(entry, now)
                 when = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)
-                return "next", {"day": {lang: self.render(lang, f"weekday_{when.weekday()}") for lang in ("en", "id")},
+                return "next", {"day": {lang: self.render(lang, f"weekday_{when.weekday()}") for lang in LANGUAGES},
                                 "hour": when.strftime("%H:%M")}
         return None, {}
 
@@ -336,9 +336,7 @@ class EventsMixin:
         return row
 
     def _kind_name(self, kind):
-        return {"trade": {"en": "trade goods", "id": "barang dagangan"},
-                "crop": {"en": "crops", "id": "hasil panen"},
-                "ore": {"en": "ore", "id": "bijih"}}[kind]
+        return {lang: self.render(lang, f"kind_{kind}") for lang in LANGUAGES}
 
     def end_event(self, row, outcome="done"):
         self.active.pop(row["id"], None)
@@ -714,16 +712,16 @@ class EventsMixin:
     # --- admins ---------------------------------------------------------------------------------
 
     def find_event(self, text):
-        """An event id for what an admin typed ("meteor shower", "hujan meteor", "meteor_shower")."""
+        """An event id for what an admin typed ("meteor shower", "Meteor shower", "meteor_shower")."""
         key = orbit_safety.name_key(text).replace("_", " ")
         if not key:
             return None
         for eid, definition in self.events_def.items():
-            names = {eid.replace("_", " ")} | {orbit_safety.name_key(definition["name"][lang]) for lang in ("en", "id")}
+            names = {eid.replace("_", " ")} | {orbit_safety.name_key(definition["name"][lang]) for lang in LANGUAGES}
             if key in names:
                 return eid
         for eid, definition in self.events_def.items():
-            names = [eid.replace("_", " ")] + [orbit_safety.name_key(definition["name"][lang]) for lang in ("en", "id")]
+            names = [eid.replace("_", " ")] + [orbit_safety.name_key(definition["name"][lang]) for lang in LANGUAGES]
             if any(key in name for name in names):
                 return eid
         return None

@@ -401,7 +401,7 @@ class OrbitPanel(_PageBase):
         self.btn_transfer.Enable(self.actions.online())
 
     def follow_settings(self, settings):
-        """A setting changed from the game ("suara pemain mati"): show it here."""
+        """A setting changed from the game ("voices off"): show it here."""
         if self._closed or not _alive(self):
             raise RuntimeError("the page is gone")
         for key, box in (("speak", self.chk_speak), ("voices", self.chk_voices),

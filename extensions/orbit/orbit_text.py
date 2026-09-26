@@ -9,19 +9,15 @@
 
 """
 Orbit's own words (the window, the Preferences page, the connection's news,
-the help), in English and Indonesian (casual: "kamu", "aku"). What happens on
-the station comes from the server, already in the player's language. No wx.
+the help), in English: Orbit is played in English, so locales/ has only
+en.json, and Hariku falls back to it whatever its language. What happens on
+the station comes from the server, in English too. No wx.
 """
 
 import os
 
-from core.i18n import get_current_language, get_translator
+from core.i18n import get_translator
 
 EXT_DIR = os.path.dirname(os.path.abspath(__file__))
+LANGUAGE = "en"          # what Orbit asks the server to speak, and its players' voices' language
 _ = get_translator("orbit", os.path.join(EXT_DIR, "locales"))
-
-
-def user_language():
-    """ "id" or "en": what Orbit asks the server to speak."""
-    code = (get_current_language() or "en").split("-")[0].lower()
-    return code if code in ("id", "en") else "en"

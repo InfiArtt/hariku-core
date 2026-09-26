@@ -3,12 +3,12 @@
   "levels": {"xp_step": 60, "max": 20, "pay_per_level": 0.03},
   "xp": {"repair": 10, "repair_tone": 2, "flight": 20, "science": 12, "patrol": 12, "mission": 25},
   "ranks": [
-    {"level": 1, "en": "trainee {job}", "id": "{job} magang"},
-    {"level": 3, "en": "{job}", "id": "{job}"},
-    {"level": 6, "en": "senior {job}", "id": "{job} senior"},
-    {"level": 10, "en": "chief {job}", "id": "kepala {job}"},
-    {"level": 15, "en": "master {job}", "id": "{job} ahli"},
-    {"level": 20, "en": "legendary {job}", "id": "{job} legendaris"}
+    {"level": 1, "en": "trainee {job}"},
+    {"level": 3, "en": "{job}"},
+    {"level": 6, "en": "senior {job}"},
+    {"level": 10, "en": "chief {job}"},
+    {"level": 15, "en": "master {job}"},
+    {"level": 20, "en": "legendary {job}"}
   ],
   "grants": [
     {"level": 2, "thing": "keycard_crew"},
@@ -83,74 +83,60 @@
   "patrol_people": {
     "innocent": [
       {
-        "en": "a grandmother knitting a scarf for her grandson on Mars",
-        "id": "seorang nenek merajut syal untuk cucunya di Mars"
+        "en": "a grandmother knitting a scarf for her grandson on Mars"
       },
-      {"en": "a student asleep on her backpack", "id": "seorang mahasiswi tertidur di atas ranselnya"},
-      {"en": "a cook carrying a crate of fresh chillies", "id": "seorang juru masak membawa peti cabai segar"},
-      {"en": "a tourist photographing every single wall", "id": "seorang turis memotret setiap dinding"},
+      {"en": "a student asleep on her backpack"},
+      {"en": "a cook carrying a crate of fresh chillies"},
+      {"en": "a tourist photographing every single wall"},
       {
-        "en": "a mechanic whistling, oil on his sleeves",
-        "id": "seorang montir bersiul, lengan bajunya penuh oli"
+        "en": "a mechanic whistling, oil on his sleeves"
       },
-      {"en": "a child hugging a stuffed rocket", "id": "seorang anak memeluk boneka roket"},
-      {"en": "a courier checking her list twice", "id": "seorang kurir memeriksa daftarnya dua kali"},
+      {"en": "a child hugging a stuffed rocket"},
+      {"en": "a courier checking her list twice"},
       {
-        "en": "a botanist talking softly to a potted fern",
-        "id": "seorang ahli botani berbicara pelan pada tanaman pakis"
+        "en": "a botanist talking softly to a potted fern"
       },
-      {"en": "a musician tuning a violin", "id": "seorang musisi menyetem biola"},
+      {"en": "a musician tuning a violin"},
       {
-        "en": "a pilot eating instant noodles straight from the cup",
-        "id": "seorang pilot makan mi instan langsung dari gelasnya"
+        "en": "a pilot eating instant noodles straight from the cup"
       },
       {
-        "en": "an old man feeding a pigeon that somehow got on board",
-        "id": "seorang kakek memberi makan burung merpati yang entah bagaimana ikut naik"
+        "en": "an old man feeding a pigeon that somehow got on board"
       },
       {
-        "en": "two sisters arguing about which moon is prettier",
-        "id": "dua kakak beradik berdebat bulan mana yang paling cantik"
+        "en": "two sisters arguing about which moon is prettier"
       }
     ],
     "suspect": [
       {
-        "en": "a man in a heavy coat although it's warm, and the coat clinks when he moves",
-        "id": "seorang pria bermantel tebal padahal udaranya hangat, dan mantelnya berdenting saat dia bergerak"
+        "en": "a man in a heavy coat although it's warm, and the coat clinks when he moves"
       },
       {
-        "en": "a woman whose crate marked 'toys' is ticking",
-        "id": "seorang wanita yang petinya bertulisan 'mainan' berdetak"
+        "en": "a woman whose crate marked 'toys' is ticking"
       },
       {
-        "en": "a trader whose badge photo shows a different face",
-        "id": "seorang pedagang yang foto di lencananya wajah orang lain"
+        "en": "a trader whose badge photo shows a different face"
       },
       {
-        "en": "a traveller who keeps glancing at the camera and wiping sweat off his lip",
-        "id": "seorang pelancong yang terus melirik kamera sambil menyeka keringat di bibirnya"
+        "en": "a traveller who keeps glancing at the camera and wiping sweat off his lip"
       },
       {
-        "en": "a man carrying a sack of coffee that squeaks",
-        "id": "seorang pria membawa karung kopi yang mencicit"
+        "en": "a man carrying a sack of coffee that squeaks"
       },
       {
-        "en": "someone whose suitcase is far too heavy for its size, and who won't put it down",
-        "id": "seseorang yang kopernya terlalu berat untuk ukurannya, dan tidak mau meletakkannya"
+        "en": "someone whose suitcase is far too heavy for its size, and who won't put it down"
       },
       {
-        "en": "a courier with no name on her uniform and three different delivery lists",
-        "id": "seorang kurir tanpa nama di seragamnya dan tiga daftar kiriman yang berbeda"
+        "en": "a courier with no name on her uniform and three different delivery lists"
       },
       {
-        "en": "a tourist whose camera has no lens but a great many wires",
-        "id": "seorang turis yang kameranya tidak punya lensa tapi banyak sekali kabel"
+        "en": "a tourist whose camera has no lens but a great many wires"
       }
     ]
   },
   "shops": {
     "general": {
-      "name": {"en": "Star Supply", "id": "Toko Bintang"},
+      "name": {"en": "Star Supply"},
       "stock": [
         "mapper",
         "headlamp",
@@ -169,12 +155,12 @@
       ]
     },
     "bar": {
-      "name": {"en": "the Cantina bar", "id": "bar Kantin"},
+      "name": {"en": "the Cantina bar"},
       "stock": ["iced_coffee", "martabak", "kerupuk"],
       "fixed": true
     },
     "seeds": {
-      "name": {"en": "the seed rack", "id": "rak bibit"},
+      "name": {"en": "the seed rack"},
       "stock": [
         "seed_kangkung",
         "seed_chilli",
@@ -188,7 +174,7 @@
       "fixed": true
     },
     "gear": {
-      "name": {"en": "Gearworks", "id": "Gearworks"},
+      "name": {"en": "Gearworks"},
       "stock": [
         "mapper",
         "headlamp",
@@ -220,7 +206,7 @@
       ]
     },
     "outfit": {
-      "name": {"en": "Orbit Outfitters", "id": "Butik Orbit"},
+      "name": {"en": "Orbit Outfitters"},
       "stock": [
         "bomber_jacket",
         "batik_shirt",
@@ -234,7 +220,7 @@
       ]
     },
     "furniture": {
-      "name": {"en": "Cosy Corner", "id": "Pojok Nyaman"},
+      "name": {"en": "Cosy Corner"},
       "stock": [
         "lava_lamp",
         "monstera",
@@ -248,19 +234,19 @@
       ]
     },
     "pets": {
-      "name": {"en": "Whiskers & Widgets", "id": "Kumis & Kabel"},
+      "name": {"en": "Whiskers & Widgets"},
       "stock": ["robot_pet", "cat_pet", "minidrone_pet", "robocat_pet", "fox_pet", "jelly_pet", "pet_food", "pet_treat"]
     },
-    "jewels": {"name": {"en": "Starglint Jewellers", "id": "Perhiasan Kilau Bintang"}, "stock": ["ring_silver", "ring_gold", "ring_star"]},
-    "food": {"name": {"en": "the Food Court", "id": "Pujasera"}, "stock": ["iced_coffee", "martabak", "kerupuk", "baby_porridge"]},
-    "casino": {"name": {"en": "the lottery booth", "id": "loket lotre"}, "stock": ["lottery_ticket"], "fixed": true},
+    "jewels": {"name": {"en": "Starglint Jewellers"}, "stock": ["ring_silver", "ring_gold", "ring_star"]},
+    "food": {"name": {"en": "the Food Court"}, "stock": ["iced_coffee", "martabak", "kerupuk", "baby_porridge"]},
+    "casino": {"name": {"en": "the lottery booth"}, "stock": ["lottery_ticket"], "fixed": true},
     "shipyard": {
-      "name": {"en": "the Orbit Shipyard", "id": "Galangan Kapal Orbit"},
+      "name": {"en": "the Orbit Shipyard"},
       "stock": ["ship_swiftlet", "ship_heron", "ship_buffalo", "ship_hornbill"]
     },
-    "tokens": {"name": {"en": "the token machine", "id": "mesin token"}, "stock": ["arcade_token"], "fixed": true},
+    "tokens": {"name": {"en": "the token machine"}, "stock": ["arcade_token"], "fixed": true},
     "prizes": {
-      "name": {"en": "the Prize Counter", "id": "Loket Hadiah"},
+      "name": {"en": "the Prize Counter"},
       "currency": "arcade_ticket",
       "stock": ["plush_comet", "glow_stars", "mini_cabinet", "title_arcade_ace", "giant_robot"],
       "fixed": true
@@ -269,12 +255,11 @@
   "things": {
     "compass": {
       "type": "gear",
-      "one": {"en": "compass", "id": "kompas"},
-      "many": {"en": "compasses", "id": "kompas"},
-      "names": {"en": ["compass"], "id": ["kompas"]},
+      "one": {"en": "compass"},
+      "many": {"en": "compasses"},
+      "names": {"en": ["compass"]},
       "desc": {
-        "en": "A brass pocket compass that also knows which deck you're on. Type compass any time.",
-        "id": "Kompas saku kuningan yang juga tahu kamu sedang di dek mana. Ketik kompas kapan saja."
+        "en": "A brass pocket compass that also knows which deck you're on. Type compass any time."
       },
       "unique": true,
       "effects": {"compass": true},
@@ -282,12 +267,11 @@
     },
     "mapper": {
       "type": "gear",
-      "one": {"en": "pocket mapper", "id": "pemeta saku"},
-      "many": {"en": "pocket mappers", "id": "pemeta saku"},
-      "names": {"en": ["mapper", "pocket mapper", "map device"], "id": ["pemeta", "pemeta saku", "alat peta"]},
+      "one": {"en": "pocket mapper"},
+      "many": {"en": "pocket mappers"},
+      "names": {"en": ["mapper", "pocket mapper", "map device"]},
       "desc": {
-        "en": "A palm-sized device that remembers every room you've walked through. With it, way to finds the way to any place you've been, and map lists what you know of the deck.",
-        "id": "Alat seukuran telapak tangan yang mengingat setiap ruangan yang pernah kamu lewati. Dengannya, arah ke bisa menunjukkan jalan ke tempat mana pun yang pernah kamu datangi, dan peta menyebutkan yang kamu tahu tentang dek ini."
+        "en": "A palm-sized device that remembers every room you've walked through. With it, way to finds the way to any place you've been, and map lists what you know of the deck."
       },
       "price": 250,
       "unique": true,
@@ -295,15 +279,13 @@
     },
     "holomapper": {
       "type": "gear",
-      "one": {"en": "holo mapper", "id": "pemeta holo"},
-      "many": {"en": "holo mappers", "id": "pemeta holo"},
+      "one": {"en": "holo mapper"},
+      "many": {"en": "holo mappers"},
       "names": {
-        "en": ["holo mapper", "holomapper", "advanced mapper", "hologram mapper"],
-        "id": ["pemeta holo", "pemeta hologram", "pemeta canggih"]
+        "en": ["holo mapper", "holomapper", "advanced mapper", "hologram mapper"]
       },
       "desc": {
-        "en": "A mapper that downloads the station's full plans: the way to every public place, visited or not, and a fuller map of each deck.",
-        "id": "Pemeta yang mengunduh denah lengkap stasiun: jalan ke setiap tempat umum, pernah didatangi atau belum, dan peta yang lebih lengkap untuk tiap dek."
+        "en": "A mapper that downloads the station's full plans: the way to every public place, visited or not, and a fuller map of each deck."
       },
       "price": 1200,
       "unique": true,
@@ -312,12 +294,11 @@
     },
     "scanner": {
       "type": "gear",
-      "one": {"en": "crew scanner", "id": "pemindai kru"},
-      "many": {"en": "crew scanners", "id": "pemindai kru"},
-      "names": {"en": ["scanner", "crew scanner"], "id": ["pemindai", "pemindai kru", "scanner"]},
+      "one": {"en": "crew scanner"},
+      "many": {"en": "crew scanners"},
+      "names": {"en": ["scanner", "crew scanner"]},
       "desc": {
-        "en": "Sweeps the rooms around you and tells you who is in each, and in which direction. Type scan.",
-        "id": "Memindai ruangan di sekitarmu dan memberi tahu siapa ada di mana, dan ke arah mana. Ketik pindai."
+        "en": "Sweeps the rooms around you and tells you who is in each, and in which direction. Type scan."
       },
       "price": 400,
       "unique": true,
@@ -325,15 +306,13 @@
     },
     "headlamp": {
       "type": "gear",
-      "one": {"en": "headlamp", "id": "senter kepala"},
-      "many": {"en": "headlamps", "id": "senter kepala"},
+      "one": {"en": "headlamp"},
+      "many": {"en": "headlamps"},
       "names": {
-        "en": ["headlamp", "head lamp", "flashlight", "torch", "lamp"],
-        "id": ["senter kepala", "senter", "lampu kepala"]
+        "en": ["headlamp", "head lamp", "flashlight", "torch", "lamp"]
       },
       "desc": {
-        "en": "A bright lamp on an elastic band. Wear it, and dark tunnels and caves show their rooms and their ways out.",
-        "id": "Lampu terang dengan tali elastis. Pakai di kepala, maka terowongan dan gua yang gelap memperlihatkan isinya dan jalan keluarnya."
+        "en": "A bright lamp on an elastic band. Wear it, and dark tunnels and caves show their rooms and their ways out."
       },
       "price": 120,
       "unique": true,
@@ -342,12 +321,11 @@
     },
     "beacon": {
       "type": "gear",
-      "one": {"en": "beacon", "id": "suar"},
-      "many": {"en": "beacons", "id": "suar"},
-      "names": {"en": ["beacon", "marker"], "id": ["suar", "penanda"]},
+      "one": {"en": "beacon"},
+      "many": {"en": "beacons"},
+      "names": {"en": ["beacon", "marker"]},
       "desc": {
-        "en": "A little blinking marker. Type place beacon to leave it in a room, and way to beacon to walk back to it from anywhere.",
-        "id": "Penanda kecil yang berkedip. Ketik pasang suar untuk meninggalkannya di sebuah ruangan, dan arah ke suar untuk kembali ke sana dari mana saja."
+        "en": "A little blinking marker. Type place beacon to leave it in a room, and way to beacon to walk back to it from anywhere."
       },
       "price": 150,
       "unique": true,
@@ -355,12 +333,11 @@
     },
     "communicator": {
       "type": "gear",
-      "one": {"en": "communicator", "id": "komunikator"},
-      "many": {"en": "communicators", "id": "komunikator"},
-      "names": {"en": ["communicator", "comm", "comms badge", "radio badge"], "id": ["komunikator", "lencana radio"]},
+      "one": {"en": "communicator"},
+      "many": {"en": "communicators"},
+      "names": {"en": ["communicator", "comm", "comms badge", "radio badge"]},
       "desc": {
-        "en": "A badge radio. It tells you when friends log in, and locate finds where a player is and the way there.",
-        "id": "Radio berbentuk lencana. Memberi tahu kalau teman-temanmu masuk, dan lacak menemukan di mana seorang pemain berada dan jalan ke sana."
+        "en": "A badge radio. It tells you when friends log in, and locate finds where a player is and the way there."
       },
       "price": 500,
       "unique": true,
@@ -368,15 +345,13 @@
     },
     "keycard_crew": {
       "type": "gear",
-      "one": {"en": "crew keycard", "id": "kartu kru"},
-      "many": {"en": "crew keycards", "id": "kartu kru"},
+      "one": {"en": "crew keycard"},
+      "many": {"en": "crew keycards"},
       "names": {
-        "en": ["crew keycard", "crew card", "blue keycard"],
-        "id": ["kartu kru", "kartu akses kru", "kartu biru"]
+        "en": ["crew keycard", "crew card", "blue keycard"]
       },
       "desc": {
-        "en": "A blue card that opens the maintenance tunnels. Every crew member gets one at level 2.",
-        "id": "Kartu biru yang membuka terowongan perawatan. Setiap kru mendapatkannya di level 2."
+        "en": "A blue card that opens the maintenance tunnels. Every crew member gets one at level 2."
       },
       "price": 100,
       "unique": true,
@@ -385,15 +360,13 @@
     },
     "keycard_tech": {
       "type": "gear",
-      "one": {"en": "technician keycard", "id": "kartu teknisi"},
-      "many": {"en": "technician keycards", "id": "kartu teknisi"},
+      "one": {"en": "technician keycard"},
+      "many": {"en": "technician keycards"},
       "names": {
-        "en": ["technician keycard", "tech keycard", "tech card", "yellow keycard"],
-        "id": ["kartu teknisi", "kartu kuning"]
+        "en": ["technician keycard", "tech keycard", "tech card", "yellow keycard"]
       },
       "desc": {
-        "en": "A yellow card for the Reactor Core and everything the crew card opens. Engineers get one at level 3.",
-        "id": "Kartu kuning untuk Inti Reaktor dan semua yang dibuka kartu kru. Insinyur mendapatkannya di level 3."
+        "en": "A yellow card for the Reactor Core and everything the crew card opens. Engineers get one at level 3."
       },
       "price": 1500,
       "unique": true,
@@ -403,12 +376,11 @@
     },
     "keycard_officer": {
       "type": "gear",
-      "one": {"en": "officer keycard", "id": "kartu perwira"},
-      "many": {"en": "officer keycards", "id": "kartu perwira"},
-      "names": {"en": ["officer keycard", "officer card", "red keycard"], "id": ["kartu perwira", "kartu merah"]},
+      "one": {"en": "officer keycard"},
+      "many": {"en": "officer keycards"},
+      "names": {"en": ["officer keycard", "officer card", "red keycard"]},
       "desc": {
-        "en": "A red card that opens the Captain's Quarters, and every door the other cards open. Given to everyone at level 10.",
-        "id": "Kartu merah yang membuka Kabin Kapten, dan semua pintu yang dibuka kartu lainnya. Diberikan kepada semua orang di level 10."
+        "en": "A red card that opens the Captain's Quarters, and every door the other cards open. Given to everyone at level 10."
       },
       "price": 5000,
       "unique": true,
@@ -418,12 +390,11 @@
     },
     "brass_key": {
       "type": "gear",
-      "one": {"en": "brass key", "id": "kunci kuningan"},
-      "many": {"en": "brass keys", "id": "kunci kuningan"},
-      "names": {"en": ["brass key", "old key", "key"], "id": ["kunci kuningan", "kunci tua", "kunci"]},
+      "one": {"en": "brass key"},
+      "many": {"en": "brass keys"},
+      "names": {"en": ["brass key", "old key", "key"]},
       "desc": {
-        "en": "A heavy old key, warm to the touch. Somewhere on the station there must be a door old enough for it.",
-        "id": "Kunci tua yang berat, terasa hangat. Pasti ada pintu di stasiun ini yang cukup tua untuknya."
+        "en": "A heavy old key, warm to the touch. Somewhere on the station there must be a door old enough for it."
       },
       "unique": true,
       "tradeable": true,
@@ -431,15 +402,13 @@
     },
     "eva_suit": {
       "type": "gear",
-      "one": {"en": "EVA suit", "id": "pakaian EVA"},
-      "many": {"en": "EVA suits", "id": "pakaian EVA"},
+      "one": {"en": "EVA suit"},
+      "many": {"en": "EVA suits"},
       "names": {
-        "en": ["eva suit", "eva", "spacesuit", "space suit", "suit"],
-        "id": ["pakaian eva", "baju eva", "pakaian antariksa", "baju antariksa"]
+        "en": ["eva suit", "eva", "spacesuit", "space suit", "suit"]
       },
       "desc": {
-        "en": "A white spacesuit with three minutes of air. Wear it to go out through an airlock; the station tows you back if the air runs out.",
-        "id": "Pakaian antariksa putih dengan udara tiga menit. Pakai untuk keluar lewat airlock; stasiun akan menarikmu pulang kalau udaranya habis."
+        "en": "A white spacesuit with three minutes of air. Wear it to go out through an airlock; the station tows you back if the air runs out."
       },
       "price": 800,
       "unique": true,
@@ -449,15 +418,13 @@
     },
     "oxygen_tank": {
       "type": "gear",
-      "one": {"en": "oxygen tank", "id": "tabung oksigen"},
-      "many": {"en": "oxygen tanks", "id": "tabung oksigen"},
+      "one": {"en": "oxygen tank"},
+      "many": {"en": "oxygen tanks"},
       "names": {
-        "en": ["oxygen tank", "oxygen", "air tank", "tank"],
-        "id": ["tabung oksigen", "oksigen", "tabung udara"]
+        "en": ["oxygen tank", "oxygen", "air tank", "tank"]
       },
       "desc": {
-        "en": "A spare tank that clips onto an EVA suit: three more minutes of air outside.",
-        "id": "Tabung cadangan yang dipasang di pakaian EVA: tiga menit udara lagi di luar."
+        "en": "A spare tank that clips onto an EVA suit: three more minutes of air outside."
       },
       "price": 300,
       "unique": true,
@@ -465,12 +432,11 @@
     },
     "drill_steel": {
       "type": "tool",
-      "one": {"en": "steel drill", "id": "bor baja"},
-      "many": {"en": "steel drills", "id": "bor baja"},
-      "names": {"en": ["steel drill", "drill", "better drill"], "id": ["bor baja", "bor"]},
+      "one": {"en": "steel drill"},
+      "many": {"en": "steel drills"},
+      "names": {"en": ["steel drill", "drill", "better drill"]},
       "desc": {
-        "en": "A hardened mining drill: faster than the platform's loaner, and it finds titanium and platinum more often.",
-        "id": "Bor tambang yang dikeraskan: lebih cepat dari bor pinjaman platform, dan lebih sering menemukan titanium dan platina."
+        "en": "A hardened mining drill: faster than the platform's loaner, and it finds titanium and platinum more often."
       },
       "price": 500,
       "unique": true,
@@ -479,12 +445,11 @@
     },
     "drill_plasma": {
       "type": "tool",
-      "one": {"en": "plasma drill", "id": "bor plasma"},
-      "many": {"en": "plasma drills", "id": "bor plasma"},
-      "names": {"en": ["plasma drill"], "id": ["bor plasma"]},
+      "one": {"en": "plasma drill"},
+      "many": {"en": "plasma drills"},
+      "names": {"en": ["plasma drill"]},
       "desc": {
-        "en": "A drill that melts rock instead of breaking it. The fastest, and the best at finding rare ore.",
-        "id": "Bor yang melelehkan batu, bukan menghancurkannya. Paling cepat, dan paling jago menemukan bijih langka."
+        "en": "A drill that melts rock instead of breaking it. The fastest, and the best at finding rare ore."
       },
       "price": 2000,
       "unique": true,
@@ -493,12 +458,11 @@
     },
     "thruster": {
       "type": "tool",
-      "one": {"en": "turbo thruster", "id": "pendorong turbo"},
-      "many": {"en": "turbo thrusters", "id": "pendorong turbo"},
-      "names": {"en": ["turbo thruster", "thruster", "turbo"], "id": ["pendorong turbo", "turbo"]},
+      "one": {"en": "turbo thruster"},
+      "many": {"en": "turbo thrusters"},
+      "names": {"en": ["turbo thruster", "thruster", "turbo"]},
       "desc": {
-        "en": "A booster you clip onto the Kancil for your rides: the trip to the Asteroid Belt takes half the time.",
-        "id": "Pendorong yang kamu pasang di Kancil setiap kamu menumpang: perjalanan ke Sabuk Asteroid jadi setengah waktunya."
+        "en": "A booster you clip onto the Wombat for your rides: the trip to the Asteroid Belt takes half the time."
       },
       "price": 350,
       "unique": true,
@@ -506,15 +470,13 @@
     },
     "sprinkler": {
       "type": "tool",
-      "one": {"en": "auto-sprinkler", "id": "penyiram otomatis"},
-      "many": {"en": "auto-sprinklers", "id": "penyiram otomatis"},
+      "one": {"en": "auto-sprinkler"},
+      "many": {"en": "auto-sprinklers"},
       "names": {
-        "en": ["auto-sprinkler", "sprinkler", "auto sprinkler"],
-        "id": ["penyiram otomatis", "penyiram", "sprinkler"]
+        "en": ["auto-sprinkler", "sprinkler", "auto sprinkler"]
       },
       "desc": {
-        "en": "Waters every seed you plant, as soon as it's in: each plot gives its watering bonus without a visit.",
-        "id": "Menyiram setiap bibit yang kamu tanam begitu masuk tanah: setiap petak dapat bonus siramnya tanpa kamu datang."
+        "en": "Waters every seed you plant, as soon as it's in: each plot gives its watering bonus without a visit."
       },
       "price": 600,
       "unique": true,
@@ -522,12 +484,11 @@
     },
     "grow_lamp": {
       "type": "tool",
-      "one": {"en": "grow lamp", "id": "lampu tumbuh"},
-      "many": {"en": "grow lamps", "id": "lampu tumbuh"},
-      "names": {"en": ["grow lamp", "lamp for plants"], "id": ["lampu tumbuh", "lampu tanaman"]},
+      "one": {"en": "grow lamp"},
+      "many": {"en": "grow lamps"},
+      "names": {"en": ["grow lamp", "lamp for plants"]},
       "desc": {
-        "en": "A pink lamp for your plots: crops ripen in four fifths of the time.",
-        "id": "Lampu merah muda untuk petakmu: tanaman matang dalam empat perlima waktunya."
+        "en": "A pink lamp for your plots: crops ripen in four fifths of the time."
       },
       "price": 900,
       "unique": true,
@@ -536,12 +497,11 @@
     },
     "bag_big": {
       "type": "tool",
-      "one": {"en": "big bag", "id": "tas besar"},
-      "many": {"en": "big bags", "id": "tas besar"},
-      "names": {"en": ["big bag", "bigger bag"], "id": ["tas besar"]},
+      "one": {"en": "big bag"},
+      "many": {"en": "big bags"},
+      "names": {"en": ["big bag", "bigger bag"]},
       "desc": {
-        "en": "A roomy canvas bag: it holds 30 goods instead of 20.",
-        "id": "Tas kanvas yang lega: muat 30 barang dagangan, bukan 20."
+        "en": "A roomy canvas bag: it holds 30 goods instead of 20."
       },
       "price": 250,
       "unique": true,
@@ -549,12 +509,11 @@
     },
     "bag_cargo": {
       "type": "tool",
-      "one": {"en": "cargo pack", "id": "ransel kargo"},
-      "many": {"en": "cargo packs", "id": "ransel kargo"},
-      "names": {"en": ["cargo pack", "backpack"], "id": ["ransel kargo", "ransel"]},
+      "one": {"en": "cargo pack"},
+      "many": {"en": "cargo packs"},
+      "names": {"en": ["cargo pack", "backpack"]},
       "desc": {
-        "en": "A framed pack with straps everywhere: 45 goods.",
-        "id": "Ransel berangka dengan tali di mana-mana: muat 45 barang dagangan."
+        "en": "A framed pack with straps everywhere: 45 goods."
       },
       "price": 900,
       "unique": true,
@@ -563,12 +522,11 @@
     },
     "wrench": {
       "type": "tool",
-      "one": {"en": "torque wrench", "id": "kunci torsi"},
-      "many": {"en": "torque wrenches", "id": "kunci torsi"},
-      "names": {"en": ["torque wrench", "wrench"], "id": ["kunci torsi"]},
+      "one": {"en": "torque wrench"},
+      "many": {"en": "torque wrenches"},
+      "names": {"en": ["torque wrench", "wrench"]},
       "desc": {
-        "en": "A digital torque wrench. Engineers are paid a tenth more for every repair.",
-        "id": "Kunci torsi digital. Insinyur dibayar sepersepuluh lebih banyak untuk setiap perbaikan."
+        "en": "A digital torque wrench. Engineers are paid a tenth more for every repair."
       },
       "price": 300,
       "unique": true,
@@ -578,15 +536,13 @@
     },
     "diagkit": {
       "type": "tool",
-      "one": {"en": "quantum diagnostic kit", "id": "kit diagnostik kuantum"},
-      "many": {"en": "quantum diagnostic kits", "id": "kit diagnostik kuantum"},
+      "one": {"en": "quantum diagnostic kit"},
+      "many": {"en": "quantum diagnostic kits"},
       "names": {
-        "en": ["quantum diagnostic kit", "diagnostic kit", "diag kit"],
-        "id": ["kit diagnostik kuantum", "kit diagnostik"]
+        "en": ["quantum diagnostic kit", "diagnostic kit", "diag kit"]
       },
       "desc": {
-        "en": "The kit the Reactor Core's own crew use. Engineers are paid a fifth more.",
-        "id": "Kit yang dipakai kru Inti Reaktor sendiri. Insinyur dibayar seperlima lebih banyak."
+        "en": "The kit the Reactor Core's own crew use. Engineers are paid a fifth more."
       },
       "price": 1200,
       "unique": true,
@@ -596,12 +552,11 @@
     },
     "navcomp": {
       "type": "tool",
-      "one": {"en": "nav computer", "id": "komputer navigasi"},
-      "many": {"en": "nav computers", "id": "komputer navigasi"},
-      "names": {"en": ["nav computer", "navigation computer"], "id": ["komputer navigasi"]},
+      "one": {"en": "nav computer"},
+      "many": {"en": "nav computers"},
+      "names": {"en": ["nav computer", "navigation computer"]},
       "desc": {
-        "en": "Plots cleaner routes to the Moon. Pilots are paid a tenth more per cargo run.",
-        "id": "Menghitung rute yang lebih rapi ke Bulan. Pilot dibayar sepersepuluh lebih banyak per penerbangan kargo."
+        "en": "Plots cleaner routes to the Moon. Pilots are paid a tenth more per cargo run."
       },
       "price": 300,
       "unique": true,
@@ -611,12 +566,11 @@
     },
     "autopilot": {
       "type": "tool",
-      "one": {"en": "smart autopilot", "id": "autopilot pintar"},
-      "many": {"en": "smart autopilots", "id": "autopilot pintar"},
-      "names": {"en": ["smart autopilot", "autopilot"], "id": ["autopilot pintar", "autopilot"]},
+      "one": {"en": "smart autopilot"},
+      "many": {"en": "smart autopilots"},
+      "names": {"en": ["smart autopilot", "autopilot"]},
       "desc": {
-        "en": "An autopilot that even lands gently. Pilots are paid a fifth more.",
-        "id": "Autopilot yang bahkan mendarat dengan lembut. Pilot dibayar seperlima lebih banyak."
+        "en": "An autopilot that even lands gently. Pilots are paid a fifth more."
       },
       "price": 1200,
       "unique": true,
@@ -626,12 +580,11 @@
     },
     "terminal": {
       "type": "tool",
-      "one": {"en": "market terminal", "id": "terminal pasar"},
-      "many": {"en": "market terminals", "id": "terminal pasar"},
-      "names": {"en": ["market terminal", "terminal"], "id": ["terminal pasar", "terminal"]},
+      "one": {"en": "market terminal"},
+      "many": {"en": "market terminals"},
+      "names": {"en": ["market terminal", "terminal"]},
       "desc": {
-        "en": "A trader's terminal with live order books: lower fees when you buy and sell.",
-        "id": "Terminal pedagang dengan buku pesanan langsung: biaya lebih rendah saat membeli dan menjual."
+        "en": "A trader's terminal with live order books: lower fees when you buy and sell."
       },
       "price": 300,
       "unique": true,
@@ -641,12 +594,11 @@
     },
     "ledger": {
       "type": "tool",
-      "one": {"en": "ledger assistant", "id": "asisten pembukuan"},
-      "many": {"en": "ledger assistants", "id": "asisten pembukuan"},
-      "names": {"en": ["ledger assistant", "ledger", "assistant"], "id": ["asisten pembukuan", "pembukuan"]},
+      "one": {"en": "ledger assistant"},
+      "many": {"en": "ledger assistants"},
+      "names": {"en": ["ledger assistant", "ledger", "assistant"]},
       "desc": {
-        "en": "A tiny accounting robot that haggles for you: the lowest fees on the station.",
-        "id": "Robot akuntan mungil yang menawar untukmu: biaya terendah di stasiun."
+        "en": "A tiny accounting robot that haggles for you: the lowest fees on the station."
       },
       "price": 1200,
       "unique": true,
@@ -656,12 +608,11 @@
     },
     "microscope": {
       "type": "tool",
-      "one": {"en": "electron microscope", "id": "mikroskop elektron"},
-      "many": {"en": "electron microscopes", "id": "mikroskop elektron"},
-      "names": {"en": ["electron microscope", "microscope"], "id": ["mikroskop elektron", "mikroskop"]},
+      "one": {"en": "electron microscope"},
+      "many": {"en": "electron microscopes"},
+      "names": {"en": ["electron microscope", "microscope"]},
       "desc": {
-        "en": "A portable electron microscope. Scientists are paid a tenth more for each analysis.",
-        "id": "Mikroskop elektron portabel. Ilmuwan dibayar sepersepuluh lebih banyak untuk setiap analisis."
+        "en": "A portable electron microscope. Scientists are paid a tenth more for each analysis."
       },
       "price": 300,
       "unique": true,
@@ -671,12 +622,11 @@
     },
     "spectrometer": {
       "type": "tool",
-      "one": {"en": "spectrometer", "id": "spektrometer"},
-      "many": {"en": "spectrometers", "id": "spektrometer"},
-      "names": {"en": ["spectrometer"], "id": ["spektrometer"]},
+      "one": {"en": "spectrometer"},
+      "many": {"en": "spectrometers"},
+      "names": {"en": ["spectrometer"]},
       "desc": {
-        "en": "Splits light into every colour it hides. Scientists are paid a fifth more.",
-        "id": "Memecah cahaya menjadi semua warna yang disembunyikannya. Ilmuwan dibayar seperlima lebih banyak."
+        "en": "Splits light into every colour it hides. Scientists are paid a fifth more."
       },
       "price": 1200,
       "unique": true,
@@ -686,12 +636,11 @@
     },
     "bodyscanner": {
       "type": "tool",
-      "one": {"en": "body scanner", "id": "pemindai tubuh"},
-      "many": {"en": "body scanners", "id": "pemindai tubuh"},
-      "names": {"en": ["body scanner"], "id": ["pemindai tubuh"]},
+      "one": {"en": "body scanner"},
+      "many": {"en": "body scanners"},
+      "names": {"en": ["body scanner"]},
       "desc": {
-        "en": "A wand that beeps at anything hidden. Security officers are paid a tenth more per patrol.",
-        "id": "Tongkat yang berbunyi bip pada apa pun yang disembunyikan. Petugas keamanan dibayar sepersepuluh lebih banyak per patroli."
+        "en": "A wand that beeps at anything hidden. Security officers are paid a tenth more per patrol."
       },
       "price": 300,
       "unique": true,
@@ -701,12 +650,11 @@
     },
     "drone": {
       "type": "tool",
-      "one": {"en": "patrol drone", "id": "drone patroli"},
-      "many": {"en": "patrol drones", "id": "drone patroli"},
-      "names": {"en": ["patrol drone", "drone"], "id": ["drone patroli", "drone"]},
+      "one": {"en": "patrol drone"},
+      "many": {"en": "patrol drones"},
+      "names": {"en": ["patrol drone", "drone"]},
       "desc": {
-        "en": "A quiet drone that watches the crowds with you. Security officers are paid a fifth more.",
-        "id": "Drone senyap yang ikut mengawasi keramaian. Petugas keamanan dibayar seperlima lebih banyak."
+        "en": "A quiet drone that watches the crowds with you. Security officers are paid a fifth more."
       },
       "price": 1200,
       "unique": true,
@@ -716,12 +664,11 @@
     },
     "iced_coffee": {
       "type": "consumable",
-      "one": {"en": "iced coffee", "id": "es kopi susu"},
-      "many": {"en": "iced coffees", "id": "es kopi susu"},
-      "names": {"en": ["iced coffee", "coffee drink", "ice coffee"], "id": ["es kopi susu", "es kopi", "kopi susu"]},
+      "one": {"en": "iced coffee"},
+      "many": {"en": "iced coffees"},
+      "names": {"en": ["iced coffee", "coffee drink", "ice coffee"]},
       "desc": {
-        "en": "The Cantina's famous iced coffee with palm sugar. Drink it for half as much again XP for ten minutes.",
-        "id": "Es kopi susu gula aren andalan Kantin. Minum, dan XP-mu bertambah setengahnya lagi selama sepuluh menit."
+        "en": "The Cantina's famous iced coffee with palm sugar. Drink it for half as much again XP for ten minutes."
       },
       "price": 15,
       "tradeable": true,
@@ -729,12 +676,11 @@
     },
     "martabak": {
       "type": "consumable",
-      "one": {"en": "sweet martabak", "id": "martabak manis"},
-      "many": {"en": "sweet martabaks", "id": "martabak manis"},
-      "names": {"en": ["martabak", "sweet martabak", "pancake"], "id": ["martabak", "martabak manis", "terang bulan"]},
+      "one": {"en": "stuffed pancake"},
+      "many": {"en": "stuffed pancakes"},
+      "names": {"en": ["stuffed pancake", "stuffed pancakes", "pancake", "sweet pancake"]},
       "desc": {
-        "en": "Thick, sweet and full of chocolate and cheese. Eat it, and the break after your next shift is halved.",
-        "id": "Tebal, manis, penuh cokelat dan keju. Makan, dan istirahat setelah shift berikutnya jadi setengah."
+        "en": "Thick, sweet and full of chocolate and cheese. Eat it, and the break after your next shift is halved."
       },
       "price": 20,
       "tradeable": true,
@@ -742,15 +688,13 @@
     },
     "kerupuk": {
       "type": "consumable",
-      "one": {"en": "bag of prawn crackers", "id": "bungkus kerupuk udang"},
-      "many": {"en": "bags of prawn crackers", "id": "bungkus kerupuk udang"},
+      "one": {"en": "bag of prawn crackers"},
+      "many": {"en": "bags of prawn crackers"},
       "names": {
-        "en": ["kerupuk", "crackers", "prawn crackers", "snack"],
-        "id": ["kerupuk", "kerupuk udang", "camilan"]
+        "en": ["prawn crackers", "crackers", "cracker", "snack"]
       },
       "desc": {
-        "en": "Very crunchy. Everybody in the room will know you're eating them.",
-        "id": "Sangat renyah. Semua orang di ruangan pasti tahu kamu sedang makan kerupuk."
+        "en": "Very crunchy. Everybody in the room will know you're eating them."
       },
       "price": 3,
       "tradeable": true,
@@ -758,27 +702,24 @@
     },
     "plot": {
       "type": "service",
-      "one": {"en": "farm plot", "id": "petak kebun"},
-      "many": {"en": "farm plots", "id": "petak kebun"},
-      "names": {"en": ["plot", "farm plot", "extra plot"], "id": ["petak", "petak kebun", "lahan", "petak tambahan"]},
+      "one": {"en": "farm plot"},
+      "many": {"en": "farm plots"},
+      "names": {"en": ["plot", "farm plot", "extra plot"]},
       "desc": {
-        "en": "One more plot of your own in Hydroponics. Each plot costs more than the last.",
-        "id": "Satu petak lagi milikmu di Kebun Hidroponik. Setiap petak lebih mahal dari sebelumnya."
+        "en": "One more plot of your own in Hydroponics. Each plot costs more than the last."
       },
       "price": 150,
       "service": "plot"
     },
     "seed_kangkung": {
       "type": "seed",
-      "one": {"en": "packet of kangkung seeds", "id": "bungkus bibit kangkung"},
-      "many": {"en": "packets of kangkung seeds", "id": "bungkus bibit kangkung"},
+      "one": {"en": "packet of water spinach seeds"},
+      "many": {"en": "packets of water spinach seeds"},
       "names": {
-        "en": ["kangkung seeds", "kangkung seed", "seed kangkung", "kangkung seed packet"],
-        "id": ["bibit kangkung", "benih kangkung", "biji kangkung"]
+        "en": ["water spinach seeds", "water spinach seed", "spinach seeds", "seed water spinach", "water spinach seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of kangkung. It ripens in 10 minutes in Hydroponics.",
-        "id": "Bibit untuk satu petak kangkung. Matang dalam 10 menit di Kebun Hidroponik."
+        "en": "Seeds for one plot of water spinach. It ripens in 10 minutes in Hydroponics."
       },
       "price": 5,
       "tradeable": true,
@@ -786,15 +727,13 @@
     },
     "seed_chilli": {
       "type": "seed",
-      "one": {"en": "packet of chilli seeds", "id": "bungkus bibit cabai"},
-      "many": {"en": "packets of chilli seeds", "id": "bungkus bibit cabai"},
+      "one": {"en": "packet of chilli seeds"},
+      "many": {"en": "packets of chilli seeds"},
       "names": {
-        "en": ["chilli seeds", "chilli seed", "seed chilli", "chilli seed packet"],
-        "id": ["bibit cabai", "benih cabai", "biji cabai"]
+        "en": ["chilli seeds", "chilli seed", "seed chilli", "chilli seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of chilli. It ripens in 30 minutes in Hydroponics.",
-        "id": "Bibit untuk satu petak cabai. Matang dalam 30 menit di Kebun Hidroponik."
+        "en": "Seeds for one plot of chilli. It ripens in 30 minutes in Hydroponics."
       },
       "price": 10,
       "tradeable": true,
@@ -802,15 +741,13 @@
     },
     "seed_tomato": {
       "type": "seed",
-      "one": {"en": "packet of tomato seeds", "id": "bungkus bibit tomat"},
-      "many": {"en": "packets of tomato seeds", "id": "bungkus bibit tomat"},
+      "one": {"en": "packet of tomato seeds"},
+      "many": {"en": "packets of tomato seeds"},
       "names": {
-        "en": ["tomato seeds", "tomato seed", "seed tomato", "tomato seed packet"],
-        "id": ["bibit tomat", "benih tomat", "biji tomat"]
+        "en": ["tomato seeds", "tomato seed", "seed tomato", "tomato seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of tomato. It ripens in 1 hour in Hydroponics.",
-        "id": "Bibit untuk satu petak tomat. Matang dalam 1 jam di Kebun Hidroponik."
+        "en": "Seeds for one plot of tomato. It ripens in 1 hour in Hydroponics."
       },
       "price": 15,
       "tradeable": true,
@@ -818,15 +755,13 @@
     },
     "seed_strawberry": {
       "type": "seed",
-      "one": {"en": "packet of strawberry seeds", "id": "bungkus bibit stroberi"},
-      "many": {"en": "packets of strawberry seeds", "id": "bungkus bibit stroberi"},
+      "one": {"en": "packet of strawberry seeds"},
+      "many": {"en": "packets of strawberry seeds"},
       "names": {
-        "en": ["strawberry seeds", "strawberry seed", "seed strawberry", "strawberry seed packet"],
-        "id": ["bibit stroberi", "benih stroberi", "biji stroberi"]
+        "en": ["strawberry seeds", "strawberry seed", "seed strawberry", "strawberry seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of strawberry. It ripens in 2 hours in Hydroponics.",
-        "id": "Bibit untuk satu petak stroberi. Matang dalam 2 jam di Kebun Hidroponik."
+        "en": "Seeds for one plot of strawberry. It ripens in 2 hours in Hydroponics."
       },
       "price": 30,
       "tradeable": true,
@@ -834,15 +769,13 @@
     },
     "seed_vanilla": {
       "type": "seed",
-      "one": {"en": "packet of vanilla seeds", "id": "bungkus bibit vanili"},
-      "many": {"en": "packets of vanilla seeds", "id": "bungkus bibit vanili"},
+      "one": {"en": "packet of vanilla seeds"},
+      "many": {"en": "packets of vanilla seeds"},
       "names": {
-        "en": ["vanilla seeds", "vanilla seed", "seed vanilla", "vanilla seed packet"],
-        "id": ["bibit vanili", "benih vanili", "biji vanili"]
+        "en": ["vanilla seeds", "vanilla seed", "seed vanilla", "vanilla seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of vanilla. It ripens in 4 hours in Hydroponics.",
-        "id": "Bibit untuk satu petak vanili. Matang dalam 4 jam di Kebun Hidroponik."
+        "en": "Seeds for one plot of vanilla. It ripens in 4 hours in Hydroponics."
       },
       "price": 60,
       "tradeable": true,
@@ -851,15 +784,13 @@
     },
     "seed_dragonfruit": {
       "type": "seed",
-      "one": {"en": "packet of dragon fruit seeds", "id": "bungkus bibit buah naga"},
-      "many": {"en": "packets of dragon fruit seeds", "id": "bungkus bibit buah naga"},
+      "one": {"en": "packet of dragon fruit seeds"},
+      "many": {"en": "packets of dragon fruit seeds"},
       "names": {
-        "en": ["dragon fruit seeds", "dragon fruit seed", "seed dragon fruit", "dragon fruit seed packet"],
-        "id": ["bibit buah naga", "benih buah naga", "biji buah naga"]
+        "en": ["dragon fruit seeds", "dragon fruit seed", "seed dragon fruit", "dragon fruit seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of dragon fruit. It ripens in 8 hours in Hydroponics.",
-        "id": "Bibit untuk satu petak buah naga. Matang dalam 8 jam di Kebun Hidroponik."
+        "en": "Seeds for one plot of dragon fruit. It ripens in 8 hours in Hydroponics."
       },
       "price": 100,
       "tradeable": true,
@@ -868,15 +799,13 @@
     },
     "seed_moonmelon": {
       "type": "seed",
-      "one": {"en": "packet of moon melon seeds", "id": "bungkus bibit melon bulan"},
-      "many": {"en": "packets of moon melon seeds", "id": "bungkus bibit melon bulan"},
+      "one": {"en": "packet of moon melon seeds"},
+      "many": {"en": "packets of moon melon seeds"},
       "names": {
-        "en": ["moon melon seeds", "moon melon seed", "seed moon melon", "moon melon seed packet"],
-        "id": ["bibit melon bulan", "benih melon bulan", "biji melon bulan"]
+        "en": ["moon melon seeds", "moon melon seed", "seed moon melon", "moon melon seed packet"]
       },
       "desc": {
-        "en": "Seeds for one plot of moon melon. It ripens in 24 hours in Hydroponics.",
-        "id": "Bibit untuk satu petak melon bulan. Matang dalam 24 jam di Kebun Hidroponik."
+        "en": "Seeds for one plot of moon melon. It ripens in 24 hours in Hydroponics."
       },
       "price": 180,
       "tradeable": true,
@@ -885,655 +814,577 @@
     },
     "lava_lamp": {
       "type": "furniture",
-      "one": {"en": "lava lamp", "id": "lampu lava"},
-      "many": {"en": "lava lamps", "id": "lampu lava"},
-      "names": {"en": ["lava lamp"], "id": ["lampu lava"]},
+      "one": {"en": "lava lamp"},
+      "many": {"en": "lava lamps"},
+      "names": {"en": ["lava lamp"]},
       "desc": {
-        "en": "Slow orange blobs rise and fall. In low gravity they mostly just drift.",
-        "id": "Gumpalan oranye naik turun pelan. Di gravitasi rendah kebanyakan cuma melayang."
+        "en": "Slow orange blobs rise and fall. In low gravity they mostly just drift."
       },
       "price": 80,
       "unique": true,
-      "effects": {"cabin": {"en": "A lava lamp glows orange on the shelf.", "id": "Lampu lava menyala oranye di rak."}}
+      "effects": {"cabin": {"en": "A lava lamp glows orange on the shelf."}}
     },
     "monstera": {
       "type": "furniture",
-      "one": {"en": "potted monstera", "id": "pot monstera"},
-      "many": {"en": "potted monsteras", "id": "pot monstera"},
+      "one": {"en": "potted monstera"},
+      "many": {"en": "potted monsteras"},
       "names": {
-        "en": ["monstera", "potted monstera", "plant", "potted plant"],
-        "id": ["monstera", "pot monstera", "tanaman pot"]
+        "en": ["monstera", "potted monstera", "plant", "potted plant"]
       },
       "desc": {
-        "en": "A glossy monstera in a clay pot. It leans towards the window.",
-        "id": "Monstera mengilap dalam pot tanah liat. Condong ke arah jendela."
+        "en": "A glossy monstera in a clay pot. It leans towards the window."
       },
       "price": 60,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A monstera leans towards the window, glossy and green.",
-          "id": "Monstera condong ke arah jendela, hijau mengilap."
+          "en": "A monstera leans towards the window, glossy and green."
         }
       }
     },
     "batik_rug": {
       "type": "furniture",
-      "one": {"en": "batik rug", "id": "karpet batik"},
-      "many": {"en": "batik rugs", "id": "karpet batik"},
-      "names": {"en": ["rug", "batik rug", "carpet"], "id": ["karpet", "karpet batik", "permadani"]},
+      "one": {"en": "woven rug"},
+      "many": {"en": "woven rugs"},
+      "names": {"en": ["rug", "woven rug", "carpet"]},
       "desc": {
-        "en": "A soft rug in a parang pattern, deep brown and gold.",
-        "id": "Karpet lembut bermotif parang, cokelat tua dan emas."
+        "en": "A soft woven rug with a wave pattern, deep brown and gold."
       },
       "price": 120,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A batik rug in brown and gold covers the floor.",
-          "id": "Karpet batik cokelat dan emas menutupi lantai."
+          "en": "A woven rug in brown and gold covers the floor."
         }
       }
     },
     "bookshelf": {
       "type": "furniture",
-      "one": {"en": "bookshelf", "id": "rak buku"},
-      "many": {"en": "bookshelfs", "id": "rak buku"},
-      "names": {"en": ["bookshelf", "books", "shelf of books"], "id": ["rak buku", "buku"]},
+      "one": {"en": "bookshelf"},
+      "many": {"en": "bookshelfs"},
+      "names": {"en": ["bookshelf", "books", "shelf of books"]},
       "desc": {
-        "en": "Paper books, strapped in, including three copies of the same cookbook.",
-        "id": "Buku kertas yang diikat, termasuk tiga salinan buku resep yang sama."
+        "en": "Paper books, strapped in, including three copies of the same cookbook."
       },
       "price": 150,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A bookshelf full of strapped-in paper books.",
-          "id": "Rak buku penuh buku kertas yang diikat supaya tidak melayang."
+          "en": "A bookshelf full of strapped-in paper books."
         }
       }
     },
     "hammock": {
       "type": "furniture",
-      "one": {"en": "hammock", "id": "hammock"},
-      "many": {"en": "hammocks", "id": "hammock"},
-      "names": {"en": ["hammock"], "id": ["hammock", "ayunan jaring"]},
+      "one": {"en": "hammock"},
+      "many": {"en": "hammocks"},
+      "names": {"en": ["hammock"]},
       "desc": {
-        "en": "A striped hammock. In zero gravity, it hugs you back.",
-        "id": "Hammock bergaris. Di gravitasi nol, dia memelukmu balik."
+        "en": "A striped hammock. In zero gravity, it hugs you back."
       },
       "price": 200,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A striped hammock is strung across a corner.",
-          "id": "Hammock bergaris terbentang di satu sudut."
+          "en": "A striped hammock is strung across a corner."
         }
       }
     },
     "aquarium": {
       "type": "furniture",
-      "one": {"en": "floating aquarium", "id": "akuarium melayang"},
-      "many": {"en": "floating aquariums", "id": "akuarium melayang"},
-      "names": {"en": ["aquarium", "fish", "floating aquarium"], "id": ["akuarium", "ikan", "akuarium melayang"]},
+      "one": {"en": "floating aquarium"},
+      "many": {"en": "floating aquariums"},
+      "names": {"en": ["aquarium", "fish", "floating aquarium"]},
       "desc": {
-        "en": "A ball of water held by a thin membrane, with two small guppies who seem unbothered by space.",
-        "id": "Bola air yang ditahan selaput tipis, berisi dua ikan gupi kecil yang santai saja di luar angkasa."
+        "en": "A ball of water held by a thin membrane, with two small guppies who seem unbothered by space."
       },
       "price": 300,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A floating ball of water hangs in the air, two guppies circling inside.",
-          "id": "Bola air melayang di udara, dua ikan gupi berputar di dalamnya."
+          "en": "A floating ball of water hangs in the air, two guppies circling inside."
         }
       }
     },
     "sofa": {
       "type": "furniture",
-      "one": {"en": "rattan sofa", "id": "sofa rotan"},
-      "many": {"en": "rattan sofas", "id": "sofa rotan"},
-      "names": {"en": ["sofa", "couch", "rattan sofa"], "id": ["sofa", "sofa rotan", "kursi rotan"]},
+      "one": {"en": "rattan sofa"},
+      "many": {"en": "rattan sofas"},
+      "names": {"en": ["sofa", "couch", "rattan sofa"]},
       "desc": {
-        "en": "A two-seat rattan sofa with cushions. Strapped down, of course.",
-        "id": "Sofa rotan dua dudukan dengan bantal. Diikat, tentu saja."
+        "en": "A two-seat rattan sofa with cushions. Strapped down, of course."
       },
       "price": 400,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A rattan sofa with plump cushions invites you to sit.",
-          "id": "Sofa rotan dengan bantal empuk mengajakmu duduk."
+          "en": "A rattan sofa with plump cushions invites you to sit."
         }
       }
     },
     "star_projector": {
       "type": "furniture",
-      "one": {"en": "star projector", "id": "proyektor bintang"},
-      "many": {"en": "star projectors", "id": "proyektor bintang"},
-      "names": {"en": ["star projector", "projector"], "id": ["proyektor bintang", "proyektor"]},
+      "one": {"en": "star projector"},
+      "many": {"en": "star projectors"},
+      "names": {"en": ["star projector", "projector"]},
       "desc": {
-        "en": "Throws the night sky of Yogyakarta onto the ceiling, as it was the night you were born.",
-        "id": "Memancarkan langit malam Yogyakarta ke langit-langit, persis seperti malam kamu lahir."
+        "en": "Throws the night sky of your hometown onto the ceiling, as it was the night you were born."
       },
       "price": 700,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A star projector paints a slow night sky across the ceiling.",
-          "id": "Proyektor bintang melukis langit malam yang berputar pelan di langit-langit."
+          "en": "A star projector paints a slow night sky across the ceiling."
         }
       },
       "level": 3
     },
     "earth_hologram": {
       "type": "furniture",
-      "one": {"en": "Earth hologram", "id": "hologram Bumi"},
-      "many": {"en": "Earth holograms", "id": "hologram Bumi"},
-      "names": {"en": ["earth hologram", "hologram", "globe"], "id": ["hologram bumi", "hologram", "bola dunia"]},
+      "one": {"en": "Earth hologram"},
+      "many": {"en": "Earth holograms"},
+      "names": {"en": ["earth hologram", "hologram", "globe"]},
       "desc": {
-        "en": "A live hologram of Earth, lit and dark exactly as it is right now.",
-        "id": "Hologram Bumi yang hidup, terang dan gelapnya persis seperti saat ini."
+        "en": "A live hologram of Earth, lit and dark exactly as it is right now."
       },
       "price": 1500,
       "unique": true,
       "effects": {
         "cabin": {
-          "en": "A hologram of Earth turns in the middle of the room, day and night sliding across it.",
-          "id": "Hologram Bumi berputar di tengah ruangan, siang dan malam bergeser di permukaannya."
+          "en": "A hologram of Earth turns in the middle of the room, day and night sliding across it."
         }
       },
       "level": 5
     },
     "bomber_jacket": {
       "type": "outfit",
-      "one": {"en": "bomber jacket", "id": "jaket bomber"},
-      "many": {"en": "bomber jackets", "id": "jaket bomber"},
-      "names": {"en": ["bomber jacket", "jacket"], "id": ["jaket bomber", "jaket"]},
+      "one": {"en": "bomber jacket"},
+      "many": {"en": "bomber jackets"},
+      "names": {"en": ["bomber jacket", "jacket"]},
       "desc": {
-        "en": "A green bomber jacket with a patch of the station on the sleeve.",
-        "id": "Jaket bomber hijau dengan emblem stasiun di lengannya."
+        "en": "A green bomber jacket with a patch of the station on the sleeve."
       },
       "price": 150,
       "unique": true,
       "slot": "body",
-      "effects": {"look": {"en": "a green bomber jacket", "id": "jaket bomber hijau"}}
+      "effects": {"look": {"en": "a green bomber jacket"}}
     },
     "batik_shirt": {
       "type": "outfit",
-      "one": {"en": "batik shirt", "id": "kemeja batik"},
-      "many": {"en": "batik shirts", "id": "kemeja batik"},
-      "names": {"en": ["batik shirt", "batik", "shirt"], "id": ["kemeja batik", "batik", "baju batik", "kemeja"]},
+      "one": {"en": "rocket-print shirt"},
+      "many": {"en": "rocket-print shirts"},
+      "names": {"en": ["rocket-print shirt", "rocket print shirt", "print shirt", "shirt"]},
       "desc": {
-        "en": "A long-sleeved batik shirt with a pattern of tiny rockets, if you look closely.",
-        "id": "Kemeja batik lengan panjang dengan motif roket-roket kecil, kalau dilihat dari dekat."
+        "en": "A long-sleeved shirt printed with tiny rockets, though you have to look closely to see them."
       },
       "price": 200,
       "unique": true,
       "slot": "body",
       "effects": {
-        "look": {"en": "a batik shirt with tiny rockets in its pattern", "id": "kemeja batik bermotif roket kecil"}
+        "look": {"en": "a shirt printed with tiny rockets"}
       }
     },
     "coveralls": {
       "type": "outfit",
-      "one": {"en": "retro coveralls", "id": "baju terusan retro"},
-      "many": {"en": "retro coverallss", "id": "baju terusan retro"},
+      "one": {"en": "retro coveralls"},
+      "many": {"en": "retro coverallss"},
       "names": {
-        "en": ["coveralls", "retro coveralls", "overalls"],
-        "id": ["baju terusan", "baju terusan retro", "wearpack"]
+        "en": ["coveralls", "retro coveralls", "overalls"]
       },
       "desc": {
-        "en": "Orange coveralls with patches from missions that never happened.",
-        "id": "Baju terusan oranye dengan emblem misi-misi yang tidak pernah terjadi."
+        "en": "Orange coveralls with patches from missions that never happened."
       },
       "price": 300,
       "unique": true,
       "slot": "body",
       "effects": {
-        "look": {"en": "orange retro coveralls covered in patches", "id": "baju terusan oranye retro penuh emblem"}
+        "look": {"en": "orange retro coveralls covered in patches"}
       }
     },
     "star_cloak": {
       "type": "outfit",
-      "one": {"en": "starry cloak", "id": "jubah bintang"},
-      "many": {"en": "starry cloaks", "id": "jubah bintang"},
-      "names": {"en": ["starry cloak", "cloak", "star cloak"], "id": ["jubah bintang", "jubah"]},
+      "one": {"en": "starry cloak"},
+      "many": {"en": "starry cloaks"},
+      "names": {"en": ["starry cloak", "cloak", "star cloak"]},
       "desc": {
-        "en": "A midnight-blue cloak with tiny lights woven in, like a clear sky over the sea.",
-        "id": "Jubah biru tengah malam dengan lampu-lampu mungil tertenun, seperti langit cerah di atas laut."
+        "en": "A midnight-blue cloak with tiny lights woven in, like a clear sky over the sea."
       },
       "price": 1200,
       "unique": true,
       "slot": "body",
       "effects": {
         "look": {
-          "en": "a midnight-blue cloak that glitters with stars",
-          "id": "jubah biru tengah malam yang berkilau bintang"
+          "en": "a midnight-blue cloak that glitters with stars"
         }
       },
       "level": 5
     },
     "gold_suit": {
       "type": "outfit",
-      "one": {"en": "golden flight suit", "id": "baju terbang emas"},
-      "many": {"en": "golden flight suits", "id": "baju terbang emas"},
-      "names": {"en": ["golden flight suit", "gold suit", "flight suit"], "id": ["baju terbang emas", "baju emas"]},
+      "one": {"en": "golden flight suit"},
+      "many": {"en": "golden flight suits"},
+      "names": {"en": ["golden flight suit", "gold suit", "flight suit"]},
       "desc": {
-        "en": "A flight suit of gold fabric. Very shiny. Possibly too shiny.",
-        "id": "Baju terbang dari kain emas. Sangat berkilau. Mungkin terlalu berkilau."
+        "en": "A flight suit of gold fabric. Very shiny. Possibly too shiny."
       },
       "price": 2500,
       "unique": true,
       "slot": "body",
-      "effects": {"look": {"en": "a gleaming golden flight suit", "id": "baju terbang emas yang berkilauan"}},
+      "effects": {"look": {"en": "a gleaming golden flight suit"}},
       "level": 10
     },
     "title_coffee": {
       "type": "title",
-      "one": {"en": "title 'Coffee Lover'", "id": "gelar 'Pecinta Kopi'"},
-      "many": {"en": "titles 'Coffee Lover'", "id": "gelar 'Pecinta Kopi'"},
-      "names": {"en": ["coffee lover", "title coffee lover"], "id": ["pecinta kopi", "gelar pecinta kopi"]},
+      "one": {"en": "title 'Coffee Lover'"},
+      "many": {"en": "titles 'Coffee Lover'"},
+      "names": {"en": ["coffee lover", "title coffee lover"]},
       "desc": {
-        "en": "A title others see when they look at you: 'Coffee Lover'. Wear it to show it.",
-        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Pecinta Kopi'. Pakai untuk menampilkannya."
+        "en": "A title others see when they look at you: 'Coffee Lover'. Wear it to show it."
       },
       "price": 200,
       "unique": true,
       "slot": "title",
-      "effects": {"title": {"en": "Coffee Lover", "id": "Pecinta Kopi"}}
+      "effects": {"title": {"en": "Coffee Lover"}}
     },
     "title_explorer": {
       "type": "title",
-      "one": {"en": "title 'Explorer'", "id": "gelar 'Penjelajah'"},
-      "many": {"en": "titles 'Explorer'", "id": "gelar 'Penjelajah'"},
-      "names": {"en": ["explorer", "title explorer"], "id": ["penjelajah", "gelar penjelajah"]},
+      "one": {"en": "title 'Explorer'"},
+      "many": {"en": "titles 'Explorer'"},
+      "names": {"en": ["explorer", "title explorer"]},
       "desc": {
-        "en": "A title others see when they look at you: 'Explorer'. Wear it to show it.",
-        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Penjelajah'. Pakai untuk menampilkannya."
+        "en": "A title others see when they look at you: 'Explorer'. Wear it to show it."
       },
       "price": 400,
       "unique": true,
       "slot": "title",
-      "effects": {"title": {"en": "Explorer", "id": "Penjelajah"}}
+      "effects": {"title": {"en": "Explorer"}}
     },
     "title_golden": {
       "type": "title",
-      "one": {"en": "title 'Golden Hands'", "id": "gelar 'Si Tangan Emas'"},
-      "many": {"en": "titles 'Golden Hands'", "id": "gelar 'Si Tangan Emas'"},
-      "names": {"en": ["golden hands", "title golden hands"], "id": ["si tangan emas", "gelar si tangan emas"]},
+      "one": {"en": "title 'Golden Hands'"},
+      "many": {"en": "titles 'Golden Hands'"},
+      "names": {"en": ["golden hands", "title golden hands"]},
       "desc": {
-        "en": "A title others see when they look at you: 'Golden Hands'. Wear it to show it.",
-        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Si Tangan Emas'. Pakai untuk menampilkannya."
+        "en": "A title others see when they look at you: 'Golden Hands'. Wear it to show it."
       },
       "price": 800,
       "unique": true,
       "slot": "title",
-      "effects": {"title": {"en": "Golden Hands", "id": "Si Tangan Emas"}},
+      "effects": {"title": {"en": "Golden Hands"}},
       "level": 5
     },
     "title_legend": {
       "type": "title",
-      "one": {"en": "title 'Station Legend'", "id": "gelar 'Legenda Stasiun'"},
-      "many": {"en": "titles 'Station Legend'", "id": "gelar 'Legenda Stasiun'"},
-      "names": {"en": ["station legend", "title station legend"], "id": ["legenda stasiun", "gelar legenda stasiun"]},
+      "one": {"en": "title 'Station Legend'"},
+      "many": {"en": "titles 'Station Legend'"},
+      "names": {"en": ["station legend", "title station legend"]},
       "desc": {
-        "en": "A title others see when they look at you: 'Station Legend'. Wear it to show it.",
-        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Legenda Stasiun'. Pakai untuk menampilkannya."
+        "en": "A title others see when they look at you: 'Station Legend'. Wear it to show it."
       },
       "price": 5000,
       "unique": true,
       "slot": "title",
-      "effects": {"title": {"en": "Station Legend", "id": "Legenda Stasiun"}},
+      "effects": {"title": {"en": "Station Legend"}},
       "level": 15
     },
     "robot_pet": {
       "type": "pet",
-      "one": {"en": "little robot", "id": "robot kecil"},
-      "many": {"en": "little robots", "id": "robot kecil"},
+      "one": {"en": "little robot"},
+      "many": {"en": "little robots"},
       "names": {
-        "en": ["little robot", "robot", "pet robot", "robot pet"],
-        "id": ["robot kecil", "robot", "robot peliharaan"]
+        "en": ["little robot", "robot", "pet robot", "robot pet"]
       },
       "desc": {
-        "en": "A round robot the size of a melon that follows you around, beeping its opinions. Pat it with pat, name it with name pet.",
-        "id": "Robot bulat seukuran melon yang mengikutimu ke mana-mana sambil berbunyi bip menyampaikan pendapatnya. Elus dengan elus, beri nama dengan namai."
+        "en": "A round robot the size of a melon that follows you around, beeping its opinions. Pat it with pat, name it with name pet."
       },
       "price": 600,
       "unique": true,
       "effects": {
         "pet": {
           "name": "Bip",
-          "kind": {"en": "little robot", "id": "robot kecil"},
+          "kind": {"en": "little robot"},
           "sound": "pet_robot",
           "reactions": {
             "en": [
               "{pet} beeps happily and spins in a circle.",
               "{pet} blinks its lights in a little rainbow.",
               "{pet} bumps gently against {owner}'s leg."
-            ],
-            "id": [
-              "{pet} berbunyi bip riang dan berputar-putar.",
-              "{pet} mengedipkan lampunya membentuk pelangi kecil.",
-              "{pet} menyundul pelan kaki {owner}."
             ]
           },
-          "eat": {"en": "{pet} slurps up the pellets with a happy whirr and a burp of steam.", "id": "{pet} menyedot pelet-peletnya dengan desing riang dan sendawa uap."},
+          "eat": {"en": "{pet} slurps up the pellets with a happy whirr and a burp of steam."},
           "tricks": {
-            "spin": {"names": {"en": ["spin", "twirl"], "id": ["putar", "berputar"]}, "stage": 1,
-                     "do": {"en": "{pet} spins on the spot, faster and faster, then stops and bows.", "id": "{pet} berputar di tempat, makin lama makin cepat, lalu berhenti dan membungkuk."}},
-            "lights": {"names": {"en": ["light show", "lights"], "id": ["pertunjukan lampu", "lampu"]}, "stage": 1,
-                       "do": {"en": "{pet} dims the lights around it and flashes a tiny rainbow show.", "id": "{pet} meredupkan lampu di sekitarnya dan menampilkan pertunjukan pelangi mungil."}},
-            "song": {"names": {"en": ["beep song", "song", "sing"], "id": ["lagu bip", "lagu", "nyanyi"]}, "stage": 2,
-                     "do": {"en": "{pet} beeps a whole little song, and ends on a note so high it squeaks.", "id": "{pet} berbunyi bip membawakan sebuah lagu kecil, dan menutupnya dengan nada setinggi decitan."}}
+            "spin": {"names": {"en": ["spin", "twirl"]}, "stage": 1,
+                     "do": {"en": "{pet} spins on the spot, faster and faster, then stops and bows."}},
+            "lights": {"names": {"en": ["light show", "lights"]}, "stage": 1,
+                       "do": {"en": "{pet} dims the lights around it and flashes a tiny rainbow show."}},
+            "song": {"names": {"en": ["beep song", "song", "sing"]}, "stage": 2,
+                     "do": {"en": "{pet} beeps a whole little song, and ends on a note so high it squeaks."}}
           }
         }
       }
     },
     "cat_pet": {
       "type": "pet",
-      "one": {"en": "orange space cat", "id": "kucing oren antariksa"},
-      "many": {"en": "orange space cats", "id": "kucing oren antariksa"},
+      "one": {"en": "orange space cat"},
+      "many": {"en": "orange space cats"},
       "names": {
-        "en": ["space cat", "cat", "orange cat", "kitty"],
-        "id": ["kucing oren", "kucing", "kucing antariksa", "oyen"]
+        "en": ["space cat", "cat", "orange cat", "kitty"]
       },
       "desc": {
-        "en": "A chubby orange cat in a tiny magnetic harness. It has opinions about everyone, and naps on all of them.",
-        "id": "Kucing oren gembul dengan tali magnet mungil. Dia punya pendapat tentang semua orang, dan tidur di atas mereka semua."
+        "en": "A chubby orange cat in a tiny magnetic harness. It has opinions about everyone, and naps on all of them."
       },
       "price": 900,
       "unique": true,
       "effects": {
         "pet": {
-          "name": "Oyen",
-          "kind": {"en": "orange space cat", "id": "kucing oren antariksa"},
+          "name": "Marmalade",
+          "kind": {"en": "orange space cat"},
           "sound": "pet_cat",
           "reactions": {
             "en": [
               "{pet} purrs and floats a slow somersault.",
               "{pet} headbutts {owner}'s hand, demanding more.",
               "{pet} yawns hugely, unimpressed by space."
-            ],
-            "id": [
-              "{pet} mendengkur dan berjungkir balik pelan di udara.",
-              "{pet} menyundul tangan {owner}, minta dielus lagi.",
-              "{pet} menguap lebar, tidak terkesan dengan luar angkasa."
             ]
           },
-          "eat": {"en": "{pet} eats with great dignity, then licks the bowl with none at all.", "id": "{pet} makan dengan penuh wibawa, lalu menjilati mangkuknya tanpa wibawa sama sekali."},
+          "eat": {"en": "{pet} eats with great dignity, then licks the bowl with none at all."},
           "tricks": {
-            "highfive": {"names": {"en": ["high five", "paw"], "id": ["tos", "salaman", "kaki"]}, "stage": 1,
-                         "do": {"en": "{pet} lifts one orange paw and gives {owner} a very serious high five.", "id": "{pet} mengangkat satu kaki orennya dan memberi {owner} tos yang sangat serius."}},
-            "somersault": {"names": {"en": ["somersault", "flip"], "id": ["jungkir balik", "salto"]}, "stage": 1,
-                           "do": {"en": "{pet} tucks in its tail and turns a perfect somersault in the air.", "id": "{pet} melipat ekornya dan berjungkir balik dengan sempurna di udara."}},
-            "fetch": {"names": {"en": ["fetch"], "id": ["ambil", "tangkap"]}, "stage": 2,
-                      "do": {"en": "{pet} bats a floating ball across the room, chases it, and brings it back. Mostly.", "id": "{pet} menepuk bola yang melayang ke seberang ruangan, mengejarnya, lalu membawanya kembali. Hampir."}}
+            "highfive": {"names": {"en": ["high five", "paw"]}, "stage": 1,
+                         "do": {"en": "{pet} lifts one orange paw and gives {owner} a very serious high five."}},
+            "somersault": {"names": {"en": ["somersault", "flip"]}, "stage": 1,
+                           "do": {"en": "{pet} tucks in its tail and turns a perfect somersault in the air."}},
+            "fetch": {"names": {"en": ["fetch"]}, "stage": 2,
+                      "do": {"en": "{pet} bats a floating ball across the room, chases it, and brings it back. Mostly."}}
           }
         }
       }
     },
     "robocat_pet": {
       "type": "pet",
-      "one": {"en": "robot cat", "id": "kucing robot"},
-      "many": {"en": "robot cats", "id": "kucing robot"},
+      "one": {"en": "robot cat"},
+      "many": {"en": "robot cats"},
       "names": {
-        "en": ["robot cat", "robocat", "robo cat", "mechanical cat"],
-        "id": ["kucing robot", "kucing mekanik", "robokucing"]
+        "en": ["robot cat", "robocat", "robo cat", "mechanical cat"]
       },
       "desc": {
-        "en": "A sleek cat of silver panels with green lamp eyes and a purr like a tiny engine. It swears it is a real cat.",
-        "id": "Kucing ramping dari pelat perak dengan mata lampu hijau dan dengkur seperti mesin mungil. Ia bersumpah kucing sungguhan."
+        "en": "A sleek cat of silver panels with green lamp eyes and a purr like a tiny engine. It swears it is a real cat."
       },
       "price": 1100,
       "unique": true,
       "effects": {
         "pet": {
-          "name": "Timah",
-          "kind": {"en": "robot cat", "id": "kucing robot"},
+          "name": "Tinker",
+          "kind": {"en": "robot cat"},
           "sound": "pet_robocat",
           "reactions": {
             "en": [
               "{pet} purrs with a soft mechanical whirr.",
               "{pet} blinks its green lamp eyes slowly at {owner}: a robot cat's kiss.",
               "{pet} stretches, and every panel clicks back into place."
-            ],
-            "id": [
-              "{pet} mendengkur dengan desing mekanik yang lembut.",
-              "{pet} mengedipkan mata lampu hijaunya pelan-pelan ke arah {owner}: tanda sayang ala kucing robot.",
-              "{pet} menggeliat, dan setiap pelatnya berbunyi klik kembali ke tempatnya."
             ]
           },
-          "eat": {"en": "{pet} nibbles the pellets and its eyes glow a little brighter.", "id": "{pet} menggigiti pelet-peletnya dan matanya berpendar sedikit lebih terang."},
+          "eat": {"en": "{pet} nibbles the pellets and its eyes glow a little brighter."},
           "tricks": {
-            "pounce": {"names": {"en": ["pounce"], "id": ["terkam", "menerkam"]}, "stage": 1,
-                       "do": {"en": "{pet} wiggles, waits, and pounces on a speck of light with a triumphant click.", "id": "{pet} menggoyangkan badan, menunggu, lalu menerkam setitik cahaya dengan bunyi klik penuh kemenangan."}},
-            "rollover": {"names": {"en": ["roll over", "roll"], "id": ["guling", "berguling"]}, "stage": 1,
-                         "do": {"en": "{pet} rolls over with a clatter of panels and shows its shiny belly.", "id": "{pet} berguling dengan bunyi pelat berderak dan memamerkan perutnya yang mengilap."}},
-            "chase": {"names": {"en": ["laser chase", "chase"], "id": ["kejar laser", "kejar"]}, "stage": 2,
-                      "do": {"en": "{pet} projects its own laser dot and chases it round the room, delighted every time it catches it.", "id": "{pet} memancarkan titik lasernya sendiri dan mengejarnya keliling ruangan, girang setiap kali berhasil menangkapnya."}}
+            "pounce": {"names": {"en": ["pounce"]}, "stage": 1,
+                       "do": {"en": "{pet} wiggles, waits, and pounces on a speck of light with a triumphant click."}},
+            "rollover": {"names": {"en": ["roll over", "roll"]}, "stage": 1,
+                         "do": {"en": "{pet} rolls over with a clatter of panels and shows its shiny belly."}},
+            "chase": {"names": {"en": ["laser chase", "chase"]}, "stage": 2,
+                      "do": {"en": "{pet} projects its own laser dot and chases it round the room, delighted every time it catches it."}}
           }
         }
       }
     },
     "fox_pet": {
       "type": "pet",
-      "one": {"en": "space fox", "id": "rubah antariksa"},
-      "many": {"en": "space foxes", "id": "rubah antariksa"},
+      "one": {"en": "space fox"},
+      "many": {"en": "space foxes"},
       "names": {
-        "en": ["space fox", "fox", "star fox"],
-        "id": ["rubah antariksa", "rubah", "rubah bintang"]
+        "en": ["space fox", "fox", "star fox"]
       },
       "desc": {
-        "en": "A small fox with fur the colour of a nebula and a tail tipped with faint light. It found its way to the simulation from Evergrove's woods, and it is very clever.",
-        "id": "Rubah kecil berbulu sewarna nebula dengan ujung ekor yang bercahaya samar. Ia menemukan jalan ke simulasi dari hutan Evergrove, dan ia sangat cerdik."
+        "en": "A small fox with fur the colour of a nebula and a tail tipped with faint light. It found its way to the simulation from Evergrove's woods, and it is very clever."
       },
       "price": 1300,
       "unique": true,
       "effects": {
         "pet": {
-          "name": "Senja",
-          "kind": {"en": "space fox", "id": "rubah antariksa"},
+          "name": "Dusk",
+          "kind": {"en": "space fox"},
           "sound": "pet_fox",
           "reactions": {
             "en": [
               "{pet} yips and chases its own glowing tail.",
               "{pet} sits beside {owner} with its ears up, listening to everything.",
               "{pet} curls its tail around {owner}'s ankle."
-            ],
-            "id": [
-              "{pet} menyalak kecil dan mengejar ekornya yang bercahaya.",
-              "{pet} duduk di samping {owner} dengan telinga tegak, mendengarkan semuanya.",
-              "{pet} melingkarkan ekornya di pergelangan kaki {owner}."
             ]
           },
-          "eat": {"en": "{pet} gulps its food, then pretends it has not eaten at all.", "id": "{pet} melahap makanannya, lalu berpura-pura belum makan sama sekali."},
+          "eat": {"en": "{pet} gulps its food, then pretends it has not eaten at all."},
           "tricks": {
-            "sit": {"names": {"en": ["sit"], "id": ["duduk"]}, "stage": 1,
-                    "do": {"en": "{pet} sits, tail swept neatly around its paws, looking extremely pleased with itself.", "id": "{pet} duduk, ekornya tersapu rapi di sekeliling kakinya, tampak sangat bangga pada dirinya."}},
-            "jump": {"names": {"en": ["jump", "leap"], "id": ["lompat", "loncat"]}, "stage": 1,
-                     "do": {"en": "{pet} leaps high, twists in the air, and lands without a sound.", "id": "{pet} melompat tinggi, berputar di udara, dan mendarat tanpa suara."}},
-            "howl": {"names": {"en": ["howl", "howl at the stars", "sing"], "id": ["lolong", "melolong", "nyanyi"]}, "stage": 2,
-                     "do": {"en": "{pet} points its nose at the ceiling and sings a thin, silvery howl for the stars.", "id": "{pet} mengarahkan moncongnya ke langit-langit dan melantunkan lolongan tipis keperakan untuk bintang-bintang."}}
+            "sit": {"names": {"en": ["sit"]}, "stage": 1,
+                    "do": {"en": "{pet} sits, tail swept neatly around its paws, looking extremely pleased with itself."}},
+            "jump": {"names": {"en": ["jump", "leap"]}, "stage": 1,
+                     "do": {"en": "{pet} leaps high, twists in the air, and lands without a sound."}},
+            "howl": {"names": {"en": ["howl", "howl at the stars", "sing"]}, "stage": 2,
+                     "do": {"en": "{pet} points its nose at the ceiling and sings a thin, silvery howl for the stars."}}
           }
         }
       }
     },
     "jelly_pet": {
       "type": "pet",
-      "one": {"en": "glow jellyfish", "id": "ubur-ubur cahaya"},
-      "many": {"en": "glow jellyfish", "id": "ubur-ubur cahaya"},
+      "one": {"en": "glow jellyfish"},
+      "many": {"en": "glow jellyfish"},
       "names": {
-        "en": ["glow jellyfish", "jellyfish", "jelly", "glowing jellyfish"],
-        "id": ["ubur-ubur cahaya", "ubur-ubur", "ubur ubur"]
+        "en": ["glow jellyfish", "jellyfish", "jelly", "glowing jellyfish"]
       },
       "desc": {
-        "en": "A jellyfish the size of a teacup, drifting inside a floating bubble of water and pulsing with soft blue light. It follows you like a small moon.",
-        "id": "Ubur-ubur seukuran cangkir teh, melayang di dalam gelembung air yang terapung dan berdenyut dengan cahaya biru lembut. Ia mengikutimu seperti bulan kecil."
+        "en": "A jellyfish the size of a teacup, drifting inside a floating bubble of water and pulsing with soft blue light. It follows you like a small moon."
       },
       "price": 1600,
       "unique": true,
       "effects": {
         "pet": {
           "name": "Lumi",
-          "kind": {"en": "glow jellyfish", "id": "ubur-ubur cahaya"},
+          "kind": {"en": "glow jellyfish"},
           "sound": "pet_jelly",
           "reactions": {
             "en": [
               "{pet} pulses a happy pink inside its bubble.",
               "{pet} drifts in a slow circle around {owner}'s head.",
               "{pet} ripples its ribbons, and the bubble hums a little."
-            ],
-            "id": [
-              "{pet} berdenyut merah muda riang di dalam gelembungnya.",
-              "{pet} melayang memutari kepala {owner} pelan-pelan.",
-              "{pet} mengibaskan pita-pitanya, dan gelembungnya berdengung pelan."
             ]
           },
-          "eat": {"en": "{pet} glows brighter as the food drifts into its bubble and disappears.", "id": "{pet} berpendar lebih terang saat makanannya melayang masuk ke gelembung lalu menghilang."},
+          "eat": {"en": "{pet} glows brighter as the food drifts into its bubble and disappears."},
           "tricks": {
-            "glow": {"names": {"en": ["glow", "shine"], "id": ["berpendar", "bersinar"]}, "stage": 1,
-                     "do": {"en": "{pet} glows so brightly that everyone's shadow jumps onto the wall.", "id": "{pet} berpendar begitu terang sampai bayangan semua orang melompat ke dinding."}},
-            "dance": {"names": {"en": ["float dance", "dance"], "id": ["tari melayang", "menari", "tari"]}, "stage": 1,
-                      "do": {"en": "{pet} dances in its bubble, ribbons swirling in slow loops.", "id": "{pet} menari di dalam gelembungnya, pita-pitanya berputar dalam lingkaran lambat."}},
-            "rainbow": {"names": {"en": ["rainbow", "colours", "colors"], "id": ["pelangi", "warna"]}, "stage": 2,
-                        "do": {"en": "{pet} pulses through every colour of the rainbow, one after another, and ends in gold.", "id": "{pet} berdenyut melewati setiap warna pelangi, satu demi satu, dan berakhir keemasan."}}
+            "glow": {"names": {"en": ["glow", "shine"]}, "stage": 1,
+                     "do": {"en": "{pet} glows so brightly that everyone's shadow jumps onto the wall."}},
+            "dance": {"names": {"en": ["float dance", "dance"]}, "stage": 1,
+                      "do": {"en": "{pet} dances in its bubble, ribbons swirling in slow loops."}},
+            "rainbow": {"names": {"en": ["rainbow", "colours", "colors"]}, "stage": 2,
+                        "do": {"en": "{pet} pulses through every colour of the rainbow, one after another, and ends in gold."}}
           }
         }
       }
     },
     "minidrone_pet": {
       "type": "pet",
-      "one": {"en": "mini drone", "id": "drone mini"},
-      "many": {"en": "mini drones", "id": "drone mini"},
+      "one": {"en": "mini drone"},
+      "many": {"en": "mini drones"},
       "names": {
-        "en": ["mini drone", "pet drone", "dronelet", "little drone"],
-        "id": ["drone mini", "drone peliharaan", "drone kecil"]
+        "en": ["mini drone", "pet drone", "dronelet", "little drone"]
       },
       "desc": {
-        "en": "A drone no bigger than your fist, with four tiny rotors and one curious camera eye. It hovers at your shoulder and whistles when it is pleased.",
-        "id": "Drone tak lebih besar dari kepalan tangan, dengan empat baling-baling mungil dan satu mata kamera yang ingin tahu. Ia melayang di bahumu dan bersiul kalau senang."
+        "en": "A drone no bigger than your fist, with four tiny rotors and one curious camera eye. It hovers at your shoulder and whistles when it is pleased."
       },
       "price": 1000,
       "unique": true,
       "effects": {
         "pet": {
           "name": "Zip",
-          "kind": {"en": "mini drone", "id": "drone mini"},
+          "kind": {"en": "mini drone"},
           "sound": "pet_minidrone",
           "reactions": {
             "en": [
               "{pet} whistles and does a little loop around {owner}.",
               "{pet} tilts its camera eye, curious about everything.",
               "{pet} lands on {owner}'s shoulder and powers down its rotors, content."
-            ],
-            "id": [
-              "{pet} bersiul dan berputar kecil mengelilingi {owner}.",
-              "{pet} memiringkan mata kameranya, ingin tahu segalanya.",
-              "{pet} hinggap di bahu {owner} dan mematikan baling-balingnya, puas."
             ]
           },
-          "eat": {"en": "{pet} docks on the pellet and charges with a contented hum.", "id": "{pet} menempel pada pelet dan mengisi daya dengan dengung puas."},
+          "eat": {"en": "{pet} docks on the pellet and charges with a contented hum."},
           "tricks": {
-            "loop": {"names": {"en": ["loop", "loop the loop"], "id": ["putaran", "jungkir"]}, "stage": 1,
-                     "do": {"en": "{pet} flies a perfect loop the loop and whistles a fanfare for itself.", "id": "{pet} terbang berputar sempurna dan bersiul memainkan fanfare untuk dirinya sendiri."}},
-            "fetch": {"names": {"en": ["fetch"], "id": ["ambil"]}, "stage": 1,
-                      "do": {"en": "{pet} zooms off, grabs a bolt from the floor, and drops it proudly in {owner}'s hand.", "id": "{pet} melesat, menyambar sebuah baut dari lantai, dan menjatuhkannya dengan bangga di tangan {owner}."}},
-            "spotlight": {"names": {"en": ["spotlight", "light"], "id": ["sorot", "lampu sorot"]}, "stage": 2,
-                          "do": {"en": "{pet} rises high and shines a spotlight on {owner}, as if they were the star of the show.", "id": "{pet} naik tinggi dan menyorotkan lampu ke {owner}, seolah dialah bintang pertunjukannya."}}
+            "loop": {"names": {"en": ["loop", "loop the loop"]}, "stage": 1,
+                     "do": {"en": "{pet} flies a perfect loop the loop and whistles a fanfare for itself."}},
+            "fetch": {"names": {"en": ["fetch"]}, "stage": 1,
+                      "do": {"en": "{pet} zooms off, grabs a bolt from the floor, and drops it proudly in {owner}'s hand."}},
+            "spotlight": {"names": {"en": ["spotlight", "light"]}, "stage": 2,
+                          "do": {"en": "{pet} rises high and shines a spotlight on {owner}, as if they were the star of the show."}}
           }
         }
       }
     },
     "title_champion": {
       "type": "title",
-      "one": {"en": "title 'Tournament Champion'", "id": "gelar 'Juara Turnamen'"},
-      "many": {"en": "titles 'Tournament Champion'", "id": "gelar 'Juara Turnamen'"},
-      "names": {"en": ["tournament champion", "title tournament champion", "champion"], "id": ["juara turnamen", "gelar juara turnamen", "juara"]},
+      "one": {"en": "title 'Tournament Champion'"},
+      "many": {"en": "titles 'Tournament Champion'"},
+      "names": {"en": ["tournament champion", "title tournament champion", "champion"]},
       "desc": {
-        "en": "A title held by those who won the most duels in a Pixel Pier tournament. Wear it to show it.",
-        "id": "Gelar milik mereka yang paling banyak menang duel dalam turnamen Dermaga Piksel. Pakai untuk menampilkannya."
+        "en": "A title held by those who won the most duels in a Pixel Pier tournament. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Tournament Champion", "id": "Juara Turnamen"}}
+      "effects": {"title": {"en": "Tournament Champion"}}
     },
     "lantern_charm": {
       "type": "furniture",
-      "one": {"en": "festival lantern charm", "id": "jimat lentera festival"},
-      "many": {"en": "festival lantern charms", "id": "jimat lentera festival"},
-      "names": {"en": ["festival lantern charm", "lantern charm", "festival charm"], "id": ["jimat lentera festival", "jimat lentera", "jimat festival"]},
+      "one": {"en": "festival lantern charm"},
+      "many": {"en": "festival lantern charms"},
+      "names": {"en": ["festival lantern charm", "lantern charm", "festival charm"]},
       "desc": {
-        "en": "A tiny paper lantern that never quite goes out, given to everyone on the station when the Lantern Festival reached its goal.",
-        "id": "Lentera kertas mungil yang tak pernah benar-benar padam, diberikan kepada semua orang di stasiun saat Festival Lentera mencapai tujuannya."
+        "en": "A tiny paper lantern that never quite goes out, given to everyone on the station when the Lantern Festival reached its goal."
       },
       "unique": true,
       "pawn": false,
-      "effects": {"cabin": {"en": "A tiny festival lantern hangs by the door, still glowing.", "id": "Lentera festival mungil tergantung di dekat pintu, masih menyala."}}
+      "effects": {"cabin": {"en": "A tiny festival lantern hangs by the door, still glowing."}}
     },
     "title_starlit": {
       "type": "title",
-      "one": {"en": "title 'Bound by Starlight'", "id": "gelar 'Terikat Cahaya Bintang'"},
-      "many": {"en": "titles 'Bound by Starlight'", "id": "gelar 'Terikat Cahaya Bintang'"},
-      "names": {"en": ["bound by starlight", "title bound by starlight"], "id": ["terikat cahaya bintang", "gelar terikat cahaya bintang"]},
+      "one": {"en": "title 'Bound by Starlight'"},
+      "many": {"en": "titles 'Bound by Starlight'"},
+      "names": {"en": ["bound by starlight", "title bound by starlight"]},
       "desc": {
-        "en": "A title for those who joined their lights in the Starlight rite. Wear it to show it.",
-        "id": "Gelar untuk mereka yang menyatukan cahaya dalam upacara Cahaya Bintang. Pakai untuk menampilkannya."
+        "en": "A title for those who joined their lights in the Starlight rite. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Bound by Starlight", "id": "Terikat Cahaya Bintang"}}
+      "effects": {"title": {"en": "Bound by Starlight"}}
     },
     "title_wedded": {
       "type": "title",
-      "one": {"en": "title 'Life Partner'", "id": "gelar 'Teman Sehidup'"},
-      "many": {"en": "titles 'Life Partner'", "id": "gelar 'Teman Sehidup'"},
-      "names": {"en": ["life partner", "title life partner"], "id": ["teman sehidup", "gelar teman sehidup"]},
+      "one": {"en": "title 'Life Partner'"},
+      "many": {"en": "titles 'Life Partner'"},
+      "names": {"en": ["life partner", "title life partner"]},
       "desc": {
-        "en": "A title for those who signed the station's register together. Wear it to show it.",
-        "id": "Gelar untuk mereka yang bersama-sama menandatangani buku catatan stasiun. Pakai untuk menampilkannya."
+        "en": "A title for those who signed the station's register together. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Life Partner", "id": "Teman Sehidup"}}
+      "effects": {"title": {"en": "Life Partner"}}
     },
     "keepsake_lantern": {
       "type": "furniture",
-      "one": {"en": "twin-light lantern", "id": "lentera cahaya kembar"},
-      "many": {"en": "twin-light lanterns", "id": "lentera cahaya kembar"},
-      "names": {"en": ["twin-light lantern", "twin lantern", "keepsake", "wedding keepsake"], "id": ["lentera cahaya kembar", "lentera kembar", "kenang-kenangan", "kenang-kenangan pernikahan"]},
+      "one": {"en": "twin-light lantern"},
+      "many": {"en": "twin-light lanterns"},
+      "names": {"en": ["twin-light lantern", "twin lantern", "keepsake", "wedding keepsake"]},
       "desc": {
-        "en": "A small paper lantern holding two flames that lean into one. A keepsake of your wedding: type read memory to read the memory of the day.",
-        "id": "Lentera kertas kecil berisi dua nyala api yang condong menjadi satu. Kenang-kenangan pernikahanmu: ketik baca kenangan untuk membaca kenangan hari itu."
+        "en": "A small paper lantern holding two flames that lean into one. A keepsake of your wedding: type read memory to read the memory of the day."
       },
       "unique": true,
       "pawn": false,
-      "effects": {"cabin": {"en": "A twin-light lantern glows on a shelf, its two flames leaning into one.", "id": "Lentera cahaya kembar menyala di rak, dua nyala apinya condong menjadi satu."}}
+      "effects": {"cabin": {"en": "A twin-light lantern glows on a shelf, its two flames leaning into one."}}
     },
     "keepsake_star": {
       "type": "furniture",
-      "one": {"en": "silver keepsake star", "id": "bintang kenangan perak"},
-      "many": {"en": "silver keepsake stars", "id": "bintang kenangan perak"},
-      "names": {"en": ["silver keepsake star", "keepsake star", "keepsake", "wedding keepsake"], "id": ["bintang kenangan perak", "bintang kenangan", "kenang-kenangan", "kenang-kenangan pernikahan"]},
+      "one": {"en": "silver keepsake star"},
+      "many": {"en": "silver keepsake stars"},
+      "names": {"en": ["silver keepsake star", "keepsake star", "keepsake", "wedding keepsake"]},
       "desc": {
-        "en": "A small silver star engraved with two names and a date. A keepsake of your wedding: type read memory to read the memory of the day.",
-        "id": "Bintang perak kecil berukir dua nama dan sebuah tanggal. Kenang-kenangan pernikahanmu: ketik baca kenangan untuk membaca kenangan hari itu."
+        "en": "A small silver star engraved with two names and a date. A keepsake of your wedding: type read memory to read the memory of the day."
       },
       "unique": true,
       "pawn": false,
-      "effects": {"cabin": {"en": "A silver keepsake star hangs by the window, engraved with two names.", "id": "Bintang kenangan perak tergantung di dekat jendela, berukir dua nama."}}
+      "effects": {"cabin": {"en": "A silver keepsake star hangs by the window, engraved with two names."}}
     },
     "baby_porridge": {
       "type": "consumable",
-      "one": {"en": "pot of baby porridge", "id": "mangkuk bubur bayi"},
-      "many": {"en": "pots of baby porridge", "id": "mangkuk bubur bayi"},
-      "names": {"en": ["baby porridge", "porridge", "baby food"], "id": ["bubur bayi", "bubur", "makanan bayi"]},
+      "one": {"en": "pot of baby porridge"},
+      "many": {"en": "pots of baby porridge"},
+      "names": {"en": ["baby porridge", "porridge", "baby food"]},
       "desc": {
-        "en": "Warm rice porridge with pumpkin, sealed in a pot that won't spill in low gravity. For babies and little children: feed the baby.",
-        "id": "Bubur nasi hangat dengan labu, dalam mangkuk tersegel yang tak tumpah di gravitasi rendah. Untuk bayi dan anak kecil: beri makan bayi."
+        "en": "Warm rice porridge with pumpkin, sealed in a pot that won't spill in low gravity. For babies and little children: feed the baby."
       },
       "price": 8,
       "tradeable": true,
@@ -1541,15 +1392,13 @@
     },
     "pet_food": {
       "type": "consumable",
-      "one": {"en": "bag of pet food", "id": "kantong pakan hewan"},
-      "many": {"en": "bags of pet food", "id": "kantong pakan hewan"},
+      "one": {"en": "bag of pet food"},
+      "many": {"en": "bags of pet food"},
       "names": {
-        "en": ["pet food", "bag of pet food", "pet pellets", "kibble"],
-        "id": ["pakan hewan", "pakan", "kantong pakan", "makanan hewan"]
+        "en": ["pet food", "bag of pet food", "pet pellets", "kibble"]
       },
       "desc": {
-        "en": "Pellets that every pet on the station eats, from cats to jellyfish; the robots get energy pellets that smell the same. Type feed pet.",
-        "id": "Pelet yang dimakan semua peliharaan di stasiun, dari kucing sampai ubur-ubur; para robot dapat pelet energi yang baunya sama. Ketik beri makan hewan."
+        "en": "Pellets that every pet on the station eats, from cats to jellyfish; the robots get energy pellets that smell the same. Type feed pet."
       },
       "price": 6,
       "tradeable": true,
@@ -1557,15 +1406,13 @@
     },
     "pet_treat": {
       "type": "consumable",
-      "one": {"en": "pet treat", "id": "camilan hewan"},
-      "many": {"en": "pet treats", "id": "camilan hewan"},
+      "one": {"en": "pet treat"},
+      "many": {"en": "pet treats"},
       "names": {
-        "en": ["pet treat", "treat", "treats", "pet treats"],
-        "id": ["camilan hewan", "camilan peliharaan", "snack hewan"]
+        "en": ["pet treat", "treat", "treats", "pet treats"]
       },
       "desc": {
-        "en": "A star-shaped biscuit that pets adore. It fills a little and delights a lot. Type feed pet treat.",
-        "id": "Biskuit berbentuk bintang yang disukai peliharaan. Sedikit mengenyangkan dan sangat menyenangkan. Ketik beri makan hewan camilan."
+        "en": "A star-shaped biscuit that pets adore. It fills a little and delights a lot. Type feed pet treat."
       },
       "price": 15,
       "tradeable": true,
@@ -1573,139 +1420,127 @@
     },
     "ring_silver": {
       "type": "outfit",
-      "one": {"en": "silver band", "id": "cincin perak"},
-      "many": {"en": "silver bands", "id": "cincin perak"},
-      "names": {"en": ["silver band", "silver ring"], "id": ["cincin perak"]},
+      "one": {"en": "silver band"},
+      "many": {"en": "silver bands"},
+      "names": {"en": ["silver band", "silver ring"]},
       "desc": {
-        "en": "A plain band of polished silver, simple and true. Give it with a proposal: propose to, and a name.",
-        "id": "Cincin polos dari perak yang mengilap, sederhana dan tulus. Berikan saat melamar: lamar, lalu sebuah nama."
+        "en": "A plain band of polished silver, simple and true. Give it with a proposal: propose to, and a name."
       },
       "price": 500,
       "slot": "hand",
-      "effects": {"ring": 1, "look": {"en": "a silver band", "id": "cincin perak"}}
+      "effects": {"ring": 1, "look": {"en": "a silver band"}}
     },
     "ring_gold": {
       "type": "outfit",
-      "one": {"en": "gold band", "id": "cincin emas"},
-      "many": {"en": "gold bands", "id": "cincin emas"},
-      "names": {"en": ["gold band", "gold ring", "golden ring"], "id": ["cincin emas"]},
+      "one": {"en": "gold band"},
+      "many": {"en": "gold bands"},
+      "names": {"en": ["gold band", "gold ring", "golden ring"]},
       "desc": {
-        "en": "A warm gold band with a line of tiny stars engraved inside. Give it with a proposal: propose to, and a name.",
-        "id": "Cincin emas yang hangat dengan deretan bintang mungil terukir di bagian dalamnya. Berikan saat melamar: lamar, lalu sebuah nama."
+        "en": "A warm gold band with a line of tiny stars engraved inside. Give it with a proposal: propose to, and a name."
       },
       "price": 1500,
       "slot": "hand",
-      "effects": {"ring": 2, "look": {"en": "a gold band", "id": "cincin emas"}}
+      "effects": {"ring": 2, "look": {"en": "a gold band"}}
     },
     "ring_star": {
       "type": "outfit",
-      "one": {"en": "star-crystal ring", "id": "cincin kristal bintang"},
-      "many": {"en": "star-crystal rings", "id": "cincin kristal bintang"},
-      "names": {"en": ["star-crystal ring", "star crystal ring", "star ring", "crystal ring"], "id": ["cincin kristal bintang", "cincin bintang", "cincin kristal"]},
+      "one": {"en": "star-crystal ring"},
+      "many": {"en": "star-crystal rings"},
+      "names": {"en": ["star-crystal ring", "star crystal ring", "star ring", "crystal ring"]},
       "desc": {
-        "en": "A ring set with a crystal that holds a tiny point of starlight, which brightens when the wearer smiles. Give it with a proposal: propose to, and a name.",
-        "id": "Cincin bermata kristal yang menyimpan setitik cahaya bintang, yang makin terang saat pemakainya tersenyum. Berikan saat melamar: lamar, lalu sebuah nama."
+        "en": "A ring set with a crystal that holds a tiny point of starlight, which brightens when the wearer smiles. Give it with a proposal: propose to, and a name."
       },
       "price": 4000,
       "slot": "hand",
-      "effects": {"ring": 3, "look": {"en": "a star-crystal ring", "id": "cincin kristal bintang"}}
+      "effects": {"ring": 3, "look": {"en": "a star-crystal ring"}}
     },
     "lottery_ticket": {
       "type": "service",
-      "one": {"en": "lottery ticket", "id": "tiket lotre"},
-      "many": {"en": "lottery tickets", "id": "tiket lotre"},
+      "one": {"en": "lottery ticket"},
+      "many": {"en": "lottery tickets"},
       "names": {
-        "en": ["lottery ticket", "ticket", "tickets", "lottery tickets"],
-        "id": ["tiket lotre", "tiket", "karcis", "karcis lotre"]
+        "en": ["lottery ticket", "ticket", "tickets", "lottery tickets"]
       },
       "desc": {
-        "en": "A ticket for this week's draw. The more you hold, the better your chance; the pot is four fifths of all tickets sold.",
-        "id": "Tiket untuk undian minggu ini. Makin banyak, makin besar peluangmu; hadiahnya empat perlima dari semua tiket yang terjual."
+        "en": "A ticket for this week's draw. The more you hold, the better your chance; the pot is four fifths of all tickets sold."
       },
       "price": 10,
       "service": "ticket"
     },
     "title_cartographer": {
       "type": "title",
-      "one": {"en": "title 'Cartographer'", "id": "gelar 'Kartografer'"},
-      "many": {"en": "titles 'Cartographer'", "id": "gelar 'Kartografer'"},
-      "names": {"en": ["cartographer", "title cartographer"], "id": ["kartografer", "gelar kartografer"]},
+      "one": {"en": "title 'Cartographer'"},
+      "many": {"en": "titles 'Cartographer'"},
+      "names": {"en": ["cartographer", "title cartographer"]},
       "desc": {
-        "en": "A title: 'Cartographer'. Earned by walking every public room of the station. Wear it to show it.",
-        "id": "Gelar: 'Kartografer'. Didapat dengan menjelajahi setiap ruangan umum stasiun. Pakai untuk menampilkannya."
+        "en": "A title: 'Cartographer'. Earned by walking every public room of the station. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Cartographer", "id": "Kartografer"}}
+      "effects": {"title": {"en": "Cartographer"}}
     },
     "title_green": {
       "type": "title",
-      "one": {"en": "title 'Green Thumb'", "id": "gelar 'Tangan Dingin'"},
-      "many": {"en": "titles 'Green Thumb'", "id": "gelar 'Tangan Dingin'"},
-      "names": {"en": ["green thumb", "title green thumb"], "id": ["tangan dingin", "gelar tangan dingin"]},
+      "one": {"en": "title 'Green Thumb'"},
+      "many": {"en": "titles 'Green Thumb'"},
+      "names": {"en": ["green thumb", "title green thumb"]},
       "desc": {
-        "en": "A title: 'Green Thumb'. Earned by harvesting 500 crops. Wear it to show it.",
-        "id": "Gelar: 'Tangan Dingin'. Didapat dengan memanen 500 hasil kebun. Pakai untuk menampilkannya."
+        "en": "A title: 'Green Thumb'. Earned by harvesting 500 crops. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Green Thumb", "id": "Tangan Dingin"}}
+      "effects": {"title": {"en": "Green Thumb"}}
     },
     "title_digger": {
       "type": "title",
-      "one": {"en": "title 'Deep Digger'", "id": "gelar 'Penggali Ulung'"},
-      "many": {"en": "titles 'Deep Digger'", "id": "gelar 'Penggali Ulung'"},
-      "names": {"en": ["deep digger", "title deep digger"], "id": ["penggali ulung", "gelar penggali ulung"]},
+      "one": {"en": "title 'Deep Digger'"},
+      "many": {"en": "titles 'Deep Digger'"},
+      "names": {"en": ["deep digger", "title deep digger"]},
       "desc": {
-        "en": "A title: 'Deep Digger'. Earned by mining 500 lumps of ore. Wear it to show it.",
-        "id": "Gelar: 'Penggali Ulung'. Didapat dengan menambang 500 bongkah bijih. Pakai untuk menampilkannya."
+        "en": "A title: 'Deep Digger'. Earned by mining 500 lumps of ore. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Deep Digger", "id": "Penggali Ulung"}}
+      "effects": {"title": {"en": "Deep Digger"}}
     },
     "title_tycoon": {
       "type": "title",
-      "one": {"en": "title 'Tycoon'", "id": "gelar 'Juragan'"},
-      "many": {"en": "titles 'Tycoon'", "id": "gelar 'Juragan'"},
-      "names": {"en": ["tycoon", "title tycoon"], "id": ["juragan", "gelar juragan"]},
+      "one": {"en": "title 'Tycoon'"},
+      "many": {"en": "titles 'Tycoon'"},
+      "names": {"en": ["tycoon", "title tycoon"]},
       "desc": {
-        "en": "A title: 'Tycoon'. Earned by holding 100,000 credits at once. Wear it to show it.",
-        "id": "Gelar: 'Juragan'. Didapat dengan memegang 100.000 kredit sekaligus. Pakai untuk menampilkannya."
+        "en": "A title: 'Tycoon'. Earned by holding 100,000 credits at once. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Tycoon", "id": "Juragan"}}
+      "effects": {"title": {"en": "Tycoon"}}
     },
     "title_lucky": {
       "type": "title",
-      "one": {"en": "title 'Lucky Star'", "id": "gelar 'Bintang Hoki'"},
-      "many": {"en": "titles 'Lucky Star'", "id": "gelar 'Bintang Hoki'"},
-      "names": {"en": ["lucky star", "title lucky star"], "id": ["bintang hoki", "gelar bintang hoki"]},
+      "one": {"en": "title 'Lucky Star'"},
+      "many": {"en": "titles 'Lucky Star'"},
+      "names": {"en": ["lucky star", "title lucky star"]},
       "desc": {
-        "en": "A title: 'Lucky Star'. Earned by winning the weekly lottery. Wear it to show it.",
-        "id": "Gelar: 'Bintang Hoki'. Didapat dengan memenangkan lotre mingguan. Pakai untuk menampilkannya."
+        "en": "A title: 'Lucky Star'. Earned by winning the weekly lottery. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Lucky Star", "id": "Bintang Hoki"}}
+      "effects": {"title": {"en": "Lucky Star"}}
     },
     "ship_swiftlet": {
       "type": "ship",
-      "one": {"en": "Swiftlet shuttle", "id": "pesawat Walet"},
-      "many": {"en": "Swiftlet shuttles", "id": "pesawat Walet"},
+      "one": {"en": "Swiftlet shuttle"},
+      "many": {"en": "Swiftlet shuttles"},
       "names": {
-        "en": ["swiftlet", "swiftlet shuttle", "shuttle", "small ship"],
-        "id": ["walet", "pesawat walet", "kapal kecil"]
+        "en": ["swiftlet", "swiftlet shuttle", "shuttle", "small ship"]
       },
       "desc": {
-        "en": "A snub-nosed two-seat shuttle: a cargo hold for 40 goods, a tank of 24 fuel, and a steady cruising speed. Everyone's first ship.",
-        "id": "Pesawat dua kursi berhidung pesek: palka untuk 40 barang, tangki 24 bahan bakar, dan kecepatan jelajah yang mantap. Kapal pertama semua orang."
+        "en": "A snub-nosed two-seat shuttle: a cargo hold for 40 goods, a tank of 24 fuel, and a steady cruising speed. Everyone's first ship."
       },
       "price": 2500,
       "level": 2,
@@ -1715,12 +1550,11 @@
     },
     "ship_heron": {
       "type": "ship",
-      "one": {"en": "Heron courier", "id": "kurir Bangau"},
-      "many": {"en": "Heron couriers", "id": "kurir Bangau"},
-      "names": {"en": ["heron", "heron courier", "courier"], "id": ["bangau", "kurir bangau"]},
+      "one": {"en": "Heron courier"},
+      "many": {"en": "Heron couriers"},
+      "names": {"en": ["heron", "heron courier", "courier"]},
       "desc": {
-        "en": "A long-legged courier built for speed: 60 goods in the hold, a tank of 40, and nearly twice as fast as a Swiftlet.",
-        "id": "Kurir berkaki panjang yang dibuat untuk kecepatan: 60 barang di palka, tangki 40, dan hampir dua kali lebih cepat dari Walet."
+        "en": "A long-legged courier built for speed: 60 goods in the hold, a tank of 40, and nearly twice as fast as a Swiftlet."
       },
       "price": 9000,
       "level": 5,
@@ -1730,12 +1564,11 @@
     },
     "ship_buffalo": {
       "type": "ship",
-      "one": {"en": "Buffalo hauler", "id": "kapal angkut Kerbau"},
-      "many": {"en": "Buffalo haulers", "id": "kapal angkut Kerbau"},
-      "names": {"en": ["buffalo", "buffalo hauler", "hauler"], "id": ["kerbau", "kapal angkut kerbau", "kapal angkut"]},
+      "one": {"en": "Buffalo hauler"},
+      "many": {"en": "Buffalo haulers"},
+      "names": {"en": ["buffalo", "buffalo hauler", "hauler"]},
       "desc": {
-        "en": "A slow, patient cargo hauler with a hold for 200 goods and a tank of 60. It drinks fuel, but it moves a market's worth at once.",
-        "id": "Kapal angkut yang lambat dan sabar dengan palka untuk 200 barang dan tangki 60. Boros bahan bakar, tapi sekali jalan membawa isi satu pasar."
+        "en": "A slow, patient cargo hauler with a hold for 200 goods and a tank of 60. It drinks fuel, but it moves a market's worth at once."
       },
       "price": 16000,
       "level": 7,
@@ -1745,15 +1578,13 @@
     },
     "ship_hornbill": {
       "type": "ship",
-      "one": {"en": "Hornbill explorer", "id": "penjelajah Rangkong"},
-      "many": {"en": "Hornbill explorers", "id": "penjelajah Rangkong"},
+      "one": {"en": "Hornbill explorer"},
+      "many": {"en": "Hornbill explorers"},
       "names": {
-        "en": ["hornbill", "hornbill explorer", "explorer"],
-        "id": ["rangkong", "penjelajah rangkong", "penjelajah"]
+        "en": ["hornbill", "hornbill explorer", "explorer"]
       },
       "desc": {
-        "en": "A long explorer with folded solar wings: 120 goods in the hold, a tank of 100, fast, and a scanner bay that reads other worlds' prices from the cockpit and keeps nosy customs scanners guessing.",
-        "id": "Kapal penjelajah panjang dengan sayap surya terlipat: 120 barang di palka, tangki 100, cepat, dan ruang pemindai yang membaca harga dunia lain dari kokpit dan membuat pemindai pabean kebingungan."
+        "en": "A long explorer with folded solar wings: 120 goods in the hold, a tank of 100, fast, and a scanner bay that reads other worlds' prices from the cockpit and keeps nosy customs scanners guessing."
       },
       "price": 40000,
       "level": 12,
@@ -1763,46 +1594,41 @@
     },
     "title_globetrotter": {
       "type": "title",
-      "one": {"en": "title 'Globetrotter'", "id": "gelar 'Penjelajah Dunia'"},
-      "many": {"en": "titles 'Globetrotter'", "id": "gelar 'Penjelajah Dunia'"},
-      "names": {"en": ["globetrotter", "title globetrotter"], "id": ["penjelajah dunia", "gelar penjelajah dunia"]},
+      "one": {"en": "title 'Globetrotter'"},
+      "many": {"en": "titles 'Globetrotter'"},
+      "names": {"en": ["globetrotter", "title globetrotter"]},
       "desc": {
-        "en": "A title: 'Globetrotter'. Earned by setting foot on every world of the simulation. Wear it to show it.",
-        "id": "Gelar: 'Penjelajah Dunia'. Didapat dengan menginjakkan kaki di setiap dunia simulasi. Pakai untuk menampilkannya."
+        "en": "A title: 'Globetrotter'. Earned by setting foot on every world of the simulation. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Globetrotter", "id": "Penjelajah Dunia"}}
+      "effects": {"title": {"en": "Globetrotter"}}
     },
     "title_chord_keeper": {
       "type": "title",
-      "one": {"en": "title 'Keeper of the Lost Chord'", "id": "gelar 'Penjaga Nada yang Hilang'"},
-      "many": {"en": "titles 'Keeper of the Lost Chord'", "id": "gelar 'Penjaga Nada yang Hilang'"},
+      "one": {"en": "title 'Keeper of the Lost Chord'"},
+      "many": {"en": "titles 'Keeper of the Lost Chord'"},
       "names": {
-        "en": ["keeper of the lost chord", "title keeper of the lost chord", "chord keeper"],
-        "id": ["penjaga nada yang hilang", "gelar penjaga nada yang hilang"]
+        "en": ["keeper of the lost chord", "title keeper of the lost chord", "chord keeper"]
       },
       "desc": {
-        "en": "A title held by whoever first found a season's Lost Chord. Wear it to show it.",
-        "id": "Gelar milik siapa pun yang pertama menemukan Nada yang Hilang dalam satu musim. Pakai untuk menampilkannya."
+        "en": "A title held by whoever first found a season's Lost Chord. Wear it to show it."
       },
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Keeper of the Lost Chord", "id": "Penjaga Nada yang Hilang"}}
+      "effects": {"title": {"en": "Keeper of the Lost Chord"}}
     },
     "arcade_token": {
       "type": "arcade",
-      "one": {"en": "arcade token", "id": "token arkade"},
-      "many": {"en": "arcade tokens", "id": "token arkade"},
+      "one": {"en": "arcade token"},
+      "many": {"en": "arcade tokens"},
       "names": {
-        "en": ["arcade token", "arcade tokens", "token", "tokens"],
-        "id": ["token arkade", "token", "koin arkade"]
+        "en": ["arcade token", "arcade tokens", "token", "tokens"]
       },
       "desc": {
-        "en": "A brass token with a pixel star on it. One plays a game on Cabinet Row.",
-        "id": "Token kuningan bergambar bintang piksel. Satu token untuk satu permainan di Lorong Mesin."
+        "en": "A brass token with a pixel star on it. One plays a game on Cabinet Row."
       },
       "price": 5,
       "pawn": false,
@@ -1810,111 +1636,99 @@
     },
     "arcade_ticket": {
       "type": "arcade",
-      "one": {"en": "prize ticket", "id": "tiket hadiah"},
-      "many": {"en": "prize tickets", "id": "tiket hadiah"},
+      "one": {"en": "prize ticket"},
+      "many": {"en": "prize tickets"},
       "names": {
-        "en": ["prize ticket", "prize tickets", "arcade ticket", "arcade tickets"],
-        "id": ["tiket hadiah", "karcis hadiah", "tiket arkade"]
+        "en": ["prize ticket", "prize tickets", "arcade ticket", "arcade tickets"]
       },
       "desc": {
-        "en": "A paper ticket from the cabinets. The Prize Counter takes them.",
-        "id": "Tiket kertas dari mesin-mesin permainan. Loket Hadiah menerimanya."
+        "en": "A paper ticket from the cabinets. The Prize Counter takes them."
       },
       "pawn": false
     },
     "plush_comet": {
       "type": "furniture",
-      "one": {"en": "plush comet", "id": "boneka komet"},
-      "many": {"en": "plush comets", "id": "boneka komet"},
-      "names": {"en": ["plush comet", "comet"], "id": ["boneka komet", "komet"]},
+      "one": {"en": "plush comet"},
+      "many": {"en": "plush comets"},
+      "names": {"en": ["plush comet", "comet"]},
       "desc": {
-        "en": "A soft comet with a sparkly tail, to hug or to throw.",
-        "id": "Komet lembut berekor berkilau, untuk dipeluk atau dilempar."
+        "en": "A soft comet with a sparkly tail, to hug or to throw."
       },
       "tickets": 40,
       "unique": true,
       "pawn": false,
       "effects": {
         "cabin": {
-          "en": "A plush comet with a sparkly tail sits on your pillow.",
-          "id": "Boneka komet berekor berkilau duduk di atas bantalmu."
+          "en": "A plush comet with a sparkly tail sits on your pillow."
         }
       }
     },
     "glow_stars": {
       "type": "furniture",
-      "one": {"en": "glow stars", "id": "bintang berpendar"},
-      "many": {"en": "glow stars", "id": "bintang berpendar"},
-      "names": {"en": ["glow stars", "glow in the dark stars", "stars"], "id": ["bintang berpendar", "bintang glow"]},
+      "one": {"en": "glow stars"},
+      "many": {"en": "glow stars"},
+      "names": {"en": ["glow stars", "glow in the dark stars", "stars"]},
       "desc": {
-        "en": "Stick-on stars that glow softly in the dark.",
-        "id": "Stiker bintang yang berpendar lembut dalam gelap."
+        "en": "Stick-on stars that glow softly in the dark."
       },
       "tickets": 100,
       "unique": true,
       "pawn": false,
       "effects": {
         "cabin": {
-          "en": "Glow stars on the ceiling make a little sky of their own.",
-          "id": "Bintang-bintang berpendar di langit-langit membentuk langit kecil sendiri."
+          "en": "Glow stars on the ceiling make a little sky of their own."
         }
       }
     },
     "mini_cabinet": {
       "type": "furniture",
-      "one": {"en": "mini arcade cabinet", "id": "mesin arkade mini"},
-      "many": {"en": "mini arcade cabinets", "id": "mesin arkade mini"},
+      "one": {"en": "mini arcade cabinet"},
+      "many": {"en": "mini arcade cabinets"},
       "names": {
-        "en": ["mini arcade cabinet", "mini cabinet", "arcade cabinet"],
-        "id": ["mesin arkade mini", "mesin mini"]
+        "en": ["mini arcade cabinet", "mini cabinet", "arcade cabinet"]
       },
       "desc": {
-        "en": "A little arcade cabinet that plays its tune to itself.",
-        "id": "Mesin arkade kecil yang memainkan lagunya sendiri."
+        "en": "A little arcade cabinet that plays its tune to itself."
       },
       "tickets": 300,
       "unique": true,
       "pawn": false,
       "effects": {
         "cabin": {
-          "en": "A little arcade cabinet in the corner plays its tune to itself.",
-          "id": "Mesin arkade kecil di sudut memainkan lagunya sendiri."
+          "en": "A little arcade cabinet in the corner plays its tune to itself."
         }
       }
     },
     "giant_robot": {
       "type": "furniture",
-      "one": {"en": "enormous robot", "id": "robot raksasa"},
-      "many": {"en": "enormous robots", "id": "robot raksasa"},
-      "names": {"en": ["enormous robot", "giant robot", "robot"], "id": ["robot raksasa", "robot"]},
+      "one": {"en": "enormous robot"},
+      "many": {"en": "enormous robots"},
+      "names": {"en": ["enormous robot", "giant robot", "robot"]},
       "desc": {
-        "en": "The enormous robot from Pixel Pier's prize counter, that nobody had ever won.",
-        "id": "Robot raksasa dari loket hadiah Dermaga Piksel, yang belum pernah dimenangkan siapa pun."
+        "en": "The enormous robot from Pixel Pier's prize counter, that nobody had ever won."
       },
       "tickets": 2500,
       "unique": true,
       "pawn": false,
       "effects": {
         "cabin": {
-          "en": "The enormous robot from Pixel Pier stands in your cabin, waving.",
-          "id": "Robot raksasa dari Dermaga Piksel berdiri di kabinmu, melambai."
+          "en": "The enormous robot from Pixel Pier stands in your cabin, waving."
         }
       }
     },
     "title_arcade_ace": {
       "type": "title",
-      "one": {"en": "title 'Arcade Ace'", "id": "gelar 'Jagoan Arkade'"},
-      "many": {"en": "titles 'Arcade Ace'", "id": "gelar 'Jagoan Arkade'"},
-      "names": {"en": ["arcade ace", "title arcade ace"], "id": ["jagoan arkade", "gelar jagoan arkade"]},
+      "one": {"en": "title 'Arcade Ace'"},
+      "many": {"en": "titles 'Arcade Ace'"},
+      "names": {"en": ["arcade ace", "title arcade ace"]},
       "desc": {
-        "en": "A title others see when they look at you: 'Arcade Ace'. Wear it to show it.",
-        "id": "Gelar yang dilihat orang lain saat melihatmu: 'Jagoan Arkade'. Pakai untuk menampilkannya."
+        "en": "A title others see when they look at you: 'Arcade Ace'. Wear it to show it."
       },
       "tickets": 500,
       "unique": true,
       "slot": "title",
       "pawn": false,
-      "effects": {"title": {"en": "Arcade Ace", "id": "Jagoan Arkade"}}
+      "effects": {"title": {"en": "Arcade Ace"}}
     }
   },
   "temple": {"lantern_price": 3, "lantern_seconds": 30, "bell_seconds": 10, "festival_goal": 30, "festival_cap": 5,
@@ -1972,27 +1786,27 @@
     "fetch": {"kerupuk": 40, "seed_kangkung": 25, "pet_treat": 20, "iced_coffee": 15},
     "speak_gap": [600, 1200],
     "desc": {
-      "0": {"en": "A baby wrapped in a soft blanket patterned with stars, with a tiny fist that grips anything nearby.", "id": "Bayi terbungkus selimut lembut bermotif bintang, dengan kepalan mungil yang menggenggam apa saja di dekatnya."},
-      "1": {"en": "A toddler with a wobbly walk, a bright laugh and very strong opinions about shoes.", "id": "Balita dengan langkah tertatih, tawa yang renyah, dan pendapat yang sangat kuat soal sepatu."},
-      "2": {"en": "A bright-eyed child who asks a question about everything, and remembers every answer.", "id": "Anak bermata cerah yang menanyakan segala hal, dan mengingat setiap jawabannya."}
+      "0": {"en": "A baby wrapped in a soft blanket patterned with stars, with a tiny fist that grips anything nearby."},
+      "1": {"en": "A toddler with a wobbly walk, a bright laugh and very strong opinions about shoes."},
+      "2": {"en": "A bright-eyed child who asks a question about everything, and remembers every answer."}
     },
     "lines": {
       "0": [
-        {"kind": "emote", "en": "{child} coos and reaches for {parent}'s finger.", "id": "{child} berceloteh dan meraih jari {parent}."},
-        {"kind": "emote", "en": "{child} giggles at nothing at all.", "id": "{child} terkikik tanpa alasan."},
-        {"kind": "emote", "en": "{child} blows a tiny bubble and looks very proud of it.", "id": "{child} meniup gelembung kecil dan tampak bangga sekali."}
+        {"kind": "emote", "en": "{child} coos and reaches for {parent}'s finger."},
+        {"kind": "emote", "en": "{child} giggles at nothing at all."},
+        {"kind": "emote", "en": "{child} blows a tiny bubble and looks very proud of it."}
       ],
       "1": [
-        {"kind": "say", "en": "{parent}! {parent}! Look!", "id": "{parent}! {parent}! Lihat!"},
-        {"kind": "say", "en": "Stars! Lots of stars!", "id": "Bintang! Bintangnya banyak!"},
-        {"kind": "say", "en": "Again! Again!", "id": "Lagi! Lagi!"},
-        {"kind": "say", "en": "Kitty!", "id": "Kucing!"}
+        {"kind": "say", "en": "{parent}! {parent}! Look!"},
+        {"kind": "say", "en": "Stars! Lots of stars!"},
+        {"kind": "say", "en": "Again! Again!"},
+        {"kind": "say", "en": "Kitty!"}
       ],
       "2": [
-        {"kind": "say", "en": "{parent}, can we go to the Observation Deck later?", "id": "{parent}, nanti kita ke Dek Observasi, ya?"},
-        {"kind": "say", "en": "I drew a picture of the Earth for you. The blue part is the sea.", "id": "Aku gambar Bumi buat kamu. Yang biru itu laut."},
-        {"kind": "say", "en": "When I grow up, I'm going to fly the ferry. Or be a gardener. Or both.", "id": "Kalau sudah besar, aku mau jadi pilot feri. Atau tukang kebun. Atau dua-duanya."},
-        {"kind": "say", "en": "Did you know the station goes round the Earth sixteen times a day?", "id": "Kamu tahu nggak, stasiun ini keliling Bumi enam belas kali sehari?"}
+        {"kind": "say", "en": "{parent}, can we go to the Observation Deck later?"},
+        {"kind": "say", "en": "I drew a picture of the Earth for you. The blue part is the sea."},
+        {"kind": "say", "en": "When I grow up, I'm going to fly the ferry. Or be a gardener. Or both."},
+        {"kind": "say", "en": "Did you know the station goes round the Earth sixteen times a day?"}
       ]
     }
   },
@@ -2048,308 +1862,272 @@
   "achievements": {
     "first_steps": {
       "en": "Finding Your Feet",
-      "id": "Mulai Melangkah",
       "stat": "rooms",
       "at": 10,
       "credits": 25,
-      "desc": {"en": "visit 10 rooms", "id": "datangi 10 ruangan"}
+      "desc": {"en": "visit 10 rooms"}
     },
     "cartographer": {
       "en": "Cartographer",
-      "id": "Kartografer",
       "stat": "rooms",
       "at": "all",
       "credits": 300,
       "thing": "title_cartographer",
       "station": true,
-      "desc": {"en": "visit every public room", "id": "datangi setiap ruangan umum"}
+      "desc": {"en": "visit every public room"}
     },
     "hard_worker": {
       "en": "Hard Worker",
-      "id": "Pekerja Keras",
       "stat": "shifts",
       "at": 25,
       "credits": 100,
-      "desc": {"en": "work 25 shifts", "id": "kerja 25 shift"}
+      "desc": {"en": "work 25 shifts"}
     },
     "tireless": {
       "en": "Tireless",
-      "id": "Tak Kenal Lelah",
       "stat": "shifts",
       "at": 250,
       "credits": 500,
       "station": true,
-      "desc": {"en": "work 250 shifts", "id": "kerja 250 shift"}
+      "desc": {"en": "work 250 shifts"}
     },
     "helping_hand": {
       "en": "Helping Hand",
-      "id": "Ringan Tangan",
       "stat": "missions",
       "at": 10,
       "credits": 100,
-      "desc": {"en": "complete 10 missions", "id": "selesaikan 10 misi"}
+      "desc": {"en": "complete 10 missions"}
     },
     "level_5": {
       "en": "Getting There",
-      "id": "Mulai Mahir",
       "stat": "level",
       "at": 5,
       "credits": 100,
-      "desc": {"en": "reach level 5", "id": "capai level 5"}
+      "desc": {"en": "reach level 5"}
     },
     "level_10": {
       "en": "Chief",
-      "id": "Kepala",
       "stat": "level",
       "at": 10,
       "credits": 300,
       "station": true,
-      "desc": {"en": "reach level 10", "id": "capai level 10"}
+      "desc": {"en": "reach level 10"}
     },
     "level_20": {
       "en": "Living Legend",
-      "id": "Legenda Hidup",
       "stat": "level",
       "at": 20,
       "credits": 2000,
       "station": true,
-      "desc": {"en": "reach level 20", "id": "capai level 20"}
+      "desc": {"en": "reach level 20"}
     },
     "first_harvest": {
       "en": "First Harvest",
-      "id": "Panen Perdana",
       "stat": "harvested",
       "at": 1,
       "credits": 20,
-      "desc": {"en": "harvest a crop", "id": "memanen hasil kebun"}
+      "desc": {"en": "harvest a crop"}
     },
     "green_thumb": {
       "en": "Green Thumb",
-      "id": "Tangan Dingin",
       "stat": "harvested",
       "at": 500,
       "credits": 400,
       "thing": "title_green",
       "station": true,
-      "desc": {"en": "harvest 500 crops", "id": "memanen 500 hasil kebun"}
+      "desc": {"en": "harvest 500 crops"}
     },
     "golden_luck": {
       "en": "Golden Luck",
-      "id": "Hoki Emas",
       "stat": "golden",
       "at": 1,
       "credits": 50,
-      "desc": {"en": "find a golden chilli", "id": "menemukan cabai emas"}
+      "desc": {"en": "find a golden chilli"}
     },
     "rockhound": {
       "en": "Rockhound",
-      "id": "Pemburu Batu",
       "stat": "mined",
       "at": 1,
       "credits": 20,
-      "desc": {"en": "mine a lump of ore", "id": "menambang sebongkah bijih"}
+      "desc": {"en": "mine a lump of ore"}
     },
     "deep_digger": {
       "en": "Deep Digger",
-      "id": "Penggali Ulung",
       "stat": "mined",
       "at": 500,
       "credits": 400,
       "thing": "title_digger",
       "station": true,
-      "desc": {"en": "mine 500 lumps of ore", "id": "menambang 500 bongkah bijih"}
+      "desc": {"en": "mine 500 lumps of ore"}
     },
     "quantum_leap": {
       "en": "Quantum Leap",
-      "id": "Lompatan Kuantum",
       "stat": "quantum",
       "at": 1,
       "credits": 200,
       "station": true,
-      "desc": {"en": "find a quantum crystal", "id": "menemukan kristal kuantum"}
+      "desc": {"en": "find a quantum crystal"}
     },
     "regular": {
       "en": "Regular",
-      "id": "Pelanggan Setia",
       "stat": "streak",
       "at": 7,
       "credits": 100,
-      "desc": {"en": "claim the daily bonus 7 days in a row", "id": "ambil bonus harian 7 hari berturut-turut"}
+      "desc": {"en": "claim the daily bonus 7 days in a row"}
     },
     "resident": {
       "en": "Resident",
-      "id": "Warga Tetap",
       "stat": "streak",
       "at": 30,
       "credits": 1000,
       "station": true,
-      "desc": {"en": "claim the daily bonus 30 days in a row", "id": "ambil bonus harian 30 hari berturut-turut"}
+      "desc": {"en": "claim the daily bonus 30 days in a row"}
     },
     "home_sweet_home": {
       "en": "Home Sweet Home",
-      "id": "Rumahku Istanaku",
       "stat": "furniture",
       "at": 5,
       "credits": 100,
-      "desc": {"en": "own 5 pieces of furniture", "id": "punya 5 perabot"}
+      "desc": {"en": "own 5 pieces of furniture"}
     },
     "well_off": {
       "en": "Well Off",
-      "id": "Berkecukupan",
       "stat": "credits",
       "at": 10000,
       "credits": 0,
       "station": true,
-      "desc": {"en": "hold 10,000 credits", "id": "memegang 10.000 kredit"}
+      "desc": {"en": "hold 10,000 credits"}
     },
     "tycoon": {
       "en": "Tycoon",
-      "id": "Juragan",
       "stat": "credits",
       "at": 100000,
       "credits": 0,
       "thing": "title_tycoon",
       "station": true,
-      "desc": {"en": "hold 100,000 credits", "id": "memegang 100.000 kredit"}
+      "desc": {"en": "hold 100,000 credits"}
     },
     "time_traveller": {
       "en": "Time Traveller",
-      "id": "Penjelajah Waktu",
       "stat": "capsule",
       "at": 1,
       "credits": 0,
       "station": true,
-      "desc": {"en": "open the time capsule", "id": "membuka kapsul waktu"}
+      "desc": {"en": "open the time capsule"}
     },
     "natural": {
       "en": "Natural",
-      "id": "Blackjack Alami",
       "stat": "naturals",
       "at": 1,
       "credits": 25,
-      "desc": {"en": "get a blackjack in your first two cards", "id": "dapat blackjack dari dua kartu pertama"}
+      "desc": {"en": "get a blackjack in your first two cards"}
     },
     "jackpot": {
       "en": "Jackpot!",
-      "id": "Jackpot!",
       "stat": "jackpots",
       "at": 1,
       "credits": 0,
       "station": true,
-      "desc": {"en": "hit the Orbit jackpot on a slot machine", "id": "kena jackpot Orbit di mesin slot"}
+      "desc": {"en": "hit the Orbit jackpot on a slot machine"}
     },
     "lucky_draw": {
       "en": "Lucky Draw",
-      "id": "Undian Beruntung",
       "stat": "lotteries",
       "at": 1,
       "credits": 0,
       "thing": "title_lucky",
       "station": true,
-      "desc": {"en": "win the weekly lottery", "id": "memenangkan lotre mingguan"}
+      "desc": {"en": "win the weekly lottery"}
     },
     "handshake": {
       "en": "Handshake",
-      "id": "Jabat Tangan",
       "stat": "trades",
       "at": 1,
       "credits": 25,
-      "desc": {"en": "trade with another player", "id": "berdagang dengan pemain lain"}
+      "desc": {"en": "trade with another player"}
     },
     "captain": {
       "en": "Captain",
-      "id": "Kapten",
       "stat": "ship",
       "at": 1,
       "credits": 100,
-      "desc": {"en": "own a ship", "id": "punya kapal sendiri"}
+      "desc": {"en": "own a ship"}
     },
     "globetrotter": {
       "en": "Globetrotter",
-      "id": "Penjelajah Dunia",
       "stat": "worlds",
       "at": "all",
       "credits": 500,
       "thing": "title_globetrotter",
       "station": true,
-      "desc": {"en": "set foot on every world", "id": "menginjakkan kaki di setiap dunia"}
+      "desc": {"en": "set foot on every world"}
     },
     "courier": {
       "en": "Special Delivery",
-      "id": "Kiriman Kilat",
       "stat": "gigs",
       "at": 25,
       "credits": 200,
-      "desc": {"en": "deliver 25 parcels in Lumina City", "id": "mengantar 25 paket di Kota Lumina"}
+      "desc": {"en": "deliver 25 parcels in Lumina City"}
     },
     "forest_friend": {
       "en": "Friend of the Forest",
-      "id": "Sahabat Rimba",
       "stat": "creatures",
       "at": 25,
       "credits": 200,
-      "desc": {"en": "win over 25 creatures in Evergrove", "id": "memenangkan hati 25 makhluk di Rimba Abadi"}
+      "desc": {"en": "win over 25 creatures in Evergrove"}
     },
     "eventful": {
       "en": "Eventful",
-      "id": "Penuh Peristiwa",
       "stat": "events",
       "at": 10,
       "credits": 150,
-      "desc": {"en": "take part in 10 events", "id": "ikut dalam 10 acara"}
+      "desc": {"en": "take part in 10 events"}
     },
     "player_one": {
       "en": "Player One",
-      "id": "Pemain Satu",
       "stat": "arcade_games",
       "at": 1,
       "credits": 20,
-      "desc": {"en": "play a game at Pixel Pier's arcade", "id": "main satu permainan di arkade Dermaga Piksel"}
+      "desc": {"en": "play a game at Pixel Pier's arcade"}
     },
     "arcade_regular": {
       "en": "Arcade Regular",
-      "id": "Langganan Arkade",
       "stat": "arcade_games",
       "at": 50,
       "credits": 150,
-      "desc": {"en": "play 50 arcade games", "id": "main 50 permainan arkade"}
+      "desc": {"en": "play 50 arcade games"}
     },
     "high_scorer": {
       "en": "High Scorer",
-      "id": "Pencetak Rekor",
       "stat": "arcade_records",
       "at": 1,
       "credits": 100,
       "station": true,
       "desc": {
-        "en": "set a new best on one of the arcade's tables",
-        "id": "cetak rekor baru di salah satu papan skor arkade"
+        "en": "set a new best on one of the arcade's tables"
       }
     },
     "crewmate": {
       "en": "Crewmate",
-      "id": "Awak Kru",
       "stat": "crew",
       "at": 1,
       "credits": 25,
-      "desc": {"en": "join or found a crew", "id": "bergabung dengan atau mendirikan kru"}
+      "desc": {"en": "join or found a crew"}
     },
     "duelist": {
       "en": "Duelist",
-      "id": "Petarung",
       "stat": "duels_won",
       "at": 1,
       "credits": 20,
-      "desc": {"en": "win a duel", "id": "menangkan satu duel"}
+      "desc": {"en": "win a duel"}
     },
     "quickest_draw": {
       "en": "Quickest Draw",
-      "id": "Tercepat di Arena",
       "stat": "duels_won",
       "at": 10,
       "credits": 150,
       "station": true,
-      "desc": {"en": "win 10 duels", "id": "menangkan 10 duel"}
+      "desc": {"en": "win 10 duels"}
     }
   },
   "travel": {
@@ -2369,83 +2147,71 @@
   },
   "creatures": {
     "moss_sprite": {
-      "one": {"en": "moss sprite", "id": "peri lumut"},
-      "names": {"en": ["moss sprite", "sprite", "sprites"], "id": ["peri lumut", "peri"]},
+      "one": {"en": "moss sprite"},
+      "names": {"en": ["moss sprite", "sprite", "sprites"]},
       "difficulty": 6,
       "xp": 5,
       "loot": {"moonpetal": 85, "ember_crystal": 5},
       "n": 1,
       "desc": {
-        "en": "A thumb-sized sprite made of moss and giggles. It challenges you to catch it.",
-        "id": "Peri seukuran ibu jari dari lumut dan tawa. Ia menantangmu menangkapnya."
+        "en": "A thumb-sized sprite made of moss and giggles. It challenges you to catch it."
       },
       "win": {
-        "en": "You cup your hands at just the right moment. The sprite laughs, wriggles free, and leaves you a gift.",
-        "id": "Kamu menangkupkan tangan tepat pada waktunya. Peri itu tertawa, meloloskan diri, dan meninggalkan hadiah untukmu."
+        "en": "You cup your hands at just the right moment. The sprite laughs, wriggles free, and leaves you a gift."
       },
       "lose": {
-        "en": "The sprite zips between your fingers, tickles your ear and vanishes into the ferns.",
-        "id": "Peri itu melesat di sela jarimu, menggelitik telingamu, lalu menghilang ke balik pakis."
+        "en": "The sprite zips between your fingers, tickles your ear and vanishes into the ferns."
       }
     },
     "puffcap_imp": {
-      "one": {"en": "puffcap imp", "id": "jin topi-jamur"},
-      "names": {"en": ["puffcap imp", "imp", "puffcap", "imps"], "id": ["jin topi-jamur", "jin", "jin jamur"]},
+      "one": {"en": "puffcap imp"},
+      "names": {"en": ["puffcap imp", "imp", "puffcap", "imps"]},
       "difficulty": 9,
       "xp": 7,
       "loot": {"moonpetal": 60, "ember_crystal": 25},
       "n": 1,
       "desc": {
-        "en": "A round little imp in a spotted mushroom cap, who asks riddles and hates losing.",
-        "id": "Jin kecil bulat bertopi jamur berbintik, yang suka memberi teka-teki dan benci kalah."
+        "en": "A round little imp in a spotted mushroom cap, who asks riddles and hates losing."
       },
       "win": {
-        "en": "You answer the imp's riddle before it finishes asking. It sulks, then pays up.",
-        "id": "Kamu menjawab teka-teki jin itu sebelum ia selesai bertanya. Ia merajuk, lalu membayar."
+        "en": "You answer the imp's riddle before it finishes asking. It sulks, then pays up."
       },
       "lose": {
-        "en": "The imp's riddle ties your tongue in a knot. It bounces away, cackling.",
-        "id": "Teka-teki jin itu membuat lidahmu terpilin. Ia melompat pergi sambil terkekeh."
+        "en": "The imp's riddle ties your tongue in a knot. It bounces away, cackling."
       }
     },
     "ember_beetle": {
-      "one": {"en": "ember beetle", "id": "kumbang bara"},
-      "names": {"en": ["ember beetle", "beetle", "beetles"], "id": ["kumbang bara", "kumbang"]},
+      "one": {"en": "ember beetle"},
+      "names": {"en": ["ember beetle", "beetle", "beetles"]},
       "difficulty": 11,
       "xp": 9,
       "loot": {"ember_crystal": 60, "moonpetal": 25},
       "n": 1,
       "desc": {
-        "en": "A beetle whose shell glows like a coal. It only shares its crystals with the patient.",
-        "id": "Kumbang yang cangkangnya berpendar seperti arang. Ia hanya berbagi kristalnya dengan yang sabar."
+        "en": "A beetle whose shell glows like a coal. It only shares its crystals with the patient."
       },
       "win": {
-        "en": "You wait, perfectly still, until the beetle trusts you and nudges a crystal your way.",
-        "id": "Kamu menunggu, diam sempurna, sampai kumbang itu percaya dan mendorong sebutir kristal ke arahmu."
+        "en": "You wait, perfectly still, until the beetle trusts you and nudges a crystal your way."
       },
       "lose": {
-        "en": "You fidget. The beetle's glow winks out and it scuttles under a root.",
-        "id": "Kamu gelisah. Cahaya kumbang itu padam dan ia bergegas ke bawah akar."
+        "en": "You fidget. The beetle's glow winks out and it scuttles under a root."
       }
     },
     "bramble_bear": {
-      "one": {"en": "bramble bear", "id": "beruang semak"},
-      "names": {"en": ["bramble bear", "bear"], "id": ["beruang semak", "beruang"]},
+      "one": {"en": "bramble bear"},
+      "names": {"en": ["bramble bear", "bear"]},
       "difficulty": 14,
       "xp": 14,
       "loot": {"ember_crystal": 70, "moonpetal": 30},
       "n": 2,
       "desc": {
-        "en": "An enormous, fluffy, very sleepy bear who guards a hoard of crystals. Wake it gently.",
-        "id": "Beruang raksasa, berbulu lebat, dan sangat mengantuk yang menjaga timbunan kristal. Bangunkan dengan lembut."
+        "en": "An enormous, fluffy, very sleepy bear who guards a hoard of crystals. Wake it gently."
       },
       "win": {
-        "en": "You hum a lullaby so sweet the bear rolls over, smiling, and pushes two treasures towards you in its sleep.",
-        "id": "Kamu menyenandungkan lagu nina bobo begitu merdu sampai beruang itu berguling, tersenyum, dan mendorong dua harta ke arahmu dalam tidurnya."
+        "en": "You hum a lullaby so sweet the bear rolls over, smiling, and pushes two treasures towards you in its sleep."
       },
       "lose": {
-        "en": "The bear yawns an enormous yawn and blows you gently back out of the thicket.",
-        "id": "Beruang itu menguap lebar sekali dan meniupmu pelan keluar dari semak belukar."
+        "en": "The bear yawns an enormous yawn and blows you gently back out of the thicket."
       }
     }
   },
@@ -2473,14 +2239,12 @@
     "table_size": 5,
     "games": {
       "quickdraw": {
-        "name": {"en": "Quick Draw", "id": "Adu Cepat"},
+        "name": {"en": "Quick Draw"},
         "names": {
-          "en": ["quick draw", "quickdraw", "reaction", "reflex", "reflexes"],
-          "id": ["adu cepat", "refleks", "reaksi"]
+          "en": ["quick draw", "quickdraw", "reaction", "reflex", "reflexes"]
         },
         "desc": {
-          "en": "reaction: wait for the beep, then type any number at once",
-          "id": "reaksi: tunggu bunyi bip, lalu segera ketik angka apa saja"
+          "en": "reaction: wait for the beep, then type any number at once"
         },
         "tokens": 1,
         "rounds": 5,
@@ -2490,11 +2254,10 @@
         "tickets": {"from": 0, "rate": 0.02, "max": 10}
       },
       "starbeat": {
-        "name": {"en": "Star Beat", "id": "Irama Bintang"},
-        "names": {"en": ["star beat", "starbeat", "rhythm", "beat"], "id": ["irama bintang", "irama", "ritme"]},
+        "name": {"en": "Star Beat"},
+        "names": {"en": ["star beat", "starbeat", "rhythm", "beat"]},
         "desc": {
-          "en": "rhythm: listen, then tap the beats back in time, a number and Enter for each",
-          "id": "irama: dengarkan, lalu ketuk ulang ketukannya tepat waktu, satu angka dan Enter untuk setiap ketukan"
+          "en": "rhythm: listen, then tap the beats back in time, a number and Enter for each"
         },
         "tokens": 1,
         "rounds": [5, 6, 7],
@@ -2506,11 +2269,10 @@
         "tickets": {"from": 0, "rate": 0.0067, "max": 10}
       },
       "echo": {
-        "name": {"en": "Echo", "id": "Gema"},
-        "names": {"en": ["echo", "memory", "simon"], "id": ["gema", "memori", "ingatan"]},
+        "name": {"en": "Echo"},
+        "names": {"en": ["echo", "memory", "simon"]},
         "desc": {
-          "en": "memory: repeat the tones as numbers, one more each time",
-          "id": "ingatan: ulangi nada-nadanya sebagai angka, bertambah satu setiap kali"
+          "en": "memory: repeat the tones as numbers, one more each time"
         },
         "tokens": 1,
         "start": 3,
@@ -2520,14 +2282,12 @@
         "tickets": {"from": 3, "rate": 2, "max": 20}
       },
       "meteor": {
-        "name": {"en": "Meteor Dodge", "id": "Hindari Meteor"},
+        "name": {"en": "Meteor Dodge"},
         "names": {
-          "en": ["meteor dodge", "meteors", "dodge", "meteor"],
-          "id": ["hindari meteor", "meteor", "menghindar"]
+          "en": ["meteor dodge", "meteors", "dodge", "meteor"]
         },
         "desc": {
-          "en": "stereo: hear where the meteor comes from and step away, 4 left or 6 right",
-          "id": "stereo: dengar dari mana meteor datang lalu menghindar, 4 ke kiri atau 6 ke kanan"
+          "en": "stereo: hear where the meteor comes from and step away, 4 left or 6 right"
         },
         "tokens": 1,
         "lives": 3,

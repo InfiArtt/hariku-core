@@ -13,14 +13,14 @@ robot, an orange space cat, a robot cat, a space fox, a glow jellyfish and
 a mini drone, from Whiskers & Widgets on the Mall Ring; the fox, the
 jellyfish and the drone also turn up, rarely, out on the worlds.
 
-  pet status / status hewan        how they are: fed, played with, rested
-  feed Kiki / beri makan Kiki      pet food or a treat (the pet shop sells both)
-  play with Kiki / main dengan Kiki
-  rest Kiki / istirahatkan Kiki
-  pat / elus                       a pat, and a little joy
-  teach Kiki sit / ajari trik duduk     a lesson (a few make a trick)
-  trick sit / trik duduk           show a trick off
-  name pet Kiki / namai Kiki, rename Kiki to Momo / ganti nama Kiki jadi Momo
+  pet status                       how they are: fed, played with, rested
+  feed Kiki                        pet food or a treat (the pet shop sells both)
+  play with Kiki
+  rest Kiki
+  pat                              a pat, and a little joy
+  teach trick sit                  a lesson (a few make a trick)
+  trick sit                        show a trick off
+  name pet Kiki, rename Kiki to Momo
 
 A pet's needs (food, fun, rest) fall slowly in real time, a few points an
 hour, and gently: a pet left alone grows sad and quiet (no more tricks or
@@ -35,7 +35,7 @@ pet is a companion (orbit_store), its state in the companion's stats.
 import logging
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -55,8 +55,8 @@ PET_DEFAULTS = {
     "finds": [],
 }
 NEEDS = ("food", "fun", "rest")
-TRICK_WORDS = {"trik", "trick", "tricks", "the"}
-RENAME_WORDS = ("jadi", "menjadi", "to", "as")
+TRICK_WORDS = {"trick", "tricks", "the"}
+RENAME_WORDS = ("to", "as")
 JOIN_IN = {"dance": "pet_join_dance", "clap": "pet_join_clap", "cheer": "pet_join_cheer",
            "laugh": "pet_join_laugh", "sigh": "pet_join_sigh", "wave": "pet_join_wave", "hug": "pet_join_hug"}
 
@@ -145,7 +145,7 @@ class PetsMixin:
             if orbit_safety.name_key(comp["name"]) == key:
                 return comp
         tid = self.world.find_thing(name, fuzzy=False)
-        if tid is None and key in ("pet", "hewan", "peliharaan", "hewanku", "peliharaanku", "my pet"):
+        if tid is None and key in ("pet", "my pet", "the pet"):
             return pets[0]
         return next((c for c in pets if c["kind"] == tid), None)
 
@@ -368,7 +368,7 @@ class PetsMixin:
         if not key:
             return None
         for tid, trick in tricks.items():
-            names = {orbit_safety.name_key(n) for lang in ("en", "id") for n in trick["names"][lang]} | {tid}
+            names = {orbit_safety.name_key(n) for lang in LANGUAGES for n in trick["names"][lang]} | {tid}
             if key in names:
                 return tid
         return None
@@ -497,7 +497,7 @@ class PetsMixin:
         room = self.room_of(session.char)
         for owner in [session] + self._in_room(room, exclude=(session,), visible=True):
             comp = self._pet_named(self.pets_of(owner.char), name) if orbit_safety.name_key(name) not in (
-                "pet", "hewan", "peliharaan") or owner is session else None
+                "pet", "the pet") or owner is session else None
             if comp is None:
                 continue
             if not session.chat.take():
@@ -521,11 +521,11 @@ class PetsMixin:
         return bool(family and family(session, name, eid, emote))
 
     def give_to_companion(self, session, name, message):
-        """ "beri makan Kiki": both clients read it as giving "makan" something (Kiki)."""
-        if orbit_safety.name_key(name) not in ("makan", "makanan", "food", "pakan"):
+        """ "give food Kiki": read as giving "food" something (Kiki): feeding Kiki."""
+        if orbit_safety.name_key(name) not in ("food", "pet food"):
             return False
         item = self._arg(message, "item", 60)
-        if orbit_safety.name_key(item) in ("credits", "credit", "kredit"):
+        if orbit_safety.name_key(item) in ("credits", "credit"):
             item = ""
         self.run(session, {"c": "pet", "op": "feed", "a": item})
         return True

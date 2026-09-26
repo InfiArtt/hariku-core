@@ -11,7 +11,7 @@
 Duels: a quick-draw contest between two players, only in the contest zones
 (rooms marked "arena": the Zero-G Gym, Pixel Pier's Tournament Stage).
 
-    duel Budi / duel Budi 50 / tantang duel Budi 50
+    duel Sam / duel Sam 50
                             challenge someone in the same arena, for a small
                             stake each (none, or up to duel "max_stake")
     accept / decline        (theirs to answer, like an offer; it runs out)

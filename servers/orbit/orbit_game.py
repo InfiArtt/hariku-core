@@ -13,7 +13,7 @@ code. orbit_server.py hands it connections and messages; the tests hand it
 fakes. The rest of the game is in mixins, one file each:
 
   orbit_nav.py    walking by compass, the way to places, maps, the dark,
-                  locks, air outside, the Kancil shuttle, cabins and visits
+                  locks, air outside, the Wombat shuttle, cabins and visits
   orbit_items.py  things: the shops, using, wearing, examining; pets
   orbit_work.py   jobs and their mini-games, XP and levels, missions, the
                   daily bonus
@@ -21,11 +21,12 @@ fakes. The rest of the game is in mixins, one file each:
   orbit_admin.py  moving a character to another computer; admin commands
 
 A connection ("conn") is anything with send(dict), close(code, reason), a
-`lang` ("en"/"id"), an `ip_hash` (or None) and a `session` attribute the game
-sets. The game answers with messages (see the protocol in README.md):
+`lang` (always "en": Orbit is played in English), an `ip_hash` (or None) and a
+`session` attribute the game sets. The game answers with messages (see the
+protocol in README.md):
 
   {"t": "welcome", "name", "job", "new", "resumed", "credits", "room", "amb"}
-  {"t": "ev", "k": kind, "text": line, ...}      every event, in the reader's language
+  {"t": "ev", "k": kind, "text": line, ...}      every event, in English
   {"t": "err", "code", "text", "fatal"}          a hello that can't join
 
 An event's "k" (kind) tells the client which sound fits and whose voice
@@ -113,7 +114,7 @@ GAME_DEFAULTS = {
 
 TALK_KINDS = ("say", "whisper", "shout")
 # What's new, said once to a returning player: each version's note, and the notes since theirs.
-NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"))
+NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"), ("1.4", "whats_new_14"))
 SEEN_VERSION = NEWS[-1][0]
 
 
@@ -176,7 +177,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             for lang in orbit_lang.LANGUAGES:
                 self.reserved.update(w for w in loc.get("aliases", {}).get(lang, []) if " " not in w)
         self.reserved.update(world.emotes)
-        self.reserved.update((world.npcs or {}).get("npcs", {}))     # the residents' own names
+        for nid, npc in ((world.npcs or {}).get("npcs") or {}).items():     # the residents' own names
+            self.reserved.add(nid)
+            self.reserved.update(orbit_safety.name_key(w) for w in str(npc.get("name") or "").split())
+            for lang in orbit_lang.LANGUAGES:
+                first = (npc.get("names", {}).get(lang) or [""])[0]
+                self.reserved.update(orbit_safety.name_key(w) for w in first.split())
         self.transfer_fails = {}          # address hash -> [times]: wrong transfer codes
         self.offers = {}                  # name key -> the trade offered to them
         self.challenges = {}              # name key -> the coin flip they're challenged to
@@ -201,7 +207,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         return self.texts.render(lang, key, **params)
 
     def _send(self, session, kind, key=None, text=None, brief=None, extra=None, **params):
-        """One event to one player, in their language. Nothing for a link-dead one."""
+        """One event to one player. Nothing for a link-dead one."""
         conn = session.conn
         if conn is None:
             return
@@ -358,7 +364,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
 
     def hello(self, conn, message):
         """A new connection's first message. Returns whether it joined; when it
-        didn't, the connection was told why ({"t": "err"}) and closed."""
+        didn't, the connection was told why ({"t": "err"}) and closed. Whatever
+        language the client asks for, the game speaks English."""
         lang = orbit_lang.language(message.get("lang"))
         conn.lang = lang
         if message.get("t") != "hello" or message.get("v") != PROTOCOL_VERSION:
@@ -619,8 +626,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
     def cmd_look(self, session, message):
         target = self._arg(message)
         lang = session.lang
-        if not target or orbit_safety.name_key(target) in ("around", "sekitar", "here", "sini",
-                                                             "room", "ruangan"):
+        if not target or orbit_safety.name_key(target) in ("around", "here", "room"):
             session.visited.add(session.char["location"])
             self._send(session, "room", text=self.look_text(session, full=True),
                        extra=self._where(session))
@@ -674,7 +680,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if creature is not None and not dark:
             self._send(session, "info", text=pick(self.econ["creatures"][creature]["desc"], lang))
             return
-        if orbit_safety.name_key(target) in ("me", "myself", "aku", "diriku", "saya", "self"):
+        if orbit_safety.name_key(target) in ("me", "myself", "self"):
             description = session.char["description"] or self.render(lang, "describe_none")
             self._send(session, "info", "look_self", rank=self.rank_name(session.char),
                        description=description)
@@ -712,8 +718,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         return extra
 
     def _said_to_resident(self, session, text):
-        """ "bicara dengan Jali" reaches the server as saying "dengan Jali" (both clients read
-        "bicara" as say), and "say hi to Jali" as saying "hi to Jali": the resident's command."""
+        """ "say to Rocco" reaches the server as saying "to Rocco", and "say hi to Rocco" as
+        saying "hi to Rocco" (older clients read "say" first): the resident's command."""
         words = [w.strip(".,!?;:") for w in str(text or "").split()]
         low = [w.lower() for w in words]
         if len(words) >= 2 and low[0] in orbit_npcs.TALK_PREFIXES:
@@ -722,20 +728,20 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 return {"c": "talk", "to": " ".join(words[1:])}
         for size in (2, 1):
             if len(words) > size + 1 and " ".join(low[:size]) in orbit_npcs.GREETING_WORDS and \
-                    low[size] in ("to", "ke", "pada", "kepada", "sama"):
+                    low[size] == "to":
                 nid = self.npc_here(session, " ".join(words[size + 1:]))
                 if nid is not None:
                     return {"c": "greet", "to": " ".join(words[size + 1:])}
         return None
 
     def _greeting_to_resident(self, session, text):
-        """ "halo Jali", "selamat pagi Bu Sekar": a greeting to a resident here."""
+        """ "hello Rocco", "good morning Amara": a greeting to a resident here."""
         words = [w.strip(".,!?;:") for w in str(text or "").split()]
         low = [w.lower() for w in words]
         for size in (2, 1):
             if len(words) > size and " ".join(low[:size]) in orbit_npcs.GREETING_WORDS:
                 rest = words[size:]
-                if rest and rest[0].lower() in ("to", "ke", "pada", "kepada", "sama"):
+                if rest and rest[0].lower() == "to":
                     rest = rest[1:]
                 if rest and self.npc_here(session, " ".join(rest)) is not None:
                     return {"c": "greet", "to": " ".join(rest)}
@@ -764,8 +770,8 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
     def cmd_whisper(self, session, message):
         name = self._arg(message, "to", 40)
         target = self._find_session(name) if name else None
-        if target is None and orbit_safety.name_key(name) in ("crew", "kru") and self.crew_of(session.char)[0]:
-            self.cmd_crew_say(session, message)             # "tell crew ..." / "bisik kru ...": the crew
+        if target is None and orbit_safety.name_key(name) == "crew" and self.crew_of(session.char)[0]:
+            self.cmd_crew_say(session, message)             # "tell crew ...": the crew
             return
         if target is None or (target.invisible and not self.is_admin(session)):
             resident = self.find_npc(name) if name else None
@@ -883,7 +889,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self._send(session, "who", "who", count=len(entries), people="; ".join(entries))
 
     def _things(self, char):
-        """What a character carries, as {"en","id"} phrases (goods and mission things first)."""
+        """What a character carries, as {"en"} phrases (goods and mission things first)."""
         things = []
         for thing_id, n in sorted(char["inventory"].items(),
                                   key=lambda kv: (self.world.things.get(kv[0], {}).get("type") != "good",
@@ -919,12 +925,12 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         target_name = self._arg(message, "to", 40)
         what = orbit_safety.name_key(self._arg(message, "item", 60)) or "credits"
         if orbit_safety.name_key(target_name) in CREDIT_WORDS and what not in CREDIT_WORDS:
-            # "beri kredit Budi 50" read by an older client as "give kredit a budi".
+            # "give credits Sam 50" read as giving "Sam" to someone called "credits".
             target_name, what = self._arg(message, "item", 60), "credits"
         target = self._find_near(session, target_name) if target_name else None
         if target is None and target_name:
             if self.give_to_companion(session, target_name, message):
-                return                           # "beri makan Kiki": feeding a pet or a child
+                return                           # "feed Kiki", from an older client: a pet or a child
             resident, item_text = self.npc_for_give(session, target_name, self._arg(message, "item", 60))
             if resident is not None:
                 n = self._count(message)
@@ -1045,7 +1051,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             self._error(session, "unknown_command")
             return
         if session.arcade and self.arcade_side(session, text):
-            return                              # "kiri!" while dodging meteors
+            return                              # "left!" while dodging meteors
         parsed = orbit_verbs.parse(text, session.lang, self.world.find_direction)
         if parsed is not None:
             self.run(session, parsed)
@@ -1065,33 +1071,25 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             self._error(session, "unknown_text", what=text[:60])
 
     HELP_TOPICS = {
-        "moving": ("moving", "move", "bergerak", "gerak", "jalan", "map", "peta", "arah", "navigation",
-                   "navigasi"),
-        "talking": ("talking", "talk", "chat", "ngobrol", "bicara", "obrolan"),
-        "work": ("work", "kerja", "job", "jobs", "pekerjaan", "missions", "misi", "level"),
-        "money": ("money", "uang", "kredit", "credits", "farm", "farming", "kebun", "tani", "mining",
-                  "tambang", "harian", "daily", "market", "pasar", "dagang"),
-        "shops": ("shops", "shop", "toko", "belanja", "items", "barang", "alat", "things", "mall", "mal",
-                  "trade", "trading", "tukar", "dagang", "pawn", "loak"),
-        "casino": ("casino", "kasino", "judi", "gambling", "dadu", "dice", "slot", "slots", "blackjack",
-                   "lotre", "lottery", "undian"),
-        "ships": ("ships", "ship", "kapal", "travel", "perjalanan", "worlds", "dunia", "planets", "planet",
-                  "ferry", "feri", "gate", "gerbang", "trade runs", "berdagang"),
-        "progress": ("progress", "kemajuan", "prestasi", "achievements", "leaderboard", "leaderboards",
-                     "papan", "skor", "score", "scores"),
-        "events": ("events", "event", "acara", "peristiwa", "pesta", "party", "parties"),
-        "hunt": ("hunt", "perburuan", "berburu", "riddles", "teka-teki", "tekateki", "nada", "chord"),
-        "crews": ("crews", "crew", "kru", "awak", "team", "tim", "guild", "clan"),
-        "duels": ("duels", "duel", "duels on", "duels off", "tantang", "adu", "arena", "contest"),
-        "arcade": ("arcade", "arkade", "games", "permainan", "tokens", "token", "tickets", "prizes", "hadiah",
-                   "pixel pier", "dermaga piksel", "high scores", "skor tertinggi"),
-        "people": ("people", "residents", "resident", "npc", "npcs", "penduduk", "warga", "orang", "tokoh",
-                   "characters", "karakter"),
-        "pets": ("pets", "pet", "hewan", "peliharaan", "hewan peliharaan", "tricks", "trik"),
-        "family": ("family", "keluarga", "partner", "partners", "pasangan", "children", "child", "anak", "adopt",
-                   "adopsi", "baby", "bayi", "naming", "upacara nama"),
-        "weddings": ("weddings", "wedding", "pernikahan", "nikah", "menikah", "marry", "marriage", "lamaran",
-                     "lamar", "propose", "rings", "cincin", "venue", "venues"),
+        "moving": ("moving", "move", "movement", "walking", "map", "directions", "navigation", "the way",
+                   "guide"),
+        "talking": ("talking", "talk", "chat", "chatting", "speech"),
+        "work": ("work", "job", "jobs", "missions", "mission", "level", "levels"),
+        "money": ("money", "credits", "farm", "farming", "mining", "daily", "market", "markets", "prices"),
+        "shops": ("shops", "shop", "shopping", "items", "things", "mall", "trade", "trading", "pawn"),
+        "casino": ("casino", "gambling", "dice", "slot", "slots", "blackjack", "lottery"),
+        "ships": ("ships", "ship", "travel", "worlds", "planets", "planet", "ferry", "gate", "trade runs"),
+        "progress": ("progress", "achievements", "leaderboard", "leaderboards", "score", "scores", "rank"),
+        "events": ("events", "event", "party", "parties"),
+        "hunt": ("hunt", "the hunt", "riddles", "riddle", "chord", "lost chord"),
+        "crews": ("crews", "crew", "team", "guild", "clan"),
+        "duels": ("duels", "duel", "duels on", "duels off", "arena", "contest"),
+        "arcade": ("arcade", "games", "tokens", "token", "tickets", "prizes", "pixel pier", "high scores"),
+        "people": ("people", "residents", "resident", "npc", "npcs", "characters"),
+        "pets": ("pets", "pet", "tricks"),
+        "family": ("family", "partner", "partners", "children", "child", "adopt", "adoption", "baby",
+                   "naming"),
+        "weddings": ("weddings", "wedding", "marry", "marriage", "propose", "rings", "venue", "venues"),
         "admin": ("admin",),
     }
 
@@ -1165,7 +1163,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         self.save_economy()
 
 
-CREDIT_WORDS = {"credit", "credits", "kredit", "cr", "uang", "duit", "money", "coins"}
+CREDIT_WORDS = {"credit", "credits", "cr", "money", "coins"}
 
 
 def _collect_commands():

@@ -12,12 +12,12 @@ Pixel Pier's arcade: four cabinets on Cabinet Row, played with tokens (from
 the change machine there, for credits), winning prize tickets for the Prize
 Counter, with a high score table for each game on the High Score Wall.
 
-    arcade / arkade                 the cabinets, your tokens and tickets
-    play quick draw / main adu cepat   start a game (it takes a token)
-    (a number)                      the game's input: both clients send
+    arcade                          the cabinets, your tokens and tickets
+    play quick draw                 start a game (it takes a token)
+    (a number)                      the game's input: every client sends
                                     numbers alone as "answer"
-    stop game / berhenti main       end your game now (it counts as it is)
-    high scores [game] / skor arkade   the tables
+    stop game                       end your game now (it counts as it is)
+    high scores [game]              the tables
 
 The games, all played by ear:
 
@@ -45,7 +45,7 @@ import logging
 import re
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -55,7 +55,7 @@ GAMES = ("quickdraw", "starbeat", "echo", "meteor")
 INTRO_SECONDS = 3.0           # between the game's welcome and its first round
 PAUSE_SECONDS = 2.0           # between rounds
 SIDES = {"w": "left", "e": "right", "n": "ahead"}
-DODGE_WORDS = {"4": "w", "left": "w", "kiri": "w", "l": "w", "6": "e", "right": "e", "kanan": "e", "r": "e"}
+DODGE_WORDS = {"4": "w", "left": "w", "l": "w", "6": "e", "right": "e", "r": "e"}
 
 
 def client_version(name):
@@ -114,12 +114,12 @@ class ArcadeMixin:
             return None
         for gid in GAMES:
             game = self.arcade_game(gid) or {}
-            names = [gid] + [n for lang in ("en", "id") for n in (game.get("names") or {}).get(lang, [])]
+            names = [gid] + [n for lang in LANGUAGES for n in (game.get("names") or {}).get(lang, [])]
             if key in {orbit_safety.name_key(n) for n in names}:
                 return gid
         for gid in GAMES:                  # "meteor" for Meteor Dodge
             game = self.arcade_game(gid) or {}
-            names = [n for lang in ("en", "id") for n in (game.get("names") or {}).get(lang, [])]
+            names = [n for lang in LANGUAGES for n in (game.get("names") or {}).get(lang, [])]
             if any(orbit_safety.name_key(n).startswith(key) for n in names if len(key) >= 4):
                 return gid
         return None
@@ -200,7 +200,7 @@ class ArcadeMixin:
         handler(session, state, str(text or "").strip().lower(), self.now())
 
     def arcade_side(self, session, text):
-        """Meteor Dodge's words ("left", "kanan"), read before anything else while it's on."""
+        """Meteor Dodge's words ("left", "right"), read before anything else while it's on."""
         state = session.arcade
         if not state or state["game"] != "meteor":
             return False

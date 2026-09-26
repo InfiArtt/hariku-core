@@ -10,22 +10,22 @@
 """
 Families (economy.json "family"): partners, and children adopted into them.
 
-  partner with Budi / ajak berpasangan Budi     a proposal; Budi says accept or decline
-  partner / pasangan                            your partnership (and family)
-  end partnership / akhiri kemitraan            asks you to be sure...
-  confirm end / konfirmasi akhiri               ...and ends it, kindly
-  adopt / adopsi                                at the Medbay's family desk: a baby of your own
-                                                (partners decide together; one player may too)
-  family / keluarga                             your partner and children, and how the children are
-  feed, play with, rest Mira / beri makan, main dengan, tidurkan Mira
-  read a story to Mira / bacakan cerita untuk Mira
-  ask Mira for help / minta tolong Mira         once a day, a small thing fetched for you
-  bring Mira / bawa Mira                        Mira comes along with you
-  naming rite Mira / upacara nama Mira          at the temple, with the keeper: the baby's name
+  partner with Sam                  a proposal; Sam says accept or decline
+  partner                           your partnership (and family)
+  end partnership                   asks you to be sure...
+  confirm end                       ...and ends it, kindly
+  adopt                             at the Medbay's family desk: a baby of your own
+                                    (partners decide together; one player may too)
+  family                            your partner and children, and how the children are
+  feed, play with, rest Lily
+  read a story to Lily
+  ask Lily for help                 once a day, a small thing fetched for you
+  bring Lily                        Lily comes along with you
+  naming rite Lily                  at the temple, with the keeper: the baby's name
 
 Partnerships need both players to say yes, and ending one needs a second,
 clear command; the other partner is told kindly, even if they're away, and
-admins can end one for players who can't (akhiri kemitraan Budi). Weddings
+admins can end one for players who can't (end partnership Sam). Weddings
 (orbit_weddings.py) take partners further: engaged, then married.
 
 Why one player may adopt alone: many play on their own, and a family in
@@ -50,7 +50,7 @@ import datetime
 import logging
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -80,9 +80,9 @@ FAMILY_DEFAULTS = {
     "desc": {},
 }
 NEEDS = ("food", "fun", "rest")
-CHILD_WORDS = {"anak", "anakku", "bayi", "bayiku", "si kecil", "child", "baby", "kid", "my child", "my baby",
-               "the baby", "the child"}
-HELP_WORDS = {"help", "bantuan", "tolong", "fetch", "errand", "ambil", "ambilkan", "for help", "a hand"}
+CHILD_WORDS = {"child", "baby", "kid", "my child", "my baby", "my kid", "the baby", "the child", "the kid",
+               "little one"}
+HELP_WORDS = {"help", "fetch", "errand", "for help", "a hand"}
 
 
 class FamilyMixin:
@@ -344,7 +344,7 @@ class FamilyMixin:
         return None
 
     def family_child_care(self, session, op, text):
-        """ "beri makan Mira", "main dengan Mira", "tidurkan Mira": a child of yours, when named."""
+        """ "feed Lily", "play with Lily", "rest Lily": a child of yours, when named."""
         words = str(text or "").split()
         for n in range(min(3, len(words)), 0, -1):
             child = self._child_named(session.char, " ".join(words[:n]))
@@ -360,7 +360,7 @@ class FamilyMixin:
             self.cmd_family(session, message)
             return
         child = self._child_named(session.char, text) or self._child_named(session.char, text.split()[0] if text
-                                                                           else "anak")
+                                                                           else "child")
         if child is None:
             self._error(session, "child_none" if not self.children_of(session.char) else "child_which",
                         children=[self.child_name(session.lang, c) for c in self.children_of(session.char)])
@@ -680,10 +680,10 @@ class FamilyMixin:
                 listeners = self._in_room(rite["room"])
                 params = {"child": rite["child"], "parent": rite["parent"]}
                 if kind == "say":
-                    self.npc_say(listeners, rite["keeper"], {lang: self.texts.raw(lang, key) for lang in ("en", "id")},
+                    self.npc_say(listeners, rite["keeper"], {lang: self.texts.raw(lang, key) for lang in LANGUAGES},
                                  **params)
                 elif kind == "emote":
-                    self.npc_emote(listeners, rite["keeper"], {lang: self.texts.raw(lang, key) for lang in ("en", "id")},
+                    self.npc_emote(listeners, rite["keeper"], {lang: self.texts.raw(lang, key) for lang in LANGUAGES},
                                    extra={"sound": sound}, **params)
                 else:
                     for other in listeners:

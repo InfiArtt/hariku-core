@@ -11,23 +11,23 @@
 Crews: players who band together under a name, with a chat of their own and
 a place on the crew board.
 
-    crew / kru                          your crew: its captain, members, motto, points
-    crew create Bintang / buat kru Bintang   found one (credits, and a level)
-    crew invite Budi / undang Budi ke kru    the captain asks someone in; they
+    crew                                your crew: its captain, members, motto, points
+    crew create Nova                    found one (credits, and a level)
+    crew invite Sam                     the captain asks someone in; they
                                         accept or decline (like an offer)
-    crew say hello / kru bilang halo    to every member online, anywhere
-    crew leave / keluar kru             leave (the captain's place goes to the
+    crew say hello                      to every member online, anywhere
+    crew leave                          leave (the captain's place goes to the
                                         longest-serving member; the last one out
                                         ends the crew)
-    crew kick Budi / keluarkan Budi dari kru   the captain sends someone off
-    crew captain Budi / jadikan Budi kapten    hand the captaincy over
-    crew motto ... / moto kru ...       the captain's line under the name
-    crews / papan kru                   the crew board: the most points
+    crew kick Sam                       the captain sends someone off
+    crew captain Sam                    hand the captaincy over
+    crew motto ...                      the captain's line under the name
+    crews                               the crew board: the most points
 
 A crew earns a point for every XP its members earn while in it. Crew chat is
 filtered, rate-limited and muted like the rest of the chat, never stored, and
 a client can ignore a member there as anywhere; names go through the word
-filter; admins can disband a crew (disband crew Bintang). Everything is in
+filter; admins can disband a crew (disband crew Nova). Everything is in
 the database (crews, crew_members); invitations wait in memory for two
 minutes, like trade offers.
 """
@@ -44,7 +44,7 @@ ROLES = ("captain", "member")
 
 
 def crew_key(name):
-    """How crew names are told apart: "Bintang Timur" and "bintangtimur" are one."""
+    """How crew names are told apart: "Morning Star" and "morningstar" are one."""
     return orbit_safety.name_key(name).replace(" ", "")
 
 

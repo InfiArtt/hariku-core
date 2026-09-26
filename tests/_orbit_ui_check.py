@@ -14,9 +14,9 @@ status line, what is read aloud, the window's closing and logging out,
 toggling without the focus moving, a transfer code, Apply), the game window
 ("Open Orbit": the Messages list and the Command field with their labels
 first, the Settings button, walking by compass as the guide says each next
-step, Enter sends, another
-player's words arrive without the focus or the selection moving, Up brings
-back the last command, Escape hides it and stays connected), Aruna ("orbit
+step, Enter sends, Up brings back the last command, Indonesian gets the
+server's English help hint, another player's words arrive without the focus
+or the selection moving, Escape hides it and stays connected), Aruna ("orbit
 who", "orbit say ..."), with what is said landing in Last result, and
 closing the window when the setting says to leave Orbit. Finally unloading.
 
@@ -318,7 +318,7 @@ assert page.chk_speak_names.GetLabel() == "Say the speaker's name &before their 
 page.chk_speak_names.SetValue(False)
 page.chk_read["read_moves"].SetValue(False)
 page.txt_ignored.ChangeValue("Budi, Tono")
-assert any(s == "Connected to Orbit." for s in spoken), spoken[-5:]
+assert pump(lambda: "Connected to Orbit." in spoken), spoken[-5:]
 if observable:
     assert wx.Window.FindFocus() is page.btn_connect, "connecting moved the focus"
 page.chk_ambience.SetValue(False)
@@ -391,6 +391,12 @@ if focus_ok:
 press_key(window.txt_command, wx.WXK_UP)
 assert window.txt_command.GetValue() == "w"
 window.txt_command.ChangeValue("")
+# Orbit is played in English: Indonesian goes to the server as it is, and its
+# help hint comes back, written and said.
+HINT = 'I don\'t understand "pergi ke kantin". Type help for the commands.'
+typed("pergi ke kantin", HINT)
+assert pump(lambda: HINT in spoken), spoken[-3:]
+assert main._client.online() and window.GetTitle() == "Orbit: Connected", window.GetTitle()
 print(f"OK window ({focus_note(focus_ok)})")
 
 # --------------------------------------------------------------------------- #

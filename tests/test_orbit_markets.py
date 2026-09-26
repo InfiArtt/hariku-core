@@ -63,7 +63,7 @@ def test_the_station_trades_at_four_markets_each_with_its_own_goods(world):
     assert "promenade" not in world.markets and world.locations["promenade"]["objects"]["signpost"]["markets"]
     for lid in STATION_MARKETS:
         loc = world.locations[lid]
-        assert loc["landmark"] and loc["market"]["about"]["en"] and loc["market"]["about"]["id"]
+        assert loc["landmark"] and loc["market"]["about"]["en"]
     # Each market is a real room on the plan: next to the room it belongs with.
     assert world.exits["hydroponics"]["w"]["to"] == "spice_market"
     assert world.exits["dock"]["n"]["to"] == "mineral_exchange"
@@ -126,7 +126,7 @@ def test_each_market_lists_and_trades_only_its_own_goods(make_game, lid):
     assert asked["text"].startswith(f"No trade in {word} here. Nearest market for {word}: ")
 
 
-def test_the_market_list_by_kind_and_by_good_in_both_languages(make_game):
+def test_the_market_list_by_kind_and_by_good(make_game):
     game = make_game()
     ani = join(game, "Ani")
     sari = join(game, "Sari", lang="id")
@@ -137,12 +137,14 @@ def test_the_market_list_by_kind_and_by_good_in_both_languages(make_game):
     sell = game.market_unit("spice_market", "coffee", char_of(game, "ani"), "sell")
     assert coffee == (f"Prices at the Spice Market, in credits for one. Trade goods: sack of coffee, buy {buy}, "
                       f"sell {sell}. Traders get better prices, and prices change every few minutes.")
-    crops = cmd(game, sari, "prices", a="panen")["text"]
-    assert crops.startswith("Harga di Pasar Rempah, dalam kredit per satu. Hasil kebun: ikat kangkung, beli ")
-    assert "kopi" not in crops
-    ore = cmd(game, sari, "prices", a="bijih")["text"]
-    assert ore == ("Di sini tidak ada jual beli bijih. Pasar bijih terdekat: Depo Es, 2 timur, turun, barat, "
-                   "lalu utara; Bursa Mineral, 2 timur, turun, barat, utara, lalu barat.")   # two markets; the slide
+    crops = cmd(game, sari, "prices", a="crops")["text"]          # Sari's client asked for Indonesian: English
+    assert crops.startswith("Prices at the Spice Market, in credits for one. Crops: bunch of water spinach, buy ")
+    assert "coffee" not in crops
+    assert cmd(game, sari, "prices", a="vegetables")["text"] == crops
+    ore = cmd(game, sari, "prices", a="ore")["text"]
+    assert ore == ("No trade in ore here. Nearest market for ore: the Ice Depot, 2 east, down, west, then north; "
+                   "the Mineral Exchange, 2 east, down, west, north, then west.")   # two markets; the slide
+    assert cmd(game, sari, "prices", a="bijih")["text"] == "No market sells bijih."      # not a word any more
 
 
 def test_the_belt_only_buys_ore(make_game, clock):
@@ -167,8 +169,9 @@ def test_prices_away_from_a_market_point_to_the_nearest(make_game):
     sari = join(game, "Sari", lang="id")
     for conn in (ani, sari):
         walk(game, conn, "promenade")
-    assert cmd(game, sari, "prices", a="kopi")["text"] == (
-        "Kamu tidak sedang di pasar. Pasar kopi terdekat: Pasar Rempah, utara lalu 2 barat.")
+    assert cmd(game, sari, "prices", a="coffee")["text"] == (
+        "You're not at a market. Nearest market for coffee: the Spice Market, north, then 2 west.")
+    assert cmd(game, sari, "prices", a="kopi")["text"] == "No market sells kopi."
     assert cmd(game, ani, "prices", a="coffee")["text"] == (
         "You're not at a market. Nearest market for coffee: the Spice Market, north, then 2 west.")
     assert cmd(game, ani, "prices", a="meteorite")["text"] == (
@@ -186,7 +189,7 @@ def test_prices_away_from_a_market_point_to_the_nearest(make_game):
     give(game, "ani", iron=2)
     assert cmd(game, ani, "sell", item="iron", n=2)["text"].startswith(
         "You're not at a market. Nearest market for iron: the Mineral Exchange, ")
-    assert cmd(game, ani, "buy", item="kopi")["text"].startswith(
+    assert cmd(game, ani, "buy", item="coffee")["text"].startswith(
         "You're not at a market. Nearest market for coffee: the Spice Market, north, then 2 west.")
     assert cmd(game, ani, "prices", a="unicorns")["text"] == "No market sells unicorns."
     assert cmd(game, ani, "prices", a="mapper")["text"] == "Look for pocket mappers at Star Supply."
@@ -198,7 +201,7 @@ def test_the_way_to_the_market_is_the_nearest_one(make_game):
     assert cmd(game, ani, "way", a="the market")["text"].startswith("To the Mineral Exchange: north.")
     sari = join(game, "Sari", lang="id")
     walk(game, sari, "promenade")
-    assert cmd(game, sari, "way", a="pasar")["text"].startswith("Ke Pasar Rempah: utara lalu 2 barat.")
+    assert cmd(game, sari, "way", a="market")["text"].startswith("To the Spice Market: north, then 2 west.")
 
 
 def test_the_promenade_signpost_shows_every_market(make_game):
@@ -206,11 +209,12 @@ def test_the_promenade_signpost_shows_every_market(make_game):
     sari = join(game, "Sari", lang="id")
     walk(game, sari, "promenade")
     look = cmd(game, sari, "look")["text"]
-    assert "Tiang petunjuk di tengahnya menunjukkan jalan ke pasar-pasar stasiun" in look
-    sign = cmd(game, sari, "look", a="tiang petunjuk")["text"]
-    assert sign.startswith("Tiang petunjuk menunjukkan pasar-pasar stasiun: Pasar Rempah (kopi, rempah, dan hasil "
-                           "kebun), utara lalu 2 barat; ")
-    assert "Depo Es (es komet, helium-3, dan mutiara beku), " in sign and "Bengkel (hasil pulung dan chip memori)" in sign
+    assert "A signpost in the middle points the way to the station's markets" in look
+    sign = cmd(game, sari, "look", a="signpost")["text"]
+    assert sign.startswith("The signpost points to the station's markets: the Spice Market (coffee, spices and "
+                           "crops), north, then 2 west; ")
+    assert "the Ice Depot (comet ice, helium-3 and frost pearls), " in sign
+    assert "the Workshop (salvage and memory chips)" in sign
 
 
 def test_shops_and_the_pawn_list_their_own(make_game):
@@ -270,7 +274,7 @@ def test_the_trader_report_and_the_residents_name_the_market(make_game):
         "Market report. Good to buy: jars of spices, 50 percent below the usual price, at the Spice Market. "
         "Good to sell: memory chips, 50 percent above the usual price, in the Workshop.")
     walk(game, tina, "cantina")
-    words = cmd(game, tina, "ask", to="Jali", a="market")["words"]
+    words = cmd(game, tina, "ask", to="Rocco", a="market")["words"]
     assert "at the Spice Market" in words or "in the Workshop" in words
 
 
@@ -308,7 +312,7 @@ def test_a_version_8_database_keeps_its_prices_at_the_new_markets(tmp_path, worl
     ani = join(game, "Ani")
     char = char_of(game, "ani")
     walk(game, ani, "promenade")                                # where the old market was
-    assert cmd(game, ani, "prices", a="kopi")["text"].startswith("You're not at a market. Nearest market for coffee")
+    assert cmd(game, ani, "prices", a="coffee")["text"].startswith("You're not at a market. Nearest market for coffee")
     walk(game, ani, "spice_market")
     fees = game.fees_for(char)
     assert game.market_unit("spice_market", "coffee", char, "sell") == \

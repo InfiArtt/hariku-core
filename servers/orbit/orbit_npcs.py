@@ -14,12 +14,11 @@ Starlight, a traveller who comes only at night, shopkeepers, the ferry's
 pilot, a curious girl, a trader in a back alley, the arcade's host, and
 people who simply live here and walk the map on their daily schedules.
 
-  talk to Jali / bicara dengan Jali      their greeting, and what to ask them about
-  ask Jali about gossip / tanya Jali tentang gosip
-  greet Jali / sapa Jali / halo Jali     and gestures at them: wave to Jali
-  give Jali 3 chillies / beri Jali 3 cabai
-                                         a gift, or what a favour asked for
-  residents / penduduk                   who they are, and where they are now
+  talk to Rocco                          their greeting, and what to ask them about
+  ask Rocco about gossip
+  greet Rocco / hello Rocco              and gestures at them: wave to Rocco
+  give Rocco 3 chillies                  a gift, or what a favour asked for
+  residents                              who they are, and where they are now
 
 They are always told apart from players: "who" lists only players, "look"
 names them under "Residents here", and looking at one says so. They move
@@ -44,10 +43,10 @@ import random
 
 import orbit_safety
 import orbit_world
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
-LANGS = ("en", "id")
+LANGS = LANGUAGES
 NPC_DEFAULTS = {
     "walk_seconds": [8, 14],        # a step every so many seconds when walking to the next place
     "idle_gap": [420, 900],         # seconds between one resident's idle lines
@@ -60,11 +59,10 @@ NPC_DEFAULTS = {
     "discount": {"friend": 0.05, "close": 0.1},
 }
 FRIENDLY_EMOTES = ("smile", "wave", "bow", "hug", "cheer", "clap", "nod", "laugh", "dance")
-GREETING_WORDS = ("halo", "hai", "hi", "hello", "hey", "hei", "helo", "hallo", "hola", "pagi", "siang", "sore",
-                  "malam", "selamat pagi", "selamat siang", "selamat sore", "selamat malam", "good morning",
-                  "good afternoon", "good evening", "morning", "evening", "salam", "yo")
-ABOUT_WORDS = ("about", "on", "tentang", "soal", "mengenai", "perihal", "masalah", "the")
-TALK_PREFIXES = ("dengan", "sama", "ke", "kepada", "pada", "with", "to")
+GREETING_WORDS = ("hi", "hello", "hey", "hiya", "howdy", "greetings", "good morning", "good afternoon",
+                  "good evening", "morning", "afternoon", "evening", "yo")
+ABOUT_WORDS = ("about", "on", "regarding", "the")
+TALK_PREFIXES = ("with", "to")
 
 
 def _keys(names):
@@ -89,7 +87,7 @@ class NpcsMixin:
             names = [d["name"], nid] + [n for lang in LANGS for n in d.get("names", {}).get(lang, [])]
             self._npc_names[nid] = _keys(names)
         self._npc_topic_names = {
-            nid: {tid: _keys(t["names"].get("en", []) + t["names"].get("id", []))
+            nid: {tid: _keys([n for lang in LANGS for n in t["names"].get(lang, [])])
                   for tid, t in d.get("topics", {}).items()}
             for nid, d in self.npc_defs.items()}
         self.room_chat = {}             # room -> when a player last talked or gestured there
@@ -109,7 +107,7 @@ class NpcsMixin:
         return self.npc_defs[nid]["name"]
 
     def npc_short(self, nid):
-        """What players call a resident: "Jali" for Bang Jali."""
+        """What players call a resident: "Mateo" for Captain Mateo."""
         return self.npc_defs[nid]["names"]["en"][0].title()
 
     def npc_scheduled(self, nid, now):
@@ -158,7 +156,7 @@ class NpcsMixin:
         return self._npc_match(list(self.npc_defs), text)
 
     def residents_text(self, session):
-        """ "Residents here: Bang Jali, the Cantina's bartender." for the room's description."""
+        """ "Residents here: Rocco, the Cantina's bartender." for the room's description."""
         here = self.npcs_in(self.room_of(session.char))
         if not here:
             return ""
@@ -243,7 +241,7 @@ class NpcsMixin:
         return best
 
     def npc_friends(self, lang, char):
-        """ "Bang Jali (a friend), Pak Harsa (an acquaintance)" for a profile, or ""."""
+        """ "Rocco (a friend), Oskar (an acquaintance)" for a profile, or ""."""
         known = [m for m in self.store.npc_memories_of(char["id"]) if m["npc"] in self.npc_defs and m["first_met"]]
         if not known:
             return ""
@@ -264,7 +262,7 @@ class NpcsMixin:
             return str(template)
 
     def _npc_variant(self, lines):
-        """One of a list of lines, the same one in every language: {"en": ..., "id": ...}."""
+        """One of a list of lines: {"en": [...]} -> {"en": one of them}."""
         index = self.npc_rng.randrange(len(lines["en"]))
         return {lang: lines[lang][index] for lang in LANGS}
 
@@ -380,7 +378,7 @@ class NpcsMixin:
         child = finder(session.char, name) if finder and name else None
         if child is None or not child["name"]:
             return False
-        helping = any(w in str(text).lower().split() for w in ("help", "bantuan", "tolong", "fetch", "errand"))
+        helping = any(w in str(text).lower().split() for w in ("help", "fetch", "errand"))
         self.run(session, {"c": "child", "op": "fetch" if op == "ask" and helping else "talk", "a": child["name"]})
         return True
 
@@ -434,7 +432,7 @@ class NpcsMixin:
         here = self.npcs_in(self.room_of(session.char))
         nid = None
         if name and self._npc_match(here, name, exact_only=True) is None:
-            # "tanya Bang Jali gosip": the name goes on into the words after it
+            # "ask Captain Mateo ferry": the name goes on into the words after it
             words = text.split()
             for n in range(min(3, len(words)), 0, -1):
                 nid = self._npc_match(here, " ".join([name] + words[:n]), exact_only=True)
@@ -502,7 +500,7 @@ class NpcsMixin:
             self.store.save_npc_memory(memory)
 
     def npc_for_give(self, session, to, item):
-        """(resident, the thing's words) for "give Jali 3 chillies" or "give Bang Jali chillies"."""
+        """(resident, the thing's words) for "give Rocco 3 chillies" or "give Granny Fern quinoa"."""
         here = self.npcs_in(self.room_of(session.char))
         if not here:
             return None, item
@@ -514,10 +512,10 @@ class NpcsMixin:
         return self._npc_match(here, to), item
 
     def npc_receive(self, session, nid, what, n):
-        """ "give Jali 3 chillies": a gift, or what a favour asked for."""
+        """ "give Rocco 3 chillies": a gift, or what a favour asked for."""
         char, lang = session.char, session.lang
         name = self.npc_name(nid)
-        if orbit_safety.name_key(what) in ("credits", "credit", "kredit", "cr", "uang", "duit", "money", "coins", ""):
+        if orbit_safety.name_key(what) in ("credits", "credit", "cr", "money", "coins", ""):
             self.npc_say([session], nid, self._npc_words("npc_no_credits"), name=session.name)
             return
         tid = self.world.find_good(what) or self.world.find_item(what) or self.world.find_thing(what)

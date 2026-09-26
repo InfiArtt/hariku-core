@@ -8,8 +8,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
-The Lost Chord (Nada yang Hilang): a season-long hunt for the prize the
-simulation's founder hid, one riddle after another, for the whole server.
+The Lost Chord: a season-long hunt for the prize the simulation's founder
+hid, one riddle after another, for the whole server.
 
 A season is a file on the server (config.json "hunt", e.g.
 private/season1.hunt.json), never in this repository: the riddles, where
@@ -21,14 +21,19 @@ normalized (lower case, no accents, only letters and digits, so "3 1 4" and
 with the answers in plain text) into that file. hunt.example.json here is a
 tiny, obviously fake season for trying it out and for the tests.
 
-    hunt / perburuan              your stage and its riddle (and any hints the
+The game is played in English, so its English texts are the ones said (a
+season file may have other languages beside them: they're left alone), and
+an answer counts when its hash is one of the stage's, in whatever language
+the season's author accepted it.
+
+    hunt                          your stage and its riddle (and any hints the
                                   admins released)
-    investigate / selidiki        look for a clue where you are: some show only
+    investigate                   look for a clue where you are: some show only
                                   with a thing (a scanner, a headlamp worn) or
                                   at certain station hours (UTC), and some are
                                   tones to listen to
-    solve ... / pecahkan ...      answer your stage's riddle
-    hunt board / papan pemburu    who has come how far, and the rival
+    solve ...                     answer your stage's riddle
+    hunt board                    who has come how far, and the rival
 
 A wrong answer makes you wait before the next try, twice as long each time
 (config "hunt_wrong_base" to "hunt_wrong_max"), so guessing doesn't pay; every
@@ -51,7 +56,7 @@ import logging
 import secrets
 import unicodedata
 
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -61,7 +66,7 @@ HUNT_DEFAULTS = {
     "hunt_wrong_base": 60,            # seconds to wait after the first wrong answer...
     "hunt_wrong_max": 86400,          # ...doubling each time, up to a day
 }
-LANGS = ("en", "id")
+LANGS = LANGUAGES
 MAX_TONES = 32
 # "look for clues" (and the like): both clients send it as look, so look passes it on.
 LOOK_FOR_CLUES = {"forclues", "foraclue", "forclue", "fortheclue", "forhints", "forahint"}
@@ -82,7 +87,8 @@ def answer_hash(salt, season, stage, text):
                     hashlib.sha256).hexdigest()
 
 
-def _both(value):
+def _texts(value):
+    """A text of the season: {"en": ...} (other languages beside it are allowed, and unused)."""
     return isinstance(value, dict) and all(isinstance(value.get(lang), str) and value[lang] for lang in LANGS)
 
 
@@ -94,8 +100,8 @@ def validate(hunt, world, plain=False):
         return ["a season is a JSON object"]
     if not str(hunt.get("season") or "").strip():
         problems.append("the season needs a name or number")
-    if not _both(hunt.get("title")) or not _both(hunt.get("intro")):
-        problems.append("the season needs a title and an intro in en and id")
+    if not _texts(hunt.get("title")) or not _texts(hunt.get("intro")):
+        problems.append("the season needs a title and an intro in en")
     salt = hunt.get("salt")
     if not plain or salt is not None:
         try:
@@ -113,8 +119,8 @@ def validate(hunt, world, plain=False):
         if not sid or sid in ids:
             problems.append(f"{where}: needs an id of its own")
         ids.add(sid)
-        if not _both(stage.get("riddle")) or not _both(stage.get("found")):
-            problems.append(f"{where}: needs a riddle and a found text in en and id")
+        if not _texts(stage.get("riddle")) or not _texts(stage.get("found")):
+            problems.append(f"{where}: needs a riddle and a found text in en")
         if plain:
             if not stage.get("accept") or not all(normalize(a) for a in stage["accept"]):
                 problems.append(f"{where}: needs the answers it accepts")
@@ -128,8 +134,8 @@ def validate(hunt, world, plain=False):
             at = f"{where}, clue {c}"
             if clue.get("room") not in world.locations:
                 problems.append(f"{at}: unknown room {clue.get('room')!r}")
-            if not _both(clue.get("text")):
-                problems.append(f"{at}: needs a text in en and id")
+            if not _texts(clue.get("text")):
+                problems.append(f"{at}: needs a text in en")
             needs = clue.get("requires") or {}
             for key in ("thing", "worn"):
                 if needs.get(key) and needs[key] not in world.things:
@@ -145,8 +151,8 @@ def validate(hunt, world, plain=False):
         if not stage.get("clues"):
             problems.append(f"{where}: needs at least one clue")
         for h, hint in enumerate(stage.get("hints") or [], 1):
-            if not _both(hint):
-                problems.append(f"{where}, hint {h}: needs en and id")
+            if not _texts(hint):
+                problems.append(f"{where}, hint {h}: needs en")
     prize = hunt.get("prize") or {}
     if not isinstance(prize.get("first"), int) or prize["first"] < 0:
         problems.append("the prize needs a first prize in credits")
@@ -154,8 +160,8 @@ def validate(hunt, world, plain=False):
         if prize.get(key) and prize[key] not in world.things:
             problems.append(f"the prize's {key} {prize[key]!r} is not a thing")
     rival = hunt.get("rival")
-    if rival is not None and (not _both(rival.get("name")) or not float(rival.get("hours") or 0) > 0):
-        problems.append("the rival needs a name in en and id, and hours between its finds")
+    if rival is not None and (not _texts(rival.get("name")) or not float(rival.get("hours") or 0) > 0):
+        problems.append("the rival needs a name in en, and hours between its finds")
     return problems
 
 

@@ -64,38 +64,39 @@ def test_both_must_say_yes(make_game, clock):
     assert asked["text"] == "You ask Budi to be partners. Now it's up to them."
     offer = budi.sent[-1]
     assert offer["k"] == "offer" and offer["ask"] == "partner" and offer["actor"] == "Ani"
-    assert offer["text"] == "Ani mengajakmu berpasangan. Ucapkan terima atau tolak, dalam 2 menit."
-    assert text(game, budi, "tolak")["text"] == "Kamu dengan baik hati menolak Ani."
+    assert offer["text"] == "Ani asks you to be partners. Say accept or decline, within 2 minutes."
+    assert text(game, budi, "tolak")["text"].startswith("I don't understand")          # English only
+    assert text(game, budi, "decline")["text"] == "You kindly say no to Ani."
     assert ani.sent[-1]["text"] == "Budi kindly says no to being partners."
     assert game.partner_of(ani.session.char)[0] is None
     assert text(game, ani, "partner with Budi")["text"].startswith("Budi said no a little while ago.")
     clock.advance(601)
     text(game, ani, "partner with Budi")
-    assert text(game, budi, "terima")["text"] == "Kamu dan Ani sekarang berpasangan."
+    assert text(game, budi, "accept")["text"] == "You and Ani are partners now."
     assert ani.sent[-1]["text"] == "You and Budi are partners now."
     p, other = game.partner_of(ani.session.char)
     assert p["status"] == "partners" and other == budi.session.char["id"]
     ceri = join(game, "Ceri")
     assert text(game, ceri, "partner with Ani")["text"] == "Ani already has a partner."
     assert "Partners with Budi." in cmd(game, ceri, "look", a="Ani")["text"]
-    assert text(game, ani, "pasangan")["text"].startswith("Your partner is Budi, since 25-09-2026.")
+    assert text(game, ani, "partner")["text"].startswith("Your partner is Budi, since 25-09-2026.")
 
 
 def test_a_plain_yes_or_no_answers_what_waits(make_game, clock):
     game = make_game()
     ani, budi = join(game, "Ani"), join(game, "Budi", lang="id")
     text(game, ani, "partner with Budi")
-    assert text(game, budi, "tidak")["text"] == "Kamu dengan baik hati menolak Ani."
+    assert text(game, budi, "no")["text"] == "You kindly say no to Ani."
     clock.advance(601)
     text(game, ani, "partner with Budi")
-    assert text(game, budi, "ya")["text"] == "Kamu dan Ani sekarang berpasangan."
+    assert text(game, budi, "yes")["text"] == "You and Ani are partners now."
     assert text(game, ani, "yes")["text"] == "That's for the couple, at the right moment of their ceremony."
 
 
 def test_a_proposal_runs_out(make_game, clock):
     game = make_game()
     ani, budi = join(game, "Ani"), join(game, "Budi")
-    text(game, ani, "ajak berpasangan Budi")
+    text(game, ani, "be partners with Budi")
     clock.advance(121)
     game.tick()
     assert budi.sent[-1]["text"] == "You didn't answer Ani in time, so nothing changes."
@@ -129,11 +130,11 @@ def test_admins_can_end_a_partnership(make_game, clock):
     game = make_game()
     ani, budi, rafli = join(game, "Ani"), join(game, "Budi"), join(game, "Rafli")
     partners(game, clock, ani, budi)
-    assert text(game, rafli, "akhiri kemitraan Ani")["text"] == "The partnership of Ani and Budi has ended."
+    assert text(game, rafli, "end partnership Ani")["text"] == "The partnership of Ani and Budi has ended."
     assert ani.sent[-1]["text"] == "The station's admins have ended your partnership with Budi."
     assert budi.sent[-1]["text"] == "The station's admins have ended your partnership with Ani."
     assert "end partnership" in {row["action"] for row in game.store.admin_log(5)}
-    assert text(game, ani, "akhiri kemitraan Budi")["text"] == "You don't have a partner."   # players: only their own
+    assert text(game, ani, "end partnership Budi")["text"] == "You don't have a partner."   # players: only their own
 
 
 # ------------------------------------------------------------
@@ -149,7 +150,7 @@ def test_adopting_alone_at_the_family_desk(make_game, clock):
     ready(game, ani, level=2)
     assert text(game, ani, "adopt")["text"] == "The family desk asks that parents be level 3 or more."
     char = ready(game, ani)
-    adopted = text(game, ani, "adopsi")
+    adopted = text(game, ani, "adopt a baby")
     assert adopted["text"].startswith("The nurse brings a baby wrapped in a star-patterned blanket") and \
         adopted["sound"] == "baby"
     assert char["credits"] == 1700
@@ -199,15 +200,15 @@ def test_a_baby_needs_care_and_is_never_harmed(make_game, clock):
     game = make_game()
     ani = adopted(game, clock)
     char = ani.session.char
-    assert text(game, ani, "beri makan bayi")["text"] == \
+    assert text(game, ani, "feed the baby")["text"] == \
         "You have no baby porridge for your baby. The Food Court has some."
     char["inventory"]["baby_porridge"] = 3
     clock.advance(20 * HOUR)
     fed = text(game, ani, "feed the baby")
     assert fed["text"].startswith("You feed your baby spoonful by spoonful: pot of baby porridge.")
     assert fed["sound"] == "baby"
-    assert text(game, ani, "main dengan bayi")["text"] == "You play peekaboo with your baby, who laughs every single time."
-    assert text(game, ani, "tidurkan bayi")["text"].startswith("You hum a lullaby")
+    assert text(game, ani, "play with the baby")["text"] == "You play peekaboo with your baby, who laughs every single time."
+    assert text(game, ani, "rest the baby")["text"].startswith("You hum a lullaby")
     assert text(game, ani, "read a story to the baby")["text"].startswith("You tell your baby a story")
     clock.advance(10 * DAY)
     child = child_of(game, ani)
@@ -238,22 +239,22 @@ def test_the_naming_rite_at_the_temple(make_game, clock):
     game = make_game()
     ani = adopted(game, clock)
     budi = join(game, "Budi")
-    assert text(game, ani, "upacara nama Mira")["text"].startswith(
+    assert text(game, ani, "naming rite Mira")["text"].startswith(
         "A name is given in the naming rite at the temple of the Way of Starlight")
     place(ani, "star_hall")
     place(budi, "star_hall")
     assert text(game, ani, "naming rite X")["text"] == "A name needs 2 to 16 letters."
     budi.clear()
     text(game, ani, "naming rite mira")
-    assert "Ibu Sekar smiles and beckons you under the dome. The naming rite for Mira begins." in ani.texts()
+    assert "Amara smiles and beckons you under the dome. The naming rite for Mira begins." in ani.texts()
     assert child_of(game, ani)["name"] == "Mira"
     for _ in range(4):
         clock.advance(4)
         game.tick()
     lines = [m["text"] for m in budi.sent]
-    assert lines[0] == "Ibu Sekar says: Welcome, little one. Tonight the dome learns a new name."
+    assert lines[0] == "Amara says: Welcome, little one. Tonight the dome learns a new name."
     assert any("lights a small lantern for the child" in line for line in lines)
-    assert "Ibu Sekar says: Under these stars, you are Mira. Keep your word, stay curious, and look after one " \
+    assert "Amara says: Under these stars, you are Mira. Keep your word, stay curious, and look after one " \
            "another, Mira." in lines
     sounds = [m.get("sound") for m in budi.sent]
     assert sounds.count("lantern") == 1 and sounds.count("bell") == 1
@@ -283,16 +284,17 @@ def test_a_child_speaks_follows_and_helps(make_game, clock, monkeypatch):
     game.award_xp(ani.session, 100)
     assert ani.session.char["xp"] == xp + 105                                   # a happy child lends a hand
     monkeypatch.setattr(game, "_pick", lambda table: "pet_treat")
-    helped = text(game, ani, "minta tolong Mira")
+    helped = text(game, ani, "ask Mira for help")
     assert helped["text"] == "Mira runs off to help, and comes back with 1 pet treat. You have a very useful child."
     assert ani.session.char["inventory"]["pet_treat"] == 1
     assert text(game, ani, "ask Mira for help")["text"] == "Mira has already helped today. Tomorrow!"
+    assert text(game, ani, "minta tolong Mira")["text"].startswith("I don't understand")      # English only
     talk = text(game, ani, "talk to Mira")
     assert talk["actor"] == "Mira" and talk["k"] == "say"
     ceri = join(game, "Ceri")
     place(ceri, "medbay")
     partners(game, clock, ani, ceri)
     game.store.add_companion_owner(child["id"], ceri.session.char["id"], "parent")
-    assert text(game, ceri, "bawa Mira")["text"] == "Mira comes along with you now."
+    assert text(game, ceri, "bring Mira")["text"] == "Mira comes along with you now."
     assert "their child Mira" in cmd(game, budi, "look", a="Ceri")["text"]
     assert "their child Mira" not in cmd(game, budi, "look", a="Ani")["text"]

@@ -110,7 +110,7 @@ def test_the_arcade_is_set_up_on_pixel_pier(world):
     games = world.economy["arcade"]["games"]
     assert set(games) == set(orbit_arcade.GAMES)
     for gid, game in games.items():
-        assert game["name"]["en"] and game["name"]["id"] and game["tickets"]["max"] > 0, gid
+        assert set(game["name"]) == {"en"} and game["name"]["en"] and game["tickets"]["max"] > 0, gid
     for tid in world.shops["prizes"]["stock"]:
         thing = world.things[tid]
         assert thing["tickets"] > 0 and thing.get("pawn") is False and not thing.get("price"), tid
@@ -148,11 +148,11 @@ def test_you_play_at_the_cabinets_with_a_token(make_game, clock):
     assert cmd(game, ani, "play", a="chess")["text"] == "Which game? Quick Draw, Star Beat, Echo, Meteor Dodge."
     assert cmd(game, ani, "play", a="")["text"].startswith("Which game?")
     char["inventory"]["arcade_token"] = 2
-    started = cmd(game, ani, "play", a="gema")
+    started = cmd(game, ani, "play", a="Echo")
     assert started["k"] == "task" and started["sound"] == "arcade_start" and started["text"].startswith("Echo!")
     assert char["inventory"]["arcade_token"] == 1 and ani.session.arcade["game"] == "echo"
     assert cmd(game, ani, "play", a="meteor")["text"].startswith("You're already playing Echo.")
-    assert cmd(game, ani, "stop_game")["text"].startswith("You stop the game.")
+    assert cmd(game, ani, "text", a="stop game")["text"].startswith("You stop the game.")
     assert ani.session.arcade is None and char["inventory"]["arcade_token"] == 1
     assert cmd(game, ani, "stop_game")["text"] == "You're not playing anything."
 
@@ -160,7 +160,7 @@ def test_you_play_at_the_cabinets_with_a_token(make_game, clock):
 def test_main_street_is_a_place_not_a_game(make_game, clock):
     game = make_game()
     ani = join(game, "Ani")
-    game.receive(ani, {"t": "cmd", "c": "text", "a": "main street"})     # "main" is also "play"
+    game.receive(ani, {"t": "cmd", "c": "text", "a": "main street"})     # a place's name, not a verb
     assert "To the Promenade: " in ani.sent[-1]["text"]
 
 
@@ -209,7 +209,7 @@ def test_star_beat(make_game, clock):
     game = make_game()
     ani = join(game, "Ani")
     at_cabinets(game, ani)
-    cmd(game, ani, "play", a="irama bintang")
+    cmd(game, ani, "play", a="star beat")
     rhythm = wait_for(game, ani, clock, lambda m: m.get("beats"))
     beats = rhythm["beats"]
     assert len(beats) == 5 and beats[0] == 1.2 and rhythm["k"] == "task" and "sound" not in rhythm
@@ -306,11 +306,14 @@ def test_meteor_dodge_tells_older_clients_the_side_and_takes_words(make_game, cl
     meteor = wait_for(game, ani, clock, sound("arcade_meteor"))
     side = {"w": "left", "e": "right", "n": "ahead"}[meteor["dir"]]
     assert meteor["text"] == ("Meteor straight ahead!" if side == "ahead" else f"Meteor from the {side}!")
-    word = {"w": "kanan", "e": "kiri", "n": "kiri"}[meteor["dir"]]
+    word = {"w": "right", "e": "left", "n": "left"}[meteor["dir"]]
     game.receive(ani, {"t": "cmd", "c": "text", "a": word})
     assert ani.sent[-1]["text"] == "Dodged! 1 so far."
     meteor = wait_for(game, ani, clock, sound("arcade_meteor"))
     assert answer(game, ani, "9")["text"] == "Step away: 4 to the left, 6 to the right."
+    short = {"w": "r", "e": "l", "n": "r"}[meteor["dir"]]              # "l" and "r" are sides too, not look
+    game.receive(ani, {"t": "cmd", "c": "text", "a": short})
+    assert ani.sent[-1]["text"] == "Dodged! 2 so far."
     limit = ani.session.arcade["limit"]
     assert limit == pytest.approx(2.9)                               # a little quicker each time
 
@@ -373,7 +376,7 @@ def test_high_score_tables(make_game, clock):
     assert everything.startswith("Quick Draw: nobody yet. Star Beat: nobody yet. Echo: nobody yet. Meteor Dodge: 1. ")
     game.receive(ani, {"t": "cmd", "c": "text", "a": "high scores meteor"})
     assert ani.sent[-1]["text"] == table
-    game.receive(ani, {"t": "cmd", "c": "text", "a": "skor arkade"})
+    game.receive(ani, {"t": "cmd", "c": "text", "a": "arcade scores"})
     assert ani.sent[-1]["text"] == everything
     game._move_to(ani.session, "pixel_scores", quiet=True)
     assert cmd(game, ani, "look", a="wall")["text"] == everything

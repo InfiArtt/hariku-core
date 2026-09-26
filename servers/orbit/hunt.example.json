@@ -2,12 +2,10 @@
   "_note": "A tiny, obviously fake demo season, for trying the hunt out and for the tests. Its answers are 'orbit' and '1234'. The real seasons live only on the server (see orbit_hunt_tool.py).",
   "season": "demo",
   "title": {
-    "en": "The Lost Chord (a demo)",
-    "id": "Nada yang Hilang (demo)"
+    "en": "The Lost Chord (a demo)"
   },
   "intro": {
-    "en": "This is only a demo of the hunt, with two easy riddles.",
-    "id": "Ini hanya contoh perburuan, dengan dua teka-teki mudah."
+    "en": "This is only a demo of the hunt, with two easy riddles."
   },
   "prize": {
     "first": 1000,
@@ -19,8 +17,7 @@
   },
   "rival": {
     "name": {
-      "en": "Meridian Grey",
-      "id": "Meridian Kelabu"
+      "en": "Meridian Grey"
     },
     "hours": 24
   },
@@ -28,26 +25,22 @@
     {
       "id": "d1",
       "riddle": {
-        "en": "What is this game called? Investigate at the Dock.",
-        "id": "Apa nama permainan ini? Selidiki di Dermaga."
+        "en": "What is this game called? Investigate at the Dock."
       },
       "found": {
-        "en": "Right: the first demo note.",
-        "id": "Benar: nada demo pertama."
+        "en": "Right: the first demo note."
       },
       "clues": [
         {
           "room": "dock",
           "text": {
-            "en": "A sticker on the schedule board: the answer is orbit.",
-            "id": "Stiker di papan jadwal: jawabannya orbit."
+            "en": "A sticker on the schedule board: the answer is orbit."
           }
         }
       ],
       "hints": [
         {
-          "en": "It's the name of the game.",
-          "id": "Itu nama permainannya."
+          "en": "It's the name of the game."
         }
       ],
       "answers": [
@@ -57,12 +50,10 @@
     {
       "id": "d2",
       "riddle": {
-        "en": "Take a scanner to the Science Lab, investigate, and give the tones you hear as digits.",
-        "id": "Bawa pemindai ke Laboratorium Sains, selidiki, dan sebutkan nada yang kamu dengar sebagai angka."
+        "en": "Take a scanner to the Science Lab, investigate, and give the tones you hear as digits."
       },
       "found": {
-        "en": "Right: the second demo note.",
-        "id": "Benar: nada demo kedua."
+        "en": "Right: the second demo note."
       },
       "clues": [
         {
@@ -71,8 +62,7 @@
             "thing": "scanner"
           },
           "text": {
-            "en": "Your scanner hums four tones.",
-            "id": "Pemindaimu mendengungkan empat nada."
+            "en": "Your scanner hums four tones."
           },
           "tones": [
             1,
@@ -84,8 +74,7 @@
       ],
       "hints": [
         {
-          "en": "Low to high.",
-          "id": "Dari rendah ke tinggi."
+          "en": "Low to high."
         }
       ],
       "answers": [

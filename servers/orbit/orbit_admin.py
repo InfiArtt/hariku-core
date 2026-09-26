@@ -32,7 +32,7 @@ import logging
 import secrets
 
 import orbit_safety
-from orbit_lang import pick
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -138,7 +138,7 @@ class AdminMixin:
         op = self._arg(message, "op", 20)
         if not self.is_admin(session):
             if op == "grant" and self._count(message, default=None) is not None:
-                # "beri kredit Budi 50" from a player: a gift, not a grant.
+                # "grant Sam 50" from a player: a gift, not a grant.
                 self.cmd_give(session, {"to": self._arg(message, "to", 40), "n": message.get("n"),
                                         "item": "credits"})
                 return
@@ -178,8 +178,8 @@ class AdminMixin:
     def _admin_announce(self, session, message):
         text = orbit_safety.tidy(self._arg(message), self.config["say_limit"])
         words = text.lower().split()
-        if len(words) == 2 and words[0] in ("petunjuk", "hint") and words[1].isdigit():
-            # "umumkan petunjuk 2": Orbit 1.0 reads it as announce; it's the hunt's hint.
+        if len(words) == 2 and words[0] == "hint" and words[1].isdigit():
+            # "announce hint 2": the hunt's hint, not an announcement.
             self.admin_release_hint(session, {"n": int(words[1])})
             return
         if not text:
@@ -384,7 +384,7 @@ class AdminMixin:
                 self._error(session, "no_place", what=text)
                 return
         self._log(session, "goto", dest)
-        self._move_to(session, dest, message={l: self.render(l, "admin_teleport") for l in ("en", "id")},
+        self._move_to(session, dest, message={l: self.render(l, "admin_teleport") for l in LANGUAGES},
                       host=host)
 
     def _kick(self, target, key, code):

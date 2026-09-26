@@ -10,18 +10,19 @@
 """
 Orbit — Hariku V2 extension: a small multiplayer text game (a MUD) on a
 space station orbiting the Earth, the entry hub of a shared simulation.
-Walk the decks by compass, hang out in the Cantina, look down at Indonesia
-from the Observation Deck, work your job, farm, mine the Asteroid Belt,
-trade and take small missions.
+Walk the decks by compass, hang out in the Cantina, look down at the real
+Earth from the Observation Deck, work your job, farm, mine the Asteroid Belt,
+trade and take small missions. Orbit is played in English: its commands,
+names and window are English (the server speaks English only since 1.4).
 
-Play it in its window ("Open Orbit", no key by default; "orbit" or "buka
+Play it in its window ("Open Orbit", no key by default; "orbit" or "open
 orbit" to Aruna) or straight from Aruna, typed or spoken, with "orbit" in
-front: "orbit utara", "orbit bilang halo", "orbit harian", "orbit panen",
-"orbit status", "orbit keluar".
+front: "orbit north", "orbit say hello", "orbit daily", "orbit harvest",
+"orbit status", "orbit quit".
 
   orbit_ws.py      the WebSocket protocol (a copy of servers/orbit/orbit_ws.py)
   orbit_net.py     the connection: its own thread, pings, reconnecting
-  orbit_parse.py   what was typed or said -> a command (Indonesian, English)
+  orbit_parse.py   what was typed or said -> a command (English)
   orbit_play.py    playing: messages, speech, sounds, ambience (no wx)
   orbit_speech.py  who speaks: the narrator, or each player's own voice
   orbit_audio.py   which cue an event plays and from where; the ambience loop
@@ -73,7 +74,7 @@ SOUND_CACHE = "orbit_sound_cache"
 DEFAULT_SERVER = "wss://infiartt.com/orbit/ws"
 PLAY_INTENT = f"{EXT_NAME}.play"
 PLAY_PATTERNS = ("orbit {text}",)
-OPEN_WORDS = {"buka", "open", "main", "play", "jendela", "window", "tampilkan", "show"}
+OPEN_WORDS = {"open", "play", "window", "show"}
 MAX_COMMAND = 300
 CONNECT_HOLD_SECONDS = 15
 AUTOCONNECT_SECONDS = 5
@@ -204,7 +205,7 @@ class Services:
         return dict(_settings)
 
     def set_setting(self, key, value):
-        """A setting changed from the game ("suara pemain mati") or the client."""
+        """A setting changed from the game ("voices off") or the client."""
         if key not in DEFAULT_SETTINGS:
             return
         voices_before = _settings["voices"]
@@ -221,7 +222,8 @@ class Services:
                 pass
 
     def language(self):
-        return orbit_text.user_language()
+        """The language of the voices players are given: Orbit is played in English."""
+        return orbit_text.LANGUAGE
 
     def account(self, url):
         data = core.api.load_data(ACCOUNTS_KEY)
@@ -426,44 +428,44 @@ def _connect():
     """ "orbit connect": connects; already connected, it says so. Never a toggle, so saying it
     twice doesn't log you out."""
     if _client is not None:
-        _client.submit("sambungkan", "aruna")
+        _client.submit("connect", "aruna")
 
 
 def _disconnect():
     """ "orbit disconnect": disconnects; not connected, it says so."""
     if _client is not None:
-        _client.submit("putuskan", "aruna")
+        _client.submit("disconnect", "aruna")
 
 
 def _leave():
     if _client is not None:
         _client.aruna_until = _client.clock() + orbit_play.ARUNA_SECONDS
-        _client.submit("keluar", "aruna")
+        _client.submit("quit", "aruna")
 
 
 ACTIONS = (
     ("open", "action_open", "title_open", open_window,
-     ("orbit", "buka orbit", "open orbit", "main orbit", "play orbit", "ke orbit"), False),
+     ("orbit", "open orbit", "play orbit"), False),
     ("look", "action_look", "title_look", _ask("look"),
-     ("orbit lihat sekitar", "orbit look around", "orbit lihat"), True),
+     ("orbit look around", "orbit look"), True),
     ("who", "action_who", "title_who", _ask("who"),
-     ("orbit siapa online", "orbit siapa yang online", "orbit who is online", "orbit who"), True),
+     ("orbit who is online", "orbit who"), True),
     ("credits", "action_credits", "title_credits", _ask("inventory"),
-     ("orbit cek kredit", "orbit kredit", "orbit check credits", "orbit inventory", "orbit tas"), True),
+     ("orbit check credits", "orbit credits", "orbit inventory"), True),
     ("connect", "action_connect", "title_connect", _connect,
-     ("orbit sambungkan", "orbit hubungkan", "orbit connect"), True),
+     ("orbit connect",), True),
     ("disconnect", "action_disconnect", "title_disconnect", _disconnect,
-     ("orbit putuskan", "orbit disconnect"), True),
+     ("orbit disconnect",), True),
     ("status", "action_status", "title_status", _ask("status"),
      ("orbit status", "status orbit", "orbit connection status"), True),
     ("leave", "action_leave", "title_leave", _leave,
-     ("orbit keluar", "keluar dari orbit", "orbit logout", "orbit log out", "leave orbit"), True),
-    ("daily", "action_daily", "title_daily", _ask("harian"),
-     ("orbit harian", "orbit bonus harian", "orbit daily", "orbit daily bonus"), True),
-    ("harvest", "action_harvest", "title_harvest", _ask("panen"),
-     ("orbit panen", "orbit harvest"), True),
-    ("profile", "action_profile", "title_profile", _ask("profil"),
-     ("orbit profil", "orbit profile"), True),
+     ("leave orbit", "orbit logout", "orbit log out", "orbit quit"), True),
+    ("daily", "action_daily", "title_daily", _ask("daily"),
+     ("orbit daily", "orbit daily bonus"), True),
+    ("harvest", "action_harvest", "title_harvest", _ask("harvest"),
+     ("orbit harvest",), True),
+    ("profile", "action_profile", "title_profile", _ask("profile"),
+     ("orbit profile",), True),
 )
 
 
