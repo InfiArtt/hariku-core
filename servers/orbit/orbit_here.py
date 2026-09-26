@@ -328,13 +328,14 @@ class HereMixin:
             for host in sorted(self.sessions.values(), key=lambda s: s.key):
                 if host is not session and host.conn is not None and self.may_visit(session, host):
                     entries.append((f"visit {host.name}", "here_visit", {"name": host.name}))
-        for oid, obj in (self._loc(char).get("objects") or {}).items():
+        for obj in (self._loc(char).get("objects") or {}).values():
             if obj.get("capsule"):
                 entries.append((f"open {obj['names']['en'][0]}", "here_open", {}))
         return entries
 
     def _here_events(self, session):
-        """The events on in this room: what they scattered, a view, a party held here, the drone."""
+        """The events on in this room: what they scattered, a view, a gathering held here, the drone
+        (an event on everywhere, like the station's birthday gift, is left to "events")."""
         char = session.char
         entries = []
         for action, cmd, key in (("collect", "collect", "here_event_collect"), ("watch", "watch", "here_event_watch"),
