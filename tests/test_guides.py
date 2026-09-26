@@ -761,7 +761,7 @@ def test_aruna_says_when_there_is_no_guide(aruna, repo, monkeypatch):
 
 @pytest.mark.parametrize("text", [
     # Orbit's own in-game help, through Aruna
-    "orbit bantuan", "orbit bantuan kasino", "orbit help", "orbit bantuan bergerak",
+    "orbit bantuan", "orbit help casino", "orbit help", "orbit help moving",
     "orbit panduan", "orbit cara pakai kapal",
     # not a guide of anything installed
     "bantuan bergerak", "bantuan kerja", "cara pakai sumpit", "help with my homework",
@@ -769,7 +769,7 @@ def test_aruna_says_when_there_is_no_guide(aruna, repo, monkeypatch):
     # the others' commands with content
     "timer 10 menit", "alarm besok jam 5 pagi", "take me to Tokyo", "bawa aku ke Paris",
     "tell me about Jakarta", "di mana aku", "salin link laporan", "copy link",
-    "orbit pergi ke kantin", "buka orbit", "25 x 4", "berapa 25 kali 4", "5 km ke mil",
+    "orbit go to the cantina", "open orbit", "25 x 4", "berapa 25 kali 4", "5 km ke mil",
     "2 foot in inches", "lempar koin",
     # Hariku's own
     "jam berapa", "what time is it", "cuaca", "gempa terbaru", "buka pengaturan",
