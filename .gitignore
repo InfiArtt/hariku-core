@@ -37,6 +37,7 @@ Hariku_V2_Developer_SDK.zip
 /body.html
 /sdk_release_post.md
 /hariku_v2_journey.md
+/hariku_v2_overview_post.md
 # Old novarealm-era update files; CI now generates version.json per release.
 /version.json
 /update.iss
