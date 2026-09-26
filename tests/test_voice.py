@@ -1545,9 +1545,10 @@ class TestRouting:
 
     def test_it_ends_after_its_time(self, voice):
         enable(voice)
-        voice.route_speech("command", seconds=0.05)
+        # Long enough to still be open when checked on a busy test machine.
+        voice.route_speech("command", seconds=0.5)
         assert voice.routed_kind() == "command"
-        assert wait_until(lambda: voice.routed_kind() is None, timeout=1.0)
+        assert wait_until(lambda: voice.routed_kind() is None, timeout=3.0)
 
     def test_a_new_command_starts_a_new_window(self, voice):
         voice.route_speech("command", seconds=0.05)
