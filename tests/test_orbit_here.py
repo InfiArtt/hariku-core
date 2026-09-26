@@ -47,6 +47,9 @@ WRONG_PLACE = {
     "not_invited", "npc_nobody", "npc_elsewhere", "npc_whom", "open_nothing", "take_where", "take_no",
     "take_nothing", "complete_where", "complete_missing", "mission_none", "crew_hangar_none", "crew_none",
     "no_player", "no_item", "go_where", "way_where", "way_unknown",
+    # 1.6: the room's furniture, what holds things, the jukebox and the pond
+    "sit_none", "lie_none", "sit_cant", "lie_cant", "put_where", "put_cant", "drop_not_aboard", "drop_not_vacuum",
+    "jukebox_where", "fish_where", "look_what_there",
 }
 NEW_CLIENT = "Hariku Orbit 1.6"
 
