@@ -14,7 +14,8 @@ status line, what is read aloud, the window's closing and logging out,
 toggling without the focus moving, a transfer code, Apply), the game window
 ("Open Orbit": the Messages list and the Command field with their labels
 first, the Settings button, walking by compass as the guide says each next
-step, Enter sends, Up brings back the last command, Indonesian gets the
+step, a look coming a part to a line, "x here", Enter sends, Up brings back
+the last command, Indonesian gets the
 server's English help hint, another player's words arrive without the focus
 or the selection moving, Escape hides it and stays connected), Aruna ("orbit
 who", "orbit say ..."), with what is said landing in Last result, and
@@ -386,10 +387,29 @@ for step, place in (("n", "the Promenade"), ("w", "the West Promenade"), ("w", "
 assert pump(lambda: "You've arrived at the Cantina." in window.lines()), window.lines()[-3:]
 assert pump(lambda: "You've arrived at the Cantina." in spoken), spoken[-3:]
 assert "step_metal" in sounds and "lift_up" in sounds and ambiences[-1] == ("cantina", 40)
+# Looking comes line by line (server 1.5, client 1.6): the room's name, its description
+# and its exits are lines of their own in the Messages box; NVDA reads the look whole.
+count = len(window.lines())
+typed("l", "Exits: ")
+looked = window.lines()[count:]
+at = looked.index("Cantina")
+assert looked[at + 1].startswith("Round tables bolted to the floor"), looked
+assert any(line.startswith("Exits: ") for line in looked[at + 2:]), looked
+assert any(line.startswith("Things to look at: ") for line in looked[at + 2:]), looked
+assert pump(lambda: len(window.lines()) == len(main._client.messages)), (len(window.lines()),
+                                                                         len(main._client.messages))
+assert pump(lambda: any(s.startswith("Cantina. Round tables bolted to the floor") and "Exits: " in s
+                        for s in spoken)), spoken[-3:]
+count = len(window.lines())
+typed("x here", "Here in the Cantina you can:")
+assert pump(lambda: "Type help for everything else." in window.lines()[count:]), window.lines()[-4:]
+assert pump(lambda: any(s.startswith("Here in the Cantina you can: ") for s in spoken)), spoken[-3:]
 if focus_ok:
     assert wx.Window.FindFocus() is window.txt_command, "sending moved the focus"
 press_key(window.txt_command, wx.WXK_UP)
-assert window.txt_command.GetValue() == "w"
+assert window.txt_command.GetValue() == "x here"
+press_key(window.txt_command, wx.WXK_UP)
+assert window.txt_command.GetValue() == "l"
 window.txt_command.ChangeValue("")
 # Orbit is played in English: Indonesian goes to the server as it is, and its
 # help hint comes back, written and said.

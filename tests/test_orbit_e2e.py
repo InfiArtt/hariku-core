@@ -301,7 +301,19 @@ def test_two_players_on_the_station(server, indonesian):
     assert loop.run_until(lambda: ("narrator", "To Rafli:") in sari.services.spoken)
     sari.do("smile at Rafli", "You smile at Rafli.")
     rafli.wait_for("Sari smiles at you.")
-    rafli.do("who", "2 online: Rafli the pilot, in the Cargo Bay; Sari the engineer, in the Cargo Bay.")
+    # A reply of several parts: a line each in the Messages list (client 1.6), said whole.
+    since = len(rafli.client.messages)
+    rafli.do("who", "2 online:")
+    assert loop.run_until(lambda: len(rafli.client.messages) >= since + 3)
+    assert rafli.client.messages[since:since + 3] == ["2 online:", "Rafli the pilot, in the Cargo Bay",
+                                                      "Sari the engineer, in the Cargo Bay"]
+    assert loop.run_until(lambda: rafli.heard(
+        "2 online: Rafli the pilot, in the Cargo Bay; Sari the engineer, in the Cargo Bay."))
+    since = len(rafli.client.messages)
+    rafli.do("x here", "Here in the Cargo Bay you can:")
+    assert loop.run_until(lambda: rafli.said("Type help for everything else.", since))
+    listed = rafli.client.messages[since:]
+    assert "x Sari: what you can do with someone or something here" in listed, listed
 
     # Work: the engineer repeats the reactor's tones...
     sari.do("e", "You walk east to the Service Corridor.")

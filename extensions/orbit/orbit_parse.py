@@ -19,6 +19,9 @@ played in English since 1.5 of this client and 1.4 of the server).
     parse("3 1 4 2")                  -> {"c": "answer", "a": "3 1 4 2"}
     parse("help")                     -> {"local": "help"}
     parse("help casino")              -> {"local": "help", "topic": "casino"}
+    parse("x here")                   -> {"c": "examine", "a": "here"}   (what you can do here;
+                                         "examine here", "commands here" too)
+    parse("x Rocco")                  -> {"c": "examine", "a": "Rocco"}  (what you can do with him)
     parse("voices off")               -> {"local": "set", "key": "voices", "value": False}
     parse("ignore Sam")               -> {"local": "ignore", "name": "Sam"}
     parse("quit")                     -> {"local": "disconnect"}
@@ -119,9 +122,10 @@ _VERBS = [
     # who
     (("who",), "who"), (("who", "is", "online"), "who"), (("whos", "online"), "who"),
     (("who's", "online"), "who"), (("online",), "who"), (("players",), "who"),
-    # looking
+    # looking; what you can do here, or with someone or something
     (("look", "around"), "look_around"), (("look", "at"), "look"), (("look",), "look"),
-    (("l",), "look"), (("examine",), "look"), (("inspect",), "look"),
+    (("l",), "look"), (("inspect",), "look"),
+    (("x",), "examine"), (("examine",), "examine"), (("commands", "here"), "examine_here"),
     # going
     (("go", "to"), "go"), (("go",), "go"), (("walk", "to"), "go"), (("walk",), "go"),
     (("head", "to"), "go"), (("move", "to"), "go"), (("enter",), "go"), (("travel", "to"), "go"),
@@ -353,6 +357,10 @@ def parse(text):
         return {"c": "look"}
     if meaning == "look":
         return {"c": "look", "a": rest} if rest else {"c": "look"}
+    if meaning == "examine":
+        return {"c": "examine", "a": rest}
+    if meaning == "examine_here":
+        return {"c": "examine", "a": "here"}
     if meaning == "go":
         return {"c": "go", "a": rest}
     if meaning in ("say", "shout", "describe", "announce"):

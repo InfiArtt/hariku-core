@@ -15,7 +15,11 @@ only asks, shows and speaks.
 
 What comes in is shown (the Messages list keeps the last 500 lines), played
 (a cue for the event, from the side it happens on; the reactor's tones; the
-ambience of the place) and read aloud when "Speak messages" is on:
+ambience of the place) and read aloud when "Speak messages" is on. A reply
+of several parts (a room: its name, description, exits, who is here; your
+things; who is online; a list) comes from server 1.5 as lines too, and each
+line is a line of the Messages list, so the arrow keys read them one by one;
+it is still read aloud whole, at once, as one line ("text"). Reading aloud:
 
   * other players' words (say, whisper, shout) in their own voice, when
     "A different voice for each player" is on and Hariku Voice has enough
@@ -60,10 +64,11 @@ import orbit_ws
 from orbit_text import LANGUAGE, _
 
 PROTOCOL_VERSION = 1
-CLIENT_NAME = "Hariku Orbit 1.5"
+CLIENT_NAME = "Hariku Orbit 1.6"           # from 1.6, the server sends a reply's lines ("lines")
 MAX_MESSAGES = 500
 TRIM_MESSAGES = 50
 MAX_LINE = 2000
+MAX_LINES_IN_MESSAGE = 200
 ARUNA_SECONDS = 8.0
 TALK_KINDS = ("say", "whisper", "shout", "crew")
 OWN_TALK_KINDS = ("said", "whispered", "shouted", "crew_sent")
@@ -129,7 +134,8 @@ class OrbitClient:
         self.schedule = []                # the events coming, from the server's last list
         self.pending_remind = None        # "remind me" asked before a list came
         self.wall_clock = time.time       # the real time, for reminders
-        self.messages = []
+        self.messages = []                # the Messages list: a line each
+        self.last_message = ""            # the newest message, whole (for "repeat")
         self.listeners = []
         self.conn = None
         self.url = None
@@ -175,14 +181,34 @@ class OrbitClient:
         self._notify("status", text)
 
     def add_line(self, text):
-        text = " ".join(str(text or "").split())[:MAX_LINE]
-        if not text:
+        self.add_lines([text])
+
+    def add_lines(self, lines, whole=None):
+        """A message for the Messages list, a line each (the window gets a "message" for each
+        line); `whole` is the message as one line, for "repeat". Past MAX_MESSAGES lines the
+        oldest go, TRIM_MESSAGES at a time (as many times over as a long message needs), and
+        the window is told how many ("trim")."""
+        shown = [line for line in (" ".join(str(line or "").split())[:MAX_LINE]
+                                   for line in list(lines)[:MAX_LINES_IN_MESSAGE]) if line]
+        if not shown:
             return
-        self.messages.append(text)
-        self._notify("message", text)
-        if len(self.messages) > MAX_MESSAGES:
-            del self.messages[:TRIM_MESSAGES]
-            self._notify("trim", TRIM_MESSAGES)
+        for line in shown:
+            self.messages.append(line)
+            self._notify("message", line)
+        self.last_message = " ".join(str(whole or "").split()) or " ".join(shown)
+        excess = len(self.messages) - MAX_MESSAGES
+        if excess > 0:
+            cut = TRIM_MESSAGES * -(-excess // TRIM_MESSAGES)
+            del self.messages[:cut]
+            self._notify("trim", cut)
+
+    @staticmethod
+    def lines_of(message):
+        """A message's lines (server 1.5, to clients from 1.6), or None: then its text is one line."""
+        lines = message.get("lines")
+        if not isinstance(lines, list) or len(lines) < 2 or not all(isinstance(line, str) for line in lines):
+            return None
+        return lines
 
     def _narrate(self, text, always=False):
         """A line of the client's own, read by the narrator: the screen reader,
@@ -419,7 +445,7 @@ class OrbitClient:
         text = str(message.get("text") or "").strip()
         if not text or self._ignored(message):
             return
-        self.add_line(text)
+        self.add_lines(self.lines_of(message) or [text], text)     # shown a line each, said whole
         self._where(message)
         if message.get("transfer_code"):
             self.transfer_code = str(message["transfer_code"])
@@ -560,7 +586,7 @@ class OrbitClient:
             else:
                 self.disconnect()
         elif what == "repeat":
-            self._narrate(self.messages[-1] if self.messages else _("nothing_yet"), always=True)
+            self._narrate(self.last_message or _("nothing_yet"), always=True)
         elif what == "status":
             self.say_status()
         elif what == "settings":

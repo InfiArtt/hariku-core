@@ -94,7 +94,13 @@ def lang(monkeypatch):
     ("look around", {"c": "look"}),
     ("look at Sari", {"c": "look", "a": "Sari"}),
     ("look at the reactor", {"c": "look", "a": "the reactor"}),
-    ("examine headlamp", {"c": "look", "a": "headlamp"}),
+    ("inspect headlamp", {"c": "look", "a": "headlamp"}),
+    ("examine headlamp", {"c": "examine", "a": "headlamp"}),
+    ("x here", {"c": "examine", "a": "here"}), ("examine here", {"c": "examine", "a": "here"}),
+    ("commands here", {"c": "examine", "a": "here"}), ("x Rocco", {"c": "examine", "a": "Rocco"}),
+    ("x", {"c": "examine", "a": ""}), ("orbit x here", {"c": "examine", "a": "here"}),
+    ("what can I do here", {"c": "text", "a": "what can I do here"}),       # the server reads it
+    ("commands", {"local": "help"}),
     ("check credits", {"c": "inventory"}),
     ("inventory", {"c": "inventory"}),
     ("i", {"c": "inventory"}),
@@ -589,7 +595,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.5", "lang": "en",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.6", "lang": "en",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -912,6 +918,55 @@ def test_the_messages_keep_the_last_500(play):
     client.add_listener(gone)
     client.add_line("still fine")
     assert gone not in client.listeners
+
+
+LOOK_LINES = ["Cantina", "Round tables bolted to the floor, and a jukebox.", "Exits: east, west.",
+              "Here: Maya the trader.", "Residents here: Rocco, the Cantina's bartender."]
+LOOK_TEXT = ("Cantina. Round tables bolted to the floor, and a jukebox. Exits: east, west. Here: Maya the trader. "
+             "Residents here: Rocco, the Cantina's bartender.")
+
+
+def test_a_reply_in_lines_is_shown_a_line_each_and_read_whole(play):
+    s, client = play.services, play.client
+    s.values["reader"] = "nvda"
+    conn = _online(play)
+    notes = []
+    client.add_listener(lambda event, value: notes.append((event, value)))
+    s.spoken.clear()
+    conn.event("room", LOOK_TEXT, lines=LOOK_LINES, room="cantina", amb="cantina")
+    assert client.messages[-5:] == LOOK_LINES                          # the arrow keys read them one by one
+    assert [v for e, v in notes if e == "message"] == LOOK_LINES      # the window gets a line each
+    assert s.spoken == [("reader", LOOK_TEXT)]                         # NVDA reads it once, whole
+    client.submit("repeat")
+    assert s.spoken[-1] == ("reader", LOOK_TEXT)                       # "repeat": the whole reply again
+    # An older server's one line, a one-line reply, and lines that aren't lines: the text, as a line.
+    for extra in ({}, {"lines": ["Sent."]}, {"lines": "Cantina\nExits"}, {"lines": ["a", 3]}):
+        conn.event("info", "One line.", **extra)
+        assert client.messages[-1] == "One line." and client.messages[-2] != "a"
+    # From Aruna: the answer is the reply said whole, once.
+    s.spoken.clear()
+    client.submit("look", "aruna")
+    conn.event("room", LOOK_TEXT, lines=LOOK_LINES)
+    assert s.spoken == [("narrator", LOOK_TEXT)] and client.messages[-5:] == LOOK_LINES
+
+
+def test_trimming_counts_every_line_of_a_long_reply(play):
+    client = play.client
+    notes = []
+    client.add_listener(lambda event, value: notes.append((event, value)))
+    for i in range(490):
+        client.add_line(f"line {i}")
+    client.add_lines([f"part {i}" for i in range(30)], "the whole reply")
+    assert len(client.messages) == 470 and client.messages[0] == "line 50" and client.messages[-1] == "part 29"
+    assert notes[-1] == ("trim", 50) and client.last_message == "the whole reply"
+    client.add_lines([f"big {i}" for i in range(180)])                 # 650 lines: three trims at once
+    assert notes[-1] == ("trim", 150) and len(client.messages) == 500 and client.messages[-1] == "big 179"
+    client.add_lines([f"huge {i}" for i in range(1000)])               # a runaway reply: at most 200 of it
+    assert client.messages[-1] == "huge 199" and len(client.messages) <= orbit_play.MAX_MESSAGES
+    # What the window was told adds up to what the client keeps.
+    shown = sum(1 for e, _v in notes if e == "message")
+    trimmed = sum(v for e, v in notes if e == "trim")
+    assert shown - trimmed == len(client.messages)
 
 
 # ------------------------------------------------------------
@@ -1311,11 +1366,12 @@ def test_kicked_or_replaced_connections_stay_closed():
 
 
 def test_old_commands_are_not_sent_late(monkeypatch):
-    monkeypatch.setattr(orbit_net, "QUEUE_MAX_AGE", 0.05)
+    # Old enough to drop, with time to spare for the fresh one on a busy test machine.
+    monkeypatch.setattr(orbit_net, "QUEUE_MAX_AGE", 0.5)
     client = FakeClient([WELCOME])
     conn, events, made, _hellos = _connection([client])
     conn.send({"t": "cmd", "c": "say", "a": "stale"})
-    time.sleep(0.1)
+    time.sleep(0.7)
     conn.send({"t": "cmd", "c": "say", "a": "fresh"})
     conn.start()
     assert _wait(lambda: {"t": "cmd", "c": "say", "a": "fresh"} in client.sent)
@@ -1691,7 +1747,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert other.connections == []
     assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
     hello = other.connections[-1].hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.5", "lang": "en",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.6", "lang": "en",
                      "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
     other.connections[-1].welcome(name="Rafli")
     account = other.accounts["wss://infiartt.com/orbit/ws"]

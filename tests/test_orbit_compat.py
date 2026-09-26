@@ -55,7 +55,7 @@ PHRASEBOOK = [
     ("use headlamp", "use"), ("wear headlamp", "use"), ("place beacon", "use"),
     ("drink iced coffee", "use"), ("eat stuffed pancake", "use"),
     ("remove headlamp", "unequip"),
-    ("examine headlamp", "look"), ("open capsule", "open"),
+    ("look at headlamp", "look"), ("open capsule", "open"),
     ("ring bell", "ring"), ("light lantern", "lantern"), ("read plaque", "look"),
     ("invite Budi", "invite"), ("visit Budi", "visit"),
     ("add friend Budi", "friends"), ("friends", "friends"),
@@ -167,6 +167,12 @@ PHRASEBOOK_NOW = [
 ]
 # Only the current client (1.4 read "board" as the mission board, as 1.0 did).
 PHRASEBOOK_15 = [("board the wombat", "board"), ("board the shuttle", "board")]
+# "examine" was "look" until client 1.6; now it's x (what you can do with it). Both reach the server.
+PHRASEBOOK_EXAMINE = {"1.0": [("examine headlamp", "look"), ("examine here", "look"), ("x here", "examine")],
+                      "1.4": [("examine headlamp", "look"), ("examine here", "look"), ("commands here", "examine"),
+                              ("help here", "examine")],
+                      "now": [("examine headlamp", "examine"), ("examine here", "examine"),
+                              ("commands here", "examine"), ("help here", "examine"), ("inspect headlamp", "look")]}
 
 # What the older clients still read themselves in Indonesian, and send as plain
 # text: the server doesn't read Indonesian any more, and answers with its hint.
@@ -263,6 +269,19 @@ def test_the_current_client_reaches_the_shuttle(spy, text, handler):
     calls.clear()
     game.receive(conn, dict(parsed, t="cmd"))
     assert calls and calls[-1] == handler, (text, parsed, calls)
+
+
+@pytest.mark.parametrize("client, text, handler", [(client, text, handler) for client, cases in
+                                                   PHRASEBOOK_EXAMINE.items() for text, handler in cases])
+def test_examine_and_the_room_list_from_every_client(spy, client, text, handler):
+    game, calls = spy
+    conn = join(game, "Tono", "engineer")
+    parsed = READERS[client](text)
+    if parsed.get("local") == "help":                      # the client's help sends a topic it doesn't know
+        parsed = {"c": "help", "a": parsed.get("topic", "")}
+    calls.clear()
+    game.receive(conn, dict(parsed, t="cmd"))
+    assert calls and calls[-1] == handler, (client, text, parsed, calls)
 
 
 @pytest.mark.parametrize("client", ["1.0", "1.4"])

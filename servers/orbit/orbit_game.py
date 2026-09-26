@@ -1107,7 +1107,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
     def cmd_help(self, session, message):
         topic = orbit_safety.name_key(self._arg(message, "a", 40))
         if topic in HERE_WORDS:
-            self.cmd_examine(session, {"a": "here"})           # "help here", "commands here": x here
+            self.run(session, {"c": "examine", "a": "here"})   # "help here", "commands here": x here
             return
         for name, words in self.HELP_TOPICS.items():
             if topic in words:
