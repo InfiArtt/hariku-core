@@ -9,13 +9,17 @@ newer, **standard library only**, one process, one SQLite file. The server
 decides everything (movement, money, things, progress); the client only sends
 commands and shows or speaks the results.
 
+**Orbit is played in English** (since 1.4): everything the server says is
+English, whatever language a client asks for, and it reads English commands
+and English names. Words in another language get its help hint.
+
 It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 `/orbit/` on to it:
 
 | Path | What |
 |---|---|
 | `GET /orbit/ws` | the game, over WebSocket |
-| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.3", "protocol": 1, "online": 3}` |
+| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.4", "protocol": 1, "online": 3}` |
 
 `/ws` and `/health` work too, for a proxy that strips the `/orbit` prefix.
 
@@ -26,7 +30,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_server.py` | the program: HTTP, WebSocket connections, limits, the tick |
 | `orbit_ws.py` | the WebSocket protocol (RFC 6455), shared with the Hariku extension |
 | `orbit_game.py` | the game's core: joining, talking, looking, time passing (no I/O) |
-| `orbit_nav.py` | walking by compass, the way (compact) and the guide, maps, dark rooms, locks, air, the Kancil, cabins |
+| `orbit_nav.py` | walking by compass, the way (compact) and the guide, maps, dark rooms, locks, air, the Wombat, cabins |
 | `orbit_items.py` | things: shops, using, wearing, examining, food, the temple |
 | `orbit_work.py` | jobs and their mini-games, XP and levels, missions, the daily bonus |
 | `orbit_econ.py` | the markets (prices where you stand, the way to the nearest), the farm, mining and salvage, profiles, the economy's totals |
@@ -46,11 +50,11 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
-| `orbit_verbs.py` | the commands the server reads from plain text (both languages) |
+| `orbit_verbs.py` | the commands the server reads from plain text (English) |
 | `orbit_world.py`, `world.json` | the map: worlds, rooms, compass exits, objects, goods, missions, gestures |
 | `economy.json` | the balance: levels, ranks, the daily bonus, crops, mining, the shops' things |
 | `orbit_earth.py` | what you see from the Observation Deck, from the real time |
-| `orbit_lang.py`, `texts.json` | everything the server says, in English and Indonesian |
+| `orbit_lang.py`, `texts.json` | everything the server says, in English |
 | `orbit_safety.py`, `words.json` | names, the word filter, rate limits |
 | `orbit_store.py` | saving (SQLite), and migrating older databases |
 | `orbit_backup.py`, `orbit-backup.service`, `orbit-backup.timer` | a daily copy of the database |
@@ -70,7 +74,7 @@ mkdir -p ~/orbit
 cd ~/orbit
 cp config.example.json config.json        # then put your character's name in "admins"
 python3 orbit_server.py --config config.json
-# "Orbit 1.3 listening on 127.0.0.1:7340"; Ctrl+C stops it
+# "Orbit 1.4 listening on 127.0.0.1:7340"; Ctrl+C stops it
 ```
 
 As a systemd **user** service (no sudo; linger is already on):
@@ -109,6 +113,79 @@ Players hear "the station's computer is restarting" and their Orbit reconnects
 by itself. The database is `~/orbit/orbit.db` (with `orbit.db-wal` next to it
 while running).
 
+### Updating to 1.4 (English only, English names; no migration)
+
+1. Copy these files to `~/orbit/`, never `private/`: `orbit_admin.py`,
+   `orbit_arcade.py`, `orbit_casino.py`, `orbit_crews.py`, `orbit_duels.py`,
+   `orbit_earth.py`, `orbit_econ.py`, `orbit_events.py`, `orbit_family.py`,
+   `orbit_game.py`, `orbit_hunt.py`, `orbit_hunt_tool.py`, `orbit_items.py`,
+   `orbit_lang.py`, `orbit_local.py`, `orbit_nav.py`, `orbit_npcs.py`,
+   `orbit_pets.py`, `orbit_progress.py`, `orbit_server.py`, `orbit_store.py`,
+   `orbit_trade.py`, `orbit_travel.py`, `orbit_verbs.py`, `orbit_weddings.py`,
+   `orbit_work.py`, `orbit_world.py`, `world.json`, `npcs.json`,
+   `economy.json`, `texts.json`, `hunt.example.json` (copying the whole
+   folder but `private/`, as before, is just as good). No new files, and
+   `config.json` needs no new keys; `words.json` (the word filter, still
+   English and Indonesian: players may type anything) is unchanged.
+2. `systemctl --user restart orbit`.
+3. **The database stays at version 8: there is nothing to migrate.** Every id
+   is the same (rooms, things, goods, events, residents), so characters,
+   their things, pets, families, weddings, the residents' memory, crews,
+   high scores and the hunt's progress keep their meaning; only names, words
+   and descriptions changed. The ids still work as names too, so "buy
+   martabak" or "talk to jali" still find the stuffed pancake and Rocco. A
+   pet keeps the name it has; new pets are called Marmalade, Tinker and Dusk
+   instead of Oyen, Timah and Senja.
+4. Returning players hear once what's new in 1.4 (`whats_new_14`: English
+   only, and the new names of the markets, the shuttles, the foods and the
+   residents), after the older notes they missed.
+5. The 1.0 to 1.4 clients keep working: every structured command they send
+   is the same, and the server answers in English even when their hello says
+   `"lang": "id"`. What they send as plain text is read in English only
+   ("way to the cantina", "guide me to the cantina", "u" for up); Indonesian
+   words ("arah ke kantin", "harian", "utara") get the help hint,
+   `I don't understand "...". Type help for the commands.` Client 1.5 is
+   English only too (its window and settings, and it no longer reads
+   Indonesian itself).
+6. The hunt: nothing to rebuild. A season's server file may keep its other
+   languages beside `"en"` (the private seasons are bilingual); the server
+   shows only the English riddles, texts, hints and the rival's name, and
+   any answer the season accepted (in any language) is still right, since
+   answers are compared by their hashes.
+7. Check: `curl -fsS http://127.0.0.1:7340/orbit/health` says `"version":
+   "1.4"`; in the game, "help" answers in English, "u" goes up, and "talk to
+   Rocco" in the Cantina works.
+
+The renames players meet most (ids unchanged):
+
+| Before 1.4 | Now |
+|---|---|
+| the Kancil (the mining shuttle to the Belt) | the Wombat ("ride the Wombat") |
+| the Merpati (the cargo shuttle to the Moon) | the Dove |
+| sweet martabak | stuffed pancake |
+| kangkung, kangkung seeds | water spinach, water spinach seeds |
+| kerupuk (as a name) | prawn crackers |
+| batik rug, batik shirt | woven rug, rocket-print shirt |
+| Bang Jali (the Cantina) | Rocco |
+| Pak Harsa (Engineering) | Oskar |
+| Ibu Sekar (the Star Dome Hall) | Amara |
+| Kelana (the Observation Deck at night) | Soren |
+| Mas Tegar (Gearworks) | Felix |
+| Kak Nilam (Whiskers & Widgets) | Priya |
+| Bu Safira (Starglint Jewellers) | Celeste |
+| Kapten Bayu (the Dock) | Captain Mateo |
+| Laras | Poppy |
+| Bayang (the Drift Bazaar's back alley) | Shade |
+| Ciko (the Tournament Stage) | Dario |
+| Pak Gino | Gino |
+| Mbak Tari | Hana |
+| Nenek Rimba (Evergrove) | Granny Fern |
+
+The places, the markets (the Spice Market, the Ice Depot, the Mineral
+Exchange, the Workshop's parts counter and the other worlds' markets), the
+shops, the worlds, the ships, the events and the titles already had English
+names and keep them.
+
 ### Updating to 1.3 (markets where you stand, the guide; no migration)
 
 1. Copy these files to `~/orbit/`, never `private/`: `orbit_econ.py`,
@@ -132,8 +209,8 @@ while running).
 4. Returning players hear once what's new in 1.3 (and in 1.2 and 1.1, if they
    missed those).
 5. The 1.0 to 1.3 clients keep working: `prices`, `buy` and `sell` are the
-   same commands, and "pandu ke kantin", "guide me to the cantina", "berhenti
-   pandu", "stop guide" reach the server as plain text. The guide's lines are
+   same commands, and "guide me to the cantina" and "stop guide" reach the
+   server as plain text. The guide's lines are
    ordinary `info` events; the arrival's `sound` (`gadget_arrived`) falls back
    to `gadget` in clients from 1.1 (1.0 plays nothing). Client 1.4 only makes
    "orbit connect" connect and "orbit disconnect" disconnect (it was one
@@ -366,17 +443,17 @@ What 1.3 ships with:
   world's prices are its market's and nothing can be bought at one counter
   and sold dear at the next. The station's markets and the other worlds'
   main markets are landmarks (anyone may ask the way); the Drift Bazaar's
-  back alley isn't. `prices` (harga) and `list` in a market say what it
+  back alley isn't. `prices` and `list` in a market say what it
   buys and sells at its prices (by kind; `prices crops`, `prices coffee`);
   in a shop or the pawn shop, their own list. Anywhere else, `prices`,
   `buy` and `sell` name the nearest market for what was asked, with the
   compact way there ("Nearest market for coffee: the Spice Market, north,
   then 2 west."; the deck instead, where the player may not ask the way);
   `way to the market` is the nearest one. The trader's report (work) says
-  where each good is traded, and so does Bang Jali's market gossip; a
+  where each good is traded, and so does Rocco's market gossip; a
   Hornbill's scanner bay still reads another world's markets, as a report.
 - **The way** is said in runs ("2 east, south, up, north, then 2 west";
-  "naik 3 tingkat" / "up 3 levels"), with the number of steps when it is 8
+  "up 3 levels"), with the number of steps when it is 8
   or more in three runs or more, and it **guides**: after each step one
   short `info` line says the next run ("Then 2 west."), a step off the
   route finds the way again ("Off the route. From here: south."), and
@@ -384,7 +461,7 @@ What 1.3 ships with:
   `gadget_arrived`). `guide` alone repeats what's left; `stop guide` ends it,
   and so do logging out, the Gate, the ferry and boarding a ship. The guide
   keeps to the doors the player can open, takes one-way exits only their
-  way, rides the Kancil when that's the way, knows the next step in the dark
+  way, rides the Wombat when that's the way, knows the next step in the dark
   and says when the next one needs a worn EVA suit. It lives in the session,
   in memory: a reconnect within the link-dead minute keeps it, a restart
   forgets it (the player asks the way again).
@@ -400,12 +477,12 @@ What 1.3 ships with:
 - **Work pay** (before levels and tools): a repair 10 + 10 per tone (40 to
   70; the Reactor Core a quarter more), a cargo run 70 to 100, an analysis
   45 + 5 per difficulty step, a patrol 40 + 5 per traveller. Breaks: 2
-  minutes (5 after a cargo run); a martabak halves the next one.
+  minutes (5 after a cargo run); a stuffed pancake halves the next one.
 - **The daily bonus:** 40, then 15 more for each day in a row, up to 130 on
   the seventh; every seventh day also 3 strawberry seeds. Missing a day
   starts again at 40.
 - **The farm:** 2 plots to start, up to 8 (150, 250, 400, 600, 900, 1,300
-  credits each). Crops (seed price, time, yield, market price): kangkung 5,
+  credits each). Crops (seed price, time, yield, market price): water spinach 5,
   10 min, 3-4, 4; chilli 10, 30 min, 3-5, 8; tomato 15, 1 h, 4-5, 9;
   strawberry 30, 2 h, 4-6, 16; vanilla 60 (level 3), 4 h, 3-5, 36; dragon
   fruit 100 (level 5), 8 h, 4-6, 50; moon melon 180 (level 8), 24 h, 3-5,
@@ -423,7 +500,7 @@ What 1.3 ships with:
   furniture 60 to 1,500, clothes 150 to 2,500, titles 200 to 5,000, pets
   600 to 1,600, pet food 6 and treats 15, rings 500 to 4,000), seeds, food
   (3 to 20), adopting (300), weddings (1,000 to 10,000, less what a
-  cancellation gives back), plots, the Kancil's fare (5 from the
+  cancellation gives back), plots, the Wombat's fare (5 from the
   Dock; pilots ride free), the tow when your air runs out (20), lanterns
   in the temple (3), the casino's edge, the lottery's cut, and the market's
   fees (10% on buying and 12% on selling; traders 2% and 4%, less with their
@@ -440,7 +517,7 @@ What 1.3 ships with:
   Second Orbit pays 40% of a thing's list price (`pawn.rate`) for anything
   but goods, pets, services and what can't be sold (the compass, keycards,
   earned titles).
-- **Trading:** `offer Budi 3 iron for 200 credits`; the other player (online,
+- **Trading:** `offer Sam 3 iron for 200 credits`; the other player (online,
   anywhere) has 2 minutes (`trading.seconds`) to accept. Goods, mission
   cargo, seeds, food, furniture and clothes (without a level) can be traded
   and given; devices, keycards and titles can't. Both sides move in one
@@ -491,7 +568,7 @@ What 1.3 ships with:
   leaving every 2 minutes and taking 40 seconds a unit (at least a minute).
   Your own ship: 25 seconds a unit divided by its speed (a pilot flies a
   quarter faster), burning fuel at each world's price (2 to 6 credits a
-  unit). The Belt is still the Kancil's.
+  unit). The Belt is still the Wombat's.
 - **Ships** (the Orbit Shipyard on the Mall Ring; one each, a new one trades
   the old in for half its list price): the Swiftlet shuttle (2,500, level 2:
   hold 40, tank 24, speed 1), the Heron courier (9,000, level 5: 60, 40,
@@ -561,18 +638,18 @@ too fast and adjust these numbers.
 `crew create` and a name founds a crew (500 credits, from level 3; a name of
 3 to 24 letters, digits and spaces, through the word filter, and unlike any
 other crew's however its spaces and capitals fall); its founder is the
-captain. `crew invite Budi` (also `kru undang Budi`, `undang Budi ke kru`)
-asks someone in: they `accept` or `decline` within two minutes, like an
-offer (a crew holds 12). `crew say` and the words (`kru bilang ...`, `cs
-...`, or a whisper to `crew`) reach every member online, anywhere; it is
+captain. `crew invite Sam` (also `invite Sam to crew`) asks someone in:
+they `accept` or `decline` within two minutes, like an offer (a crew holds
+12). `crew say` and the words (`say to crew ...`, `cs ...`, or a whisper to
+`crew`) reach every member online, anywhere; it is
 filtered, rate-limited and muted like the rest of the chat and never
 stored, and players can ignore a member there as anywhere. `crew` shows the
-crew, `crew leave`, `crew kick Budi`, `crew captain Budi` (hand it over),
+crew, `crew leave`, `crew kick Sam`, `crew captain Sam` (hand it over),
 `crew motto` and a line; when the captain leaves, the longest-serving member
 takes over, and the last one out ends the crew. Every XP a member earns
-while in it is a point for the crew; `crews` (`papan kru`) shows the board.
+while in it is a point for the crew; `crews` (`crew board`) shows the board.
 Others see a player's crew when they look at them or at their profile.
-Admins can disband a crew (`bubarkan kru Bintang` / `disband crew Bintang`).
+Admins can disband a crew (`disband crew Nova`).
 The Crew Hangar, north of the Hangar, is a room each crew has to itself:
 only members get in, each crew meets only its own, and its board says the
 crew's points and place. The numbers are `crews` in economy.json.
@@ -581,8 +658,8 @@ crew's points and place. The numbers are `crews` in economy.json.
 
 Two players settle it with a quick draw, only in the contest zones (rooms
 marked `arena` in world.json: the Zero-G Gym on the station and the
-Tournament Stage on Pixel Pier). `duel Budi` (also `tantang duel Budi`), or
-`duel Budi 20` for a stake of up to 100 credits each: Budi answers `accept`
+Tournament Stage on Pixel Pier). `duel Sam` (also `duel with Sam`), or
+`duel Sam 20` for a stake of up to 100 credits each: Sam answers `accept`
 or `decline` within a minute, like an offer; both pay the stake when it
 starts, and the room hears it begin. Best of three rounds: "ready", then
 "draw!" 2 to 5 seconds later, and the first number typed wins the round (a
@@ -592,44 +669,43 @@ draw gives them back; walking out, leaving the game or losing the
 connection forfeits. Both then rest a minute; a player who was declined
 waits five minutes before challenging the same person again; `duels off`
 refuses every challenge (`duels` shows the record); muted players can't
-challenge; admins can stop a duel (`hentikan duel Budi` / `stop duel Budi`,
-the stakes go back). The numbers are `duels` in economy.json.
+challenge; admins can stop a duel (`stop duel Sam`, the stakes go back). The numbers are `duels` in economy.json.
 
-Every duel won counts on the duels' leaderboard (`leaderboard duels`,
-`papan peringkat duel`; the `duels_won` column). The weekly **duel tournament**
+Every duel won counts on the duels' leaderboard (`leaderboard duels`; the
+`duels_won` column). The weekly **duel tournament**
 (Sunday 15:00 UTC, two hours; `game.events_weekly`) counts the duels won on
 the Tournament Stage while it's on: the most wins take 500, 200 and 100
 credits and the champion the title Tournament Champion (`prizes` and `prize_thing` of
 `tournament` in world.json's events; a tie goes to who got there first).
-Ciko, the stage's host, knows who leads. Admins can start one at any time
-(`mulai acara turnamen` / `start event tournament`).
+Dario, the stage's host, knows who leads. Admins can start one at any time
+(`start event tournament`).
 
 ## Residents (npcs.json)
 
 The simulation has 14 residents who aren't players, each with a voice
 number of their own (the 1.2 client reads their words in it) and every
-line in both languages. Eleven keep a post: Bang Jali, the Cantina's
-bartender; Pak Harsa, the old engineer in Engineering; Ibu Sekar, the
-keeper of the Way of Starlight in the Star Dome Hall; Mas Tegar at
-Gearworks; Kak Nilam at Whiskers & Widgets; Bu Safira, the jeweller and
-wedding planner, at Starglint Jewellers; Kapten Bayu, the ferry's pilot, at
-the Dock; Bayang in the Drift Bazaar's back alley; Ciko, the host of Pixel
-Pier's Tournament Stage; Kelana, a traveller at the Observation Deck from
-19:00 to 05:00 only; and Laras, a curious girl who spends her day in the
-Archive, the park, the Food Court and at the Observation Deck. Three walk
-the map on a daily schedule (station time, UTC), room by room by the
-compass, and the rooms they pass hear them come and go: Pak Gino (the Dock,
-the Food Court, Cargo, the Cantina), Mbak Tari (Hydroponics, the park, the
-Jasmine Pavilion, the Cantina) and Nenek Rimba in Evergrove.
+line in English (their ids are still the old ones: `jali` is Rocco, and so
+on; see Updating to 1.4). Eleven keep a post: Rocco, the Cantina's
+bartender; Oskar, the old engineer in Engineering; Amara, the keeper of the
+Way of Starlight in the Star Dome Hall; Felix at Gearworks; Priya at
+Whiskers & Widgets; Celeste, the jeweller and wedding planner, at Starglint
+Jewellers; Captain Mateo, the ferry's pilot, at the Dock; Shade in the
+Drift Bazaar's back alley; Dario, the host of Pixel Pier's Tournament
+Stage; Soren, a traveller at the Observation Deck from 19:00 to 05:00 only;
+and Poppy, a curious girl who spends her day in the Archive, the park, the
+Food Court and at the Observation Deck. Three walk the map on a daily
+schedule (station time, UTC), room by room by the compass, and the rooms
+they pass hear them come and go: Gino (the Dock, the Food Court, Cargo, the
+Cantina), Hana (Hydroponics, the park, the Jasmine Pavilion, the Cantina)
+and Granny Fern in Evergrove.
 
 - **Honesty:** residents are never in `who`, the online count or any list
   of players; `look` names them on a line of their own ("Residents here:
   ..."), looking at one says it's a resident, not a player, and so does
-  whispering to one. Players can't take their names. `penduduk` /
+  whispering to one. Players can't take their names (nor their ids).
   `residents` lists them all and where they are now.
-- **Talking:** `talk to Jali` / `bicara dengan Jali` (a greeting and the
-  topics), `ask Jali about gossip` / `tanya Jali tentang gosip`, `greet
-  Jali` / `sapa Jali` (also `hi Jali`, and any gesture at them), and giving
+- **Talking:** `talk to Rocco` (a greeting and the topics), `ask Rocco about
+  gossip`, `greet Rocco` (also `hi Rocco`, and any gesture at them), and giving
   them things. Some answers are live: the gossip (a wedding, the richest,
   the top miner, the leading crew), who's online, the market, the events,
   the station time, your own progress, today's specials, the ferry, your
@@ -644,7 +720,7 @@ Jasmine Pavilion, the Cantina) and Nenek Rimba in Evergrove.
   friends 5% off in their own shop, close friends 10% (`discount`). A
   resident who knows you well may greet you when you walk in (half of the
   times, at most once in half an hour).
-- **Favours:** `ask Harsa about work` names what they need (3 pieces of
+- **Favours:** `ask Oskar about work` names what they need (3 pieces of
   scrap, later circuit boards, satellite chips...); give it to them for
   credits, XP or a thing, each favour once a day.
 - **Idle lines** are rare (7 to 15 minutes apart, at most one in a room
@@ -652,8 +728,8 @@ Jasmine Pavilion, the Cantina) and Nenek Rimba in Evergrove.
   in, and never come while players have talked there in the last 90
   seconds.
 
-`npcs.json` is checked when the server starts (every line in both languages
-with the same placeholders, schedules, rooms that exist, routes that avoid
+`npcs.json` is checked when the server starts (every line in English,
+schedules, rooms that exist, routes that avoid
 airless, dark and private rooms, voices 1 to 10, names unique); a mistake
 stops the server with the reason in the log. Its `rules` are the numbers
 above: `walk_seconds` (8 to 14 seconds a room), `idle_gap`, `room_gap`,
@@ -683,22 +759,21 @@ and each kind's `pet` (its sound, what it eats, its tricks).
 - **Tricks:** young pets learn two, grown ones a third; 3 lessons each
   (`lessons`), 5 minutes apart, when the pet is content and not tired.
 - `pet status`, `feed Kiki`, `play with Kiki`, `rest Kiki`, `pat`, `teach
-  trick sit`, `trick sit`, `name pet Kiki`, `rename Kiki to Momo` (and in
-  Indonesian `status hewan`, `beri makan`, `main dengan`, `istirahatkan`,
-  `elus`, `ajari trik duduk`, `trik duduk`, `namai`, `ganti nama ... jadi
-  ...`). Pets follow their owner, join in their gestures and react to
-  others'.
+  trick sit`, `trick sit`, `name pet Kiki`, `rename Kiki to Momo`. A new pet
+  has its kind's name (`name` in its `pet`: Marmalade the orange cat, Tinker
+  the robot cat, Dusk the fox, Bip the little robot...) until it's given one. Pets follow their
+  owner, join in their gestures and react to others'.
 
 ## Families
 
-- **Partners:** `partner with Budi` / `ajak berpasangan Budi`; Budi answers
+- **Partners:** `partner with Sam`; Sam answers
   `accept` or `decline` within 2 minutes (`ask_seconds`); after a no, the
   same player can't be asked again for 10 minutes (`snub_seconds`). Ending
-  it takes two commands: `end partnership` / `akhiri kemitraan`, then
-  `confirm end` / `konfirmasi akhiri` within a minute; the other partner is
+  it takes two commands: `end partnership`, then `confirm end` within a
+  minute; the other partner is
   told kindly (at once, or when they next come). A new partnership waits a
   day after one ended (`partner_cooldown`). Admins can end one for players
-  who can't (`akhiri kemitraan Budi` / `end partnership Budi`). It stays
+  who can't (`end partnership Sam`). It stays
   wholesome: partners are partners, and the texts never turn romantic.
 - **Adopting,** at the Medbay's family desk: 300 credits, from level 3, at
   most 2 children each, 3 days apart. Partners decide together (the other
@@ -708,18 +783,18 @@ and each kind's `pet` (its sound, what it eats, its tricks).
   having a partner.
 - **A child's needs** fall more gently than a pet's (food 1.5 an hour, fun
   2, rest 1): baby porridge from the Food Court (8 credits, 40 food; a
-  martabak 30, kerupuk 15), play (30 fun, 5 minutes apart), a story (15 fun
+  stuffed pancake 30, prawn crackers 15), play (30 fun, 5 minutes apart), a story (15 fun
   and 15 rest, 10 minutes apart), rest (45, 20 minutes apart). A child left
   alone grows quiet and asks for you; it's never harmed. With care it grows
   over real days: a toddler after 6 cares and 2 days, a child after 18 and
   5 (`stages`), saying more as it grows, in a voice of its own.
 - **Helping:** a happy child (the third stage) at your side adds 5% to the
-  XP from work (`xp_bonus`); once a day `ask Mira for help` / `minta tolong
-  Mira` fetches something small (kerupuk, kangkung seeds, a pet treat or an
-  iced coffee, by the weights in `fetch`). `bring Mira` / `bawa Mira`: the
-  child follows you.
-- **The naming rite:** `naming rite Mira` / `upacara nama Mira` in the Star
-  Dome Hall, with Ibu Sekar there: a lantern lit, the name spoken under the
+  XP from work (`xp_bonus`); once a day `ask Lily for help` fetches
+  something small (prawn crackers, water spinach seeds, a pet treat or an
+  iced coffee, by the weights in `fetch`). `bring Lily`: the child follows
+  you.
+- **The naming rite:** `naming rite Lily` in the Star Dome Hall, with Amara
+  there: a lantern lit, the name spoken under the
   dome, the star bell once.
 
 The numbers are `family` in economy.json (with the children's lines, by
@@ -729,13 +804,13 @@ stage).
 
 - **The ring:** Starglint Jewellers, north-east of the Mall Ring's east
   side, sells silver (500), gold (1,500) and star (4,000) rings. `propose
-  to Budi` / `lamar Budi` in the same room; Budi answers `accept` (engaged)
+  to Sam` in the same room; Sam answers `accept` (engaged)
   or `decline` (the ring stays yours) within 2 minutes; after a no, 10
   minutes before asking again.
 - **Booking,** at the jeweller's wedding desk, for an engaged couple: a hall
   (the rooms marked `venue`: the Star Dome Hall, the Jasmine Pavilion,
   Evergrove's Great Hall), a tier, a ceremony and a time in station time
-  (`book wedding pavilion grand neutral 14:00`, also `besok 14:00` or
+  (`book wedding pavilion grand neutral 14:00`, also `tomorrow 14:00` or
   `2026-10-03 14:00`), at least 10 minutes and at most 14 days ahead.
   Tiers: simple 1,000 credits (10 guests), grand 4,000 (30 guests, music
   and the celebration's ambience), luxurious 10,000 (60 guests, and
@@ -744,17 +819,17 @@ stage).
   money back a day or more ahead, half of it an hour or more ahead, and
   nothing later. A character marries again only after 7 days
   (`cooldown_days`). Admins can cancel any wedding, all the money back
-  (`batalkan pernikahan Budi` / `cancel wedding Budi`).
-- **Guests:** `invite Budi to the wedding`; guests answer `rsvp yes` or
-  `rsvp no` (`hadir`, `tidak hadir`), hear of invitations waiting when they
+  (`cancel wedding Sam`).
+- **Guests:** `invite Sam to the wedding`; guests answer `rsvp yes` or
+  `rsvp no` (`i'll come`, `can't come`), hear of invitations waiting when they
   join and are reminded 10 minutes before. At the ceremony they `throw
   flowers`, cheer and clap, each with its sound.
 - **The ceremony** waits 20 minutes for both partners at the hall
   (`wait_minutes`); if they don't come, it's missed and half the price
   comes back. Two kinds, chosen when booking. The **Starlight rite**, led by
-  Ibu Sekar: each partner lights a lantern, the two lights are joined into
+  Amara: each partner lights a lantern, the two lights are joined into
   one, a moment of silence, the vows the two write themselves, the star bell
-  three times. A **neutral ceremony**, led by Bu Safira as the station's
+  three times. A **neutral ceremony**, led by Celeste as the station's
   registrar: the vows, each partner's yes, their signatures. Neither
   borrows from any real faith's rites. Each step waits a few minutes
   (`lantern_seconds`, `join_seconds`, `vow_seconds`, `consent_seconds`,
@@ -766,7 +841,7 @@ stage).
 - **Afterwards:** the station hears the news, the couple get a title
   (Starlit or Wedded) and a keepsake, and the day is kept as a memory (who
   came, the vows, the flowers and cheers) that the couple and their guests
-  can read (`read memory` / `baca kenangan`).
+  can read (`read memory`).
 
 The numbers are `weddings` in economy.json.
 
@@ -774,8 +849,8 @@ The numbers are `weddings` in economy.json.
 
 The station's own quiet tradition, made up for Orbit (no real faith's
 rites, words or symbols): lanterns lit in the Star Dome Hall for someone,
-the star bell, the naming rite and the Starlight wedding, kept by Ibu
-Sekar. On the Lantern Festival (the hundredth day of the year) lanterns
+the star bell, the naming rite and the Starlight wedding, kept by Amara.
+On the Lantern Festival (the hundredth day of the year) lanterns
 are free and each one lit is thanked with a small gift; the lanterns lit
 that day also count towards the festival's goal, 30 in all and at most 5
 from each player (`temple.festival_goal`, `festival_cap`). Reaching it
@@ -801,11 +876,11 @@ losing the connection ends it too.
 - **Echo** (memory): tones 1 to 4 (the reactor's), typed back as numbers;
   one more every time, from 3 up to 16.
 - **Meteor Dodge** (stereo): a meteor comes from the left, the right or
-  ahead; 4 steps left, 6 right (or the words left, right, kiri, kanan). Its
+  ahead; 4 steps left, 6 right (or the words left and right). Its
   sound is placed on its side; clients older than 1.1 are told the side.
 
-Each game's table (`arcade scores`, `skor arkade`, `high scores meteor`, or
-looking at the High Score Wall) keeps each player's best; beating the top
+Each game's table (`arcade scores`, `arcade scores meteor`, or looking at
+the High Score Wall) keeps each player's best; beating the top
 of a table is announced to everyone and pays more tickets. The Prize
 Counter, east of the Hall, takes the tickets (`list`, `buy plush comet`).
 Everything is timed on the server when commands arrive; a client of one's
@@ -817,10 +892,10 @@ prizes are only for fun.
 A season-long chain of hard riddles for the whole server: the simulation's
 founder broke her last chord apart and hid each note behind a riddle, and
 whoever finds them all first wins.
-Players type `perburuan` / `hunt` (their riddle, and any hints released),
-`selidiki` / `investigate` (also `cari petunjuk`, `look for clues`) where
-they think a clue is, `pecahkan ...` / `solve ...` (also `jawaban ...`,
-`my answer is ...`) and `papan pemburu` / `hunt board`.
+Players type `hunt` (their riddle, and any hints released), `investigate`
+(also `look for clues`) where they think a clue is, `solve ...` (also `my
+answer is ...`) and `hunt board`. Everything the hunt says is English; a
+season's file may hold other languages too, and only its `"en"` is shown.
 
 - **Clues** are in rooms. Some show only to someone carrying a thing (a
   scanner), wearing one (a headlamp), or at certain station hours (UTC;
@@ -841,14 +916,14 @@ they think a clue is, `pecahkan ...` / `solve ...` (also `jawaban ...`,
 - **The rival**, the Meridian Grey company, "finds" a note every
   `rival.hours` and says so, to keep the pressure on, but never the last one.
 - **Admins** know the answers, so they're left off the board and out of the
-  prizes (unless `game.hunt_admins_compete`); `uji perburuan` / `hunt test`
+  prizes (unless `game.hunt_admins_compete`); `hunt test`
   plays the season from the start without counting, to try it out.
 
 **A season is never in this repository**, which is public: the riddles,
 where the clues are and what unlocks them are the game. Seasons are written
 in `servers/orbit/private/` (ignored by git) and live in `~/orbit/private/`
 on the server. There are two files. The **authoring** file has the answers in
-plain text (`"accept"`: every answer a riddle takes, in both languages and
+plain text (`"accept"`: every answer a riddle takes, in any language and
 other spellings); it stays on the computer it was written on. The server's
 file, built from it, has only keyed hashes of them (HMAC-SHA256 with a new
 random salt of 32 bytes, over "season:stage:answer"), so the answers can't
@@ -876,14 +951,14 @@ systemctl --user restart orbit
 
 The log says "the hunt's season 1 begins" the first time (a restart goes on
 with the same season). For the next season: build its file and copy it over
-the one `"hunt"` names, then an admin types `musim baru` / `new season`,
+the one `"hunt"` names, then an admin types `new season`,
 with no restart (a new name in config.json needs a restart instead):
 everyone starts it at the first riddle and hears so; the old season's
 progress stays in the database. A file that can't be read or isn't right is
 refused (the log says why) and the season running goes on. When a riddle
-proves too hard, `umumkan petunjuk 2` / `release hint 2` gives everyone the
+proves too hard, `release hint 2` (or `announce hint 2`) gives everyone the
 next of riddle 2's hints (the season file has them), and `hunt` repeats it
-from then on. `status perburuan` / `hunt status` shows where everyone is,
+from then on. `hunt status` shows where everyone is,
 their tries and waits.
 
 `hunt.example.json` is a fake two-riddle demo season (its answers are
@@ -891,38 +966,39 @@ their tries and waits.
 
 ## Admin commands
 
-Typed in the game by a character in `game.admins` (Indonesian first):
+Typed in the game by a character in `game.admins` (in English, like every
+command since 1.4):
 
 | Command | What |
 |---|---|
-| `bisukan Budi 10` / `mute Budi 10`, `unmute Budi` | mute for minutes |
-| `tendang Budi` / `kick Budi` | send off the station |
-| `ban Budi`, `unban Budi` | the character, and its address for 7 days |
-| `umumkan ...` / `announce ...` | to everyone |
-| `beri kredit Budi 500` / `grant Budi 500` | give credits (from a player, "beri kredit" is a gift) |
-| `ambil kredit Budi 100` / `take credits Budi 100` | take credits |
-| `beri item Budi senter 1` / `give item Budi headlamp` | give any thing (a pet too) |
-| `ekonomi` / `economy` | the economy's report |
-| `atur harga kopi 20` / `set price coffee 20` | a market price for the next hour |
-| `reset harian Budi` / `reset streak Budi` | a daily streak back to zero |
-| `pergi ke Anjungan`, `pergi ke Budi` / `goto the bridge`, `goto Budi` | teleport (players walk) |
-| `tak terlihat` / `invisible` | nobody sees you come, go, or in who (again: visible) |
-| `pindahan` / `transfers` | recent character transfers |
-| `cabut akses Budi` / `revoke Budi` | no computer can play Budi until a transfer code is used (a stolen laptop) |
-| `kode pindah untuk Budi` / `transfer code for Budi` | a code for someone who lost their computer |
-| `log admin` / `admin log` | the last admin actions |
-| `mulai acara hujan meteor` / `start event meteor shower` | start any event now (`start event tournament`: the duel tournament) |
-| `hentikan acara` / `stop event` (and a name) | stop the event (or cancel a scheduled one) |
-| `jadwalkan acara 2026-09-27 14:00 ...` / `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
-| `status perburuan` / `hunt status` | the hunt: everyone's riddle, tries and waits |
-| `musim baru` / `new season` | read the hunt's season file again (a new season begins when its number changed) |
-| `umumkan petunjuk 2` / `release hint 2` | the next hint of the hunt's riddle 2, to everyone |
-| `hentikan duel Budi` / `stop duel Budi` | stop a duel (the stakes go back) |
-| `bubarkan kru Bintang` / `disband crew Bintang` | end a crew (its members are told) |
-| `akhiri kemitraan Budi` / `end partnership Budi` | end Budi's partnership, for players who can't (both are told kindly) |
-| `batalkan pernikahan Budi` / `cancel wedding Budi` | cancel Budi's coming wedding, all the money back (the couple and guests are told) |
-| `uji perburuan` / `hunt test` | play the hunt from the start without counting (again: back) |
-| `bantuan admin` / `help admin` | this list, in the game (players don't see it) |
+| `mute Sam 10`, `unmute Sam` | mute for minutes |
+| `kick Sam` | send off the station |
+| `ban Sam`, `unban Sam` | the character, and its address for 7 days |
+| `announce ...` | to everyone |
+| `grant Sam 500` | give credits (from a player, "give Sam 500 credits" is a gift) |
+| `take credits Sam 100` | take credits |
+| `give item Sam headlamp` | give any thing (a pet too) |
+| `economy` | the economy's report |
+| `set price coffee 20` | a market price for the next hour |
+| `reset streak Sam` | a daily streak back to zero |
+| `goto the bridge`, `goto Sam` | teleport (players walk) |
+| `invisible` | nobody sees you come, go, or in who (again: visible) |
+| `transfers` | recent character transfers |
+| `revoke Sam` | no computer can play Sam until a transfer code is used (a stolen laptop) |
+| `transfer code for Sam` | a code for someone who lost their computer |
+| `admin log` | the last admin actions |
+| `start event meteor shower` | start any event now (`start event tournament`: the duel tournament) |
+| `stop event` (and a name) | stop the event (or cancel a scheduled one) |
+| `schedule event 2026-09-27 14:00 ...`, `schedule event 30 ...` | an announcement of your own at a UTC time, or in so many minutes |
+| `hunt status` | the hunt: everyone's riddle, tries and waits |
+| `new season` | read the hunt's season file again (a new season begins when its number changed) |
+| `release hint 2` | the next hint of the hunt's riddle 2, to everyone |
+| `stop duel Sam` | stop a duel (the stakes go back) |
+| `disband crew Nova` | end a crew (its members are told) |
+| `end partnership Sam` | end Sam's partnership, for players who can't (both are told kindly) |
+| `cancel wedding Sam` | cancel Sam's coming wedding, all the money back (the couple and guests are told) |
+| `hunt test` | play the hunt from the start without counting (again: back) |
+| `help admin` | this list, in the game (players don't see it) |
 
 Every admin action is written to the log and to the database's `admin_log`
 table, with who did it and when.
@@ -931,7 +1007,7 @@ table, with who did it and when.
 
 A character lives on the computer that made it: the client keeps a random
 secret, the server only a hash of it. In Preferences, Orbit ("Move my
-character to another computer"), or with `kode pindah` / `move my character`,
+character to another computer"), or with `transfer code` / `move my character`,
 the server makes a one-time code: 16 letters from an alphabet without I and O
 (about 70 bits), shown as four groups; only its keyed hash is stored, for 10
 minutes, and a new one replaces the old. The other computer sends the code
@@ -1004,17 +1080,18 @@ never contains secrets, codes, chat or addresses.
 ## Protocol
 
 JSON text messages over WebSocket (text frames only; 4096 bytes at most from
-a client). Everything the server sends is already in the player's language.
-Protocol version 1 is unchanged since Orbit 1.0: everything 1.1, 1.2 and
-1.3 added is optional, so the older clients keep working (they only miss
+a client). Everything the server sends is English, ready to show and
+speak, whatever `lang` the hello asked for.
+Protocol version 1 is unchanged since Orbit 1.0: everything 1.1, 1.2, 1.3
+and 1.4 added is optional, so the older clients keep working (they only miss
 the new sounds; every newer command reaches the server from them as plain
 text).
 
 **Joining.** The client's first message:
 
 ```json
-{"t": "hello", "v": 1, "lang": "id", "secret": "<64 hex characters>",
- "name": "Rafli", "job": "pilot", "client": "Hariku Orbit 1.2"}
+{"t": "hello", "v": 1, "lang": "en", "secret": "<64 hex characters>",
+ "name": "Rafli", "job": "pilot", "client": "Hariku Orbit 1.5"}
 ```
 
 A known secret resumes its character (the name and job are then ignored); an
@@ -1036,7 +1113,7 @@ still on the station (a reconnect within a minute: nobody is told anything).
 
 **Commands** (`{"t": "cmd", "c": ..., ...}`); the client reads what was typed
 and sends the command word, the server finds places, people and things by
-their names in either language. Anything the client doesn't know goes as
+their English names (and their ids). Anything the client doesn't know goes as
 `text`, and the server reads the rest itself (`orbit_verbs.py`), so new
 commands need no new client:
 
@@ -1046,8 +1123,8 @@ commands need no new client:
 | `move` | `d`: n, ne, e, se, s, sw, w, nw, u, d | walk one room |
 | `go` | `a`: a direction or a place | next door: a walk; further: the way (admins teleport) |
 | `way`, `map`, `where`, `compass`, `scan`, `locate` | `a` / `to` | finding your way and people (`way` also starts the guide) |
-| `guide` | `a`: a place (the way, guided); nothing: what's left; `op`: `stop` | the guide (1.3; from text: pandu ke, guide me to, berhenti pandu, stop guide) |
-| `board` | | the Kancil, at the Dock or the Belt Platform |
+| `guide` | `a`: a place (the way, guided); nothing: what's left; `op`: `stop` | the guide (1.3; from text: guide me to, stop guide) |
+| `board` | | the Wombat, at the Dock or the Belt Platform |
 | `say`, `shout` | `a`: the words | shout: station-wide, once every 10 s |
 | `whisper` | `to`, `a` | to anyone on the station |
 | `emote` | `e`: smile, wave, laugh, nod, shrug, clap, cheer, sigh, bow, dance, hug; `to` (optional) | |
@@ -1213,10 +1290,13 @@ would give players the edge fails there. `test_orbit_worlds.py` checks every
 world's map (each room reached from its port and back, 6 to 15 rooms, air
 rescue in the same world) and the travel links between the worlds.
 
-`tests/orbit_parse_1_0.py` is a frozen copy of the 1.0 client's command
-reader: `test_orbit_compat.py` checks that every command added later still
-reaches the server from it. The residents', pets', families' and weddings'
-tests run on a fixed clock with seeded randomness; `test_orbit_npcs.py` also
+`tests/orbit_parse_1_0.py` and `tests/orbit_parse_1_4.py` are frozen copies
+of the 1.0 and 1.4 clients' command readers: `test_orbit_compat.py` checks
+that every command added later still reaches the server from them and from
+client 1.5's, that what they send in Indonesian gets the English help hint,
+and that a hello asking for `"lang": "id"` is answered in English. The
+residents', pets', families' and weddings' tests run on a fixed clock with
+seeded randomness; `test_orbit_npcs.py` also
 migrates a version 7 database to 8. `test_orbit_markets.py` checks that each
 station market lists and trades only its own goods, the way to the nearest
 one, and that a version 8 database keeps its prices at the new markets;
@@ -1224,7 +1304,7 @@ one, and that a version 8 database keeps its prices at the new markets;
 detour, arriving, stopping, logging out and travel), past keycard doors,
 through the dark, down the one-way slide and out into vacuum.
 
-## Later (not in 1.3)
+## Later (not in 1.4)
 
 - **Pets shared by two players:** a companion already has any number of
   owners (`companion_owners`), as children do; a pet could be given to a
