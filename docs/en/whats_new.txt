@@ -19,6 +19,9 @@ Version 2.11.0 (Core Update)
   Calculator & Converter is the first to use it: "25 x 4", "5 km ke mil",
   "2 foot in inches" and, right after an answer, "tambah 5" are answered as
   they are, without "berapa" or "what's" in front.
+- What Hariku says reaches your screen reader in the order it was said.
+  Two lines that came at the same moment (a game's reply and the note
+  after it) could be read the other way round; now they queue up.
 - For extension developers: put your guide in docs/<language>/guide.md (its
   first # heading is its title) and Hariku finds it; core.guides opens
   guides from your code. core.commands.add_intent takes a matcher for
