@@ -6,6 +6,7 @@
 # Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+import queue
 import sys
 import threading
 import logging
@@ -71,9 +72,49 @@ def speak(text, interrupt=False):
     _deliver(final_text, final_interrupt, config, speech=True)
 
 
+# Everything for Tolk goes through one queue and one worker thread (since 2.11),
+# so lines reach the screen reader in the order they were spoken: with a thread
+# for each line, two lines spoken at once (a game's reply and the note after it)
+# could arrive the other way round, and Tolk was called from several threads at
+# once. The worker starts with the first line and lives as long as Hariku; a
+# failed line is logged and the next one still goes.
+_queue = queue.Queue()
+_worker = None
+_worker_lock = threading.Lock()
+
+
+def _to_tolk(text, interrupt, speech, braille_on, silence):
+    try:
+        if silence and interrupt:
+            tolk.silence()
+        if speech and braille_on:
+            tolk.output(text, interrupt)   # speech + braille
+        elif speech:
+            tolk.speak(text, interrupt)     # speech only
+        elif braille_on:
+            tolk.braille(text)              # braille only
+    except Exception as e:
+        logger.error(f"Tolk speak error: {e}")
+
+
+def _run_queue():
+    while True:
+        job = _queue.get()
+        _to_tolk(*job)
+
+
+def _start_worker():
+    global _worker
+    with _worker_lock:
+        if _worker is None or not _worker.is_alive():
+            _worker = threading.Thread(target=_run_queue, daemon=True, name="hariku-speech")
+            _worker.start()
+
+
 def _deliver(text, interrupt, config, speech=True, braille=None, silence=False):
-    """Hand text to Tolk on a worker thread. `braille` None follows the
-    braille_output setting; `silence` first stops the screen reader's speech."""
+    """Hand text to Tolk on the speech worker thread, in order. `braille` None
+    follows the braille_output setting; `silence` first stops the screen
+    reader's speech."""
     actual_interrupt = interrupt and config.get("interrupt_speech", True)
 
     # Braille output: Tolk's output() sends to BOTH speech and a connected
@@ -83,19 +124,8 @@ def _deliver(text, interrupt, config, speech=True, braille=None, silence=False):
         braille and config.get("braille_output", True))
 
     if TOLK_LOADED:
-        def _speak_worker():
-            try:
-                if silence and actual_interrupt:
-                    tolk.silence()
-                if speech and braille_on:
-                    tolk.output(text, actual_interrupt)   # speech + braille
-                elif speech:
-                    tolk.speak(text, actual_interrupt)     # speech only
-                elif braille_on:
-                    tolk.braille(text)                     # braille only
-            except Exception as e:
-                logger.error(f"Tolk speak error: {e}")
-        threading.Thread(target=_speak_worker, daemon=True).start()
+        _queue.put((text, actual_interrupt, speech, braille_on, silence))
+        _start_worker()
     elif speech:
         # Fallback console print
         print(f"[SPEECH] {text}")
