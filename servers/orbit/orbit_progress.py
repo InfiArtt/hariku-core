@@ -27,7 +27,7 @@ duels won.
 import logging
 
 import orbit_safety
-from orbit_lang import LANGUAGES
+from orbit_lang import LANGUAGES, pick
 
 logger = logging.getLogger("orbit.game")
 
@@ -175,7 +175,7 @@ class ProgressMixin:
         table = self.econ.get("achievements", {})
         titles = [self._title(table[a]) for a in self.store.achievements_of(char["id"]) if a in table]
         parts = [self.render(lang, "achievements" if titles else "achievements_none", n=len(titles),
-                             total=len(table), titles=titles)]
+                             total=len(table), titles="\n".join(pick(t, lang) for t in titles))]
         nearest = []
         for aid, achievement in table.items():
             if aid in earned:
@@ -188,8 +188,8 @@ class ProgressMixin:
                                desc=table[aid].get("desc", ""), have=have, goal=goal)
                    for _ratio, aid, have, goal in nearest[:3]]
         if entries:
-            parts.append(self.render(lang, "achievements_next", entries="; ".join(entries)))
-        self._info(session, text=" ".join(parts))
+            parts.append(self.render(lang, "achievements_next", entries="\n".join(entries)))
+        self._info(session, text="\n".join(parts))
 
     # --- leaderboards ------------------------------------------------------------------------
 
@@ -226,17 +226,17 @@ class ProgressMixin:
                 if rows and rows[0][1] > 0:
                     leaders.append(self.render(lang, "board_leader", board=self.render(lang, f"board_{b}"),
                                                name=rows[0][0], value=rows[0][1]))
-            self._info(session, "boards", leaders="; ".join(leaders) or self.render(lang, "board_empty"),
+            self._info(session, "boards", leaders="\n".join(leaders) or self.render(lang, "board_empty"),
                        boards=[self.render(lang, f"board_{b}") for b in BOARDS])
             return
         rows = self.board_entries(board)
         entries = [self.render(lang, "board_entry", n=i + 1, name=name, value=value)
                    for i, (name, value) in enumerate(rows)]
         text = self.render(lang, "board", board=self.render(lang, f"board_{board}"),
-                           entries="; ".join(entries) or self.render(lang, "board_empty"))
+                           entries="\n".join(entries) or self.render(lang, "board_empty"))
         if session.key not in self.admins:
             self._save(session)
             rank = self.store.rank_of(BOARDS[board][0], char["id"], exclude=self.admins)
             if rank:
-                text += " " + self.render(lang, "board_you", n=rank)
+                text += "\n" + self.render(lang, "board_you", n=rank)
         self._info(session, text=text)

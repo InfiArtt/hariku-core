@@ -465,7 +465,7 @@ class WeddingsMixin:
         if not entries:
             self._info(session, "wedding_schedule_none")
             return
-        self._info(session, "wedding_schedule", entries="; ".join(entries[:10]))
+        self._info(session, "wedding_schedule", entries="\n".join(entries[:10]))
 
     # --- guests ---------------------------------------------------------------------------------------
 
@@ -554,7 +554,7 @@ class WeddingsMixin:
         if not entries:
             self._info(session, "wedding_invitations_none")
             return
-        self._info(session, "wedding_invitations", entries="; ".join(entries))
+        self._info(session, "wedding_invitations", entries="\n".join(entries))
 
     def _wedding_flowers(self, session, message):
         wedding = self._celebrating(self.room_of(session.char))
@@ -981,7 +981,7 @@ class WeddingsMixin:
                          else self.render(lang, "wedding_memory_silent", name=name))
         parts.append(self.render(lang, "wedding_memory_joy", flowers=int(state.get("flowers") or 0),
                                  cheers=int(state.get("cheers") or 0)))
-        return " ".join(parts)
+        return "\n".join(parts)
 
     def _wedding_memory(self, session, message):
         lang = session.lang

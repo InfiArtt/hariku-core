@@ -130,7 +130,7 @@ class CrewsMixin:
         text = self.render(lang, "crew_info", crew=crew["name"], captain=captain, n=len(members),
                            members=", ".join(names), points=int(crew["points"]))
         if crew["motto"]:
-            text += " " + self.render(lang, "crew_motto_is", motto=crew["motto"])
+            text += "\n" + self.render(lang, "crew_motto_is", motto=crew["motto"])
         self._info(session, text=text)
 
     def cmd_crews(self, session, message):
@@ -138,10 +138,10 @@ class CrewsMixin:
         rows = self.store.top_crews(int(self.crew_rules().get("board_size", 5)))
         entries = [self.render(lang, "crew_board_entry", place=i, crew=row["name"], points=int(row["points"]),
                                n=int(row["members"])) for i, row in enumerate(rows, 1)]
-        text = self.render(lang, "crew_board", entries="; ".join(entries) or self.render(lang, "board_empty"))
+        text = self.render(lang, "crew_board", entries="\n".join(entries) or self.render(lang, "board_empty"))
         crew, _role = self.crew_of(session.char)
         if crew is not None:
-            text += " " + self.render(lang, "crew_board_yours", crew=crew["name"], points=int(crew["points"]))
+            text += "\n" + self.render(lang, "crew_board_yours", crew=crew["name"], points=int(crew["points"]))
         self._info(session, text=text)
 
     # --- founding -------------------------------------------------------------------------------

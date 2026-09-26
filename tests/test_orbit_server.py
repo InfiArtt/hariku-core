@@ -807,7 +807,7 @@ def test_who_inventory_and_giving(make_game):
     cmd(game, rafli, "give", to="credits", n=5, item="sari")
     assert rafli.last()["text"] == "You give Sari 5 credits. You have 65 left."
     cmd(game, sari, "inventory")
-    assert sari.last()["text"] == "You have 135 credits. Job: pilot. You carry 1 compass."
+    assert sari.last()["text"] == "You have 135 credits. Job: pilot. You carry: 1 compass."
 
 
 def test_the_engineers_reactor(make_game, clock):

@@ -256,7 +256,7 @@ class NavMixin:
             extra["via"] = via
         if sound:
             extra["sound"] = sound
-        self._send(session, "moved", text=f"{line} {self.look_text(session, full=first)}", extra=extra)
+        self._send(session, "moved", text=f"{line}\n{self.look_text(session, full=first)}", extra=extra)
         self.guide_step(session)
         self.pet_follows(session)
         self.gig_arrived(session)
@@ -450,7 +450,7 @@ class NavMixin:
         session.guide = {"dest": dest, "path": list(path)}
         if not session.guide_told:                       # once a session: what the lines after each step are
             session.guide_told = True
-            text += " " + self.render(lang, "guide_hint")
+            text += "\n" + self.render(lang, "guide_hint")
         self._info(session, text=text)
 
     # --- guiding you there, step by step ------------------------------------------------
@@ -552,7 +552,7 @@ class NavMixin:
             near.append(self.render(lang, "map_near", dir=self.dir_word(lang, d),
                                     place=self.world.locations[ex["to"]]["ref"]))
         if near:
-            parts.append(self.render(lang, "map_around", places="; ".join(near)))
+            parts.append(self.render(lang, "map_around", places="\n".join(near)))
         if level >= 1:
             area_id = self._loc(char).get("area")
             known = set(char["stats"].get("map") or [])
@@ -572,7 +572,7 @@ class NavMixin:
                 else:
                     others.append(pick(loc["ref"], lang))
             if others:
-                parts.append(self.render(lang, "map_known", places="; ".join(others)))
+                parts.append(self.render(lang, "map_known", places="\n".join(others)))
             elif level == 1:
                 parts.append(self.render(lang, "map_known_none"))
         if level >= 2:
@@ -581,10 +581,10 @@ class NavMixin:
                 if aid in ("transit", area_id) or not info.get("about"):
                     continue
                 decks.append(self.render(lang, "map_deck", deck=info["name"], about=info["about"]))
-            parts.append(self.render(lang, "map_decks", decks="; ".join(decks)))
+            parts.append(self.render(lang, "map_decks", decks="\n".join(decks)))
         elif level == 0:
             parts.append(self.render(lang, "map_no_mapper"))
-        self._info(session, text=" ".join(parts), sound="gadget" if level else None)
+        self._info(session, text="\n".join(parts), sound="gadget" if level else None)
 
     def cmd_where(self, session, message):
         char, lang = session.char, session.lang
@@ -625,7 +625,7 @@ class NavMixin:
                 found.append(self.render(lang, "scan_room", dir=self.dir_word(lang, d),
                                          place=self.world.locations[ex["to"]]["ref"], people=people))
         if found:
-            self._info(session, "scan", rooms="; ".join(found), sound="scan")
+            self._info(session, "scan", rooms="\n".join(found), sound="scan")
         else:
             self._info(session, "scan_nobody", sound="scan")
 

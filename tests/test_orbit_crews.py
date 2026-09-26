@@ -79,7 +79,7 @@ def test_founding_a_crew(make_game, clock):
     assert (crew["name"], crew["name_key"], role) == ("Nova Prime", "novaprime", "captain")
     assert cmd(game, ani, "crew_create", a="Other")["text"] == "You're already in the crew Nova Prime."
     info = cmd(game, ani, "crew")["text"]
-    assert info == "The crew Nova Prime: captain Ani; 1 members: Ani (online). 0 points."
+    assert info == "The crew Nova Prime: captain Ani. 1 members: Ani (online). 0 points."
     assert "crewmate" in set(game.store.achievements_of(char["id"]))
     # the name is taken, whatever its spaces and case
     budi = join(game, "Budi")

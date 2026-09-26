@@ -536,7 +536,7 @@ class TravelMixin:
             parts.append(self.render(lang, "look_people",
                                      people=[self._person(lang, o) for o in sorted(others, key=lambda o: o.key)]))
         parts.append(self.render(lang, "ship_hint" if ship.get("flight") else "ship_hint_docked"))
-        return " ".join(parts)
+        return "\n".join(parts)
 
     # --- the ferry ------------------------------------------------------------------------------
 
@@ -768,7 +768,7 @@ class TravelMixin:
                 fares.append(self.render(lang, "worlds_ferry", fare=self.ferry_fare(here, wid)))
             entries.append(self.render(lang, "worlds_entry", place=info["name"], about=info["about"],
                                        dist=self.world.distance(here, wid), fares=fares))
-        self._info(session, "worlds", here=self.world_name(here, "in"), entries="; ".join(entries))
+        self._info(session, "worlds", here=self.world_name(here, "in"), entries="\n".join(entries))
 
     def go_travel(self, session, text):
         """ "go to Karmina", "the gate to the Moon", "ferry to Glasir" through cmd_go

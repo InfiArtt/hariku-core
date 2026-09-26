@@ -470,7 +470,7 @@ def test_achievements_are_earned_once_and_the_big_ones_are_news(make_game, clock
     assert "Achievement unlocked: Getting There (reach level 5). You get 100 credits." in mine
     listed = cmd(game, ani, "achievements")["text"]
     total = len(game.econ["achievements"])
-    assert listed.startswith(f"Your achievements, 3 of {total}: Finding Your Feet, Getting There and Chief.")
+    assert listed.startswith(f"Your achievements, 3 of {total}: Finding Your Feet; Getting There; Chief.")
     assert "Closest: Living Legend, reach level 20: 10 of 20;" in listed
     assert "Closest: " in listed
     assert cmd(game, budi, "achievements", to="Ani")["text"].startswith(f"Ani's achievements, 3 of {total}:")

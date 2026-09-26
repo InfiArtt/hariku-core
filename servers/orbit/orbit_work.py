@@ -316,7 +316,7 @@ class WorkMixin:
         self._send(session, "paid", text=self.render(lang, "flight_arrive", pay=pay,
                                                      credits=char["credits"],
                                                      time=self._duration(lang, rest))
-                   + " " + self.look_text(session, full=False),
+                   + "\n" + self.look_text(session, full=False),
                    extra=dict(self._where(session), sound="landing"))
         if not session.invisible:
             self._to_room(self.room_of(char), "arrive", "flight_back_other", exclude=(session,),
@@ -351,7 +351,7 @@ class WorkMixin:
                                      pct=int(round((ratios[dear] - 1) * 100)), where=self.station_market_in(dear)))
         if len(parts) == 1:
             parts.append(self.render(lang, "trader_calm"))
-        self._send(session, "info", text=" ".join(parts))
+        self._send(session, "info", text="\n".join(parts))
 
     # --- the scientist ---------------------------------------------------------------------------
 
@@ -530,7 +530,7 @@ class WorkMixin:
             entries.append(self.render(lang, "mission_entry", number=number,
                                        title=self._mission_title(mid),
                                        reward=mission["reward"], mark=gift + mark))
-        self._send(session, "info", "missions_board", entries="; ".join(entries))
+        self._send(session, "info", "missions_board", entries="\n".join(entries))
 
     def cmd_accept(self, session, message):
         if message.get("n") in (None, "") and self.accept_pending(session):

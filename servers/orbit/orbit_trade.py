@@ -309,7 +309,7 @@ class TradeMixin:
         if not entries:
             self._info(session, "pawn_nothing")
             return
-        self._info(session, "pawn_list", entries="; ".join(entries))
+        self._info(session, "pawn_list", entries="\n".join(entries))
 
     def pawn_sell(self, session, message):
         char = session.char

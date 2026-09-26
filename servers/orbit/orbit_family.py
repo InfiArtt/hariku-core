@@ -739,7 +739,7 @@ class FamilyMixin:
             parts.append(self.child_status_line(lang, child))
         if not children:
             parts.append(self.render(lang, "family_no_children"))
-        self._info(session, text=" ".join(parts))
+        self._info(session, text="\n".join(parts))
 
     def companion_look(self, session, text):
         """ "look Mira", "look Kiki": a child or pet in the room, with a word that it isn't a player."""
@@ -750,10 +750,11 @@ class FamilyMixin:
                 if child["name"] and orbit_safety.name_key(child["name"]) == orbit_safety.name_key(text) and \
                         int(child["stats"].get("with") or 0) == owner.char["id"]:
                     desc = (self.family_rules().get("desc") or {}).get(str(self.child_stage(child)))
-                    return " ".join([self.render(lang, "child_look", child=child["name"], parent=owner.name,
-                                                 stage=self.render(lang, f"child_stage_{self.child_stage(child)}")),
-                                     pick(desc, lang) if desc else "", self.child_status_line(lang, child)
-                                     if owner is session else ""]).strip()
+                    return "\n".join(line for line in [
+                        self.render(lang, "child_look", child=child["name"], parent=owner.name,
+                                    stage=self.render(lang, f"child_stage_{self.child_stage(child)}")),
+                        pick(desc, lang) if desc else "",
+                        self.child_status_line(lang, child) if owner is session else ""] if line)
             for comp in self.pets_of(owner.char):
                 if orbit_safety.name_key(comp["name"]) == orbit_safety.name_key(text):
                     thing = self.world.things[comp["kind"]]
@@ -762,7 +763,7 @@ class FamilyMixin:
                              pick(thing.get("desc") or thing["one"], lang)]
                     if owner is session:
                         parts.append(self.pet_status_line(lang, comp))
-                    return " ".join(parts)
+                    return "\n".join(parts)
         return None
 
     def family_emote_at(self, session, name, eid, emote):

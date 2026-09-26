@@ -223,7 +223,7 @@ class PetsMixin:
                     for t, n in lessons.items() if t in tricks and t not in comp["stats"].get("tricks", [])]
         if learning:
             parts.append(self.render(lang, "pet_learning_list", entries=learning))
-        return " ".join(parts)
+        return "\n".join(parts)
 
     def _pet_status(self, session, text, message):
         pets = self.pets_of(session.char)
@@ -233,7 +233,7 @@ class PetsMixin:
         if text:
             comp = self._pet_named(pets, text)
             pets = [comp] if comp is not None else pets
-        self._info(session, text=" ".join(self.pet_status_line(session.lang, comp) for comp in pets))
+        self._info(session, text="\n".join(self.pet_status_line(session.lang, comp) for comp in pets))
 
     # --- care --------------------------------------------------------------------------------
 

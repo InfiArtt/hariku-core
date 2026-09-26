@@ -333,9 +333,10 @@ class EconomyMixin:
         found = self.markets_for(char, goods or set(self.world.goods))
         return found[0][0] if found else None
 
-    def market_entries(self, session, found, about=False):
+    def market_entries(self, session, found, about=False, sep="; "):
         """ "the Spice Market, west, north, then west" for each (market, route): the way when
-        you may ask it (the landmarks, or your mapper), else the deck it's on."""
+        you may ask it (the landmarks, or your mapper), else the deck it's on. Joined by `sep`
+        ("\\n": a line each)."""
         char, lang = session.char, session.lang
         known = self.guide_rooms(char)
         entries = []
@@ -349,7 +350,7 @@ class EconomyMixin:
             else:
                 way = self.world.area_of(lid).get("in", "")
             entries.append(self.render(lang, "market_entry", place=place, way=way))
-        return "; ".join(entries)
+        return sep.join(entries)
 
     def market_pointer(self, session, what=None, goods=None, side=None):
         """Where to go for `goods` (named `what`), from here: "Nearest market for coffee: the
@@ -363,7 +364,8 @@ class EconomyMixin:
                 return self.render(lang, "prices_none_here", place=place)
             return self.render(lang, "market_none_world", what=what, place=place)
         if everything:
-            return self.render(lang, "markets_nearest", markets=self.market_entries(session, found[:6], about=True))
+            return self.render(lang, "markets_nearest", markets=self.market_entries(session, found[:6], about=True,
+                                                                                    sep="\n"))
         if len(goods) == 1:
             found = found[:1]
         return self.render(lang, "market_nearest", what=what, markets=self.market_entries(session, found[:4]))
@@ -371,7 +373,7 @@ class EconomyMixin:
     def markets_sign(self, session):
         """The Promenade's signpost: every market near, what it deals in, and the way."""
         found = self.markets_for(session.char, set(self.world.goods))
-        self._info(session, "markets_sign", markets=self.market_entries(session, found, about=True))
+        self._info(session, "markets_sign", markets=self.market_entries(session, found, about=True, sep="\n"))
 
     def market_list(self, session, lid, what, goods):
         """What market `lid` buys and sells (of `goods`), at its prices, by kind."""
@@ -393,9 +395,9 @@ class EconomyMixin:
                 key = "price_entry" if buy and sell else "price_entry_buy" if buy else "price_entry_sell"
                 entries.append(self.render(lang, key, good=good["one"], buy=buy, sell=sell))
             if entries:
-                groups.append(self.render(lang, f"prices_{kind}", entries="; ".join(entries)))
+                groups.append(self.render(lang, f"prices_{kind}", entries="\n".join(entries)))
         key = "prices_trader" if char["job"] == "trader" else "prices"
-        self._info(session, key, where=self.world.locations[lid]["in"], entries=". ".join(groups))
+        self._info(session, key, where=self.world.locations[lid]["in"], entries="\n".join(groups))
 
     def scan_prices(self, session, wid):
         """A Hornbill's scanner bay reads another world's markets (a report: you trade there)."""
@@ -417,11 +419,11 @@ class EconomyMixin:
                 key = "price_entry" if buy and sell else "price_entry_buy" if buy else "price_entry_sell"
                 entries.append(self.render(lang, key, good=good["one"], buy=buy, sell=sell))
             parts.append(self.render(lang, "scan_market", place=self.world.locations[lid]["ref"],
-                                     entries="; ".join(entries)))
+                                     entries="\n".join(entries)))
         if not parts:
             self._error(session, "prices_none_here", place=self.world.worlds[wid]["in"])
             return
-        self._info(session, "prices_scan", place=self.world.worlds[wid]["ref"], markets=" ".join(parts),
+        self._info(session, "prices_scan", place=self.world.worlds[wid]["ref"], markets="\n".join(parts),
                    sound="scan")
 
     def cmd_prices(self, session, message):
@@ -805,7 +807,7 @@ class EconomyMixin:
                 entries.append(self.render(lang, "plot_growing", number=number, crop=name,
                                            time=self._duration(lang, float(plot["ready"]) - now),
                                            watered=watered))
-        return self.render(lang, "farm", n=len(entries), plots="; ".join(entries))
+        return self.render(lang, "farm", n=len(entries), plots="\n".join(entries))
 
     def cmd_farm(self, session, message):
         self._info(session, text=self.farm_text(session))
@@ -926,7 +928,7 @@ class EconomyMixin:
                                  level=self.level_of(int(char.get("xp") or 0)),
                                  mined=char.get("mined", 0), harvested=char.get("harvested", 0))]
             parts.extend(self.appearance(lang, char))
-            self._info(session, text=" ".join(parts))
+            self._info(session, text="\n".join(parts))
             return
         char = session.char
         xp = int(char.get("xp") or 0)
@@ -948,7 +950,7 @@ class EconomyMixin:
         voice = int(char.get("voice") or 0)
         parts.append(self.render(lang, "profile_voice_n", n=voice) if voice
                      else self.render(lang, "profile_voice_auto"))
-        self._info(session, text=" ".join(parts))
+        self._info(session, text="\n".join(parts))
 
     def cmd_voice(self, session, message):
         char = session.char

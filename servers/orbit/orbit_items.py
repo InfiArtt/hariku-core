@@ -277,15 +277,15 @@ class ItemsMixin:
         entries = [self.entry_text(lang, char, tid, sid) for tid in stock]
         currency = self.shop_currency(sid)
         if currency:
-            self._info(session, "shop_list_in", shop=shop["name"], entries="; ".join(entries),
+            self._info(session, "shop_list_in", shop=shop["name"], entries="\n".join(entries),
                        have=self._count_of(currency, int(char["inventory"].get(currency) or 0)))
             return
-        text = self.render(lang, "shop_list", shop=shop["name"], entries="; ".join(entries))
+        text = self.render(lang, "shop_list", shop=shop["name"], entries="\n".join(entries))
         friend = self.npc_discount(char, sid)
         if friend:
             keeper = next((nid for nid, d in self.npc_defs.items() if d.get("shop") == sid), None)
-            text += " " + self.render(lang, "shop_friend_price", name=self.npc_name(keeper) if keeper else "?",
-                                      pct=int(round(friend * 100)))
+            text += "\n" + self.render(lang, "shop_friend_price", name=self.npc_name(keeper) if keeper else "?",
+                                       pct=int(round(friend * 100)))
         self._info(session, text=text)
 
     def where_sold(self, tid):
@@ -408,7 +408,7 @@ class ItemsMixin:
                                          price=self._count_of(currency, self.price_of(char, tid, sid))))
             else:
                 parts.append(self.render(lang, "examine_price", price=self.price_of(char, tid, sid)))
-        self._info(session, text=" ".join(parts))
+        self._info(session, text="\n".join(parts))
         return True
 
     def cmd_use(self, session, message):

@@ -113,6 +113,8 @@ GAME_DEFAULTS = {
 }
 
 TALK_KINDS = ("say", "whisper", "shout")
+# Clients from this version show a reply's lines one by one (the "lines" of an event).
+LINES_CLIENT = (1, 6)
 # What's new, said once to a returning player: each version's note, and the notes since theirs.
 NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"), ("1.4", "whats_new_14"))
 SEEN_VERSION = NEWS[-1][0]
@@ -207,7 +209,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         return self.texts.render(lang, key, **params)
 
     def _send(self, session, kind, key=None, text=None, brief=None, extra=None, **params):
-        """One event to one player. Nothing for a link-dead one."""
+        """One event to one player. Nothing for a link-dead one. A reply of several lines
+        (joined with "\\n") goes as one line in "text" to everyone, and, to a client from 1.6,
+        as its lines too ("lines"), to show one by one."""
         conn = session.conn
         if conn is None:
             return
@@ -215,6 +219,11 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         if text is None:
             text = self.render(lang, key, **params)
         message = {"t": "ev", "k": kind, "text": text}
+        if "\n" in text:
+            lines = orbit_lang.lines_of(text)
+            message["text"] = orbit_lang.one_line(lines)
+            if len(lines) > 1 and tuple(session.client) >= LINES_CLIENT:
+                message["lines"] = lines
         if brief:
             message["brief"] = self.render(lang, brief, **params)
         if extra:
@@ -428,7 +437,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                    "new": new, "resumed": resumed, "credits": char["credits"],
                    "voice": int(char.get("voice") or 0), **self._where(session)})
         if resumed:
-            self._send(session, "room", text=self.render(lang, "welcome_resumed") + " "
+            self._send(session, "room", text=self.render(lang, "welcome_resumed") + "\n"
                        + self.look_text(session, full=False), extra=self._where(session))
             logger.info("%s resumed", char["name"])
             return True
@@ -438,7 +447,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         notes = self.on_join(session, new)
         session.visited.add(char["location"])
         self._remember_room(char, char["location"])
-        text = " ".join(t for t in [greeting] + notes + [self.look_text(session, full=True)] if t)
+        text = "\n".join(t for t in [greeting] + notes + [self.look_text(session, full=True)] if t)
         self._send(session, "room", text=text, extra=self._where(session))
         self._save(session)
         if not self._loc(char).get("private"):
@@ -556,72 +565,71 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         return self.render(lang, "person", name=name, job=self.world.job_name(other.char["job"]))
 
     def look_text(self, session, full=True):
+        """What you see, a line each (the Nova Realm way): the room's name; the first time
+        you come, or when you look, its description (and the hints for your job); the exits;
+        who is here; and the things to look at."""
         lang, char = session.lang, session.char
         loc = self._loc(char)
-        parts = [f"{pick(self.cabin_name(session) or loc['name'], lang)}."]
+        lines = [pick(self.cabin_name(session) or loc["name"], lang)]
         if char["location"] == "shuttle":
             flight = char["stats"].get("flight") or {}
-            parts.append(pick(loc["desc"], lang))
-            parts.append(self.render(lang, "look_in_flight",
+            lines.append(pick(loc["desc"], lang))
+            lines.append(self.render(lang, "look_in_flight",
                                      time=self._duration(lang, float(flight.get("arrive", 0)) - self.now())))
-            return " ".join(parts)
+            return "\n".join(lines)
         if char["location"] == "kancil":
             ride = char["stats"].get("ride") or {}
-            parts.append(pick(loc["desc"], lang))
-            parts.append(self.render(lang, "look_in_flight",
+            lines.append(pick(loc["desc"], lang))
+            lines.append(self.render(lang, "look_in_flight",
                                      time=self._duration(lang, float(ride.get("arrive", 0)) - self.now())))
-            return " ".join(parts)
+            return "\n".join(lines)
         if char["location"] == "ship":
             return self.ship_look(session)
         if char["location"] == "ferry":
             trip = char["stats"].get("ferry") or {}
-            parts.append(pick(loc["desc"], lang))
+            lines.append(pick(loc["desc"], lang))
             if trip.get("to") in self.world.worlds:
                 now = self.now()
                 key = "ferry_look_waiting" if now < float(trip.get("depart", 0)) else "ferry_look_moving"
-                parts.append(self.render(lang, key, place=self.world.worlds[trip["to"]]["ref"],
+                lines.append(self.render(lang, key, place=self.world.worlds[trip["to"]]["ref"],
                                          wait=self._duration(lang, float(trip.get("depart", 0)) - now),
                                          time=self._duration(lang, float(trip.get("arrive", 0)) - now)))
             others = self._in_room(self.room_of(char), exclude=(session,), visible=True)
             if others:
-                parts.append(self.render(lang, "look_people", people=[self._person(lang, o) for o in
+                lines.append(self.render(lang, "look_people", people=[self._person(lang, o) for o in
                                                                       sorted(others, key=lambda o: o.key)]))
-            return " ".join(parts)
+            return "\n".join(lines)
         if self.in_the_dark(char):
-            parts.append(self.dark_text(session))
-            return " ".join(p for p in parts if p)
+            lines.append(self.dark_text(session))
+            return "\n".join(line for line in lines if line)
         if full:
-            parts.append(pick(loc["desc"], lang))
+            lines.append(pick(loc["desc"], lang))
             if loc.get("earth_view"):
-                parts.append(self._earth(lang))
+                lines.append(self._earth(lang))
             hints = loc.get("hints", {})
             for hint in (hints.get(char["job"]), hints.get("all")):
                 if hint:
-                    parts.append(pick(hint, lang))
-            parts.extend(self.cabin_lines(session))
-            parts.extend(self.crew_hangar_lines(session))
+                    lines.append(pick(hint, lang))
+            lines.extend(self.cabin_lines(session))
+            lines.extend(self.crew_hangar_lines(session))
+        lines.append(self.exits_text(session))
+        if loc.get("airless"):
+            lines.append(self.air_text(session))
         others = self._in_room(self.room_of(char), exclude=(session,), visible=True)
         residents = self.residents_text(session)
         if others:
-            parts.append(self.render(lang, "look_people",
+            lines.append(self.render(lang, "look_people",
                                      people=[self._person(lang, o) for o in sorted(others, key=lambda o: o.key)]))
         elif full and not loc.get("private") and not residents:
-            parts.append(self.render(lang, "look_alone"))
+            lines.append(self.render(lang, "look_alone"))
         if residents:
-            parts.append(residents)
-        decor = self.wedding_decor(session)
-        if decor:
-            parts.append(decor)
-        mark = self.hunt_mark(session)
-        if mark:
-            parts.append(mark)
-        parts.append(self.exits_text(session))
-        if loc.get("airless"):
-            parts.append(self.air_text(session))
+            lines.append(residents)
+        lines.append(self.wedding_decor(session))
+        lines.append(self.hunt_mark(session))
         if full and loc.get("objects"):
             things = [o["names"][lang][0] for o in loc["objects"].values()]
-            parts.append(self.render(lang, "look_objects", things=things))
-        return " ".join(p for p in parts if p)
+            lines.append(self.render(lang, "look_objects", things=things))
+        return "\n".join(line for line in lines if line)
 
     def cmd_look(self, session, message):
         target = self._arg(message)
@@ -702,7 +710,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         parts = [self.render(lang, "look_player", name=other.name, rank=self.rank_name(char))]
         parts.extend(self.appearance(lang, char))
         parts.append(description)
-        return " ".join(p for p in parts if p)
+        return "\n".join(p for p in parts if p)
 
     # --- talking --------------------------------------------------------------------
 
@@ -886,7 +894,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             elif other.away:
                 entry += self.render(lang, "who_idle_suffix")
             entries.append(entry)
-        self._send(session, "who", "who", count=len(entries), people="; ".join(entries))
+        self._send(session, "who", "who", count=len(entries), people="\n".join(entries))
 
     def _things(self, char):
         """What a character carries, as {"en"} phrases (goods and mission things first)."""
@@ -904,7 +912,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         parts = [self.render(lang, "inv_credits", credits=char["credits"],
                              job=self.world.job_name(char["job"]))]
         things = self._things(char)
-        parts.append(self.render(lang, "inv_items", items=things) if things
+        parts.append(self.render(lang, "inv_items", items="\n".join(pick(t, lang) for t in things)) if things
                      else self.render(lang, "inv_empty"))
         goods = self._goods_count(char)
         if goods:
@@ -918,7 +926,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
             parts.append(self.render(lang, "inv_mission", title=self._mission_title(active),
                                      have=char["inventory"].get(mission["item"], 0),
                                      need=mission["count"]))
-        self._send(session, "info", text=" ".join(parts))
+        self._send(session, "info", text="\n".join(parts))
 
     def cmd_give(self, session, message):
         char = session.char
@@ -1040,7 +1048,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
         online = sum(1 for s in self.sessions.values() if s.conn is not None and not s.invisible)
         text = self.render(lang, "status", name=session.name, place=place, deck=area.get("in", ""), n=online)
         if session.away:
-            text += " " + self.render(lang, "status_away")
+            text += "\n" + self.render(lang, "status_away")
         self._info(session, text=text)
 
     # --- reading plain text ------------------------------------------------------------
@@ -1103,7 +1111,7 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
                 text = self.render(session.lang, f"help_{name}", low=casino["min_bet"], high=casino["max_bet"],
                                    limit=casino["hour_limit"])
                 if name == "ships":
-                    text += " " + self.render(session.lang, "help_worlds_work")
+                    text += "\n" + self.render(session.lang, "help_worlds_work")
                 self._send(session, "info", text=text)
                 return
         self._send(session, "info", "help")

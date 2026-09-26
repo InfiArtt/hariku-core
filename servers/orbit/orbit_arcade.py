@@ -138,7 +138,7 @@ class ArcadeMixin:
             entries.append(self.render(lang, "arcade_entry", game=game["name"], how=game["desc"],
                                        tokens=int(game.get("tokens", 1))))
         place = next((loc["ref"] for loc in self.world.locations.values() if loc.get("arcade")), None)
-        self._info(session, "arcade_list", entries=" ".join(entries), place=place or "",
+        self._info(session, "arcade_list", entries="\n".join(entries), place=place or "",
                    tokens=self._count_owned(char, TOKEN), tickets=self._count_owned(char, TICKET),
                    price=int(self.world.things[TOKEN].get("price") or 0))
 
@@ -459,7 +459,7 @@ class ArcadeMixin:
         tables = []
         for g in [gid] if gid else GAMES:
             rows = self.store.arcade_top(g, size if gid else 3)
-            entries = "; ".join(self.render(lang, "arcade_table_entry", place=i, name=name, score=score)
+            entries = "\n".join(self.render(lang, "arcade_table_entry", place=i, name=name, score=score)
                                 for i, (name, score) in enumerate(rows, 1)) or self.render(lang, "board_empty")
             tables.append(self.render(lang, "arcade_table", game=self.arcade_game(g)["name"], entries=entries))
         mine = []
@@ -467,4 +467,4 @@ class ArcadeMixin:
             best = self.store.arcade_best(gid, session.char["id"])
             if best is not None:
                 mine.append(self.render(lang, "arcade_your_best", score=best))
-        self._info(session, text=" ".join(tables + mine))
+        self._info(session, text="\n".join(tables + mine))

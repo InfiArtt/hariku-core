@@ -258,7 +258,7 @@ class HuntMixin:
         released = int(self.hunt_state().get("hints", {}).get(stage["id"], 0))
         for hint in (stage.get("hints") or [])[:released]:
             parts.append(self.render(lang, "hunt_hint", hint=hint))
-        return " ".join(parts)
+        return "\n".join(parts)
 
     def cmd_hunt(self, session, message):
         if self._no_hunt(session):
@@ -277,7 +277,7 @@ class HuntMixin:
                 parts.append(self.render(lang, "hunt_wait_note", time=self._duration(lang, left)))
         if getattr(session, "hunt_test", False):
             parts.append(self.render(lang, "hunt_test_note"))
-        self._info(session, text=" ".join(parts))
+        self._info(session, text="\n".join(parts))
 
     def _clue_visible(self, char, clue):
         needs = clue.get("requires") or {}
@@ -371,7 +371,7 @@ class HuntMixin:
         found = pick(stage["found"], lang)
         if n < total:
             self.store.save_hunt_progress(key, char["id"], progress)
-            self._send(session, "paid", text=found + " " + self._stage_text(lang, n), extra={"sound": "hunt_found"})
+            self._send(session, "paid", text=found + "\n" + self._stage_text(lang, n), extra={"sound": "hunt_found"})
             if counts:
                 self._to_all("announce", "hunt_progress_news", exclude=(session,), extra={"sound": "hunt_clue"},
                              name=session.name, n=n, total=total)
@@ -424,9 +424,9 @@ class HuntMixin:
                 entries.append(self.render(lang, "hunt_board_entry", name=name, n=stage, total=total))
         rival = self.hunt.get("rival")
         text = self.render(lang, "hunt_board", title=self.hunt["title"],
-                           entries="; ".join(entries) or self.render(lang, "board_empty"))
+                           entries="\n".join(entries) or self.render(lang, "board_empty"))
         if rival:
-            text += " " + self.render(lang, "hunt_board_rival", name=rival["name"],
+            text += "\n" + self.render(lang, "hunt_board_rival", name=rival["name"],
                                       n=int(self.hunt_state().get("rival", 0)), total=total)
         self._info(session, text=text)
 

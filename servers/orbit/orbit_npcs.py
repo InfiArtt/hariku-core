@@ -174,7 +174,7 @@ class NpcsMixin:
         if memory["first_met"]:
             parts.append(self.render(lang, "npc_knows_you", name=d["name"],
                                      level=self.render(lang, f"npc_level_{self.npc_level(memory['affinity'])}")))
-        return " ".join(parts)
+        return "\n".join(parts)
 
     def npc_where_text(self, lang, nid):
         room = self.npcs[nid]["room"]
@@ -187,7 +187,7 @@ class NpcsMixin:
         entries = [self.render(lang, "resident_where", name=self.npc_name(nid), role=d["role"],
                                where=self.npc_where_text(lang, nid))
                    for nid, d in self.npc_defs.items()]
-        self._info(session, "residents_list", entries="; ".join(entries))
+        self._info(session, "residents_list", entries="\n".join(entries))
 
     # --- what they remember ---------------------------------------------------------------------
 

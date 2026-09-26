@@ -833,9 +833,9 @@ class EventsMixin:
                                        day=self.render(lang, f"weekday_{when.weekday()}"),
                                        date=when.strftime("%d-%m"), hour=when.strftime("%H:%M")))
             schedule.append({"event": eid, "name": name, "at": start})
-        text = self.render(lang, "events_on", entries="; ".join(on)) if on else self.render(lang, "events_none")
+        text = self.render(lang, "events_on", entries="\n".join(on)) if on else self.render(lang, "events_none")
         if entries:
-            text += " " + self.render(lang, "events_coming", entries="; ".join(entries))
+            text += "\n" + self.render(lang, "events_coming", entries="\n".join(entries))
         self._send(session, "info", text=text, extra={"schedule": schedule})
 
     def next_event(self, now):
