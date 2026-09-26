@@ -625,7 +625,7 @@ def test_the_first_join_makes_a_secret_for_that_server_only(play):
     assert client.connect()
     conn = s.connections[-1]
     hello = conn.hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.6", "lang": "en",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.7", "lang": "en",
                      "secret": "0" * 63 + "1", "name": "Rafli", "job": "pilot"}
     assert s.accounts[s.values["server"]]["joined"] is False
     conn.welcome(name="Rafli")
@@ -1435,18 +1435,64 @@ def test_what_is_read_can_be_narrowed(play):
     count = len(s.spoken)
     conn.event("say", "Sari says: hello", actor="Sari")
     conn.event("emote", "Sari smiles.", actor="Sari", emote="smile")
-    conn.event("arrive", "Budi comes in from the west, from the Dock.", actor="Budi", dir="w")
-    conn.event("paid", "You're paid 40 credits.")
+    conn.event("arrive", "Budi arrives from the west.", actor="Budi", dir="w")
+    conn.event("received", "Budi gives you 5 credits.", actor="Budi")
     assert len(s.spoken) == count                           # not read...
     assert client.messages[-4:] == ["Sari says: hello", "Sari smiles.",
-                                    "Budi comes in from the west, from the Dock.", "You're paid 40 credits."]
-    assert s.sounds[-4:] == ["say", "emote", "arrive", "success"]               # ...but heard
+                                    "Budi arrives from the west.", "Budi gives you 5 credits."]
+    assert s.sounds[-4:] == ["say", "emote", "arrive", "coins"]               # ...but heard
     conn.event("whisper", "Budi whispers to you: psst", actor="Budi")
     conn.event("emote", "You smile.", emote="smile")   # your own gesture: always
     assert s.spoken[-1] == ("narrator", "You smile.") and s.spoken[-2][1] == "Budi whispers to you: psst"
+    # A reply to your own command is always read: you were paid, you bought, you sold.
+    conn.event("paid", "You're paid 40 credits.")
+    conn.event("trade", "You buy an iced coffee for 15 credits. You have 85 credits.", brief="Bought.")
+    conn.event("gave", "You give Budi 5 credits.", actor="Rafli")
+    assert [t for _v, t in s.spoken[-3:]] == ["You're paid 40 credits.", "Bought.", "You give Budi 5 credits."]
     client.submit("orbit who is online", "aruna")
     conn.event("say", "Sari says: I'm here", actor="Sari")
     assert s.spoken[-1][1] == "Sari says: I'm here"   # Aruna asked: everything is read
+
+
+ALL_READ_OFF = {key: False for key in ("read_say", "read_whisper", "read_shout", "read_moves", "read_money",
+                                        "read_announce", "read_events")}
+
+
+@pytest.mark.parametrize("reader", ["mixed", "nvda", "voices"])
+@pytest.mark.parametrize("kind", ["paid", "failed", "received", "gave", "trade", "info", "error", "emote",
+                                  "mission", "task", "flight", "room", "moved", "system", "who", "tones"])
+def test_a_reply_to_your_own_command_is_read_whatever_the_filters(play, reader, kind):
+    s, client = play.services, play.client
+    s.values.update(ALL_READ_OFF, reader=reader)
+    conn = _online(play)
+    s.spoken.clear()
+    s.timers = []                                       # not the client's own tick
+    conn.event(kind, "You get 3 sacks of coffee.", sound="coins")
+    s.run_timers()
+    assert [t for _v, t in s.spoken] == ["You get 3 sacks of coffee."], (reader, kind, s.spoken)
+    s.spoken.clear()
+    conn.event(kind, "Sam gives you 3 sacks of coffee.", actor="Sam")            # what others do: filtered
+    s.run_timers()
+    filtered = orbit_play.READ_KINDS.get(kind) is not None
+    assert (s.spoken == []) == filtered, (reader, kind, s.spoken)
+
+
+def test_lines_are_read_in_the_order_they_came_even_behind_a_wait(play):
+    s = play.services
+    s.FILES = FakeServices.FILES | {"dice", "win"}
+    s.values["reader"] = "nvda"
+    conn = _online(play)
+    s.spoken.clear()
+    s.timers = []
+    conn.event("paid", "The dice roll 5 and 6: 11. You win 230 credits!", sound="dice", outcome="win")
+    conn.event("paid", "Achievement: High Roller.", sound="achievement")         # came right after
+    conn.event("info", "Rocco raises an eyebrow.")
+    assert s.spoken == []                               # all wait for the dice to land
+    s.run_timers()
+    assert [t for _v, t in s.spoken] == ["The dice roll 5 and 6: 11. You win 230 credits!",
+                                         "Achievement: High Roller.", "Rocco raises an eyebrow."]
+    conn.event("info", "Nothing waits now.")
+    assert s.spoken[-1] == ("reader", "Nothing waits now.")
 
 
 def test_with_the_window_closed_only_what_matters_is_heard(play):
@@ -1774,7 +1820,7 @@ def test_a_transfer_code_is_asked_for_shown_and_used(play):
     assert other.connections == []
     assert elsewhere.redeem_transfer("abcd-efgh-jklm-npqr") is True
     hello = other.connections[-1].hello()
-    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.6", "lang": "en",
+    assert hello == {"t": "hello", "v": 1, "client": "Hariku Orbit 1.7", "lang": "en",
                      "secret": "0" * 63 + "1", "transfer": "ABCDEFGHJKLMNPQR"}
     other.connections[-1].welcome(name="Rafli")
     account = other.accounts["wss://infiartt.com/orbit/ws"]

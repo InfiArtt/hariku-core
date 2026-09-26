@@ -1166,6 +1166,30 @@ class TestSpeechHelpers:
         assert wait_until(lambda: tolk.output.called)
         tolk.output.assert_called_once_with("Hello", True)
 
+    def test_lines_reach_the_screen_reader_in_order(self, tolk):
+        """One worker, one queue: lines spoken at once arrive as they were spoken, and a
+        line Tolk fails on doesn't stop the ones after it."""
+        import core.speech
+        heard = []
+
+        def output(text, interrupt):
+            time.sleep(0.001 if len(heard) % 3 else 0.004)      # slow now and then: no overtaking
+            heard.append(text)
+            if text == "line 5":
+                raise OSError("the screen reader hiccupped")
+
+        tolk.output.side_effect = output
+        try:
+            for i in range(40):
+                core.speech.speak(f"line {i}")
+            assert wait_until(lambda: len(heard) == 40)
+        finally:
+            tolk.output.side_effect = None
+        assert heard == [f"line {i}" for i in range(40)]
+        assert core.speech._worker is not None and core.speech._worker.is_alive()
+        workers = [t for t in threading.enumerate() if t.name == "hariku-speech"]
+        assert len(workers) == 1
+
 
 # ------------------------------------------------------------
 # The call sites

@@ -20,6 +20,9 @@ Versi 2.11.0 (Pembaruan Inti)
   Konversi yang pertama memakainya: "25 x 4", "5 km ke mil", "2 foot in
   inches", dan, tepat setelah sebuah jawaban, "tambah 5" langsung dijawab,
   tanpa "berapa" atau "hitung" di depannya.
+- Apa yang Hariku ucapkan sampai ke pembaca layarmu sesuai urutan
+  ucapannya. Dua baris yang datang bersamaan (balasan sebuah game dan
+  catatan sesudahnya) dulu bisa terbaca terbalik; sekarang keduanya antre.
 - Untuk pembuat ekstensi: taruh panduanmu di docs/<bahasa>/guide.md (judul
   # pertamanya adalah judul panduan) dan Hariku menemukannya; core.guides
   membuka panduan dari kodemu. core.commands.add_intent menerima matcher

@@ -30,9 +30,12 @@ it is still read aloud whole, at once, as one line ("text"). Reading aloud:
   * everything else by the narrator: Hariku Voice for commands, or the
     screen reader.
 
-What is read can be narrowed (Preferences: chat, whispers, shouts, arrivals
-and departures, work and money, announcements); what isn't read still goes
-to the Messages list. While the window is closed, only whispers, your name
+What others do and the station's news can be left unread (Preferences:
+their chat, whispers, shouts, arrivals and departures, what they give you,
+announcements, events); what isn't read still goes to the Messages list. A
+reply to your own command (you bought, sold, got, gave, were paid) is always
+read. Lines are read in the order they came: one that waits for its sounds
+(the dice landing, the reels stopping) holds back the ones after it. While the window is closed, only whispers, your name
 and station news are read (or everything, or nothing: a setting), and the
 sounds follow. Players you ignore ("ignore Sam") are neither shown nor
 heard. A command from Aruna (or one of Orbit's actions) is always answered
@@ -64,7 +67,7 @@ import orbit_ws
 from orbit_text import LANGUAGE, _
 
 PROTOCOL_VERSION = 1
-CLIENT_NAME = "Hariku Orbit 1.6"           # from 1.6, the server sends a reply's lines ("lines")
+CLIENT_NAME = "Hariku Orbit 1.7"           # from 1.6, the server sends a reply's lines ("lines")
 MAX_MESSAGES = 500
 TRIM_MESSAGES = 50
 MAX_LINE = 2000
@@ -81,12 +84,15 @@ READERS = ("mixed", "nvda", "voices")
 VOICE_KINDS = TALK_KINDS + OWN_TALK_KINDS + ("announce",)
 JOBS = ("pilot", "engineer", "trader", "scientist", "security")
 FAILURES = {"kicked": "fail_kicked", "replaced": "fail_replaced", "banned": "fail_banned"}
-# What each read-aloud setting covers.
+# What each read-aloud setting covers: what OTHER players (and the residents) do, and the
+# station's news. A reply to your own command is always read (OrbitClient.own_reply).
 READ_KINDS = {"say": "read_say", "emote": "read_say", "whisper": "read_whisper", "crew": "read_whisper",
               "shout": "read_shout",
               "arrive": "read_moves", "leave": "read_moves", "paid": "read_money",
               "failed": "read_money", "received": "read_money", "gave": "read_money",
               "trade": "read_money", "announce": "read_announce"}
+# The station's news: never a reply to you, whoever it names.
+STATION_KINDS = ("announce",)
 IGNORABLE_KINDS = ("say", "whisper", "shout", "emote", "offer", "crew")
 # With the window closed, "whispers, my name and events" reads these kinds (and your name).
 BACKGROUND_KINDS = ("whisper", "crew", "announce", "system", "offer", "tones", "task")
@@ -156,6 +162,8 @@ class OrbitClient:
         self._announce = False
         self._token = None
         self._timer = None
+        self._held = []                   # lines to say, in order, behind one that waits for its sounds
+        self._hold_timer = None
 
     # --- listeners (the window, the Preferences page) ------------------------------------
 
@@ -476,16 +484,48 @@ class OrbitClient:
         if not heard or not (settings.get("speak", True) or aruna):
             return
         setting = "read_events" if message.get("event") else READ_KINDS.get(kind)
-        if setting and not aruna and not settings.get(setting, True) and (actor or kind != "emote"):
+        if setting and not aruna and not self.own_reply(message) and not settings.get(setting, True):
             return
         voiced = self._voiced(kind, settings, preview=bool(message.get("preview")))
         if voiced:
             parts = self._parts(message, text, settings, aruna)
         else:       # the whole line for what others say; the short form for the rest
             parts = [(text if kind in TALK_KINDS else str(message.get("brief") or text), None)]
-        if delay:
-            self.s.call_later(delay, lambda: self._say(parts, voiced))
-        else:
+        self._speak(parts, voiced, delay)
+
+    def own_reply(self, message):
+        """Whether an event answers what you did yourself (you bought, sold, got, gave, were
+        paid, lost a bet...): no one else is its actor, and it isn't the station's news. The
+        "Read aloud" filters narrow down what others do and the station's news; a reply to
+        your own command is always read."""
+        if message.get("event") or message.get("k") in STATION_KINDS:
+            return False
+        actor = message.get("actor")
+        if not isinstance(actor, str) or not actor:
+            return True
+        return bool(self.me) and actor.casefold() == self.me.casefold()
+
+    def _speak(self, parts, voiced, delay=0.0):
+        """Say a line now, or after `delay` seconds (the dice landing, the reels stopping,
+        the reactor's tones: the words wait for their sounds). A line that comes while
+        another waits is said after it, so lines are heard in the order they came."""
+        if not delay and not self._held and self._hold_timer is None:
+            self._say(parts, voiced)
+            return
+        self._held.append((delay, parts, voiced))
+        if self._hold_timer is None:
+            self._release_held()
+
+    def _release_held(self):
+        """Say the lines that wait, in order, until one that waits for its sounds."""
+        self._hold_timer = None
+        while self._held:
+            delay, parts, voiced = self._held[0]
+            if delay > 0:
+                self._held[0] = (0.0, parts, voiced)
+                self._hold_timer = self.s.call_later(delay, self._release_held)
+                return
+            self._held.pop(0)
             self._say(parts, voiced)
 
     def _parts(self, message, text, settings, aruna):
@@ -758,6 +798,13 @@ class OrbitClient:
     def shutdown(self):
         """Hariku is closing: goodbye to the server, if there's time."""
         self.speaker.clear()
+        self._held = []
+        timer, self._hold_timer = self._hold_timer, None
+        if timer is not None:
+            try:
+                timer.cancel()
+            except Exception:
+                pass
         self._cancel_tick()
         conn, self.conn = self.conn, None
         self._token = None

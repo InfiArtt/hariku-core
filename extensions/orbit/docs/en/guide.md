@@ -795,10 +795,12 @@ Open it with the window's Settings button, or type "settings" in the game.
 - A different voice for each player (Hariku Voice).
 - Speak my own lines in my character voice.
 - Say the speaker's name before their words.
-- Read aloud: what is read, by kind: Chat and gestures; Whispers and crew chat; Shouts;
-  Arrivals and departures; Work, farming, mining and money; Station announcements and
-  news; Special events (meteor showers, parties, fireworks). What isn't read still goes
-  to the Messages box.
+- Read aloud what others do and the station's news: Others' chat and gestures; Whispers
+  and crew chat to me; Others' shouts; Others' arrivals and departures; Credits and
+  things others give me; Station announcements and news; Special events' news (meteor
+  showers, parties, fireworks). These only narrow down what other players and the
+  station do: a reply to your own command (you buy, sell, get, give, are paid, win or
+  lose a bet) is always read. What isn't read still goes to the Messages box.
 - While the Orbit window is closed, read: Everything; Only whispers, my name and station
   news (the default); or Nothing. Sounds follow the same choice.
 - When I close the Orbit window, and Log me out when the window is closed and I've been

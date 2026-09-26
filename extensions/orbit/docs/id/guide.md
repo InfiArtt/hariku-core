@@ -850,10 +850,13 @@ berbahasa Inggris:
 - A different voice for each player (Hariku Voice).
 - Speak my own lines in my character voice.
 - Say the speaker's name before their words.
-- Read aloud: apa yang dibacakan, per jenis: Chat and gestures; Whispers and crew chat;
-  Shouts; Arrivals and departures; Work, farming, mining and money; Station announcements
-  and news; Special events (meteor showers, parties, fireworks). Yang tidak dibacakan tetap
-  masuk ke kotak Messages.
+- Read aloud what others do and the station's news: Others' chat and gestures; Whispers
+  and crew chat to me; Others' shouts; Others' arrivals and departures; Credits and things
+  others give me; Station announcements and news; Special events' news (meteor showers,
+  parties, fireworks). Kotak-kotak ini hanya menyaring apa yang dilakukan pemain lain dan
+  kabar stasiun: jawaban atas perintahmu sendiri (kamu membeli, menjual, mendapat,
+  memberi, dibayar, menang atau kalah taruhan) selalu dibacakan. Yang tidak dibacakan
+  tetap masuk ke kotak Messages.
 - While the Orbit window is closed, read: Everything; Only whispers, my name and station
   news (bawaan); atau Nothing. Bunyi-bunyi mengikuti pilihan yang sama.
 - When I close the Orbit window, dan Log me out when the window is closed and I've been
