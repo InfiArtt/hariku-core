@@ -38,8 +38,12 @@ fokusnya langsung di kotak Command.
 ### Isi jendela
 
 - Messages: semua baris dari game, yang terbaru paling bawah. Isinya teks yang hanya bisa
-  dibaca: baca dengan tombol panah seperti teks biasa. Baris baru tidak pernah memindahkan
-  fokusmu, dan selama kamu membaca di kotak itu, posisimu tetap di tempatnya.
+  dibaca: baca dengan tombol panah seperti teks biasa. Jawaban yang terdiri dari beberapa
+  bagian datang sebaris per bagian: nama ruangan, deskripsinya, jalan keluarnya, siapa
+  yang ada, dan benda yang bisa dilihat masing-masing satu baris, begitu juga isi sebuah
+  daftar (yang online, barang-barangmu, harga), jadi Panah Atas dan Bawah membacanya satu
+  per satu. Baris baru tidak pernah memindahkan fokusmu, dan selama kamu membaca di kotak
+  itu, posisimu tetap di tempatnya.
 - Command: ketik perintah lalu tekan Enter. Panah Atas dan Bawah memunculkan lagi
   perintah-perintah sebelumnya.
 - Connect, yang berubah jadi Leave Orbit selama kamu tersambung.
@@ -64,6 +68,9 @@ Ketik "help" untuk daftar topik bantuan, dalam empat kelompok:
 membacakan pesan terakhir sekali lagi, dan "status" menyebutkan kamu tersambung sebagai
 siapa, sedang di mana, dan berapa orang yang online.
 
+"x here" menyebutkan apa saja yang bisa kamu lakukan di ruangan tempatmu berada (lihat
+Apa yang bisa kulakukan di sini?).
+
 ## Bergerak
 
 ### Berjalan pakai arah mata angin
@@ -79,12 +86,44 @@ keluarnya.
 
 ### Melihat sekeliling
 
-- "look" menggambarkan ruangan, siapa saja yang ada di sana, lalu diakhiri jalan
-  keluarnya, misalnya "Exits: north, southwest, down."
+- "look" (atau "l") menggambarkan ruangan sebaris per bagian: namanya, deskripsinya,
+  jalan keluarnya ("Exits: north, southwest, down."), siapa yang ada, para penduduk, dan
+  benda yang bisa dilihat. Semuanya dibacakan sekaligus; di kotak Messages tiap bagian
+  jadi baris sendiri.
 - "look north" mengintip ruangan sebelah tanpa pergi ke sana.
 - "look at" dan nama benda atau orang menggambarkannya, misalnya "look at earth" di the
   Observation Deck, tempat kamu melihat Bumi sungguhan di bawah sana seperti keadaannya
   saat ini.
+
+### Apa yang bisa kulakukan di sini?
+
+"x here" menyebutkan perintah-perintah yang bisa dipakai di ruangan tempatmu berada,
+satu per baris, masing-masing dengan petunjuk singkat, lalu ditutup dengan "Type help for
+everything else." Di the Cantina misalnya:
+
+- "Here in the Cantina you can:"
+- "list: what the Cantina bar sells, and the prices"
+- "buy iced coffee: buy from the Cantina bar"
+- "talk to Rocco: hear what Rocco can tell you about"
+- "ask Rocco about gossip: one of the things Rocco talks about"
+- "look at bar: the things here are bar, jukebox and menu"
+- "x Rocco: what you can do with someone or something here"
+
+Yang disebut hanya yang benar-benar bisa dilakukan di tempat itu: harga di pasar, daftar
+barang di toko, kebun, menambang dan memungut rongsokan, permainan kasino, arkade, kuil,
+meja keluarga dan meja pernikahan, duel di arena, the Wombat, the ferry, the Gate,
+kapalmu, pekerjaanmu di tempat kerjamu, misimu, kabinmu, acara yang sedang berlangsung di
+situ, dan penduduk yang sedang ada. Perintah yang bisa dipakai di mana saja (look,
+inventory, who, say...) ada di help. "what can I do here", "examine here", "commands
+here", dan "help here" sama artinya. Di tempat gelap kamu hanya diberi tahu bahwa
+ruangannya terlalu gelap: pakai headlamp.
+
+"x" dan sebuah nama menyebutkan apa yang bisa kamu lakukan dengan seseorang atau sesuatu:
+"x Rocco" (mengobrol, bertanya soal topik-topiknya, menyapa, hadiah yang dia suka, daftar
+barang di barnya), "x Maya" (berbisik, memberi, gerakan, tawar-menawar, profilnya, duel di
+arena, lempar koin di kasino...), "x headlamp" (memakai atau melepasnya), "x iced coffee"
+(meminumnya), "x coffee" di pasar (membeli atau menjualnya di situ), "x jukebox", atau
+"x me". "look at" tetap menggambarkan.
 
 Stasiun punya tiga dek: the Upper Deck (komando dan sains), the Main Deck (the Promenade,
 toko-toko, the Cantina, dan kabin kru), dan the Lower Deck (Engineering, the Cargo Bay, dan
@@ -189,8 +228,8 @@ ditata di kabinmu.
 
 ## Membaca dan mendengarkan
 
-Semua yang terjadi dibacakan begitu datang, dan setiap baris lengkapnya juga masuk ke
-kotak Messages.
+Semua yang terjadi dibacakan begitu datang, satu jawaban utuh sekaligus, dan juga masuk
+ke kotak Messages, sebaris per bagian.
 
 ### Siapa yang membacakan: pengaturan "Read with"
 
@@ -238,9 +277,11 @@ Orbit mengirim teks yang kamu ketik, tidak pernah suaramu.
 ### Kotak Messages
 
 Kotak Messages menyimpan sekitar 500 baris terakhir, selalu utuh, walaupun yang dibacakan
-hanya konfirmasi pendek. "repeat" membacakan baris terbaru sekali lagi. Yang kamu pilih
-untuk tidak didengar (lihat Pengaturan) tetap masuk ke kotak itu, kecuali kata-kata pemain
-yang kamu abaikan.
+hanya konfirmasi pendek. Jawaban yang terdiri dari beberapa bagian (ruangan,
+barang-barangmu, yang online, harga, acara, bantuan) memakai satu baris untuk tiap
+bagian. "repeat" membacakan jawaban terbaru sekali lagi, utuh. Yang kamu pilih untuk tidak
+didengar (lihat Pengaturan) tetap masuk ke kotak itu, kecuali kata-kata pemain yang kamu
+abaikan.
 
 ### Bunyi dan suasana
 
@@ -250,8 +291,10 @@ kirimu; dengung lift, desis airlock, tiap gerakan, koin, panen, beliung di batu,
 kartu dan gulungan mesin slot, lonceng kuil, semuanya dengan gema ruangannya. Banyak di
 antaranya rekaman dari paket bunyi gratis (CC0) buatan Kenney.
 
-Selama jendela terbuka, suasana tempat itu terdengar pelan, dan mengecil saat Hariku
-berbicara. Keduanya punya sakelar dan volume sendiri di Pengaturan.
+Selama jendela terbuka, suasana tempat itu terdengar pelan. Suasana itu tetap terdengar
+saat pembaca layarmu membacakan game, dan hanya sedikit mengecil saat Hariku Voice
+berbicara (suara para pemain), supaya kata-katanya tetap jelas. Keduanya punya sakelar dan
+volume sendiri di Pengaturan.
 
 ## Kerja dan kemajuan
 
@@ -372,7 +415,8 @@ murah lagi.
 ### Memakai dan mengenakan barang
 
 - "list" menunjukkan apa yang dijual toko tempatmu berada; "buy mapper" membelinya.
-- "examine mapper" menjelaskan kegunaan sebuah barang.
+- "look at mapper" menjelaskan kegunaan sebuah barang, dan "x mapper" apa yang bisa kamu
+  lakukan dengannya.
 - "use" dan nama barang memakainya: minum, makan, memasang beacon.
 - "wear" dan nama barang mengenakannya (headlamp, EVA suit, pakaian, gelar); "remove" dan
   nama barangnya melepasnya.
@@ -761,12 +805,13 @@ diucapkan (dengan Voice Control, kata pemanggilnya juga bisa). Perintah sesudah 
 tetap bahasa Inggris:
 
 - "orbit north", "orbit say hello", "orbit whisper Maya see you later"
-- "orbit who is online", "orbit daily", "orbit harvest", "orbit profile"
+- "orbit who is online", "orbit daily", "orbit harvest", "orbit profile", "orbit x here"
 - "orbit status", "orbit voices off", "orbit quit"
 
-Jawabannya diucapkan dan muncul di Hasil terakhir Aruna. Kalau kamu belum tersambung,
-Orbit menyambung dulu, yang butuh sebentar. Memanen tetap butuh karaktermu ada di
-Hydroponics, dan bekerja butuh tempat kerjamu: Aruna hanya mengirim perintahnya.
+Jawabannya diucapkan, satu jawaban utuh sekaligus, dan muncul di Hasil terakhir Aruna.
+Kalau kamu belum tersambung, Orbit menyambung dulu, yang butuh sebentar. Memanen tetap
+butuh karaktermu ada di Hydroponics, dan bekerja butuh tempat kerjamu: Aruna hanya
+mengirim perintahnya.
 
 "panduan orbit" ke Aruna membuka panduan ini.
 
@@ -885,6 +930,21 @@ pindahkan dengan kode pindah (transfer code).
 
 Karakternya dipindah, bukan disalin: komputer pertama tidak bisa memainkannya lagi. Kalau
 komputermu hilang, admin bisa membuatkan kode untukmu.
+
+## Yang berubah di Orbit 1.6 (dan server 1.5)
+
+- "x here" menyebutkan apa yang bisa kamu lakukan di ruangan tempatmu berada, dan "x" dan
+  sebuah nama apa yang bisa kamu lakukan dengan seseorang atau sesuatu (lihat Apa yang
+  bisa kulakukan di sini?). "examine" sekarang sama artinya dengan "x"; "look at" tetap
+  menggambarkan benda.
+- Jawaban yang terdiri dari beberapa bagian datang sebaris per bagian di kotak Messages:
+  nama ruangan, deskripsi, jalan keluar, dan siapa yang ada; isi sebuah daftar. Semuanya
+  tetap dibacakan sekaligus, dan "repeat" membacakan jawaban terakhir secara utuh.
+- Suasana tempat tetap terdengar saat pembaca layarmu membaca, dan hanya sedikit mengecil
+  di bawah Hariku Voice, tidak lagi hilang.
+
+Versi Orbit yang lebih lama tetap bisa dipakai: tiap jawaban tetap datang sebagai satu
+baris seperti dulu, dan "x here" juga bisa dipakai di situ.
 
 ## Yang berubah di Orbit 1.4
 

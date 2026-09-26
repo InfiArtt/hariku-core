@@ -13,13 +13,19 @@ commands and shows or speaks the results.
 English, whatever language a client asks for, and it reads English commands
 and English names. Words in another language get its help hint.
 
+Since 1.5, "x here" says what can be done in the room you're in, a command a
+line, and "x" and a name what can be done with someone or something; and a
+reply of several parts (a room, your things, who is online, a list) goes to
+clients from 1.6 as lines, one part each, so the Messages box reads them one
+by one (see Protocol: `lines`).
+
 It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 `/orbit/` on to it:
 
 | Path | What |
 |---|---|
 | `GET /orbit/ws` | the game, over WebSocket |
-| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.4", "protocol": 1, "online": 3}` |
+| `GET /orbit/health` | `{"ok": true, "service": "orbit", "version": "1.5", "protocol": 1, "online": 3}` |
 
 `/ws` and `/health` work too, for a proxy that strips the `/orbit` prefix.
 
@@ -47,6 +53,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_pets.py` | pets: feeding, playing, resting, growing up, tricks, finds on the worlds |
 | `orbit_family.py` | families: partners (both agree), adopting, children growing up, the naming rite |
 | `orbit_weddings.py` | weddings: the ring, booking a hall, invitations, the two ceremonies, the memory |
+| `orbit_here.py` | "x here": what can be done in this room, and "x" and a name: with someone or something |
 | `orbit_hunt.py` | the hunt (the Lost Chord): seasons of riddles, clues, answers kept only as hashes, the rival |
 | `orbit_hunt_tool.py`, `hunt.example.json` | a season's server file from its authoring file; a fake demo season |
 | `orbit_admin.py` | moving a character to another computer; the admins' commands |
@@ -54,7 +61,7 @@ It listens on `127.0.0.1` behind the web server, which handles TLS and passes
 | `orbit_world.py`, `world.json` | the map: worlds, rooms, compass exits, objects, goods, missions, gestures |
 | `economy.json` | the balance: levels, ranks, the daily bonus, crops, mining, the shops' things |
 | `orbit_earth.py` | what you see from the Observation Deck, from the real time |
-| `orbit_lang.py`, `texts.json` | everything the server says, in English |
+| `orbit_lang.py`, `texts.json` | everything the server says, in English; a reply's lines, and the same as one line |
 | `orbit_safety.py`, `words.json` | names, the word filter, rate limits |
 | `orbit_store.py` | saving (SQLite), and migrating older databases |
 | `orbit_backup.py`, `orbit-backup.service`, `orbit-backup.timer` | a daily copy of the database |
@@ -74,7 +81,7 @@ mkdir -p ~/orbit
 cd ~/orbit
 cp config.example.json config.json        # then put your character's name in "admins"
 python3 orbit_server.py --config config.json
-# "Orbit 1.4 listening on 127.0.0.1:7340"; Ctrl+C stops it
+# "Orbit 1.5 listening on 127.0.0.1:7340"; Ctrl+C stops it
 ```
 
 As a systemd **user** service (no sudo; linger is already on):
@@ -112,6 +119,38 @@ To update: copy the new files over and `systemctl --user restart orbit`.
 Players hear "the station's computer is restarting" and their Orbit reconnects
 by itself. The database is `~/orbit/orbit.db` (with `orbit.db-wal` next to it
 while running).
+
+### Updating to 1.5 ("x here", replies line by line; no migration)
+
+1. Copy these files to `~/orbit/`, never `private/`. New in 1.5: `orbit_here.py`.
+   Changed: `orbit_arcade.py`, `orbit_casino.py`, `orbit_crews.py`, `orbit_econ.py`,
+   `orbit_events.py`, `orbit_family.py`, `orbit_game.py`, `orbit_hunt.py`,
+   `orbit_items.py`, `orbit_lang.py`, `orbit_local.py`, `orbit_nav.py`, `orbit_npcs.py`,
+   `orbit_pets.py`, `orbit_progress.py`, `orbit_server.py`, `orbit_trade.py`,
+   `orbit_travel.py`, `orbit_verbs.py`, `orbit_weddings.py`, `orbit_work.py`,
+   `orbit_world.py`, `texts.json` (copying the whole folder but `private/`, as before, is
+   just as good). `world.json`, `economy.json`, `npcs.json`, `words.json` and the service
+   files are unchanged, and `config.json` needs no new keys.
+2. `systemctl --user restart orbit` (players hear that the station's computer restarts,
+   and their Orbit reconnects by itself).
+3. **The database stays at version 8: there is nothing to migrate**, so no copy is made
+   and the log has no migration line. Nothing new is stored: "x here" is worked out from
+   the room, the players and residents in it and the character, each time it's asked.
+4. Returning players hear once what's new in 1.5 (`whats_new_15`), after the older notes
+   they missed.
+5. The 1.0 to 1.5 clients keep working, and get every reply as one line, as before: the
+   parts of a list are joined with "; " and end with "." (`orbit_lang.one_line`), so a
+   room, "who", the prices and the rest read the way they always did. A few lists that
+   were joined with "and" (your things, your achievements) now read "You carry: a
+   compass; 3 sacks of coffee." They send "x here", "what can I do here" and "x Rocco"
+   as plain text, which the server reads (`orbit_verbs.py`); clients 1.1 to 1.5 send
+   "help here" and "commands here" as the help topic "here", which is "x here" too. Only
+   their "examine" still means look. Client 1.6 says hello as `"client": "Hariku Orbit
+   1.6"`, gets the `lines` too, and sends `examine`.
+6. Check: `curl -fsS http://127.0.0.1:7340/orbit/health` says `"version": "1.5"`; in the
+   game, "x here" in the Cantina starts with "Here in the Cantina you can:" and ends with
+   "Type help for everything else.", and, with Orbit 1.6, "l" puts the room's name, its
+   description and its exits on lines of their own in the Messages box.
 
 ### Updating to 1.4 (English only, English names; no migration)
 
@@ -1082,16 +1121,16 @@ never contains secrets, codes, chat or addresses.
 JSON text messages over WebSocket (text frames only; 4096 bytes at most from
 a client). Everything the server sends is English, ready to show and
 speak, whatever `lang` the hello asked for.
-Protocol version 1 is unchanged since Orbit 1.0: everything 1.1, 1.2, 1.3
-and 1.4 added is optional, so the older clients keep working (they only miss
-the new sounds; every newer command reaches the server from them as plain
-text).
+Protocol version 1 is unchanged since Orbit 1.0: everything 1.1, 1.2, 1.3,
+1.4 and 1.5 added is optional, so the older clients keep working (they only miss
+the new sounds and the lines; every newer command reaches the server from them as
+plain text).
 
 **Joining.** The client's first message:
 
 ```json
 {"t": "hello", "v": 1, "lang": "en", "secret": "<64 hex characters>",
- "name": "Rafli", "job": "pilot", "client": "Hariku Orbit 1.5"}
+ "name": "Rafli", "job": "pilot", "client": "Hariku Orbit 1.6"}
 ```
 
 A known secret resumes its character (the name and job are then ignored); an
@@ -1120,6 +1159,7 @@ commands need no new client:
 | `c` | Fields | |
 |---|---|---|
 | `look` | `a`: nothing, a person, a thing, a thing you own, a direction | |
+| `examine` | `a`: `here` (or `room`, `around`), a player, a resident, a pet or child, a thing here, one you own or one for sale here, a good at this market, a place, `me`; nothing: how it's used | 1.5: what can be done (from text: x here, x Rocco, what can I do here, commands here; `help` with `a`: `here` too) |
 | `move` | `d`: n, ne, e, se, s, sw, w, nw, u, d | walk one room |
 | `go` | `a`: a direction or a place | next door: a walk; further: the way (admins teleport) |
 | `way`, `map`, `where`, `compass`, `scan`, `locate` | `a` / `to` | finding your way and people (`way` also starts the guide) |
@@ -1179,7 +1219,9 @@ another player's: the words alone, so a client can read the name in one
 voice and the words in the speaker's), `to` (who you whispered to),
 `preview` (read this line in `voice`), `ask` (an invitation, an offer, a challenge, a
 proposal: answer with accept or decline; `partner`, `adopt` and `ring` are
-1.2's), a resident's lines are `say` and `emote` events with its name as
+1.2's), `lines` (1.5, only to a client from 1.6, the hello's `client`, and only
+for a reply of several parts: its parts, a line each, to show one by one; `text`
+is always the whole reply as one line, for every client, to read aloud), a resident's lines are `say` and `emote` events with its name as
 `actor`, its `voice` and its `words`, like a player's, `transfer_code` and `expires`, `reels` (a slot
 machine's three symbols, left to right) and `outcome` (`win`, `lose`,
 `push`, `jackpot`: the client plays it after the dice land, the cards turn
@@ -1281,8 +1323,18 @@ From Hariku's source folder (they run on Windows or Linux, and use only this
 computer):
 
 ```sh
-python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_markets.py tests/test_orbit_guide.py tests/test_orbit_compat.py tests/test_orbit_e2e.py -q
+python -m pytest tests/test_orbit_server.py tests/test_orbit_map.py tests/test_orbit_economy.py tests/test_orbit_casino.py tests/test_orbit_worlds.py tests/test_orbit_events.py tests/test_orbit_hunt.py tests/test_orbit_arcade.py tests/test_orbit_crews.py tests/test_orbit_duels.py tests/test_orbit_npcs.py tests/test_orbit_pets.py tests/test_orbit_family.py tests/test_orbit_weddings.py tests/test_orbit_starlight.py tests/test_orbit_tournament.py tests/test_orbit_markets.py tests/test_orbit_guide.py tests/test_orbit_compat.py tests/test_orbit_here.py tests/test_orbit_lines.py tests/test_orbit_e2e.py -q
 ```
+
+`test_orbit_here.py` goes to every room of every world and types each command
+"x here" lists there, the way client 1.6 reads it, and fails if the answer is
+one that means "not here" (not a market, no farm here, the casino is
+elsewhere...): the list comes from the same checks the commands make, and this
+keeps it so. It also tries "x" on residents, players and things, the dark, a
+mission, the events held in a room, a ship and the ferry, and the words that
+ask for it from the 1.0 and 1.4 clients. `test_orbit_lines.py` checks that a
+client from 1.6 gets a reply's `lines`, that every client gets the same reply as
+one line in `text`, and that the older clients get no `lines` at all.
 
 `test_orbit_casino.py` computes each game's return exactly from
 economy.json (blackjack with perfect hit-or-stand play), so a change that
@@ -1293,7 +1345,7 @@ rescue in the same world) and the travel links between the worlds.
 `tests/orbit_parse_1_0.py` and `tests/orbit_parse_1_4.py` are frozen copies
 of the 1.0 and 1.4 clients' command readers: `test_orbit_compat.py` checks
 that every command added later still reaches the server from them and from
-client 1.5's, that what they send in Indonesian gets the English help hint,
+client 1.6's, that what they send in Indonesian gets the English help hint,
 and that a hello asking for `"lang": "id"` is answered in English. The
 residents', pets', families' and weddings' tests run on a fixed clock with
 seeded randomness; `test_orbit_npcs.py` also
@@ -1304,7 +1356,7 @@ one, and that a version 8 database keeps its prices at the new markets;
 detour, arriving, stopping, logging out and travel), past keycard doors,
 through the dark, down the one-way slide and out into vacuum.
 
-## Later (not in 1.4)
+## Later (not in 1.5)
 
 - **Pets shared by two players:** a companion already has any number of
   owners (`companion_owners`), as children do; a pet could be given to a

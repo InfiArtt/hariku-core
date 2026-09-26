@@ -33,8 +33,11 @@ window connects you if you aren't connected yet, and puts you in the Command fie
 ### The window
 
 - Messages: every line of the game, newest last. It is read-only text: read it with the
-  arrow keys like any text. A new line never moves your focus, and while you read in the
-  box, your place stays where it is.
+  arrow keys like any text. A reply of several parts comes a part to a line: a room's
+  name, its description, its exits, who is here and the things to look at are separate
+  lines, and so are the entries of a list (who is online, your things, the prices), so
+  Up and Down Arrow read them one by one. A new line never moves your focus, and while
+  you read in the box, your place stays where it is.
 - Command: type a command and press Enter. Up and Down Arrow bring back your earlier
   commands.
 - Connect, which becomes Leave Orbit while you're connected.
@@ -58,6 +61,8 @@ Type "help" for the list of help topics, in four groups:
 "help settings" lists the settings you can type. "repeat" (or "again") reads the last
 message again, and "status" says who you're connected as, where you are and how many are online.
 
+"x here" says what you can do in the room you're in (see What can I do here?).
+
 ## Moving around
 
 ### Walking by compass
@@ -70,11 +75,39 @@ If there's no way in the direction you typed, Orbit says so and names the exits.
 
 ### Looking around
 
-- "look" describes the room, who is there, and ends with its exits: "Exits: north,
-  southwest, down."
+- "look" (or "l") describes the room a part to a line: its name, its description, its
+  exits ("Exits: north, southwest, down."), who is here, the residents, and the things to
+  look at. It's read aloud all at once; in the Messages box each part is its own line.
 - "look north" peeks into the next room without walking there.
 - "look at" and a thing or a person describes it, for example "look at earth" at the
   Observation Deck, where you see the real Earth below as it is right now.
+
+### What can I do here?
+
+"x here" lists the commands that work in the room you're in, one a line, each with a
+short hint, and ends with "Type help for everything else." In the Cantina:
+
+- "Here in the Cantina you can:"
+- "list: what the Cantina bar sells, and the prices"
+- "buy iced coffee: buy from the Cantina bar"
+- "talk to Rocco: hear what Rocco can tell you about"
+- "ask Rocco about gossip: one of the things Rocco talks about"
+- "look at bar: the things here are bar, jukebox and menu"
+- "x Rocco: what you can do with someone or something here"
+
+It lists only what works where you stand: a market's prices, a shop's list, the farm,
+mining and salvage, the casino's games, the arcade, the temple, the family and wedding
+desks, duels in the contest zones, the Wombat, the ferry, the Gate, your ship, your
+job's work at your workplace, your mission, your cabin, an event on here, and the
+residents present. What works anywhere (look, inventory, who, say...) is left to help.
+"what can I do here", "examine here", "commands here" and "help here" say the same. In
+the dark you only hear that it's too dark: wear a headlamp.
+
+"x" and a name says what you can do with someone or something: "x Rocco" (talk, ask
+about his topics, greet him, a gift he'd like, his bar's list), "x Maya" (whisper, give,
+a gesture, a trade, her profile, a duel in a contest zone, a coin flip at the casino...),
+"x headlamp" (wear it, or take it off), "x iced coffee" (drink it), "x coffee" at a
+market (buy or sell it here), "x jukebox" or "x me". "look at" still describes.
 
 The station has three decks: the Upper Deck (command and science), the Main Deck (the
 Promenade, the shops, the Cantina and the crew cabins) and the Lower Deck (Engineering,
@@ -170,8 +203,8 @@ lets Maya in for 10 minutes, and she types "visit" and your name from the Crew Q
 
 ## Reading and listening
 
-Everything that happens is read aloud as it comes, and every whole line also goes to the
-Messages box.
+Everything that happens is read aloud as it comes, a whole reply at once, and also goes
+to the Messages box, a part to a line.
 
 ### Who reads: the "Read with" setting
 
@@ -219,8 +252,10 @@ typed, never your voice.
 ### The Messages box
 
 The Messages box keeps the last 500 lines or so, always whole, even when only a short
-confirmation was read aloud. "repeat" reads the newest line again. What you choose not
-to hear (see Settings) still goes to the box, except the words of players you ignore.
+confirmation was read aloud. A reply of several parts (a room, your things, who is
+online, the prices, the events, help) takes a line for each part. "repeat" reads the
+newest reply again, whole. What you choose not to hear (see Settings) still goes to the
+box, except the words of players you ignore.
 
 ### Sounds and ambience
 
@@ -230,8 +265,10 @@ lift humming, an airlock hissing, each gesture, coins, a harvest, the pick on ro
 dice, cards and reels, the temple's bell, all with the room's echo. Many are recordings
 from Kenney's free (CC0) sound packs.
 
-While the window is open, a quiet ambience of the place plays, and it goes quiet while
-Hariku speaks. Both have their own switch and volume in Settings.
+While the window is open, a quiet ambience of the place plays. It keeps playing while
+your screen reader reads the game, and dips softly while Hariku Voice speaks (the
+players' voices), so the words stay clear. Both have their own switch and volume in
+Settings.
 
 ## Work and progress
 
@@ -348,7 +385,7 @@ Prices move a little each day, and each shop has one special of the day, cheaper
 ### Using and wearing things
 
 - "list" shows what the shop you're in sells; "buy mapper" buys.
-- "examine mapper" says what a thing does.
+- "look at mapper" says what a thing does, and "x mapper" what you can do with it.
 - "use" and a thing uses it: drink, eat, place a beacon.
 - "wear" and a thing puts it on (a headlamp, an EVA suit, clothes, a title); "remove"
   and the thing takes it off.
@@ -717,12 +754,12 @@ Put "orbit" in front of any game command and tell it to Aruna, typed or spoken (
 Voice Control, the wake phrase works too):
 
 - "orbit north", "orbit say hello", "orbit whisper Maya see you later"
-- "orbit who is online", "orbit daily", "orbit harvest", "orbit profile"
+- "orbit who is online", "orbit daily", "orbit harvest", "orbit profile", "orbit x here"
 - "orbit status", "orbit voices off", "orbit quit"
 
-The answer is spoken and shows in Aruna's Last result. If you aren't connected, Orbit
-connects first, which takes a moment. Harvesting still needs your character in
-Hydroponics, and work needs your workplace: Aruna only sends the command.
+The answer is spoken, a whole reply at once, and shows in Aruna's Last result. If you
+aren't connected, Orbit connects first, which takes a moment. Harvesting still needs your
+character in Hydroponics, and work needs your workplace: Aruna only sends the command.
 
 ## Keys and commands
 
@@ -836,6 +873,20 @@ it with a transfer code.
 
 The character is moved, not copied: the first computer can't play it any more. If you
 lose your computer, an admin can make a code for you.
+
+## What changed in Orbit 1.6 (and the server's 1.5)
+
+- "x here" lists what you can do in the room you're in, and "x" and a name what you can
+  do with someone or something (see What can I do here?). "examine" now means the same as
+  "x"; "look at" still describes a thing.
+- Replies of several parts come a part to a line in the Messages box: a room's name,
+  description, exits and who is here; the entries of a list. They're still read aloud
+  all at once, and "repeat" reads the whole last reply.
+- The ambience keeps playing while your screen reader reads, and dips softly under
+  Hariku Voice instead of going silent.
+
+Older versions of Orbit keep working: they get each reply as one line, as before, and
+"x here" works in them too.
 
 ## What changed in Orbit 1.4
 

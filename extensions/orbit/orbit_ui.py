@@ -11,8 +11,9 @@
 Orbit's windows: the game window and the Preferences page.
 
 The game window has the Messages box (read-only text, newest line last, read
-with the arrow keys like any text; a new line never moves the focus, nor your
-reading place while you're in it), the Command
+with the arrow keys like any text; a reply of several parts takes a line for
+each, so the client's "message" and "trim" counts are lines of the box; a new
+line never moves the focus, nor your reading place while you're in it), the Command
 field (Enter sends; Up and Down bring back earlier commands), Connect or
 Leave Orbit, Help, Settings (Orbit's Preferences page), and the status; the
 title says whether you're connected. Escape or closing it does what the
