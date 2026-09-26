@@ -106,6 +106,10 @@ class LocalMixin:
 
     # --- Lumina City's courier gigs -------------------------------------------------------
 
+    def gig_hub_here(self, char):
+        """Whether `char` is where courier gigs are handed out (Lumina City's Courier Hub)."""
+        return bool(self._loc(char).get("gigs"))
+
     def cmd_gig(self, session, message):
         char, lang = session.char, session.lang
         rules = self.econ.get("gigs", {})
@@ -114,7 +118,7 @@ class LocalMixin:
             self._info(session, "gig_current", place=self.world.locations[gig["to"]]["ref"],
                        time=self._duration(lang, float(gig["until"]) - self.now()), pay=gig["pay"])
             return
-        if not self._loc(char).get("gigs"):
+        if not self.gig_hub_here(char):
             hub = next((lid for lid, loc in self.world.locations.items() if loc.get("gigs")), None)
             self._error(session, "gig_where", where=self.world.locations[hub]["in"] if hub else "?")
             return

@@ -156,6 +156,9 @@ PHRASEBOOK = [
     # the guide (server 1.3)
     ("guide me to the cantina", "guide"), ("guide me to the dock", "guide"), ("guide", "guide"),
     ("stop guide", "guide"), ("stop guiding", "guide"), ("cancel guidance", "guide"), ("guide off", "guide"),
+    # what you can do here, or with someone (server 1.5)
+    ("x here", "examine"), ("what can I do here", "examine"), ("what can i do here?", "examine"),
+    ("x Mateo", "examine"), ("what can I do with Mateo", "examine"), ("x", "examine"),
 ]
 # Only the newer clients: Orbit 1.0 read these as work, take or the mission board.
 PHRASEBOOK_NOW = [

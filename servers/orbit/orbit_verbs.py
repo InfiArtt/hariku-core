@@ -26,6 +26,8 @@ every client can use them:
     parse("ride the wombat")      -> {"c": "board"}
     parse("fly to Karmina")       -> {"c": "fly", "a": "Karmina"}
     parse("dice 50 high")         -> {"c": "dice", "a": "high", "n": 50}
+    parse("x here")               -> {"c": "examine", "a": "here"}   (and "what can I do here")
+    parse("x Rocco")              -> {"c": "examine", "a": "Rocco"}
     parse("offer Sam 3 iron for 200 credits")
                                   -> {"c": "offer", "to": "Sam", "a": "3 iron for 200 credits"}
     parse("grant Sam 50")         -> {"c": "admin", "op": "grant", "to": "Sam", "n": 50}
@@ -70,6 +72,10 @@ VERBS = [
     (("light", "a", "lantern"), "lantern"), (("light", "the", "lantern"), "lantern"),
     (("light", "a", "star", "lantern"), "lantern"),
     (("read",), "read"),
+    # what you can do here, or with someone or something (the Nova Realm's examine)
+    (("x",), "examine"), (("examine",), "examine"), (("what", "can", "i", "do", "with"), "examine"),
+    (("what", "can", "i", "do", "here"), "examine_here"), (("what", "can", "i", "do"), "examine_here"),
+    (("commands", "here"), "examine_here"), (("actions", "here"), "examine_here"),
     # things
     (("open",), "open"),
     (("use",), "use"), (("drink",), "use"), (("eat",), "use"),
@@ -391,6 +397,10 @@ def parse(text, _lang=None, find_direction=None):
         return {"c": "lantern"}
     if meaning == "read":
         return {"c": "look", "a": rest} if rest else None
+    if meaning == "examine":
+        return {"c": "examine", "a": rest}
+    if meaning == "examine_here":
+        return {"c": "examine", "a": "here"}
     if meaning in ("use", "equip", "unequip"):
         message = {"c": "unequip" if meaning == "unequip" else "use", "item": rest}
         if meaning == "equip":

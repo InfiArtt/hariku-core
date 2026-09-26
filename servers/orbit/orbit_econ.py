@@ -452,7 +452,7 @@ class EconomyMixin:
             else:
                 self.cmd_list(session, {"a": text})
             return
-        if self._loc(char).get("pawn") and not (text and goods):
+        if self.pawn_here(char) and not (text and goods):
             self.pawn_list(session)
             return
         if goods is None:
@@ -549,7 +549,7 @@ class EconomyMixin:
 
     def cmd_sell(self, session, message):
         char = session.char
-        if self._loc(char).get("pawn"):
+        if self.pawn_here(char):
             self.pawn_sell(session, message)
             return
         lid = char["location"]
@@ -652,8 +652,12 @@ class EconomyMixin:
         char["stats"]["farm"] = farm
         return farm
 
+    def farm_here(self, char):
+        """Whether `char` stands where the farm plots are (Hydroponics)."""
+        return bool(self._loc(char).get("farm"))
+
     def _at_farm(self, session):
-        if not self._loc(session.char).get("farm"):
+        if not self.farm_here(session.char):
             farm = next(lid for lid, loc in self.world.locations.items() if loc.get("farm"))
             self._error(session, "farm_where", where=self.world.locations[farm]["in"])
             return False
@@ -838,9 +842,17 @@ class EconomyMixin:
                 return gid
         return next(iter(table))
 
+    def mine_here(self, char):
+        """The mining table of the room `char` is in ("platform", "rim"...), or None."""
+        return self._loc(char).get("mine")
+
+    def salvage_here(self, char):
+        """The salvage table of the room `char` is in ("debris", "domes"...), or None."""
+        return self._loc(char).get("salvage")
+
     def cmd_mine(self, session, message):
         char, lang = session.char, session.lang
-        spot = self._loc(char).get("mine")
+        spot = self.mine_here(char)
         if not spot:
             belt = next(lid for lid, loc in self.world.locations.items() if loc.get("mine"))
             self._error(session, "mine_where", where=self.world.locations[belt]["ref"])
@@ -884,7 +896,7 @@ class EconomyMixin:
         if self.events_here(char, "collect"):
             self.event_collect(session)
             return
-        spot = self._loc(char).get("salvage")
+        spot = self.salvage_here(char)
         if not spot:
             self._error(session, "collect_nothing")
             return

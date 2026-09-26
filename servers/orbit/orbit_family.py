@@ -550,10 +550,14 @@ class FamilyMixin:
 
     # --- adopting ----------------------------------------------------------------------------------
 
+    def family_desk_here(self, char):
+        """Whether `char` is at the family desk (in the Medbay), where babies are adopted."""
+        return bool(self._loc(char).get("family_desk"))
+
     def cmd_adopt(self, session, message):
         char, lang = session.char, session.lang
         rules = self.family_rules()
-        if not self._loc(char).get("family_desk"):
+        if not self.family_desk_here(char):
             desk = next((lid for lid, loc in self.world.locations.items() if loc.get("family_desk")), None)
             self._error(session, "adopt_where", where=self.world.locations[desk]["in"] if desk else "?")
             return
@@ -639,7 +643,7 @@ class FamilyMixin:
     def cmd_naming(self, session, message):
         char, lang = session.char, session.lang
         name = orbit_safety.tidy(self._arg(message, "a", 40), 16)
-        if not self._loc(char).get("temple"):
+        if not self.temple_here(char):
             temple = next((lid for lid, loc in self.world.locations.items() if loc.get("temple")), None)
             self._error(session, "naming_where", where=self.world.locations[temple]["in"] if temple else "?")
             return

@@ -88,9 +88,12 @@ class CasinoMixin:
 
     # --- betting -------------------------------------------------------------------------
 
+    def casino_here(self, char):
+        """Whether `char` is in the Casino Corner (the room whose shop is the casino's)."""
+        return self._loc(char).get("shop") == "casino"
+
     def _at_casino(self, session):
-        loc = self._loc(session.char)
-        if loc.get("shop") == "casino":
+        if self.casino_here(session.char):
             return True
         casino = next((lid for lid, l in self.world.locations.items() if l.get("shop") == "casino"), None)
         self._error(session, "casino_where", where=self.world.locations[casino]["in"] if casino else "?")
@@ -150,7 +153,7 @@ class CasinoMixin:
 
     def cmd_casino(self, session, message):
         """The games and the rules; from anywhere else, the way to the casino."""
-        if self._loc(session.char).get("shop") != "casino":
+        if not self.casino_here(session.char):
             casino_id = next((lid for lid, l in self.world.locations.items() if l.get("shop") == "casino"), None)
             if casino_id:
                 self.cmd_go(session, {"a": casino_id})

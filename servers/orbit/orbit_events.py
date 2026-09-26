@@ -691,9 +691,14 @@ class EventsMixin:
 
     # --- parties ------------------------------------------------------------------------------
 
+    @staticmethod
+    def party_here(char):
+        """Whether `char` is in their own cabin, where they may throw a party."""
+        return char["location"] == "cabin" and not char["stats"].get("visit")
+
     def cmd_party(self, session, message):
         char = session.char
-        if char["location"] != "cabin" or char["stats"].get("visit"):
+        if not self.party_here(char):
             self._error(session, "party_where")
             return
         if self._muted(session):

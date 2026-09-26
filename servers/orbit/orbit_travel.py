@@ -553,6 +553,27 @@ class TravelMixin:
         every = float(rules["every"])
         return math.ceil((now + float(rules["board_before"])) / every) * every
 
+    def ferry_here(self, char):
+        """The world whose ferry stop `char` stands at (the ferry leaves from here), or None."""
+        here = self.world.world_of(char["location"])
+        if here is None or self.world.worlds[here].get("ferry") != char["location"]:
+            return None
+        return here
+
+    def gate_here(self, char):
+        """The world whose Gate `char` stands at, or None."""
+        here = self.world.world_of(char["location"])
+        if here is None or self.world.worlds[here].get("gate") != char["location"]:
+            return None
+        return here
+
+    def ship_docked_at(self, char):
+        """Your own ship when it's docked in the room you stand in (embark, refuel), or None."""
+        ship = self.ship_of(char)
+        if ship is None or ship.get("flight") or ship.get("dock") != char["location"]:
+            return None
+        return ship
+
     def cmd_ferry(self, session, message):
         char, lang = session.char, session.lang
         here = self.world.world_of(char["location"])
@@ -561,7 +582,7 @@ class TravelMixin:
             return
         text = self._arg(message, "a", 60)
         dest = self.target_world(text) if text else None
-        if here is None or self.world.worlds[here].get("ferry") != char["location"]:
+        if self.ferry_here(char) is None:
             stop = self.world.worlds.get(here, {}).get("ferry") if here else None
             if stop:
                 self._error(session, "ferry_where", where=self.world.locations[stop]["in"])
@@ -644,7 +665,7 @@ class TravelMixin:
         text = self._arg(message, "a", 60)
         dest = self.target_world(text) if text else None
         gate = self.world.worlds.get(here, {}).get("gate") if here else None
-        if gate is None or gate != char["location"]:
+        if self.gate_here(char) is None:
             if gate:
                 self._error(session, "gate_where", where=self.world.locations[gate]["in"])
             else:

@@ -70,9 +70,13 @@ class CrewsMixin:
         found = self.store.crew_of(char["id"])
         return found if found else (None, None)
 
+    def crew_room_here(self, char):
+        """Whether `char` is in the Crew Hangar (their crew's own room)."""
+        return bool(self._loc(char).get("crew_room"))
+
     def crew_hangar_lines(self, session):
         """The crew board, in the Crew Hangar."""
-        if not self._loc(session.char).get("crew_room"):
+        if not self.crew_room_here(session.char):
             return []
         lang = session.lang
         crew, _role = self.crew_of(session.char)

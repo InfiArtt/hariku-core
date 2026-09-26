@@ -592,7 +592,7 @@ def test_a_migrated_character_plays_on(tmp_path, make_game, clock):
     assert conn.sent[0]["name"] == "Quilafly" and conn.sent[0]["credits"] == 1234 and conn.sent[0]["room"] == "cantina"
     room = conn.sent[1]["text"]
     assert room.startswith("Welcome back, Quilafly. New in Orbit: it's a whole simulation now.")
-    for note in ("New in Orbit 1.2", "New in Orbit 1.3", "New in Orbit 1.4"):     # every note since 1.0
+    for note in ("New in Orbit 1.2", "New in Orbit 1.3", "New in Orbit 1.4", "New in Orbit 1.5"):   # all since 1.0
         assert note in room
     assert "Cantina." in room and "Exits: east, west." in room
     char = game.sessions["quilafly"].char

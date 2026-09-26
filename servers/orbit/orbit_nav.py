@@ -925,6 +925,16 @@ class NavMixin:
             if now > until:
                 session.invites.pop(key, None)
 
+    @staticmethod
+    def visit_here(char):
+        """Whether `char` is in the Crew Quarters, where cabins are visited from."""
+        return char["location"] == "cabins_hall"
+
+    def may_visit(self, session, host):
+        """Whether `host` has invited `session` into their cabin (or throws a party)."""
+        until = host.invites.get(session.key)
+        return bool(until and until >= self.now()) or self.party_of(host.key)
+
     def cmd_visit(self, session, message):
         char = session.char
         name = self._arg(message, "to", 40)
@@ -935,11 +945,10 @@ class NavMixin:
         if host is session:
             self.cmd_go(session, {"a": "cabin"})
             return
-        until = host.invites.get(session.key)
-        if (not until or until < self.now()) and not self.party_of(host.key):
+        if not self.may_visit(session, host):
             self._error(session, "not_invited", name=host.name)
             return
-        if char["location"] != "cabins_hall":
+        if not self.visit_here(char):
             self._error(session, "visit_where")
             return
         d = next((d for d, ex in self.world.neighbours("cabins_hall") if ex["to"] == "cabin"), None)

@@ -24,7 +24,7 @@ Things you own, and what they do (economy.json "things"):
   use X                 use it: drink, eat, place a beacon, wear...
   wear X                wear it (headlamp, EVA suit, clothes, a title)
   take off X            stop wearing it
-  examine X             what it is and does
+  look at X             what it is and does (x X: what you can do with it, orbit_here.py)
 
 A pet is a companion (a table of its own; orbit_pets.py cares for them).
 Things stay in the inventory; seeds,
@@ -253,7 +253,7 @@ class ItemsMixin:
             if self._loc(char).get("market"):
                 self.cmd_prices(session, {"a": self._arg(message)})
                 return
-            if self._loc(char).get("pawn"):
+            if self.pawn_here(char):
                 self.pawn_list(session)
                 return
             self._error(session, "list_where")
@@ -538,8 +538,12 @@ class ItemsMixin:
 
     # --- the temple of the Way of Starlight (flavour, optional) ---------------------------------
 
+    def temple_here(self, char):
+        """Whether `char` is at the temple of the Way of Starlight (the Star Dome Hall)."""
+        return bool(self._loc(char).get("temple"))
+
     def _at_temple(self, session):
-        if not self._loc(session.char).get("temple"):
+        if not self.temple_here(session.char):
             temple = next((lid for lid, loc in self.world.locations.items() if loc.get("temple")), None)
             self._error(session, "temple_where",
                         where=self.world.locations[temple]["in"] if temple else "?")

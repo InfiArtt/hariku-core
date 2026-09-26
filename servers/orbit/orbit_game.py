@@ -18,6 +18,7 @@ fakes. The rest of the game is in mixins, one file each:
   orbit_work.py   jobs and their mini-games, XP and levels, missions, the
                   daily bonus
   orbit_econ.py   the markets, the farm, mining and salvage, your profile
+  orbit_here.py   "x here": what can be done in this room, and with someone or something
   orbit_admin.py  moving a character to another computer; admin commands
 
 A connection ("conn") is anything with send(dict), close(code, reason), a
@@ -57,6 +58,7 @@ from orbit_casino import CasinoMixin
 from orbit_econ import EconomyMixin
 from orbit_family import FamilyMixin
 from orbit_events import EventsMixin
+from orbit_here import HERE_WORDS, HereMixin
 from orbit_hunt import HuntMixin
 from orbit_arcade import ArcadeMixin, client_version
 from orbit_crews import CrewsMixin
@@ -116,7 +118,8 @@ TALK_KINDS = ("say", "whisper", "shout")
 # Clients from this version show a reply's lines one by one (the "lines" of an event).
 LINES_CLIENT = (1, 6)
 # What's new, said once to a returning player: each version's note, and the notes since theirs.
-NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"), ("1.4", "whats_new_14"))
+NEWS = (("1.1", "whats_new"), ("1.2", "whats_new_12"), ("1.3", "whats_new_13"), ("1.4", "whats_new_14"),
+        ("1.5", "whats_new_15"))
 SEEN_VERSION = NEWS[-1][0]
 
 
@@ -155,12 +158,12 @@ class Session:
 
 MIXINS = (NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
           TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-          PetsMixin, FamilyMixin, WeddingsMixin, AdminMixin)
+          PetsMixin, FamilyMixin, WeddingsMixin, HereMixin, AdminMixin)
 
 
 class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixin, ProgressMixin,
            TravelMixin, LocalMixin, EventsMixin, HuntMixin, ArcadeMixin, CrewsMixin, DuelsMixin, NpcsMixin,
-           PetsMixin, FamilyMixin, WeddingsMixin, AdminMixin):
+           PetsMixin, FamilyMixin, WeddingsMixin, HereMixin, AdminMixin):
     def __init__(self, world, store, texts, config=None, word_filter=None, clock=time.time,
                  rng=None):
         self.world = world
@@ -1103,6 +1106,9 @@ class Game(NavMixin, ItemsMixin, WorkMixin, EconomyMixin, CasinoMixin, TradeMixi
 
     def cmd_help(self, session, message):
         topic = orbit_safety.name_key(self._arg(message, "a", 40))
+        if topic in HERE_WORDS:
+            self.cmd_examine(session, {"a": "here"})           # "help here", "commands here": x here
+            return
         for name, words in self.HELP_TOPICS.items():
             if topic in words:
                 if name == "admin" and not self.is_admin(session):

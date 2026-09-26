@@ -37,6 +37,9 @@ logger = logging.getLogger("orbit.game")
 
 REPAIR_MIN, REPAIR_MAX = 3, 6
 CARD_WORDS = {"card", "a card", "cards", "another card"}
+# Where each job's work is done (a trader's market report: anywhere).
+WORK_PLACES = {"engineer": ("engineering", "reactor_core"), "pilot": ("dock",), "scientist": ("science_lab",),
+               "security": ("cargo",)}
 
 
 class WorkMixin:
@@ -153,8 +156,14 @@ class WorkMixin:
         else:
             self._send(session, "info", "work_none", job=self.world.job_name(job))
 
-    def _work_place(self, session, *places):
-        if session.char["location"] not in places:
+    @staticmethod
+    def work_places(job):
+        """The rooms where `job` works (WORK_PLACES), or None: anywhere."""
+        return WORK_PLACES.get(job)
+
+    def _work_place(self, session):
+        places = self.work_places(session.char["job"])
+        if places is not None and session.char["location"] not in places:
             self._error(session, "work_where", where=self.world.locations[places[0]]["in"])
             return False
         return True
@@ -181,7 +190,7 @@ class WorkMixin:
         return None
 
     def _work_repair(self, session):
-        if not self._work_place(session, "engineering", "reactor_core"):
+        if not self._work_place(session):
             return
         stats = session.char["stats"]
         task = self._pending_task(session, "repair")
@@ -270,7 +279,7 @@ class WorkMixin:
     # --- the pilot ---------------------------------------------------------------------------
 
     def _work_flight(self, session):
-        if not self._work_place(session, "dock"):
+        if not self._work_place(session):
             return
         if not self._check_cooldown(session, "flight"):
             return
@@ -394,7 +403,7 @@ class WorkMixin:
         return seq[:-1], seq[-1]
 
     def _work_science(self, session):
-        if not self._work_place(session, "science_lab"):
+        if not self._work_place(session):
             return
         task = self._pending_task(session, "science")
         if task:
@@ -433,7 +442,7 @@ class WorkMixin:
     # --- security ---------------------------------------------------------------------------
 
     def _work_patrol(self, session):
-        if not self._work_place(session, "cargo"):
+        if not self._work_place(session):
             return
         lang = session.lang
         task = self._pending_task(session, "patrol")

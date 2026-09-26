@@ -292,6 +292,10 @@ class TradeMixin:
 
     # --- the pawn shop ------------------------------------------------------------------------
 
+    def pawn_here(self, char):
+        """Whether `char` is in the pawn shop (Second Orbit)."""
+        return bool(self._loc(char).get("pawn"))
+
     def pawn_value(self, tid):
         """What Second Orbit pays for one `tid` (0: it doesn't buy it)."""
         thing = self.world.things.get(tid)

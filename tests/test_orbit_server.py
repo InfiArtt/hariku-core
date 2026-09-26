@@ -1071,10 +1071,22 @@ def test_the_status_line(make_game):
     assert cmd(game, rafli, "text", a="orbit status")["text"].startswith("Connected as Rafli")
 
 
-def test_the_server_is_version_1_4():
+def test_the_server_is_version_1_5():
     import orbit_server
-    assert orbit_server.VERSION == "1.4"
-    assert orbit_game.NEWS[-1] == ("1.4", "whats_new_14") and orbit_game.SEEN_VERSION == "1.4"
+    assert orbit_server.VERSION == "1.5"
+    assert orbit_game.NEWS[-1] == ("1.5", "whats_new_15") and orbit_game.SEEN_VERSION == "1.5"
+
+
+def test_a_returning_player_hears_whats_new_in_1_5_once(make_game):
+    game = make_game()
+    rafli = join(game, "Rafli")
+    game.sessions["rafli"].char["stats"]["seen_version"] = "1.4"     # last played with Orbit 1.4
+    game.receive(rafli, {"t": "cmd", "c": "bye"})
+    text = join(game, "Rafli").sent[1]["text"]
+    assert "New in Orbit 1.5: type x here (or what can I do here)" in text and "New in Orbit 1.4" not in text
+    assert "a part to a line in the Messages box" in text
+    game.receive(game.sessions["rafli"].conn, {"t": "cmd", "c": "bye"})
+    assert "New in Orbit" not in join(game, "Rafli").sent[1]["text"]
 
 
 def test_a_returning_player_hears_whats_new_in_1_4_once(make_game, tmp_path):

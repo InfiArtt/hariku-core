@@ -601,11 +601,11 @@ class World:
         """Any thing's id (a good, a device, a seed...) for what was typed."""
         return self._lookup(self._thing_names, text, fuzzy)
 
-    def find_object(self, location_id, text):
+    def find_object(self, location_id, text, fuzzy=True):
         """(object id, object) in a location for what was typed, or (None, None)."""
         loc = self.locations.get(location_id, {})
         index = self._index({oid: o["names"] for oid, o in loc.get("objects", {}).items()})
-        found = self._lookup(index, text)
+        found = self._lookup(index, text, fuzzy)
         return (found, loc["objects"][found]) if found else (None, None)
 
     def find_direction(self, text, _lang=None):

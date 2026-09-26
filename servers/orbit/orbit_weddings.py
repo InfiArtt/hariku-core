@@ -301,10 +301,14 @@ class WeddingsMixin:
             found["venue"] = venue
         return found, problem
 
+    def wedding_desk_here(self, char):
+        """Whether `char` is at the wedding desk (Starglint Jewellers), where weddings are booked."""
+        return bool(self._loc(char).get("wedding_desk"))
+
     def _wedding_book(self, session, message):
         char, lang = session.char, session.lang
         rules = self.wedding_rules()
-        if not self._loc(char).get("wedding_desk"):
+        if not self.wedding_desk_here(char):
             desk = next((lid for lid, loc in self.world.locations.items() if loc.get("wedding_desk")), None)
             self._error(session, "wedding_book_where", where=self.world.locations[desk]["in"] if desk else "?")
             return
