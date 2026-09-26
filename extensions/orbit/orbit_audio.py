@@ -33,8 +33,11 @@ breathing in a suit outside, the Belt's machinery, the soft air of a venue.
 It plays through an MCI "mpegvideo" device of its own (every command for
 such a device must come from the thread that opened it, so the player has a
 thread), looping, at the volume the user set. It fades out and in between
-places, and goes quiet while Hariku speaks: while Hariku Voice is busy, and
-for about as long as the screen reader needs for a line (hush()).
+places. It keeps playing while the screen reader reads the game (as in
+VIPMud: NVDA speaks over the room's sound), and dips to DUCK_LEVEL of its
+volume, never to silence, while Hariku Voice itself speaks (the players'
+voices, the narrator: a voice Hariku plays, which would otherwise have to
+compete with the loop), coming back as soon as it's done.
 
 The MCI calls go through `mci(command)`, so the tests give a fake. No wx.
 """
@@ -78,6 +81,7 @@ MAX_BEATS, MAX_BEAT_SECONDS = 16, 20.0
 POLL_SECONDS = 0.05
 FADE_PER_SECOND = 900.0       # MCI volume units (0-1000) a second
 MODE_CHECK_SECONDS = 1.0
+DUCK_LEVEL = 0.3              # the ambience's share of its volume while Hariku Voice speaks
 
 
 def _step(floor):
@@ -196,7 +200,8 @@ def _pump_windows():
 
 class AmbiencePlayer:
     """One looping sound at a time. play(path, volume) switches to a loop
-    (None: silence), set_volume(0-100), hush(seconds), shutdown()."""
+    (None: silence), set_volume(0-100), shutdown(). `is_speaking()` says
+    whether Hariku Voice is speaking: the loop dips while it does."""
 
     ALIAS = "hariku_orbit_ambience"
 
@@ -213,7 +218,6 @@ class AmbiencePlayer:
         self.playing = None           # the loop that is open
         self.volume = 30              # 0-100
         self.level = 0.0              # what the device is set to, 0-1000
-        self.hush_until = 0.0
         self.broken = False
         self._applied = None
         self._last_step = None
@@ -243,9 +247,6 @@ class AmbiencePlayer:
 
     def set_volume(self, volume):
         self._command("volume", volume)
-
-    def hush(self, seconds):
-        self._command("hush", float(seconds))
 
     def stop(self):
         self._command("play", (None, None))
@@ -286,8 +287,6 @@ class AmbiencePlayer:
                 self.volume = max(0, min(100, int(volume)))
         elif op == "volume":
             self.volume = max(0, min(100, int(value)))
-        elif op == "hush":
-            self.hush_until = max(self.hush_until, self._clock() + value)
 
     def _send(self, command):
         try:
@@ -325,11 +324,12 @@ class AmbiencePlayer:
             self._send(f"setaudio {self.ALIAS} volume to {level}")
 
     def target(self, now):
-        """The volume the loop should be at now, 0-1000."""
+        """The volume the loop should be at now, 0-1000: the user's, a share of it while
+        Hariku Voice speaks (the screen reader doesn't change it), none while switching."""
         if self.wanted is None or self.wanted != self.playing:
             return 0.0
-        if now < self.hush_until or self._is_speaking():
-            return 0.0
+        if self._is_speaking():
+            return self.volume * 10.0 * DUCK_LEVEL
         return self.volume * 10.0
 
     def step(self, now):

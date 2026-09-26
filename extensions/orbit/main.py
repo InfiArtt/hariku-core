@@ -352,13 +352,8 @@ class Services:
         return _frame is not None and orbit_ui._alive(_frame) and _frame.IsShown()
 
 
-def _on_before_speak(payload, *args, **kwargs):
-    # Any thread: the ambience goes quiet for about as long as the line takes.
-    if _services is not None and isinstance(payload, dict):
-        text = payload.get("text")
-        if isinstance(text, str) and text.strip():
-            _services.ambience_player.hush(orbit_speech.reader_seconds(text))
-
+# The ambience plays on while the screen reader reads (Orbit no longer listens to
+# on_before_speak): it dips only under Hariku Voice (the AmbiencePlayer's is_speaking).
 
 # ------------------------------------------------------------
 # The window
@@ -578,7 +573,6 @@ def register(bus):
     _services = Services()
     _client = orbit_play.OrbitClient(_services)
 
-    bus.subscribe("on_before_speak", _on_before_speak)
     bus.subscribe("on_unload", _on_unload)
     core.commands.add_intent(PLAY_INTENT, list(PLAY_PATTERNS), _on_play_intent,
                              title=_("title_play"))
@@ -616,10 +610,8 @@ def teardown():
         except Exception:
             pass
     if _bus is not None:
-        for event_name, handler in (("on_before_speak", _on_before_speak),
-                                    ("on_unload", _on_unload)):
-            try:
-                _bus.unsubscribe(event_name, handler)
-            except Exception:
-                pass
+        try:
+            _bus.unsubscribe("on_unload", _on_unload)
+        except Exception:
+            pass
     logger.info("Orbit extension unloaded.")

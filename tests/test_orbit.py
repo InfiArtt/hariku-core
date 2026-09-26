@@ -341,10 +341,40 @@ def test_register_and_teardown(omain, fresh_event_bus, monkeypatch):
     assert "orbit disconnect" not in core.commands.aliases_for("Orbit.connect")
     assert "orbit disconnect" in core.commands.aliases_for("Orbit.disconnect")
     assert panels[0][0] == "Orbit"
-    assert omain._on_before_speak in fresh_event_bus._listeners["on_before_speak"]
+    # The ambience plays on under the screen reader: Orbit doesn't listen to what Hariku says.
+    assert not fresh_event_bus._listeners.get("on_before_speak") and not hasattr(omain, "_on_before_speak")
+    assert omain._on_unload in fresh_event_bus._listeners["on_unload"]
     omain.teardown()
     assert core.commands.intents() == [] and core.commands.aliases_for("Orbit.open") == []
-    assert omain._on_before_speak not in fresh_event_bus._listeners.get("on_before_speak", [])
+    assert omain._on_unload not in fresh_event_bus._listeners.get("on_unload", [])
+
+
+def test_screen_reader_speech_leaves_the_ambience_alone(omain, fresh_event_bus, monkeypatch):
+    """Client 1.6: NVDA reads over the room's sound, as in VIPMud; only Hariku Voice dips it."""
+    import core.commands
+    import core.hotkeys
+    import core.preferences
+    import core.voice
+    monkeypatch.setattr(core.hotkeys, "register_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(core.preferences, "register_panel", lambda *args: None)
+    monkeypatch.setattr(core.commands, "_intents", {})
+    monkeypatch.setattr(core.commands, "_answer_actions", set())
+    speaking = [False]
+    monkeypatch.setattr(core.voice, "is_speaking", lambda: speaking[0])
+    omain.register(fresh_event_bus)
+    player = omain._services.ambience_player
+    player._clock = lambda: 100.0
+    player.apply("play", ("vent.wav", 40))
+    player.playing = player.wanted
+    for text in ("Cantina. Exits: east, west.", "Rafli says: hello", "x" * 400):
+        fresh_event_bus.emit("on_before_speak", {"text": text, "interrupt": False, "cancel": False})
+        assert player.target(100.0) == 400.0                  # the screen reader: no change
+    speaking[0] = True                                         # Hariku Voice (a player's voice)
+    assert player.target(100.0) == 400.0 * orbit_audio.DUCK_LEVEL
+    speaking[0] = False
+    assert player.target(100.0) == 400.0
+    player.playing = None
+    omain.teardown()
 
 
 def test_connect_only_connects_and_disconnect_only_disconnects(omain, play):
@@ -1162,7 +1192,7 @@ def _steps(player, now, count, dt=0.05):
         player.step(now[0])
 
 
-def test_the_ambience_fades_in_loops_and_hushes():
+def test_the_ambience_fades_in_loops_and_dips_under_hariku_voice():
     mci = FakeMci()
     speaking = [False]
     player, now = _player(mci, lambda: speaking[0])
@@ -1172,15 +1202,13 @@ def test_the_ambience_fades_in_loops_and_hushes():
     assert "play hariku_orbit_ambience repeat" in mci.commands
     _steps(player, now, 20)
     assert mci.volumes()[-1] == 300 and mci.volumes() == sorted(mci.volumes())       # faded in
-    player.apply("hush", 2.0)
-    _steps(player, now, 10)
-    assert mci.volumes()[-1] == 0                  # quiet while the screen reader reads
-    _steps(player, now, 40)
-    assert mci.volumes()[-1] == 300
+    assert not hasattr(player, "hush")             # the screen reader never hushes it
     speaking[0] = True
     _steps(player, now, 10)
-    assert mci.volumes()[-1] == 0                  # and while Hariku Voice speaks
+    assert mci.volumes()[-1] == 90 and min(mci.volumes()[-10:]) == 90     # a dip under Hariku Voice, not silence
     speaking[0] = False
+    _steps(player, now, 10)
+    assert mci.volumes()[-1] == 300                # and back
     player.apply("volume", 10)
     _steps(player, now, 20)
     assert mci.volumes()[-1] == 100
@@ -1222,11 +1250,10 @@ def test_no_ambience_where_mci_fails():
 
 
 def test_nothing_piles_up_while_no_loop_plays():
-    # Every line Hariku says hushes the ambience; with the window closed there
-    # is no loop and no thread, and those calls must not queue up forever.
+    # With the window closed there is no loop and no thread, and the calls
+    # made meanwhile must not queue up forever.
     player = orbit_audio.AmbiencePlayer(mci=FakeMci(), pump=lambda: None)
     for _i in range(100):
-        player.hush(1.0)
         player.stop()
         player.set_volume(10)
     assert player._commands.qsize() == 0 and player._thread is None and player.volume == 10
