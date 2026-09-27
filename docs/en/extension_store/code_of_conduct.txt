@@ -1,5 +1,5 @@
 Hariku V2 — Community Code of Conduct
-Last Updated: July 2026
+Last Updated: September 2026
 
 ========================================================================
 1. PURPOSE
@@ -113,8 +113,10 @@ The following behaviors will not be tolerated:
 This Code of Conduct applies to all community spaces and
 interactions, including:
 
-    - The Hariku forum at https://sp.novarealm.cloud/forum/hariku
-    - Extension store submissions and reviews at novarealm.cloud
+    - The Hariku forum at
+      https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
+    - Extension Store submissions and reviews (the store submission
+      issues at https://github.com/InfiArtt/hariku-sdk/issues)
     - Code contributions and pull requests
     - Email correspondence related to Hariku development
     - Any other space where you represent or participate in the
@@ -194,6 +196,6 @@ CONTACT
 
 For Code of Conduct questions or reports:
     Email:  terabase06@gmail.com
-    Forum:  https://sp.novarealm.cloud/forum/hariku
+    Forum:  https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
 
 Thank you for helping us build a community where everyone belongs.

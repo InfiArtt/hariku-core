@@ -1,5 +1,5 @@
 Hariku V2 — Security Policy
-Last Updated: July 2026
+Last Updated: September 2026
 
 ========================================================================
 1. OVERVIEW
@@ -116,10 +116,12 @@ equivalent to running arbitrary code on your machine.
 Our security model relies on the following safeguards:
 
     Trusted Hash Registry
-        Every extension published through the official store at
-        novarealm.cloud is registered with a cryptographic hash.
-        Before loading, Hariku verifies the extension package against
-        its registered hash to detect tampering.
+        Every extension published through the official Extension
+        Store has the SHA-256 hash of its .hrk package in the trusted
+        registry, which is served from GitHub Pages together with the
+        store's catalogue (Hariku's core/endpoints.py has the exact
+        addresses). Before loading a .hrk, Hariku checks it against
+        that registry to detect tampering.
 
     User Consent for Unverified Extensions
         Extensions that are sideloaded or whose hash does not match
@@ -186,7 +188,7 @@ We are transparent about the following architectural limitations:
 
 We are actively evaluating options for additional safeguards in
 future releases. Community input on this topic is welcome on the
-forum at https://sp.novarealm.cloud/forum/hariku.
+forum at https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum.
 
 
 ========================================================================
@@ -194,7 +196,8 @@ CONTACT
 ========================================================================
 
 For all security-related communications:
-    Email:  terabase06@gmail.com
-    Forum:  https://sp.novarealm.cloud/forum/hariku
+    Email:  terabase06@gmail.com (vulnerability reports go here only)
+    Forum:  https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
+            (general security questions, never undisclosed vulnerabilities)
 
 Thank you for helping keep Hariku and its community safe.
