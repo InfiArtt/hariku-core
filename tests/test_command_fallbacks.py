@@ -340,15 +340,17 @@ def test_a_fallback_that_is_off_changes_nothing(cb, everything):
 
 def test_aruna_stays_responsive_while_the_fallback_thinks(cb, everything):
     release = threading.Event()
+    finished = threading.Event()
 
     def slow(request):
         release.wait(5)
+        finished.set()
         return request.propose_command("Weather.show_forecast")
     c.add_fallback(slow)
     bar = make_bar(cb, keep_open=True)
-    started = time.monotonic()
     type_and_enter(bar, "apakah nanti hujan")
-    assert time.monotonic() - started < 0.5              # Enter came back at once
+    # Enter came back while the fallback is still thinking: it doesn't wait for it.
+    assert not finished.is_set() and bar.said == []
     assert bar.txt_status.value == "Aruna sedang berpikir..." and bar._thinking is not None
     assert not bar._idle()
     release.set()
