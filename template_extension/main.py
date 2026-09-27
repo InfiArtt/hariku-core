@@ -1,11 +1,11 @@
-# Hariku V2 — accessible calendar & automation for screen-reader users.
-# Copyright (C) 2024-2026 InfiArtt (Rafli) and Hariku contributors.
+# Hariku V2 extension template ("Hello World").
+# Copyright (C) 2024-2026 InfiArtt (Rafli)
 #
-# This file is part of Hariku, released under the GNU General Public License,
-# version 3 or (at your option) any later version, with the Hariku Extension
-# Exception. See LICENSE and LICENSE-EXCEPTION. Distributed WITHOUT ANY WARRANTY.
+# SPDX-License-Identifier: MIT
 #
-# SPDX-License-Identifier: GPL-3.0-or-later
+# Unlike the rest of Hariku (GPL-3.0-or-later), this template is under the MIT
+# License: see LICENSE in this folder. Copy it into an extension of your own and
+# release that extension under any license you like, open source or not.
 
 # ============================================================
 # Hariku V2 Extension Template — "Hello World"
@@ -156,13 +156,17 @@ def _apply_panel():
 # 3. EVENT HANDLERS (Optional)
 # ============================================================
 
+_greeting_timer = None
+
 def on_app_startup():
     """Called once after all extensions are loaded and the UI is ready."""
+    global _greeting_timer
     config = core.api.load_data("HelloWorld")
     if config.get("greet_on_startup", False):
         name = config.get("user_name", "Developer")
-        # Delay 2 seconds so it doesn't clash with the startup quote
-        wx.CallLater(2000, speak, f"Good day, {name}!")
+        # Delay 2 seconds so it doesn't clash with Hariku's own greeting.
+        # set_timeout returns the timer, so teardown() can stop it.
+        _greeting_timer = core.api.set_timeout(2000, speak, f"Good day, {name}!")
 
 
 def on_date_changed(date_str):
@@ -241,3 +245,20 @@ def register(bus):
         _create_panel,
         _apply_panel
     )
+
+
+# ============================================================
+# 5. TEARDOWN FUNCTION (expected by the Extension Store)
+# ============================================================
+# Hariku calls teardown() when it shuts down. Stop your timers
+# and background work here and let go of what you hold. The
+# Extension Store asks every extension to define one.
+
+def teardown():
+    """Called by Hariku when the app shuts down."""
+    global _greeting_timer, _panel_instance
+    if _greeting_timer is not None:
+        _greeting_timer.Stop()      # harmless if it already ran
+        _greeting_timer = None
+    _panel_instance = None
+    logger.info("Hello World extension unloaded.")
