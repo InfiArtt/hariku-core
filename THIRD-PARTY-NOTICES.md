@@ -56,8 +56,10 @@ each component.
   whisper.cpp is not included in Hariku or its installer.
 - **Whisper speech models** (OpenAI, https://github.com/openai/whisper, MIT),
   in whisper.cpp's format from https://huggingface.co/ggerganov/whisper.cpp:
-  `ggml-tiny.bin`, `ggml-base.bin` and `ggml-small.bin`, each downloaded only
-  when the user chooses it and checked against a SHA-256 pinned in the
+  `ggml-tiny-q8_0.bin`, `ggml-base-q8_0.bin` and `ggml-small-q8_0.bin` (8-bit;
+  Voice Control 1.2 and earlier downloaded the 16-bit `ggml-tiny.bin`,
+  `ggml-base.bin` and `ggml-small.bin`, which keep working), each downloaded
+  only when the user chooses it and checked against a SHA-256 pinned in the
   extension. No model is included in Hariku or its installer.
 - **sherpa-onnx** (https://github.com/k2-fsa/sherpa-onnx, Apache-2.0,
   Copyright Xiaomi Corporation and the sherpa-onnx contributors): the wake
