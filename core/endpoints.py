@@ -11,9 +11,10 @@
 # policy for download URLs. Change hosting in ONE place.
 #
 # History: the old free domain novarealm.cloud expired, so all static content
-# moved to GitHub (Pages for JSON manifests, Releases for binaries) and the
-# telemetry / crash-report POST endpoints were retired (GitHub can't accept
-# POST). See core.telemetry and core.crash_handler.
+# moved to GitHub (Pages for JSON manifests, Releases for binaries). GitHub
+# can't accept POST, so crash reports now go to the InfiArtt backend below
+# (core.crash_handler), and the old telemetry ping was retired for good: Hariku
+# collects no telemetry (see core.telemetry and PRIVACY.md).
 #
 # TO MIGRATE HOSTING: edit GITHUB_OWNER / GITHUB_REPO (and, later, PAGES_HOST
 # if you point a custom domain at Pages). Nothing else needs to change.
@@ -58,10 +59,8 @@ NEW_ISSUE_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/issues/new"
 # novarealm.cloud). Its PHP backend exposes these routes.
 INFIARTT_API_BASE = "https://infiartt.com"
 # POST {app_version, os_info, language, error_type, error_message, traceback} -> 201
+# Sent only when the user agrees in the crash dialog (or chose "always send").
 CRASH_REPORT_URL = f"{INFIARTT_API_BASE}/api/crash-report"
-# Telemetry endpoint exists too, but the core ping is intentionally left OFF
-# (see core.telemetry). Kept here for if it's ever re-enabled.
-TELEMETRY_URL = f"{INFIARTT_API_BASE}/api/telemetry"
 
 # --- Hariku AI (core 2.11) ----------------------------------------------------
 # The Cloudflare Worker behind the Ask Hariku extension: "Tanya Hariku"
