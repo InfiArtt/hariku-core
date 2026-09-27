@@ -124,8 +124,9 @@ YOUR DATA STAYS ON YOUR COMPUTER
   data are kept on your computer, in %APPDATA%\Hariku2. Hariku's developer
   can't see them. What you type for a quick reminder or to Aruna, the command
   bar, is understood on your computer by rules built into Hariku, with no AI
-  and no online service, and it is not stored. Hariku Voice with the Windows
-  voices also speaks on your computer.
+  and no online service, and it is not stored. The only exception is the
+  Ask Hariku extension, and only if you turn it on (see below). Hariku Voice
+  with the Windows voices also speaks on your computer.
 
 WHAT HARIKU CONNECTS TO BY ITSELF
   When Hariku starts, it downloads a few small files from its GitHub Pages
@@ -193,6 +194,13 @@ EXTENSIONS AND THE INTERNET
       on.
     - Dropbox talks to Dropbox only after you connect your account, and
       Hariku Account Manager talks to infiartt.com only when you sign in.
+    - Ask Hariku sends nothing until you turn on one of its two features in
+      Preferences, Ask Hariku. Then a how-to question you ask Aruna, or a
+      sentence Aruna didn't understand (with the names of Hariku's own
+      commands), goes to Hariku's AI service on Cloudflare Workers. Only
+      the words and their language are sent, never your reminders, diary,
+      finances, places or name, and the service keeps no logs. Aruna asks
+      you before doing anything the AI suggests.
     - Clipboard History, Timer & Alarm and Sleep Pattern send nothing.
   Third-party extensions can make their own connections, which their
   authors are responsible for.
