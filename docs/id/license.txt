@@ -133,8 +133,9 @@ DATAMU TETAP DI KOMPUTERMU
   tidak bisa melihatnya. Apa yang kamu ketik untuk pengingat cepat atau
   kepada Aruna, bilah perintah Hariku, dipahami di komputermu dengan aturan
   yang tertanam di Hariku, tanpa AI dan tanpa layanan online, dan tidak
-  disimpan. Hariku Voice dengan suara bawaan Windows juga berbicara di
-  komputermu.
+  disimpan. Satu-satunya pengecualian adalah ekstensi Tanya Hariku, dan
+  hanya kalau kamu menyalakannya (lihat di bawah). Hariku Voice dengan
+  suara bawaan Windows juga berbicara di komputermu.
 
 YANG DIHUBUNGI HARIKU DENGAN SENDIRINYA
   Saat menyala, Hariku mengunduh beberapa berkas kecil dari situs GitHub
@@ -204,6 +205,14 @@ EKSTENSI DAN INTERNET
     - Dropbox berhubungan dengan Dropbox hanya setelah kamu menyambungkan
       akunmu, dan Hariku Account Manager berhubungan dengan infiartt.com
       hanya saat kamu masuk.
+    - Tanya Hariku tidak mengirim apa pun sampai kamu menyalakan salah satu
+      dari dua fiturnya di Pengaturan, Tanya Hariku. Setelah itu, pertanyaan
+      cara pakai yang kamu ajukan ke Aruna, atau kalimat yang tidak dipahami
+      Aruna (beserta nama perintah Hariku sendiri), dikirim ke layanan AI
+      Hariku di Cloudflare Workers. Yang dikirim hanya kata-katanya dan
+      bahasanya, tidak pernah pengingat, diary, keuangan, tempat, atau
+      namamu, dan layanannya tidak menyimpan catatan. Aruna selalu bertanya
+      dulu sebelum menjalankan saran dari AI.
     - Riwayat Clipboard, Timer & Alarm, dan Pola Tidur tidak mengirim apa pun.
   Ekstensi pihak ketiga bisa membuat sambungannya sendiri, dan pembuatnya
   yang bertanggung jawab atasnya.
