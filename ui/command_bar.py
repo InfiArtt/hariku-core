@@ -551,10 +551,11 @@ class CommandBar(wx.Dialog):
             decision.text, "voice" if self._voice_turn else "typed", get_current_language(),
             core.commands.commands(), core.commands.intents(),
             guess=decision.command if decision.kind == "confirm" else None)
+        fallbacks = core.commands.active_fallbacks()     # their switches, on this thread
 
         def work():
             try:
-                proposal = core.commands.ask_fallbacks(request)
+                proposal = core.commands.ask_fallbacks(request, fallbacks)
             except Exception:
                 logger.exception("Command bar: asking the fallbacks failed")
                 proposal = None
