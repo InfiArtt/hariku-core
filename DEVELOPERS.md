@@ -1175,7 +1175,7 @@ import core.commands
 **Ctrl+Alt+Backspace**, from anywhere (a global hotkey through `RegisterHotKey`; users can move it in Input Gestures), opens a small always-on-top window called "Hariku" with one field, "Say or type a command". Enter runs what was typed:
 
 - A reminder sentence (a trigger such as "ingatkan aku" or "remind me", or a date or time) gets the quick reminder's read-back ("..., Save?"); Enter again or "ya"/"simpan" saves it, "tidak"/"batal" or Escape doesn't.
-- Otherwise the text is matched against **every registered hotkey action**, by its description in the user's language and its aliases. A clear winner runs at once: the bar closes, focus goes back to the window that had it, and the action runs as its hotkey would, so a dialog it opens opens as usual. A close call asks "Did you mean …?" (Enter or "ya" runs it). Anything else: "I didn't understand".
+- Otherwise the text is matched against **every registered hotkey action**, by its description in the user's language and its aliases. A clear winner runs at once: the bar closes, focus goes back to the window that had it, and the action runs as its hotkey would, so a dialog it opens opens as usual. A close call asks "Did you mean …?" (Enter or "ya" runs it). Anything else: "I didn't understand", unless an extension's fallback proposes something first (core 2.11, see [When Aruna doesn't understand](#the-command-bar-aruna) below).
 - The bar's answers are spoken with Hariku Voice (`announce(text, "command")`), and the action's own `speak()` is routed there for a moment (`core.voice.route_speech`).
 
 Your extension's actions are commands already: register them with `core.hotkeys.register_action` (a key is optional; `None` works) and give them a clear description. Add the other ways people say them:
@@ -1281,7 +1281,48 @@ Before listening, silence the screen reader (`core.speech.silence()`) and Hariku
 - Recordings stay in memory or in a temporary file deleted right after use; never send them anywhere without asking the user first, and say so on your page.
 - Never install a keyboard hook. Global keys go through `core.hotkeys` (`RegisterHotKey`).
 
-**A future AI fallback:** `core.commands.set_fallback(handler)` registers `handler(text, commands)`, called on a worker thread for a text the rules didn't understand; it returns an action id or `None`. The bar only ever asks "Did you mean …?" about its answer; it never runs it straight away. Reserved for Hariku's own AI extension.
+**When Aruna doesn't understand (fallbacks)** *(core 2.11)*. When Aruna's rules don't understand a sentence, or only have a weak guess (a "Did you mean …?" scoring under `core.commands.FALLBACK_ASK_BELOW`, 0.65, with no reminder to offer instead), it can ask the fallbacks extensions add: an online AI (the Ask Hariku extension), a local model, anything that can guess what was meant. A fallback only *proposes*; Aruna always asks the user before doing it, and drops a proposal naming a command or intent that isn't registered. Declare `"minimum_core_version": "2.11"`, or check `getattr(core.commands, "FALLBACKS", False)`.
+
+```python
+import core.commands
+
+def guess(request):                       # a FallbackRequest, on a worker thread
+    if "rain" in request.text.lower():
+        return request.propose_command("Weather.show_forecast")      # "Did you mean …?"
+    if request.text.lower().startswith("tea"):
+        return request.propose_intent("Timer and Alarm.timer", "tea 5 minutes")
+    return None                           # no idea: the next fallback, then Aruna as before
+
+def register(bus):
+    core.commands.add_fallback(guess, is_enabled=lambda: settings["on"], name="My guesser")
+
+def teardown():
+    core.commands.remove_fallback(guess)
+```
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.commands.add_fallback(handler, is_enabled=None, name="")` | `handler` | `handler(request)` is called on a worker thread for a sentence Aruna didn't understand. `is_enabled()`, asked on the UI thread before each sentence, must be quick (no network, no files); a fallback that is off costs nothing and no thread is started. Adding the same handler again replaces it. |
+| `core.commands.remove_fallback(handler)` | `bool` | In `teardown()`. |
+| `core.commands.has_fallback()` | `bool` | Whether any fallback is on. |
+| `core.commands.wants_fallback(decision)` | `bool` | Whether Aruna asks its fallbacks about a `Decision`. |
+| `core.commands.ask_fallbacks(request)` | proposal or `None` | What the command bar calls, on a worker thread: each fallback in turn on a thread of its own, until one proposes something or `request.deadline` passes. |
+
+`request` is a `core.commands.FallbackRequest`: `.text` (the sentence), `.source` (`"typed"` or `"voice"`), `.language` (Hariku's; the sentence may be in another language Aruna understands), `.commands` (every `Command`: `.id`, `.name`, `.title`), `.intents` (every `Intent`: `.id`, `.title`, `.patterns`), `.guess` (the `Command` of Aruna's weak guess, or `None`), `.deadline` and `.time_left()`. The handler returns one of:
+
+| Return | What Aruna does |
+|---|---|
+| `None` | Asks the next fallback. When none proposes anything, Aruna does what it would have done: its weak "Did you mean …?", or "I didn't understand". |
+| `request.propose_command(action_id)` | Asks "Did you mean: <title>?". Yes runs it, as a command the user typed. |
+| `request.propose_intent(intent_id, text)` | Asks "Did you mean: <title>, "<text>"?". Yes calls that intent's handler with `request.text` = `text`, and does what its `Reply` says. |
+| `core.commands.Decision("reminder", text, result=...)` | Reads the reminder back ("…, Save?"), as for a typed one. |
+| A `Reply` or a string | Said, or asked, as an intent's `Reply` is. |
+
+Aruna waits `core.commands.FALLBACK_TIMEOUT` seconds (6) for all its fallbacks together, showing "Aruna is thinking..." and taking new input all the while; a new message, Escape or closing Aruna makes a late answer too late, and it is dropped. Use `request.time_left()` as your network time-out. A handler that raises is logged and the next one is asked.
+
+**Rules:** a fallback that sends the sentence anywhere needs the user's consent first (an opt-in that is off until they turn it on, on your Preferences page, saying what is sent and to whom), and must send only what it needs: the sentence, and at most the names of commands. Never run anything yourself from a fallback; propose it.
+
+*(Core 2.7 to 2.10 had `core.commands.set_fallback(handler)`, reserved and unused: `handler(text, commands)` returning an action id. It still works, as a fallback that proposes that command.)*
 
 ### Morning Briefing and Evening Summary
 

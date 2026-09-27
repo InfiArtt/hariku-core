@@ -598,6 +598,7 @@
         "cmd_done": "Done: {name}.",
         "cmd_empty": "Type or say a command, for example \"what time is it\" or \"remind me to take medicine tomorrow at 8\".",
         "cmd_did_you_mean": "Did you mean: {name}?",
+        "cmd_did_you_mean_intent": "Did you mean: {name}, \"{text}\"?",
         "cmd_intent_confirm": "Shall I go ahead?",
         "cmd_offer_reminder": "That's not in my dictionary yet. Want it as a quick reminder instead?",
         "cmd_offer_reminder@sweet": "I don't understand that one yet. Shall I make it a quick reminder?",
