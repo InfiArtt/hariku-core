@@ -439,7 +439,10 @@ def run_thread(background_func, callback=None):
             if callback:
                 wx.CallAfter(callback, result)
         except Exception as e:
-            logger.error(f"Error in run_thread ({background_func.__name__}): {e}")
+            # functools.partial and other callables have no __name__; naming
+            # the function must never stop the callback from being called.
+            name = getattr(background_func, "__name__", None) or repr(background_func)
+            logger.error(f"Error in run_thread ({name}): {e}")
             if callback:
                 # Pass None (or an Exception object, if preferred).
                 wx.CallAfter(callback, None)

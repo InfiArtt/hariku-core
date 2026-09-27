@@ -2,19 +2,20 @@
   HARIKU V2 EXTENSION STORE — CODING STANDARDS
 ================================================================================
 
-  Document Version : 1.0
-  Last Updated     : July 2026
+  Document Version : 1.1
+  Last Updated     : September 2026
   Applies To       : All extensions submitted to the Hariku Extension Store
-  Contact          : terabase06@gmail.com
-  Forum            : https://sp.novarealm.cloud/forum/hariku
+  Submissions      : https://github.com/InfiArtt/hariku-sdk/issues/new/choose
+  Forum            : https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
 
 ================================================================================
   1. OVERVIEW
 ================================================================================
 
 This document defines the code quality standards that every extension must
-meet before it can be accepted into the official Hariku Extension Store at
-novarealm.cloud.
+meet before it can be accepted into the official Hariku Extension Store
+(served from GitHub; submissions go through the store submission form at
+https://github.com/InfiArtt/hariku-sdk/issues/new/choose).
 
 Hariku V2 is an accessible calendar application built for screen reader users.
 Extensions run with full system access — there is no sandbox. Because of this,
@@ -46,8 +47,10 @@ Every extension must contain at minimum:
   1. manifest.json  — Extension metadata (see Section 4).
   2. main.py        — The entry point module loaded by the Hariku core.
 
-The main.py file must define the functions expected by the extension lifecycle:
-setup(), teardown(), and any registered event handlers or hotkey callbacks.
+The main.py file must define the functions of the extension lifecycle:
+register(bus), which Hariku calls when it loads the extension (subscribe to
+events, register hotkeys and settings pages there), and teardown(), which
+Hariku calls when it shuts down.
 
 
 2.2  Recommended Directory Layout
@@ -56,10 +59,12 @@ setup(), teardown(), and any registered event handlers or hotkey callbacks.
   my_extension/
   ├── manifest.json
   ├── main.py
-  ├── sounds/          — Audio files (.wav, .ogg) used by the extension
+  ├── sounds/          — Audio files (.wav) used by the extension
   ├── locales/         — Translation files for internationalization
   │   ├── en.json
   │   └── ar.json
+  ├── docs/            — Your guide, one folder per language (Hariku 2.11):
+  │   └── en/guide.md
   └── lib/             — Bundled third-party pure-Python libraries
 
 
@@ -154,23 +159,30 @@ The manifest.json file must contain accurate, complete metadata.
 Required fields:
 
   name                — Human-readable display name of the extension.
-  version             — Version string following Semantic Versioning (semver).
+  version             — Version string, such as "1.0.0" or "1.0" (see rule 1).
   author              — Author or organization name.
   description         — A clear, meaningful description of what the extension
                         does. Generic descriptions like "A Hariku extension"
                         will be rejected.
-  main                — Entry point module name (usually "main").
+  main                — Entry point file name (usually "main.py"), right in
+                        the extension folder.
   language            — Primary language code (e.g., "en", "ar").
-  minimum_core_version — The minimum Hariku core version required.
+  minimum_core_version — The minimum Hariku core version required, such as
+                        "2.9" or "2.10.0".
   last_tested_core_version — Optional: the newest Hariku you tested it with.
 
 Rules:
 
-  1. The "version" field must follow semver: MAJOR.MINOR.PATCH (e.g., 1.0.0).
+  1. The "version" field is two or three numbers separated by dots:
+     MAJOR.MINOR or MAJOR.MINOR.PATCH, such as "1.0" or "1.2.3"
+     (MAJOR.MINOR.PATCH is recommended). A pre-release may end in a1, b1 or
+     rc1 ("1.1.0b1"). No "v" in front and no words such as "-beta": the store
+     compares versions as numbers, so every update needs a higher version.
      Use MAJOR for breaking changes, MINOR for new features, PATCH for fixes.
+     tools/check_extension.py in the Developer SDK checks this.
 
   2. The "minimum_core_version" must be set to the oldest Hariku version your
-     extension actually works with. Do not set it to "1.0.0" unless you have
+     extension actually works with. Do not set it to "1.0" unless you have
      verified compatibility. Do not set it to the latest version unless your
      extension requires features introduced in that version.
      Hariku doesn't run an extension made for a core older than the oldest
@@ -201,12 +213,18 @@ extension can crash the entire Hariku application.
 Always wrap network operations in try/except. Network failures are common and
 must never crash the application:
 
+    import urllib.error
+    import urllib.request
+
     try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-    except requests.RequestException as e:
+        with urllib.request.urlopen(api_url, timeout=10) as response:
+            data = response.read()
+    except (urllib.error.URLError, TimeoutError) as e:
         logger.error("Failed to fetch data: %s", e)
         core.speech.speak("Could not connect. Please check your internet.")
+
+(Python's own urllib comes with Hariku. A library such as requests does not:
+bundle it in lib/, see Section 11.)
 
 Always set a timeout on network requests. Never use indefinite blocking calls.
 
@@ -245,12 +263,12 @@ be rejected during review.
 -------------------------
 
 Never allow exceptions to propagate uncaught out of your extension's entry
-points (setup, teardown, event handlers, hotkey callbacks). Wrap top-level
+points (register, teardown, event handlers, hotkey callbacks). Wrap top-level
 handlers defensively:
 
-    def on_date_changed(event):
+    def on_date_changed(date_str):
         try:
-            _handle_date_change(event)
+            _handle_date_change(date_str)
         except Exception as e:
             logger.error("Error in on_date_changed: %s", e, exc_info=True)
 
@@ -277,17 +295,22 @@ Operations that MUST run off the UI thread:
 
 Use the provided core APIs instead of creating raw threads:
 
-    # Run a function in a background thread
-    core.api.run_thread(fetch_prayer_times)
+    # Run a function in a background thread; on_times(result) then runs on
+    # the UI thread (with None if fetch_prayer_times raised an exception)
+    core.api.run_thread(fetch_prayer_times, on_times)
 
-    # Schedule a delayed action
-    core.api.set_timeout(check_for_updates, delay_ms=60000)
+    # Schedule a delayed action: after 60 seconds (milliseconds come first)
+    timer = core.api.set_timeout(60000, check_for_updates)
 
-    # Schedule a repeating action
-    timer_id = core.api.set_interval(refresh_data, interval_ms=300000)
+    # Schedule a repeating action: every 5 minutes
+    timer = core.api.set_interval(300000, refresh_data)
+
+    # Cancel either kind: the timer object has a Stop() method
+    timer.Stop()
 
 These APIs ensure proper integration with the Hariku lifecycle and provide
-safe mechanisms for updating the UI from background threads.
+safe mechanisms for updating the UI from background threads. Timers call
+their function on the UI thread, so it must be quick too.
 
 
 6.3  Clean Up in teardown()
@@ -299,12 +322,12 @@ application after your extension is unloaded:
 
     _timers = []
 
-    def setup():
-        _timers.append(core.api.set_interval(refresh, 60000))
+    def register(bus):
+        _timers.append(core.api.set_interval(60000, refresh))
 
     def teardown():
-        for timer_id in _timers:
-            core.api.clear_timer(timer_id)
+        for timer in _timers:
+            timer.Stop()
         _timers.clear()
 
 
@@ -315,13 +338,16 @@ application after your extension is unloaded:
 7.1  Configuration Data
 ------------------------
 
-Use the core data APIs for storing extension settings and configuration:
+Use the core data APIs for storing extension settings and configuration. The
+name is shared by every extension, so use one of your own, such as your
+extension's name:
 
     # Save settings
-    core.api.save_data("settings", {"notifications": True, "interval": 30})
+    core.api.save_data("PrayerTimes", {"notifications": True, "interval": 30})
 
-    # Load settings
-    settings = core.api.load_data("settings", default={"notifications": True})
+    # Load settings: {} when nothing is saved yet, so give defaults with get()
+    settings = core.api.load_data("PrayerTimes")
+    notifications = settings.get("notifications", True)
 
 These APIs handle serialization, file paths, and error recovery automatically.
 
@@ -332,7 +358,7 @@ These APIs handle serialization, file paths, and error recovery automatically.
 If your extension needs to store files (caches, databases, downloads), use
 the designated storage directory:
 
-    storage = core.api.get_storage_dir()
+    storage = core.api.get_storage_dir("prayer_times")   # your extension's id
     cache_path = os.path.join(storage, "cache.json")
 
 Never write files to arbitrary locations on the user's system. Never write to
@@ -364,12 +390,18 @@ users. Every UI element your extension creates must be fully accessible.
 Every wx control must have an accessible label that the screen reader can
 announce. Never create unlabeled controls:
 
-    # Correct — label is associated with the control
+    # Correct — the label is created right before its control
     wx.StaticText(panel, label="Reminder interval (minutes):")
     self.interval_spin = wx.SpinCtrl(panel, min=1, max=120, initial=15)
 
     # Wrong — no label, screen reader announces "edit" or "spin control"
     self.interval_spin = wx.SpinCtrl(panel, min=1, max=120)
+
+NVDA names a text field, list or spin control after the static text created
+just before it, so the order you create them in matters, not where they
+appear. Create a control first and its label after, and each control is read
+with the wrong name. SetName() does not change what NVDA says. Check boxes
+and buttons carry their own label.
 
 
 8.2  Tab Order
@@ -416,7 +448,7 @@ interactions are not accessible to screen reader users:
 If your extension supports right-to-left languages (Arabic, Hebrew, Farsi),
 apply the RTL layout helper:
 
-    from core.ui import apply_rtl_layout
+    from core.i18n import apply_rtl_layout
     apply_rtl_layout(dialog)
 
 This mirrors the control layout for natural RTL reading order.
@@ -444,13 +476,24 @@ Verify that:
 9.1  Translatable Strings
 ---------------------------
 
-All user-facing strings must use the translation system:
+All user-facing strings must use the translation system. Give the translator
+your extension's id and its locales/ folder, and look texts up by key:
 
+    import os
     from core.i18n import get_translator
-    _ = get_translator("my_extension")
 
-    core.speech.speak(_("Reminder saved successfully."))
-    wx.StaticText(panel, label=_("Notification interval:"))
+    EXT_DIR = os.path.dirname(os.path.abspath(__file__))
+    _ = get_translator("my_extension", os.path.join(EXT_DIR, "locales"))
+
+    core.speech.speak(_("reminder_saved"))
+    wx.StaticText(panel, label=_("label_interval"))
+
+with the texts in locales/en.json (and each other language's file):
+
+    "messages": {
+        "reminder_saved": "Reminder saved successfully.",
+        "label_interval": "Notification interval:"
+    }
 
 Never hardcode user-facing strings directly in your code without wrapping
 them in the translation function.
@@ -471,13 +514,16 @@ languages are encouraged:
 9.3  Date and Time Formatting
 -------------------------------
 
-Use the core formatting utilities for dates and times:
+Use the core formatting utility for dates, so day and month names come in the
+user's language rather than the computer's:
 
     from core.i18n import format_date
-    display_text = format_date(event_date)
+    display_text = format_date(event_date, "%A, %d %B %Y")
+    # English: "Thursday, 19 June 2026"; Indonesian: "Kamis, 19 Juni 2026"
 
-Never format dates manually with hardcoded patterns. Different locales expect
-different date formats, and the core utilities handle this automatically.
+format_date() knows %A and %a (the day's name), %B and %b (the month's
+name), %d, %m and %Y. Never build day or month names yourself, and don't
+rely on strftime(), which uses the operating system's language.
 
 
 ================================================================================
@@ -553,8 +599,8 @@ instruct users to install packages via pip.
         ├── dateutil/
         └── requests/
 
-Import bundled libraries by adding the lib/ directory to the path in your
-main.py or by using relative imports.
+Hariku adds your lib/ directory to Python's path when it loads your
+extension, so import bundled libraries normally ("import dateutil").
 
 
 11.2  Platform Compatibility
@@ -567,8 +613,9 @@ Only pure-Python libraries are permitted. Extensions must not include:
   - Platform-specific native code
 
 This ensures extensions work across all environments where Hariku runs.
-If your extension requires a compiled dependency, contact the Hariku team
-at terabase06@gmail.com to discuss options.
+If your extension requires a compiled dependency, ask the Hariku team on the
+forum (https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum)
+or at terabase06@gmail.com to discuss options.
 
 
 11.3  Dependency Documentation
@@ -597,8 +644,11 @@ Every extension should include documentation that covers:
   - Any configuration options available.
   - Known limitations or compatibility notes.
 
-This can be a README.txt file in the extension root or a thorough description
-in the manifest.json. For complex extensions, a separate README is preferred.
+From Hariku 2.11, write it as your extension's guide, docs/en/guide.md (and
+docs/<language>/guide.md for other languages): Hariku shows it in Help,
+Extension guides, and DEVELOPERS.md ("Your Extension's Guide") explains how
+to write it. For older Hariku versions, a README.txt file in the extension
+root or a thorough description in the manifest.json will do.
 
 
 12.2  Hotkey Documentation
@@ -655,7 +705,8 @@ review process for updates.
 
 Before submitting your extension, verify the following:
 
-  [ ] manifest.json is complete and accurate with valid semver version
+  [ ] manifest.json is complete and accurate, with a valid version
+      (tools/check_extension.py reports no errors)
   [ ] Code follows PEP 8 and uses proper naming conventions
   [ ] All public functions have docstrings
   [ ] No use of print() — logging module used instead
@@ -665,7 +716,8 @@ Before submitting your extension, verify the following:
   [ ] All timers are cleaned up in teardown()
   [ ] Data stored via core APIs, not arbitrary file paths
   [ ] No sensitive data stored in plaintext
-  [ ] All wx controls have accessible labels
+  [ ] All wx controls have accessible labels, each created right before
+      its control
   [ ] Tab order is logical; tested with keyboard only
   [ ] Tested with NVDA or JAWS screen reader
   [ ] User-facing strings wrapped in translation function
@@ -685,7 +737,7 @@ Before submitting your extension, verify the following:
 For questions about these standards or help preparing your extension for
 submission, visit the forum or contact the developer:
 
-  Forum : https://sp.novarealm.cloud/forum/hariku
+  Forum : https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
   Email : terabase06@gmail.com
 
 ================================================================================
