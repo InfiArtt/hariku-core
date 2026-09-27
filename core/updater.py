@@ -58,7 +58,7 @@ _ALLOWED_UPDATE_DOMAINS = core.endpoints.ALLOWED_DOWNLOAD_HOSTS
 # unsigned; flip to True the moment you start code-signing your builds.
 REQUIRE_AUTHENTICODE_SIGNATURE = False
 
-# Optional publisher pinning. When set (e.g. "PT Novarealm" or your cert's
+# Optional publisher pinning. When set (e.g. "Example Publisher Ltd" or your cert's
 # Common Name), a valid signature is additionally required to be issued to
 # exactly this subject. Empty string = accept any valid, trusted signature.
 EXPECTED_PUBLISHER_CN = ""

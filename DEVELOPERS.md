@@ -1384,7 +1384,7 @@ my_extension/
 | `language_name` | ✅ | Human-readable name (e.g., "Bahasa Indonesia") |
 | `language_code` | ✅ | ISO code (e.g., `"en"`, `"id"`, `"ar"`) |
 | `translator` | ✅ | Name of the translator |
-| `email` | ✅ | Contact email for translation issues |
+| `email` | ✅ | Where to report translation issues: an email address or a web address. Hariku's own language files use `https://github.com/InfiArtt/hariku/issues`. Hariku doesn't show it; the key must be there |
 | `version` | ✅ | Version of the translation |
 | `core_version` | ❌ | Hariku version this translation targets |
 | `rtl` | ❌ | Set `true` for right-to-left languages (Arabic, Hebrew) |
@@ -1612,20 +1612,15 @@ from core import telemetry
 
 | Function | Returns | Description |
 |---|---|---|
-| `telemetry.is_enabled()` | `bool` | Returns `True` if the user has telemetry enabled (opt-out model, defaults to `True`). Useful if your extension collects any usage data — you should respect this setting. |
+| `telemetry.is_enabled()` | `bool` | Always `False` (since core 2.11). Kept so extensions that call it keep working. |
 
-> **Note:** The core's own telemetry ping is currently **disabled** (its old endpoint was retired and there is no replacement), so the core sends nothing. `is_enabled()` still reflects the user's preference — honor it if your extension collects data.
+> **Note:** Hariku collects no analytics or telemetry, and since core 2.11 Preferences has no telemetry setting (old `telemetry_enabled` values in Core.json are ignored). So `is_enabled()` always returns `False`: an extension that honours it sends no usage data. If your extension really needs to send any, ask the user first, in your extension, and say so in its description (see the store's privacy rules).
 
 **Example:**
 ```python
 from core import telemetry
 
-if telemetry.is_enabled():
-    # OK to send anonymous usage stats
-    pass
-else:
-    # User has opted out — do not send any data
-    pass
+telemetry.is_enabled()  # False: Hariku has no usage-data setting to give consent
 ```
 
 ---
@@ -1877,7 +1872,7 @@ the exact URLs. To publish your extension:
 10. **Use `_()` for all user-facing strings** if you want your extension to support multiple languages.
 11. **Always define `teardown()`** in your `main.py` to clean up resources (timers, threads, file handles) when the app shuts down. This prevents errors and resource leaks.
 12. **Stop your timers in `teardown()`.** Leaving timers running after unload will cause crashes.
-13. **Respect the user's telemetry preference.** If your extension collects any data, check `telemetry.is_enabled()` first.
+13. **Send no usage statistics without asking.** Hariku collects none, and `telemetry.is_enabled()` always returns `False`; if your extension must send any data, ask the user first and say so in its description.
 14. **Use `core.api.main_window_instance` as the parent** for any custom `wx.Dialog` you create. This ensures proper window stacking and accessibility.
 15. **Use `apply_rtl_layout()`** in your dialogs if you support RTL languages like Arabic or Hebrew.
 16. **Use `format_date()` for displaying dates** instead of formatting them yourself — this ensures dates are displayed in the user's language.

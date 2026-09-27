@@ -93,6 +93,9 @@ jobs:
 
       # Product name and version are embedded in Hariku.exe because signed
       # binaries must carry this metadata (SignPath requirement).
+      # LICENSE, LICENSE-EXCEPTION, PRIVACY.md and THIRD-PARTY-NOTICES.md ship
+      # next to Hariku.exe: the GPL asks that everyone who gets Hariku gets the
+      # license, and Help, About, License (docs/*/license.txt) points to them.
       - name: Compile with Nuitka
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads
@@ -103,6 +106,10 @@ jobs:
           --include-data-dir=locales=locales
           --include-data-dir=docs=docs
           --include-data-file=nvdaControllerClient64.dll=nvdaControllerClient64.dll
+          --include-data-file=LICENSE=LICENSE
+          --include-data-file=LICENSE-EXCEPTION=LICENSE-EXCEPTION
+          --include-data-file=PRIVACY.md=PRIVACY.md
+          --include-data-file=THIRD-PARTY-NOTICES.md=THIRD-PARTY-NOTICES.md
           --company-name=InfiArtt
           --product-name=Hariku
           --file-description=Hariku
