@@ -2,6 +2,16 @@
 
 Welcome to the Hariku V2 extension development guide. This document covers everything you need to build, test, and distribute extensions for Hariku.
 
+**Get the Developer SDK** at [github.com/InfiArtt/hariku-sdk](https://github.com/InfiArtt/hariku-sdk).
+It has this guide, the extension template, small commented examples (a hotkey, an Aruna command,
+a Preferences page, a background task, a guide), the packager, a checker for your extension folder,
+and the store guidelines, synced with each Hariku release. Download the SDK ZIP from its releases,
+or press **Use this template** there to start a repository for your own extension: its workflow
+checks your extension on every push and attaches the packed `.hrk` to your GitHub releases.
+The template and the examples are under the **MIT License**, so you can copy them into an
+extension released under any license (see the
+[Hariku Extension Exception](https://github.com/InfiArtt/hariku-core/blob/main/LICENSE-EXCEPTION)).
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)

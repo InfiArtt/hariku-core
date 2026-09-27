@@ -79,6 +79,15 @@ Start with [DEVELOPERS.md](DEVELOPERS.md) for the extension API, and
 `template_extension/` for a minimal skeleton. An extension talks to Hariku only
 through the documented `core.*` API and its manifest.
 
+The **Developer SDK** is at
+[InfiArtt/hariku-sdk](https://github.com/InfiArtt/hariku-sdk): the guide, the
+template, small commented examples, the packager, a checker for your extension
+folder, and the store guidelines, kept in sync with Hariku's releases. Press
+"Use this template" there to start a repository for your own extension that
+checks it and packs it into a `.hrk` on GitHub. The template and the examples
+are under the MIT License, so you can copy them into an extension under any
+license.
+
 ## License
 
 Hariku is free software under the GNU General Public License v3.0 or later, with
@@ -88,6 +97,7 @@ extension API can be released under any license, including a proprietary or
 commercial one.
 
 - Core and official extensions: `GPL-3.0-or-later` (see [LICENSE](LICENSE)).
+- The extension template (`template_extension/`): `MIT` (see its `LICENSE`).
 - Third-party extensions: your choice, under the extension exception.
 - Bundled third-party libraries: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
