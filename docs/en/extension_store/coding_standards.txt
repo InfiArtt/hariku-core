@@ -574,7 +574,9 @@ Validate and sanitize all external data before use:
 10.4  User Privacy
 -------------------
 
-  - Respect the user's telemetry and data-sharing preferences.
+  - Send no analytics or usage data unless the user agreed to it in your
+    extension. Hariku itself collects none and has no telemetry setting
+    (core.telemetry.is_enabled() always returns False).
   - Do not collect, transmit, or store user data beyond what is necessary
     for the extension's stated functionality.
   - If your extension collects any data, you must disclose this clearly in

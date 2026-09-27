@@ -192,6 +192,25 @@ book = prefs.treebook
 for i in range(book.GetPageCount()):
     check(book.GetPage(i), book.GetPageText(i), problems)
 print(f"checked {book.GetPageCount()} pages")
+
+
+def _labels(window):
+    for child in window.GetChildren():
+        if isinstance(child, wx.TopLevelWindow):
+            continue
+        yield child.GetLabel()
+        yield from _labels(child)
+
+
+# Hariku collects no telemetry (core 2.11): the General page has no telemetry
+# box or "share my usage data" check box any more.
+general = [i for i in range(book.GetPageCount()) if book.GetPageText(i) == "General"]
+if not general:
+    problems.append("PROBLEM the General page is missing")
+for i in general:
+    for label in _labels(book.GetPage(i)):
+        if "telemetry" in label.lower() or "usage data" in label.lower():
+            problems.append(f"PROBLEM [General] still has a telemetry control: {label!r}")
 for line in problems:
     print(line)
 if not problems:

@@ -22,7 +22,7 @@ TABLE OF CONTENTS
   11. Safe Mode
   12. Checking for Updates
   13. Crash Reporter
-  14. Telemetry & Privacy
+  14. Privacy
   15. Troubleshooting
 
 ================================================================================
@@ -294,12 +294,6 @@ GENERAL Winddow
         Minimize to Tray   — Hides the window; Hariku stays running in the tray.
         Quit Hariku        — Exits the application completely.
         Show Exit Options  — Asks you what to do each time.
-
-  Public Telemetry Data
-      Hariku collects fully anonymous usage statistics (OS version, language,
-      active extensions) to help improve the application. This data contains
-      no personal information. You may opt out here at any time. The collected
-      data is publicly viewable at sp.novarealm.cloud/stats.
 
   Check for Updates  (button)
       Manually triggers an update check right now.
@@ -743,38 +737,34 @@ Preferences > Advanced > View Log File.
 
 
 ================================================================================
-14. TELEMETRY & PRIVACY
+14. PRIVACY
 ================================================================================
 
-Hariku collects a small amount of anonymous data on startup to help us
-understand how the application is being used and to prioritise improvements.
+Hariku sends no usage statistics. It collects no analytics or telemetry, so
+there is no setting to opt out of. (The "Public Telemetry Data" box that
+Preferences > General used to have is gone.)
 
-WHAT IS COLLECTED
-------------------
-  - Your operating system version.
-  - Your Hariku version.
-  - Your display language.
-  - The names of extensions you have installed.
-  - An anonymous session ID (a random number generated fresh each launch;
-    it is not stored or linked to your identity in any way).
+YOUR DATA
+----------
+Your calendar, reminders, routines, profile, places, settings and extension
+data stay on your computer, in %APPDATA%\Hariku2.
 
-WHAT IS NEVER COLLECTED
+WHEN HARIKU GOES ONLINE
 ------------------------
-  - Your name, email, or any account information.
-  - The content of your reminders or diary entries.
-  - Your calendar data.
-  - Your file system or application activity outside of Hariku.
+  - At startup it downloads a few small files from its GitHub Pages site:
+    version.json (is there a newer Hariku?), the store catalogue (do your
+    extensions have updates?) and the list of trusted extension
+    fingerprints. They carry no identifier and none of your data.
+  - When you ask: opening the store, installing or updating, searching for
+    an address or a city in Preferences > Places, and so on.
+  - A crash report is sent only if you agree in the Crash Reporter, or if
+    you chose there to always send them (see section 13).
+  - Extensions make their own connections for their own features.
 
-WHERE THE DATA GOES
---------------------
-The data is sent to the Hariku analytics service and is viewable publicly by
-anyone at sp.novarealm.cloud/stats. There are no private or hidden metrics.
-
-HOW TO OPT OUT
----------------
-Go to Preferences > General, scroll to the "Public Telemetry Data" section,
-and uncheck "Share my anonymous usage data publicly". The change takes effect
-immediately. No restart required.
+The summary is under Help > About Hariku > License. The full, exact list of
+every connection, for Hariku and each official extension, is in PRIVACY.md,
+which comes with Hariku and is at
+https://github.com/InfiArtt/hariku-core/blob/main/PRIVACY.md
 
 
 ================================================================================

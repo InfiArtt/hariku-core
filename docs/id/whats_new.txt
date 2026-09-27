@@ -32,6 +32,14 @@ Versi 2.11.0 (Pembaruan Inti)
 - Apa yang Hariku ucapkan sampai ke pembaca layarmu sesuai urutan
   ucapannya. Dua baris yang datang bersamaan (balasan sebuah game dan
   catatan sesudahnya) dulu bisa terbaca terbalik; sekarang keduanya antre.
+- Bantuan, Tentang Hariku, Lisensi sekarang menampilkan lisensi Hariku
+  yang berlaku dan ringkasan privasinya: Hariku adalah perangkat lunak bebas di
+  bawah GNU GPL versi 3 atau yang lebih baru, dengan Pengecualian Ekstensi
+  Hariku, dan tidak mengumpulkan analitik atau telemetri. Kotak "Public
+  Telemetry Data" sudah dihapus dari Pengaturan, halaman General: Hariku
+  tidak mengirim data pemakaian, jadi tidak ada yang perlu dimatikan. Rilis
+  Hariku kini menyertakan LICENSE, LICENSE-EXCEPTION, PRIVACY.md, dan
+  THIRD-PARTY-NOTICES.md di folder Hariku.
 - Untuk pembuat ekstensi: taruh panduanmu di docs/<bahasa>/guide.md (judul
   # pertamanya adalah judul panduan) dan Hariku menemukannya; core.guides
   membuka panduan dari kodemu. core.commands.add_intent menerima matcher

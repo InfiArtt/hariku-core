@@ -45,6 +45,10 @@ from ui.main_window import MainWindow
 
 # Prevent Nuitka from stripping the standard library.
 import core.stdlib_includes
+# Hariku sends no telemetry; this module only keeps the documented
+# telemetry.is_enabled() (always False) for extensions, and Nuitka only
+# compiles modules the core imports.
+import core.telemetry
 
 import os
 import sys
@@ -213,10 +217,6 @@ class HarikuApp(wx.App):
             core.personal.schedule_startup_greeting(
                 welcome, boot=core.api.started_with_windows())
 
-        # Send the telemetry ping.
-        import core.telemetry
-        core.telemetry.record_startup()
-        
         return True
 
     def OnExit(self):
