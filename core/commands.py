@@ -16,7 +16,9 @@ spoken command. No wx here; the window is ui/command_bar.py.
     answer(text)                  -> "yes", "no" or None ("ya", "simpan", "batal")
     add_aliases(action_id, [...]) -> more ways to say an action (extensions)
     register_listener(...)        -> the speech recogniser (Voice Control)
-    set_fallback(handler)         -> reserved for a future AI fallback
+    add_fallback(handler)         -> propose what a sentence Aruna didn't
+                                     understand meant (core 2.11); Aruna
+                                     asks the user before doing it
     add_answer_actions([...])     -> actions that only say something (core 2.8):
                                      Aruna stays open and shows their answer
     add_intent(id, [...], handler) -> commands with content (core 2.9): "catat
@@ -68,7 +70,12 @@ reminder as the alternative when the sentence also had a weaker date word);
 any other date or time makes a reminder; words that look like a date but
 weren't understood offer the quick reminder; the rest isn't understood.
 
-Everything happens on this computer; nothing is sent anywhere.
+What isn't understood, and a "Did you mean …?" that is only a weak guess,
+goes to the fallbacks extensions add (core 2.11, add_fallback), when there
+are any and they are on; Aruna asks the user about whatever they propose.
+
+All of this happens on this computer. Only a fallback may send a sentence
+elsewhere (the Ask Hariku extension, when the user turned that on).
 """
 import datetime
 import difflib
@@ -1025,17 +1032,134 @@ def get_listener():
 
 
 # ------------------------------------------------------------
-# A future AI fallback
+# Fallbacks: when Aruna doesn't understand (core 2.11)
 # ------------------------------------------------------------
+# When Aruna's rules don't understand a sentence, or only have a weak guess,
+# registered fallbacks (an extension's AI, a local model later) may propose
+# what was meant. They run on a worker thread, in turn, within
+# FALLBACK_TIMEOUT seconds in all; the first proposal wins. Aruna never runs
+# a proposal straight away: a command is asked about ("Did you mean …?"), a
+# command with content too ("Did you mean: Timer, "tea 5 minutes"?"), a
+# reminder is read back ("…, Save?"). Proposals are checked here: a command
+# or an intent that isn't registered is dropped.
 
-_fallback = None
+FALLBACKS = True            # add_fallback() exists (core 2.11): extensions check this
+FALLBACK_TIMEOUT = 6.0      # seconds Aruna waits for its fallbacks, all of them together
+FALLBACK_ASK_BELOW = 0.65   # a "Did you mean …?" weaker than this asks the fallbacks first
+
+
+class FallbackRequest:
+    """What a fallback gets (core 2.11), on a worker thread:
+
+      text      the sentence, as typed or heard
+      source    "typed" or "voice"
+      language  Hariku's language ("id", "en"...); the sentence may be in
+                another one Aruna understands
+      commands  [Command]: every command Aruna knows (.id, .name, .title)
+      intents   [Intent]: every command with content (.id, .title, .patterns)
+      guess     the Command Aruna would ask "Did you mean …?" about, or None
+      deadline  time.monotonic() by when to answer; time_left() in seconds
+
+    command(id) and intent(id) find one of them; propose_command(id) and
+    propose_intent(id, text) make the Decision to return (None for an id
+    that isn't registered)."""
+
+    def __init__(self, text, source="typed", language="en", commands=(), intents=(),
+                 guess=None, deadline=None):
+        self.text = " ".join(str(text or "").split())
+        self.source = source
+        self.language = language
+        self.commands = list(commands)
+        self.intents = list(intents)
+        self.guess = guess
+        self.deadline = deadline if deadline is not None else time.monotonic() + FALLBACK_TIMEOUT
+
+    def time_left(self):
+        return max(0.0, self.deadline - time.monotonic())
+
+    def command(self, action_id):
+        return next((c for c in self.commands if c.id == action_id), None)
+
+    def intent(self, intent_id):
+        return next((i for i in self.intents if i.id == intent_id), None)
+
+    def propose_command(self, action_id):
+        """A Decision asking "Did you mean <that command>?", or None."""
+        command = self.command(action_id)
+        return None if command is None else Decision("confirm", self.text, command=command)
+
+    def propose_intent(self, intent_id, text):
+        """A Decision offering a command with content with `text` in its
+        {text}, or None."""
+        intent = self.intent(intent_id)
+        text = " ".join(str(text or "").split())
+        if intent is None or not text:
+            return None
+        return Decision("intent", self.text, intents=[IntentMatch(intent, text, 1.0, 0)])
+
+    def __repr__(self):
+        return f"FallbackRequest({self.text!r}, {self.source}, {len(self.commands)} commands)"
+
+
+class _Fallback:
+    def __init__(self, handler, is_enabled=None, name=""):
+        self.handler = handler
+        self.is_enabled = is_enabled
+        self.name = name or getattr(handler, "__name__", "fallback")
+
+    def enabled(self):
+        if self.is_enabled is None:
+            return True
+        try:
+            return bool(self.is_enabled())
+        except Exception:
+            logger.exception(f"Command bar: asking whether {self.name} is on failed")
+            return False
+
+
+_fallbacks = []         # [_Fallback], in the order they were added
+_fallback = None        # set_fallback()'s handler (core 2.7, still honoured)
+
+
+def add_fallback(handler, is_enabled=None, name=""):
+    """Let `handler` propose what a sentence meant when Aruna doesn't
+    understand it (core 2.11). handler(request) gets a FallbackRequest on a
+    worker thread and returns, before request.time_left() runs out:
+
+      None                        no idea (the next fallback is asked)
+      request.propose_command(id) "Did you mean <command>?"
+      request.propose_intent(id, text)
+                                  "Did you mean <intent>, "<text>"?"; yes
+                                  calls that intent's handler with it
+      a Decision("reminder", result=...) the quick reminder's read-back
+      a Reply or a string         said (or asked) like an intent's Reply
+
+    `is_enabled()` is asked on the UI thread before each sentence and must
+    be quick (no network, no files); a fallback that is off is skipped
+    without starting a thread. Adding the same handler again replaces it.
+    Call remove_fallback() in teardown(). Sending the sentence anywhere
+    needs the user's consent, asked for in your extension's settings."""
+    if not callable(handler):
+        raise TypeError("handler must be callable")
+    if is_enabled is not None and not callable(is_enabled):
+        raise TypeError("is_enabled must be callable or None")
+    with _lock:
+        _fallbacks[:] = [f for f in _fallbacks if f.handler != handler]
+        _fallbacks.append(_Fallback(handler, is_enabled, name))
+    return handler
+
+
+def remove_fallback(handler):
+    with _lock:
+        before = len(_fallbacks)
+        _fallbacks[:] = [f for f in _fallbacks if f.handler != handler]
+        return len(_fallbacks) != before
 
 
 def set_fallback(handler):
-    """Reserved for an AI fallback (phase 2). handler(text, commands) is
-    called on a worker thread for a text decide() didn't understand, and
-    returns an action id or None. The command bar never runs its answer
-    straight away: it asks "Did you mean …?" first. None removes it."""
+    """The core 2.7 form, still honoured: handler(text, commands) returns an
+    action id or None, on a worker thread. Aruna asks "Did you mean …?"
+    about it. None removes it. New code uses add_fallback()."""
     global _fallback
     if handler is not None and not callable(handler):
         raise TypeError("handler must be callable or None")
@@ -1049,8 +1173,9 @@ def get_fallback():
 
 
 def ask_fallback(text, candidates=None):
-    """The fallback's Command for `text`, or None (no fallback, no answer, an
-    error or an unknown action). Slow: call it on a worker thread."""
+    """The set_fallback() handler's Command for `text`, or None (no
+    fallback, no answer, an error or an unknown action). Slow: call it on a
+    worker thread."""
     handler = get_fallback()
     if handler is None:
         return None
@@ -1061,6 +1186,97 @@ def ask_fallback(text, candidates=None):
         logger.exception("Command bar: the fallback failed")
         return None
     return next((c for c in candidates if c.id == action_id), None)
+
+
+def _legacy(request):
+    command = ask_fallback(request.text, request.commands)
+    return None if command is None else request.propose_command(command.id)
+
+
+def active_fallbacks():
+    """The fallbacks that are on now (quick; the UI thread asks it)."""
+    with _lock:
+        registered = list(_fallbacks)
+        legacy = _fallback
+    found = [f for f in registered if f.enabled()]
+    if legacy is not None:
+        found.insert(0, _Fallback(_legacy, name="set_fallback"))
+    return found
+
+
+def has_fallback():
+    return bool(active_fallbacks())
+
+
+def wants_fallback(decision):
+    """Whether Aruna asks its fallbacks about a decision: one it didn't
+    understand, or a "Did you mean …?" weaker than FALLBACK_ASK_BELOW with
+    no reminder to offer instead."""
+    kind = getattr(decision, "kind", None)
+    if kind == "unknown":
+        return True
+    if kind == "confirm" and decision.alternative is None:
+        found = getattr(decision, "match", None)
+        return found is None or found.score < FALLBACK_ASK_BELOW
+    return False
+
+
+def proposal_of(value, request):
+    """A fallback's answer as what Aruna may do with it: a Decision
+    ("confirm" with a registered command, "intent" with a registered intent
+    and some text, "reminder" with a result), a Reply, or None. Anything
+    else, and anything naming what isn't registered, is None."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return Reply(say=value) if value.strip() else None
+    if isinstance(value, Reply):
+        return value
+    if not isinstance(value, Decision):
+        return None
+    if value.kind in ("run", "confirm"):
+        command = request.command(getattr(value.command, "id", None))
+        return None if command is None else Decision("confirm", request.text, command=command,
+                                                     match=value.match)
+    if value.kind == "intent" and value.intents:
+        found = value.intents[0]
+        intent = request.intent(getattr(found.intent, "id", None))
+        text = " ".join(str(getattr(found, "text", "") or "").split())
+        if intent is None or not text:
+            return None
+        return Decision("intent", request.text, intents=[IntentMatch(intent, text, found.score, 0)])
+    if value.kind == "reminder" and value.result is not None:
+        return Decision("reminder", request.text, result=value.result)
+    return None
+
+
+def ask_fallbacks(request, fallbacks=None):
+    """Ask the fallbacks in turn, each on a thread of its own, until one
+    proposes something or request.deadline passes: the proposal_of() of
+    the first answer, or None. Slow: call it on a worker thread."""
+    for fallback in active_fallbacks() if fallbacks is None else fallbacks:
+        left = request.time_left()
+        if left <= 0:
+            logger.info("Command bar: no time left for the fallbacks.")
+            return None
+        box = {}
+
+        def run(fallback=fallback, box=box):
+            try:
+                box["value"] = fallback.handler(request)
+            except Exception:
+                logger.exception(f"Command bar: the fallback {fallback.name} failed")
+
+        thread = threading.Thread(target=run, daemon=True, name="hariku-aruna-fallback")
+        thread.start()
+        thread.join(left)
+        if thread.is_alive():
+            logger.info(f"Command bar: the fallback {fallback.name} took too long.")
+            return None
+        proposal = proposal_of(box.get("value"), request)
+        if proposal is not None:
+            return proposal
+    return None
 
 
 # ------------------------------------------------------------
