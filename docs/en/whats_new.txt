@@ -19,13 +19,23 @@ Version 2.11.0 (Core Update)
   Calculator & Converter is the first to use it: "25 x 4", "5 km ke mil",
   "2 foot in inches" and, right after an answer, "tambah 5" are answered as
   they are, without "berapa" or "what's" in front.
+- When Aruna doesn't understand a sentence, or is only guessing, an
+  extension can suggest what you meant, and Aruna asks you first: "Did you
+  mean: Weather forecast?", Enter for yes. Nothing runs without your yes.
+  The new Ask Hariku extension does this with Hariku's AI, only if you turn
+  it on; it can also answer how-to questions from Hariku's guides ("tanya
+  hariku gimana cara pasang Orbit", "how do I set a repeating alarm").
+  Both are off until you turn them on in Preferences, Ask Hariku, and
+  PRIVACY.md says exactly what they send.
 - What Hariku says reaches your screen reader in the order it was said.
   Two lines that came at the same moment (a game's reply and the note
   after it) could be read the other way round; now they queue up.
 - For extension developers: put your guide in docs/<language>/guide.md (its
   first # heading is its title) and Hariku finds it; core.guides opens
   guides from your code. core.commands.add_intent takes a matcher for
-  sentences with no fixed words. See DEVELOPERS.md.
+  sentences with no fixed words, and core.commands.add_fallback lets your
+  extension propose what a sentence Aruna didn't understand meant (Aruna
+  asks the user before doing it). See DEVELOPERS.md.
 
 
 Version 2.10.0 (Core Update - September 25, 2026)

@@ -569,6 +569,10 @@ earthquake", "what time is it" or "evening summary", or a reminder, such as
     "yes") to save it, or Escape to cancel.
   - When Hariku isn't sure, it asks "Did you mean ...?". Enter runs it,
     Escape doesn't.
+  - When Hariku doesn't understand at all, an extension can suggest what you
+    meant (the Ask Hariku extension does, with Hariku's AI, only if you turn
+    that on). Aruna then asks "Did you mean ...?" too: nothing runs without
+    your yes.
 
 Every action of Hariku and of your extensions can be run this way, in English
 or Indonesian. Tab reaches the "Last result" field, which shows what Hariku
