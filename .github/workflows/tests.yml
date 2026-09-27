@@ -1,12 +1,13 @@
 name: Tests
 
-# Runs the whole suite in two jobs at once:
+# Runs the whole suite in three jobs at once:
 #   - tests: everything without windows, in parallel on all the runner's
 #     cores (pytest-xdist);
 #   - windows: the real-window checks that open Hariku windows and dialogs,
 #     one at a time, since windows opened together would take each other's
 #     focus. They are skipped on developers' own computers (they steal focus
-#     and the screen reader announces them), so they run here instead.
+#     and the screen reader announces them), so they run here instead;
+#   - hariku-ai: the Hariku AI Worker's tests (servers/hariku-ai, node --test).
 on:
   push:
     branches: [main]
@@ -62,3 +63,21 @@ jobs:
         env:
           HARIKU_UI_TESTS: "1"
         run: python -m pytest -q -m window
+
+  hariku-ai:
+    name: Hariku AI Worker (node --test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm install: the Worker has no dependencies, and its tests use
+      # Node's own test runner.
+      - name: Run the Worker's tests
+        working-directory: servers/hariku-ai
+        run: node --test
