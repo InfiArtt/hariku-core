@@ -3,12 +3,14 @@
   Internal Document for Extension Reviewers
 ===============================================================================
 
-  Document Version : 1.0
-  Effective Date   : July 2026
+  Document Version : 1.1
+  Effective Date   : September 2026
   Classification   : INTERNAL — Do not distribute to extension developers
   Contact          : terabase06@gmail.com
-  Store URL        : https://novarealm.cloud
-  Forum            : https://sp.novarealm.cloud/forum/hariku
+  Store            : served from GitHub (catalogue on GitHub Pages,
+                     packages as GitHub Release assets of InfiArtt/hariku)
+  Submissions      : https://github.com/InfiArtt/hariku-sdk/issues/new/choose
+  Forum            : https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
 
   This document is intended for authorized reviewers of the Hariku V2
   Extension Store. It defines the review process, evaluation criteria,
@@ -131,9 +133,12 @@
         impersonate or closely mimic an official Hariku feature or
         another existing extension.
 
-    3.  The "version" field follows semantic versioning (MAJOR.MINOR.PATCH).
-        For first submissions, version should be 1.0.0 or a pre-release
-        variant (e.g., 0.1.0).
+    3.  The "version" field is two or three numbers separated by dots,
+        MAJOR.MINOR or MAJOR.MINOR.PATCH (e.g., 1.0 or 1.2.3), as
+        DEVELOPERS.md and the SDK's checker require. A pre-release may end
+        in a1, b1 or rc1 (e.g., 1.1.0b1). No "v" in front and no words such
+        as "-beta": the store compares versions as numbers, so every update
+        must have a higher version than the one in the store.
 
     4.  The "minimum_core_version" field references a valid, released
         version of Hariku V2. It must not reference unreleased or
@@ -316,9 +321,11 @@
         - The extension's description in the store
         - A first-run notice shown to the user
 
-   36.  The extension respects Hariku's telemetry opt-out setting. If
-        the user has disabled telemetry in Hariku's core settings, the
-        extension must not send analytics or usage data.
+   36.  The extension sends no analytics or usage data unless the user
+        agreed to it in the extension itself. Hariku collects none and has
+        no telemetry setting (core.telemetry.is_enabled() always returns
+        False), so an extension cannot rely on a Hariku setting for
+        consent.
 
    37.  User data is stored securely. Sensitive data (passwords, tokens,
         personal information) must not be stored in plain text. Use
@@ -622,7 +629,7 @@
   This document is reviewed and updated quarterly. If you have
   suggestions for improvements, contact terabase06@gmail.com or
   post in the reviewer channel on the Hariku forum:
-  https://sp.novarealm.cloud/forum/hariku
+  https://infiartt.com/forum/thread/welcome-to-the-official-hariku-forum
 
-  Last updated: July 2026
+  Last updated: September 2026
   Next scheduled review: October 2026

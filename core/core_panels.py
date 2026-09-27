@@ -135,20 +135,10 @@ class GeneralSettingsPanel(wx.Panel):
         self.chk_high_contrast.SetValue(config.get("high_contrast", False))
         vbox.Add(self.chk_high_contrast, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
-        # --- Telemetry ---
-        box_telemetry = wx.StaticBox(self, label="Public Telemetry Data")
-        bsizer_telemetry = wx.StaticBoxSizer(box_telemetry, wx.VERTICAL)
-        
-        lbl_info = wx.StaticText(box_telemetry, label="Anonymous usage statistics are currently disabled: the previous statistics server was retired and no data is collected or sent. This setting is kept for when telemetry returns.")
-        lbl_info.Wrap(500)
-        bsizer_telemetry.Add(lbl_info, 0, wx.ALL, 5)
-        
-        self.chk_telemetry = wx.CheckBox(box_telemetry, label="Share my anonymous usage data publicly")
-        self.chk_telemetry.SetValue(config.get("telemetry_enabled", True))
-        
-        bsizer_telemetry.Add(self.chk_telemetry, 0, wx.ALL, 5)
-        vbox.Add(bsizer_telemetry, 0, wx.EXPAND | wx.ALL, 10)
-        
+        # No telemetry box (removed in core 2.11): Hariku collects no usage data,
+        # so there is nothing to opt out of. Old configs may still hold
+        # "telemetry_enabled" / "telemetry_id"; they are ignored.
+
         # Updater Button
         self.btn_check_updates = wx.Button(self, label=_("lbl_check_updates"))
         self.btn_check_updates.Bind(wx.EVT_BUTTON, self.on_check_updates)
@@ -185,8 +175,7 @@ class GeneralSettingsPanel(wx.Panel):
         config["date_format"] = DATE_FORMATS.get(selected_format_key, "%A, %d %B %Y")
         
         config["close_behavior"] = {0: "minimize", 1: "quit", 2: "ask"}.get(self.rb_close_behavior.GetSelection(), "minimize")
-        config["telemetry_enabled"] = self.chk_telemetry.GetValue()
-        
+
         core.api.save_data("Core", config)
 
         # Re-apply the low-vision appearance live (font scale + high contrast).

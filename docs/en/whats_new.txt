@@ -22,6 +22,13 @@ Version 2.11.0 (Core Update)
 - What Hariku says reaches your screen reader in the order it was said.
   Two lines that came at the same moment (a game's reply and the note
   after it) could be read the other way round; now they queue up.
+- Help, About Hariku, License now shows Hariku's current license and a
+  privacy summary: Hariku is free software under the GNU GPL, version 3 or later,
+  with the Hariku Extension Exception, and it collects no analytics or
+  telemetry. The "Public Telemetry Data" box is gone from Preferences,
+  General: Hariku sends no usage data, so there was nothing to turn off.
+  The release now includes LICENSE, LICENSE-EXCEPTION, PRIVACY.md and
+  THIRD-PARTY-NOTICES.md in Hariku's folder.
 - For extension developers: put your guide in docs/<language>/guide.md (its
   first # heading is its title) and Hariku finds it; core.guides opens
   guides from your code. core.commands.add_intent takes a matcher for
