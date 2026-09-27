@@ -207,10 +207,54 @@ is not stored. Only the reminder you save is kept, like any other reminder.
 
 Aruna (Ctrl+Alt+Backspace) works out what you typed or said on your
 computer, with rules built into Hariku: it compares your words with the names
-of Hariku's actions. No AI and no online service is involved, and what you
-type is not stored. A command you run makes the connections that command
-makes when you use its own key (the latest earthquake downloads BMKG's file,
-for example), as described on this page.
+of Hariku's actions. By itself Aruna uses no AI and no online service, and
+what you type is not stored. A command you run makes the connections that
+command makes when you use its own key (the latest earthquake downloads
+BMKG's file, for example), as described on this page.
+
+Only if you turn on "Let Aruna ask Hariku's AI when it doesn't understand"
+in the Ask Hariku extension does a sentence Aruna didn't understand go
+online, as described under Ask Hariku below. Other extensions can offer the
+same kind of help; the official ones that go online say so on this page.
+
+## Ask Hariku
+
+The Ask Hariku extension has two features, both off until you turn them on
+in Preferences, Ask Hariku. While they are off, it sends nothing at all.
+
+- **Answering how-to questions** ("Answer how-to questions with Hariku's AI
+  (online)"): a question you ask Aruna ("tanya hariku ...", "gimana cara
+  ...", "how do I ...") goes to Hariku's AI service: only the question and
+  its language (Indonesian or English).
+- **Aruna's AI help** ("Let Aruna ask Hariku's AI when it doesn't understand
+  (online)"): a sentence Aruna didn't understand goes there with its
+  language and the names, other names and patterns of the commands of
+  Hariku and its official extensions, so the AI can say which one you
+  meant. The commands of other extensions are never sent, since their names
+  could be your own words. Aruna asks you before doing what the AI suggests:
+  nothing runs without your yes.
+
+Nothing else is ever sent: not your reminders, diary, finances, places,
+profile or name, nothing else from your computer, and no identifier or
+account.
+
+Hariku's AI service is a small program of Hariku's own (its code is in
+Hariku's repository, `servers/hariku-ai`) that runs on Cloudflare Workers and
+answers with Cloudflare Workers AI, from Hariku's guides. It keeps no logs of
+questions or sentences and stores nothing; Cloudflare's request logs are
+turned off for it. Cloudflare does not use Workers AI inputs to train AI
+models (see [Workers AI data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/)).
+Like every web request, a request carries your IP address: the service uses
+it only to count requests for a minute, so that no one can overload it, and
+doesn't store it. The connection itself is covered by the
+[Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/).
+
+"Test connection" on the Ask Hariku page only asks the service whether it is
+running; it sends no question. The service's address can be changed on that
+page (for a copy of the service you run yourself); Hariku sends only over
+HTTPS to infiartt.com or a Cloudflare Workers address (`workers.dev`), or to
+your own computer. The two settings and the address are saved on your
+computer, in `%APPDATA%\Hariku2` (`AskHariku`).
 
 ## Clipboard History
 

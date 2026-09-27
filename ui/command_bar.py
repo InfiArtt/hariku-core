@@ -29,6 +29,12 @@ decides what it means):
     core 2.9: "catat beli gula", "timer mie 3 menit") goes to its handler,
     which answers with a Reply: something to say, a question to confirm,
     "the answer comes later", or something to do once the bar has closed;
+  * anything else, and a "Did you mean …?" that is only a weak guess, goes
+    to the fallbacks extensions added (core.commands.add_fallback, core
+    2.11), when any is on: on a worker thread, "Aruna is thinking..." in
+    the meantime, at most core.commands.FALLBACK_TIMEOUT seconds. What they
+    propose is always asked about first ("Did you mean …?"), never run
+    straight away. Without a proposal, the bar does what it did before;
   * anything else: "I didn't understand".
 
 An answer told in steps (core 2.9, core.commands.hold_answer) stays in Last
@@ -223,11 +229,12 @@ class _Awaited:
 
 class _Pending:
     """A question the bar asked and waits for: "action" (Did you mean …?),
-    "reminder" (… Save?), "offer" (open it as a quick reminder?) or
-    "intent" (an extension's own question, core 2.9)."""
+    "reminder" (… Save?), "offer" (open it as a quick reminder?), "intent"
+    (an extension's own question, core 2.9) or "proposed" (a command with
+    content a fallback proposed, core 2.11: Did you mean <intent>, "…"?)."""
 
     def __init__(self, kind, text, command=None, result=None, alternative=None, reply=None,
-                 request=None):
+                 request=None, intent=None):
         self.kind = kind
         self.text = text
         self.command = command
@@ -235,6 +242,7 @@ class _Pending:
         self.alternative = alternative
         self.reply = reply
         self.request = request
+        self.intent = intent
 
 
 # ------------------------------------------------------------
@@ -272,6 +280,8 @@ class CommandBar(wx.Dialog):
         self._saying = False             # the bar is saying its own words
         self._sent_at = 0.0
         self._background = False         # opened without the focus (the wake phrase)
+        self._thinking = None            # the fallbacks' turn being waited for (core 2.11)
+        self._fallback_turn = 0          # later answers of earlier turns are dropped
         bus.subscribe("on_before_speak", self._on_speech)
         core.commands.set_answer_sink(self._show_line)
 
@@ -390,7 +400,7 @@ class CommandBar(wx.Dialog):
 
     def _idle(self):
         return (self._pending is None and not self._listening and self._awaiting is None
-                and not self._busy and self._follow_up is None)
+                and not self._busy and self._follow_up is None and self._thinking is None)
 
     def _finish_background_soon(self):
         """Opened in the background, Aruna closes by itself once it has
@@ -433,6 +443,7 @@ class CommandBar(wx.Dialog):
         text = self.text() if text is None else " ".join(str(text).split())
         self._voice_turn = source == "voice"
         self._cancel_follow_up()
+        self._cancel_thinking()              # a new message: the fallbacks' answer is too late
         self._end_answer()                   # a new message: stop waiting for the last answer
         self._sent(source)
         pending = self._pending
@@ -450,7 +461,10 @@ class CommandBar(wx.Dialog):
         self._handle(decision)
         return decision
 
-    def _handle(self, decision):
+    def _handle(self, decision, fallbacks=True):
+        if fallbacks and core.commands.wants_fallback(decision) and core.commands.has_fallback():
+            self._ask_fallbacks(decision)
+            return
         kind = decision.kind
         if kind == "run":
             self._run_command(decision.command)
@@ -520,30 +534,78 @@ class CommandBar(wx.Dialog):
                 self._busy = True
                 self._after_keys_released(self.close)
 
-    def _not_understood(self, text):
-        if core.commands.get_fallback() is None:
-            self.say(_("cmd_not_understood"))
-            return
-        # A future AI fallback: slow, so on a worker thread; its answer is
-        # only ever asked about, never run straight away.
+    def _not_understood(self, _text=None):
+        self.say(_("cmd_not_understood"))
+
+    # --- fallbacks (core 2.11) ---------------------------------------------------------
+
+    def _ask_fallbacks(self, decision):
+        """Ask the fallbacks on a worker thread what `decision`'s text meant;
+        the bar stays responsive ("Aruna is thinking...") and a new message
+        makes their answer too late (_cancel_thinking)."""
+        self._fallback_turn += 1
+        turn = self._thinking = self._fallback_turn
         self._set_status(_("cmd_status_thinking"))
-        candidates = core.commands.commands()
+        from core.i18n import get_current_language
+        request = core.commands.FallbackRequest(
+            decision.text, "voice" if self._voice_turn else "typed", get_current_language(),
+            core.commands.commands(), core.commands.intents(),
+            guess=decision.command if decision.kind == "confirm" else None)
+        fallbacks = core.commands.active_fallbacks()     # their switches, on this thread
 
         def work():
-            command = core.commands.ask_fallback(text, candidates)
-            _call_after(self._fallback_done, text, command)
+            try:
+                proposal = core.commands.ask_fallbacks(request, fallbacks)
+            except Exception:
+                logger.exception("Command bar: asking the fallbacks failed")
+                proposal = None
+            _call_after(self._fallbacks_answered, turn, decision, request, proposal)
 
-        threading.Thread(target=work, daemon=True, name="hariku-command-fallback").start()
+        threading.Thread(target=work, daemon=True, name="hariku-aruna-fallbacks").start()
 
-    def _fallback_done(self, text, command):
-        if not self._alive():
+    def _cancel_thinking(self):
+        self._fallback_turn += 1
+        self._thinking = None
+
+    def _fallbacks_answered(self, turn, decision, request, proposal):
+        if not self._alive() or self._thinking != turn:
+            return                       # closed, or the user went on to something else
+        self._thinking = None
+        if proposal is None:
+            # As before the fallbacks: the weak "Did you mean …?" or not understood.
+            self._handle(decision, fallbacks=False)
             return
-        self._set_status(self._idle_status())
-        if command is None:
-            self.say(_("cmd_not_understood"))
+        if isinstance(proposal, core.commands.Reply):
+            self._reply(proposal, core.commands.Request(request.text, request.text,
+                                                        request.source, ""), "")
+        elif proposal.kind == "confirm":
+            self._ask(_Pending("action", request.text, command=proposal.command),
+                      _("cmd_did_you_mean", name=proposal.command.title))
+        elif proposal.kind == "intent":
+            found = proposal.intents[0]
+            asked = core.commands.Request(found.text, request.text, request.source,
+                                          found.intent.id)
+            self._ask(_Pending("proposed", request.text, request=asked, intent=found.intent),
+                      _("cmd_did_you_mean_intent", name=found.intent.title, text=found.text))
+        elif proposal.kind == "reminder":
+            self._reminder(proposal.result, request.text)
         else:
-            self._ask(_Pending("action", text, command=command),
-                      _("cmd_did_you_mean", name=command.title))
+            self._handle(decision, fallbacks=False)
+
+    def _run_proposed(self, pending):
+        """Yes to a command with content a fallback proposed: its handler
+        gets the text, as if the user had said it with the pattern's words."""
+        core.voice.route_speech("command")
+        try:
+            reply = core.commands.Reply.of(pending.intent.handler(pending.request))
+        except Exception:
+            logger.exception(f"Command bar: the intent {pending.intent.id} failed")
+            self.say(_("cmd_action_failed"))
+            return
+        if reply is None:
+            self._not_understood()
+            return
+        self._reply(reply, pending.request, pending.intent.title)
 
     # --- questions and answers -------------------------------------------------------
 
@@ -565,6 +627,8 @@ class CommandBar(wx.Dialog):
                 self._open_quick_reminder(pending.text)
             elif pending.kind == "intent":
                 self._confirmed(pending)
+            elif pending.kind == "proposed":
+                self._run_proposed(pending)
             return None
         if pending.kind == "intent" and pending.reply.cancel is not None:
             try:
@@ -917,6 +981,7 @@ class CommandBar(wx.Dialog):
             restore = False                     # the focus never left the user's window
         self._background = False
         self._cancel_follow_up()
+        self._cancel_thinking()
         self._end_answer()
         bus.unsubscribe("on_before_speak", self._on_speech)
         core.commands.remove_answer_sink(self._show_line)

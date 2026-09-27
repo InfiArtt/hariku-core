@@ -597,6 +597,7 @@
         "cmd_done": "Selesai: {name}.",
         "cmd_empty": "Ketik atau ucapkan perintah, misalnya \"jam berapa\" atau \"ingatkan aku minum obat besok jam 8\".",
         "cmd_did_you_mean": "Maksudnya: {name}?",
+        "cmd_did_you_mean_intent": "Maksudnya: {name}, \"{text}\"?",
         "cmd_intent_confirm": "Lanjutkan?",
         "cmd_offer_reminder": "Itu belum masuk kamusku. Mau kujadikan pengingat cepat saja?",
         "cmd_offer_reminder@sweet": "Aku belum ngerti yang itu. Mau aku jadikan pengingat cepat aja?",

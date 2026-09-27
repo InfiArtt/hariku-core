@@ -81,6 +81,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "orbit",
     "dropbox",
     "calculator",
+    "ask_hariku",
 ])
 
 

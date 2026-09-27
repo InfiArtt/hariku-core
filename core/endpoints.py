@@ -19,6 +19,7 @@
 # if you point a custom domain at Pages). Nothing else needs to change.
 # =============================================================================
 
+import re
 from urllib.parse import urlparse
 
 # --- GitHub account/repo hosting Pages (manifests) + Releases (binaries) -----
@@ -61,6 +62,63 @@ CRASH_REPORT_URL = f"{INFIARTT_API_BASE}/api/crash-report"
 # Telemetry endpoint exists too, but the core ping is intentionally left OFF
 # (see core.telemetry). Kept here for if it's ever re-enabled.
 TELEMETRY_URL = f"{INFIARTT_API_BASE}/api/telemetry"
+
+# --- Hariku AI (core 2.11) ----------------------------------------------------
+# The Cloudflare Worker behind the Ask Hariku extension: "Tanya Hariku"
+# answers and Aruna's AI fallback (servers/hariku-ai). Only the address is
+# here; the Worker reaches Workers AI through its own binding, so there is no
+# key in Hariku. Ask Hariku sends nothing unless the user turns it on.
+#
+# TODO(owner): replace <subdomain> with the account's workers.dev subdomain
+# once the Worker is deployed (servers/hariku-ai/README.md). Until then the
+# address isn't valid and Ask Hariku says it isn't set up yet. Later:
+# "https://ai.infiartt.com" on the infiartt account.
+HARIKU_AI_URL = "https://hariku-ai.<subdomain>.workers.dev"
+
+# Where Ask Hariku may send a question (the address can be changed on its
+# Preferences page, for a self-hosted copy of the Worker): HTTPS on
+# infiartt.com, or a Cloudflare Worker on workers.dev. Plain HTTP only to
+# this computer (`wrangler dev`).
+HARIKU_AI_HOSTS = frozenset(["infiartt.com"])
+HARIKU_AI_HOST_SUFFIXES = (".infiartt.com", ".workers.dev")
+LOCAL_HOSTS = frozenset(["localhost", "127.0.0.1", "[::1]", "::1"])
+_HOST_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$")
+
+
+def assert_ai_url(url):
+    """Raise ValueError unless `url` is a Hariku AI address Hariku may send
+    to: https on an allowed host (HARIKU_AI_HOSTS, or a host ending in one of
+    HARIKU_AI_HOST_SUFFIXES), or http(s) to this computer. No user name,
+    password, query or fragment. Returns the address without a trailing /."""
+    url = (url or "").strip()
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    if parsed.username or parsed.password or "@" in parsed.netloc:
+        raise ValueError("[Security] An AI address can't carry a user name or password.")
+    if parsed.query or parsed.fragment or ".." in parsed.path:
+        raise ValueError("[Security] An AI address has no query, fragment or '..'.")
+    host = (parsed.hostname or "").lower()
+    if host in LOCAL_HOSTS:
+        if scheme not in ("http", "https"):
+            raise ValueError(f"[Security] Unsupported scheme {scheme!r}.")
+        return url.rstrip("/")
+    if scheme != "https":
+        raise ValueError(f"[Security] The AI service must use HTTPS, got {scheme!r}.")
+    if not _HOST_RE.match(host):
+        raise ValueError(f"[Security] Not a host name: {host!r}")
+    if host not in HARIKU_AI_HOSTS and not host.endswith(HARIKU_AI_HOST_SUFFIXES):
+        raise ValueError(f"[Security] The AI service isn't on an allowed host: {host!r}")
+    return url.rstrip("/")
+
+
+def is_allowed_ai_url(url):
+    """Boolean form of assert_ai_url()."""
+    try:
+        assert_ai_url(url)
+        return True
+    except ValueError:
+        return False
+
 
 # --- Download URL security policy --------------------------------------------
 # Pages host is exclusively YOUR content, so a host match there is already
