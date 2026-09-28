@@ -1,5 +1,28 @@
+Versi 2.12.1 (Pembaruan Inti - 28 September 2026)
+================================================================================
+Pembaruan kecil ini merapikan panduan dan Apa yang Baru berbahasa Inggris,
+yang di banyak tempat masih memakai contoh bahasa Indonesia, dan membuat
+jendela pembaruan memberi tahu isi pembaruannya.
+
+- Apa yang Baru, Panduan Pengguna dan panduan ekstensi berbahasa Inggris
+  sekarang memakai contoh bahasa Inggris, dan yang berbahasa Indonesia
+  memakai contoh bahasa Indonesia, seperti "jam berapa di Tokyo" atau
+  "timer 10 menit". Setiap contoh sudah dicek benar-benar jalan di Aruna.
+  Panduan ekstensi yang diperbarui datang sebagai pembaruan kecil di Toko
+  Ekstensi.
+- Kotak "Yang baru" di jendela pembaruan sekarang menampilkan isi versi
+  baru dalam bahasamu, diawali alasan kenapa versi itu dirilis; dulu hanya
+  nomor versinya. Jendela pembaruannya sendiri juga sudah berbahasa
+  Indonesia.
+- Saat World Trip, World Clock tidak lagi menjawab "jam berapa di sana"
+  dengan "I don't know the time zone"; pertanyaan itu kembali dijawab World
+  Trip.
+
 Versi 2.12.0 (Pembaruan Inti - 28 September 2026)
 ================================================================================
+Pembaruan ini membuat pengingat lebih akrab: pengingat sekarang bicara
+dengan gaya Hariku kepadamu, bukan lagi baris kaku "Reminder:".
+
 - Pengingat sekarang ngomong seperti Hariku. Waktu pengingat datang, Hariku
   tidak lagi bilang "Reminder: minum obat", tapi memberitahumu dengan gaya
   bicaranya dan nama panggilanmu: "Psst, Rafli! Ada pengingat nih: minum
