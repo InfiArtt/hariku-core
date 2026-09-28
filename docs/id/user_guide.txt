@@ -14,6 +14,20 @@ Saat pertama kali menyala, sebelum jendela utama, Hariku mengajak kenalan lewat 
 2. EKSTENSI
 ================================================================================
 
+Ekstensi adalah kemampuan tambahan Hariku: Orbit, Cuaca, Timer & Alarm, Kalkulator & Konversi, Voice Control, dan lainnya. Kamu memilih sendiri mana yang dipasang.
+
+MEMASANG EKSTENSI
+-----------------
+Ekstensi dipasang dari Toko Ekstensi, lewat Pengelola Ekstensi:
+
+  1. Buka Pengelola Ekstensi dengan Ctrl+X, atau menu Ekstensi, Kelola Ekstensi...
+  2. Tekan Ctrl+Tab sampai ke tab Tersedia: ekstensi dari Toko yang belum kamu punya.
+  3. Pilih ekstensinya (misalnya Orbit) dengan tombol panah, atau ketik sebagian namanya di kolom pencarian.
+  4. Tekan Pasang (atau Enter).
+  5. Mulai ulang Hariku, lalu ekstensinya siap dipakai.
+
+Ekstensi yang butuh Hariku yang lebih baru bilang begitu dan belum bisa dipasang. Di tab Terpasang kamu bisa Nonaktifkan, Hapus, atau Perbarui sebuah ekstensi, dan membuka Panduan-nya; di tab Pembaruan, Perbarui atau Perbarui semua.
+
 SETIAP EKSTENSI PUNYA PANDUANNYA SENDIRI
 ----------------------------------------
 Cara memakai sebuah ekstensi (Orbit, Dropbox, Kalkulator & Konversi, Timer & Alarm, Keliling Dunia, Voice Control, Cuaca, dan lainnya) tidak ada di panduan ini: tiap ekstensi membawa panduannya sendiri, yang ikut terpasang, diperbarui, dan dihapus bersamanya. Panduan dibuka dalam bahasamu kalau ekstensinya punya, kalau tidak dalam bahasa Inggris. Ada tiga cara membukanya:
@@ -25,3 +39,49 @@ Cara memakai sebuah ekstensi (Orbit, Dropbox, Kalkulator & Konversi, Timer & Ala
 Panduan terbuka sebagai halaman di browser web-mu, begitu juga Panduan Pengguna ini (Bantuan, Panduan Pengguna). Dengan NVDA, halamannya dalam mode jelajah: H dan Shift+H pindah dari judul ke judul, 1, 2, dan 3 menurut tingkatnya, dan NVDA+F7 menampilkan semua judul. Tutup halamannya dengan Ctrl+W atau Alt+F4. Kalau browser tidak bisa dibuka, panduannya tampil sebagai teks di sebuah jendela.
 
 Bantuan di dalam permainan Orbit itu lain lagi: di dalam game, atau dengan "orbit bantuan" di Aruna, "bantuan" dan "help" menampilkan topik bantuan game-nya.
+
+================================================================================
+3. TEMPAT
+================================================================================
+
+Tempat adalah tempat-tempat yang kamu pakai, masing-masing dengan nama, misalnya Rumah atau Kantor. Cuaca, Kondisi Laut, Kualitas Udara, Gempa & Tsunami, Antariksa, Kokpit, dan Radar Pesawat memakai tempat utamamu, kecuali kamu memilih tempat lain di halaman mereka masing-masing. Tempat-tempatmu hanya disimpan di komputermu.
+
+Atur di Pengaturan (Ctrl+P), halaman Tempat:
+
+  - "Tempat Anda": daftar tempatmu, dengan kolom Nama dan Lokasi. Tempat utama ditandai "(utama)".
+  - Tambah... dan Ubah...: membuka jendela untuk memberi nama tempatnya dan menentukan lokasinya, dengan salah satu dari tiga cara: "Cari alamat" (ketik alamatnya, tekan Enter, lalu pilih di "Alamat yang ditemukan"), "Cari kota" (sama, dengan "Kota yang ditemukan"), atau "Tempel koordinat atau tautan peta" lalu tekan Enter atau Pakai. "Titik yang dipilih" menunjukkan lokasinya; tekan Oke untuk menyimpan.
+  - Hapus: menghapus tempat yang dipilih, setelah bertanya. Ekstensi yang memakainya beralih ke tempat utama.
+  - Jadikan utama: menjadikan tempat yang dipilih tempat utamamu. Tempat pertama yang kamu tambahkan otomatis menjadi tempat utama; "Tempat utama" menyebut yang mana.
+
+Saat pertama kali menyala, kotamu menjadi tempat pertamamu, bernama Rumah. Mencari alamat atau kota baru tersambung ke internet saat kamu menekan Enter atau tombol cari; lihat PRIVACY.md.
+
+================================================================================
+4. PINTASAN KEYBOARD
+================================================================================
+
+Semua aksi Hariku dan ekstensinya bisa diberi tombol, atau tombolnya diganti, di Pengaturan (Ctrl+P), halaman Pintasan Keyboard. Aksinya tersusun dalam pohon: kategori (misalnya "Hariku Core", "Calendar Navigation", atau nama ekstensi), lalu nama aksinya, lalu tombol-tombolnya. Tombol-tombol di halaman ini berbahasa Inggris.
+
+MENAMBAH ATAU MENGGANTI TOMBOL
+------------------------------
+  1. Pilih aksinya di pohon.
+  2. Tekan "Add Key".
+  3. Tahan tombol pengubah yang kamu mau (Ctrl, Shift, Alt, atau tombol Windows), lalu tekan tombol utamanya. Lepaskan semua tombol, dan kombinasinya tersimpan. Escape membatalkan.
+  4. Untuk membuang tombol lama: buka aksinya di pohon, pilih tombolnya, lalu tekan "Remove Key".
+
+Satu aksi boleh punya beberapa tombol. Kalau sebuah tombol dipilih, kotak centang "Make this shortcut Global (Works everywhere in Windows)" bisa dicentang supaya tombol itu bekerja di mana saja di Windows, bukan hanya di jendela Hariku. Perubahannya disimpan saat kamu menutup Pengaturan dengan Oke.
+
+TOMBOL ARUNA
+------------
+Aruna dibuka dengan Ctrl+Alt+Backspace dari mana saja. Untuk mengganti tombolnya atau menambah tombol lain: di halaman Pintasan Keyboard, buka "Hariku Core", pilih "Buka Aruna: ketik atau ucapkan perintah", tekan "Add Key" dan tekan tombol barunya; pilih tombol lama lalu tekan "Remove Key" kalau ingin membuangnya.
+
+================================================================================
+5. ARUNA
+================================================================================
+
+Aruna adalah bilah perintah Hariku (Ctrl+Alt+Backspace, dari mana saja, bahkan saat Hariku tersembunyi di baki sistem). Ketik perintah, misalnya "gempa terbaru", "jam berapa", atau "ringkasan malam", atau sebuah pengingat, misalnya "ingatkan aku minum obat besok jam 8", lalu tekan Enter:
+
+  - Perintah langsung dijalankan. Perintah yang cuma memberi tahu sesuatu (jam, cuaca, gempa terbaru) menjawab di "Hasil terakhir" dan Aruna tetap terbuka.
+  - Pengingat dibacakan dulu ("..., Simpan?"). Tekan Enter lagi atau bilang "ya" untuk menyimpan, Escape untuk batal.
+  - Kalau Aruna ragu, dia bertanya "Maksudnya: ...?". Enter menjalankannya, Escape tidak.
+
+Pengaturannya ada di Pengaturan, halaman Aruna. Dengan ekstensi Voice Control, kamu juga bisa berbicara ke Aruna. Dengan ekstensi Tanya Hariku, Aruna bisa menjawab pertanyaan cara pakai dari panduan Hariku, kalau kamu menyalakannya.

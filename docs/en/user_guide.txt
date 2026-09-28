@@ -298,6 +298,33 @@ GENERAL Winddow
   Check for Updates  (button)
       Manually triggers an update check right now.
 
+PLACES Window
+-------------
+Places are the places you use, each with a name, such as Home or Office.
+Weather, Sea Conditions, Air Quality, Earthquakes, Space, Cockpit and Flight
+Radar use your main place, unless you choose another of your places on their
+own pages. Your places are kept only on your computer.
+
+  Your places  (list: Name, Where)
+      Every place you added. The main place says "(main)".
+  Add... / Edit...
+      Opens a window to name the place ("Name (for example Home, Office or
+      Mum's house)") and say where it is, in one of three ways: "Find an
+      address" (type it and press Enter, then choose one of "Addresses
+      found"), "Find a city" (the same, with "Cities found"), or "Paste
+      coordinates or a map link" and press Enter or "Use". "Chosen point"
+      shows where it is; press OK to save it.
+  Remove
+      Removes the selected place, after asking. Extensions that used it use
+      the main place instead.
+  Make main
+      Makes the selected place your main place. The first place you add
+      becomes the main place; "Main place" says which one it is.
+
+The welcome (Section 1) makes your city your first place, called Home.
+Searching for an address or a city goes online only when you press Enter or
+the search button; see PRIVACY.md.
+
 EXTENSIONS Window
 ---------------
   Controls what Hariku does when a new version of an installed extension is
@@ -546,6 +573,11 @@ bring it back without pressing alt tab.
 ARUNA, THE COMMAND BAR
 -----------------------
   Ctrl + Alt + Backspace  (default, works system-wide)
+
+To change Aruna's key, or give it another one, open Preferences (Ctrl + P),
+Input Gestures, expand "Hariku Core", select "Open Aruna: type or say a
+command", press "Add Key" and press the new keys; select the old key and
+press "Remove Key" to take it away (Section 8).
 
 Opens Aruna, Hariku's command bar: a small window called "Aruna", from anywhere, even
 when Hariku is hidden in the tray. Type a command, such as "latest
