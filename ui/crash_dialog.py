@@ -129,7 +129,8 @@ class CrashDialog(wx.Dialog):
 
         data = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(core.endpoints.CRASH_REPORT_URL, data=data,
-                                     headers={'Content-Type': 'application/json'})
+                                     headers={'Content-Type': 'application/json',
+                                              'User-Agent': core.endpoints.HTTP_USER_AGENT})
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
                 pass
