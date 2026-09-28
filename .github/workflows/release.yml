@@ -69,6 +69,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # The update window's "What's new" box and the GitHub release show this
+      # version's What's New entry, in English and Indonesian. A version
+      # without one isn't released: write the entry, then tag again.
+      - name: Release notes from What's New
+        run: python tools/release_notes.py "${{ steps.ver.outputs.version }}" --json release_notes.json --text release_notes_en.txt
+
       # A failing test stops the release before anything is compiled or
       # published. The tests without windows run in parallel (pytest-xdist);
       # the real-window checks run after them, one at a time, since windows
@@ -145,6 +151,7 @@ jobs:
           $v   = "${{ steps.ver.outputs.version }}"
           $sha = (Get-FileHash "${{ env.INSTALLER }}" -Algorithm SHA256).Hash.ToLower()
           Write-Host "SHA256: $sha"
+          $notes = Get-Content release_notes.json -Raw -Encoding utf8 | ConvertFrom-Json
           $manifest = [ordered]@{
             latest_version       = $v
             min_version_required = "2.0.0"
@@ -152,7 +159,8 @@ jobs:
             force_update         = $false
             download_url         = "https://github.com/${{ env.DIST_REPO }}/releases/download/v$v/HarikuV2-Setup.exe"
             sha256               = $sha
-            release_notes        = "Hariku $v"
+            release_notes        = $notes.en
+            release_notes_id     = $notes.id
           }
           $manifest | ConvertTo-Json | Set-Content -Path version.json -Encoding utf8
 
@@ -165,7 +173,7 @@ jobs:
           v="${{ steps.ver.outputs.version }}"
           # 1) Release with the installer (create, or reuse+clobber if the tag already exists)
           gh release create "v$v" "${{ env.INSTALLER }}" \
-            --repo "${{ env.DIST_REPO }}" --title "Hariku $v" --notes "Automated release $v" \
+            --repo "${{ env.DIST_REPO }}" --title "Hariku $v" --notes-file release_notes_en.txt \
           || gh release upload "v$v" "${{ env.INSTALLER }}" --repo "${{ env.DIST_REPO }}" --clobber
           # 2) Publish version.json to GitHub Pages (public repo, main branch)
           content=$(base64 -w0 version.json)
