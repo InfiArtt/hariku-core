@@ -216,6 +216,9 @@ Only if you turn on "Let Aruna ask Hariku's AI when it doesn't understand"
 in the Ask Hariku extension does a sentence Aruna didn't understand go
 online, as described under Ask Hariku below. Other extensions can offer the
 same kind of help; the official ones that go online say so on this page.
+What you say to Aruna with the Voice Control extension is turned into text
+on your computer, unless you choose its Hariku cloud option, as described
+under Voice Control below.
 
 ## Ask Hariku
 
@@ -569,15 +572,17 @@ voice on the Piper Voices page, or delete those folders to remove everything.
 
 ## Voice Control
 
-The Voice Control extension lets you talk to Aruna, Hariku's command bar. Your
-speech is recognised on your computer by whisper.cpp, a program that runs
-without the internet:
+The Voice Control extension lets you talk to Aruna, Hariku's command bar. By
+default ("Speech recognition": "On this computer (whisper.cpp)"), your speech
+is recognised on your computer by whisper.cpp, a program that runs without
+the internet:
 
 - While it listens, the microphone's sound is kept in memory only. When you
   stop speaking, it is handed to the whisper.cpp program on your computer
   through a local connection (127.0.0.1) that nothing outside your computer
   can reach, and then dropped. It is never saved to disk and never sent
-  anywhere. What was recognised is handled like text you typed.
+  anywhere (unless you choose Hariku cloud, below). What was recognised is
+  handled like text you typed.
 - It listens only after you press Ctrl+Alt+Backspace (or, if you turned that on,
   when Aruna opens, or when you say the wake phrase, below), and it stops on
   its own after a second or two of silence, after 12 seconds, or when you
@@ -608,7 +613,55 @@ runs on your computer:
   hours choice) are kept with Voice Control's other settings in
   `%APPDATA%\Hariku2`.
 
-It connects only when you press Download in Preferences, Voice Control:
+**Hariku cloud** (Voice Control 1.4), for computers too old for whisper.cpp,
+is off unless you choose "Hariku cloud (needs an InfiArtt account)" in
+"Speech recognition" in Preferences, Voice Control. While you haven't, none
+of what follows happens. Once you have:
+
+- Each recording Voice Control makes when it listens to you (after
+  Ctrl+Alt+Backspace, when Aruna opens listening, after the wake phrase, or
+  while Aruna waits for your answer to a question it asked you) goes, when
+  you stop speaking, to Hariku's AI service over HTTPS
+  (`ai.infiartt.com/v1/transcribe`), once: the recording as a WAV file (16
+  kHz, mono, at most about 12 seconds), its language (Hariku's: Indonesian or
+  English), a list of up to 400 characters of words to expect (a few words
+  such as "yes" and "remind me", and the names, other names and patterns of
+  the commands of Hariku and its official extensions; never another
+  extension's, since their names could be your own words), and your InfiArtt
+  sign-in. Nothing else is sent: not your reminders, diary, finances,
+  places, profile or name.
+- The wake phrase is still heard only on your computer: the sound the wake
+  phrase listener hears is never sent anywhere, and nothing is sent while
+  Voice Control isn't listening to a command.
+- The service is the one described under Ask Hariku above. It recognises the
+  recording with a speech recognition model on Cloudflare Workers AI and
+  sends back the text. The recording and the text are not stored, and not
+  logged; Cloudflare doesn't use Workers AI inputs to train AI models. As for
+  Ask Hariku, the service asks infiartt.com which account your sign-in
+  belongs to, only to count how many seconds of speech each account had
+  recognised today (15 minutes a day for now), in the same kind of small
+  daily count.
+- Your InfiArtt sign-in goes only to `ai.infiartt.com`, over HTTPS, never
+  along a redirect. Without a sign-in, nothing is sent: if a speech model is
+  installed, your computer recognises what you said instead.
+- If the service can't recognise a recording (no internet, the service busy,
+  today's time used up, a sign-in it didn't accept), it isn't sent again:
+  when the whisper.cpp program and a model are installed, your computer
+  recognises it, and Hariku tells you why once; otherwise Hariku tells you
+  what went wrong. When today's time is used up, nothing is sent until it
+  starts again.
+- The service's address can be changed on the Voice Control page to a copy of
+  the service you run yourself, as described under Ask Hariku above (HTTPS
+  to a Cloudflare Workers address, `workers.dev`, or infiartt.com, or your
+  own computer; the page warns that Hariku's promises for `ai.infiartt.com`
+  don't cover it). Such a service gets the same recording, language and
+  words, and never your InfiArtt sign-in: only the access key you gave for
+  it, if any, which is saved on your computer encrypted with Windows' Data
+  Protection API and never written to Hariku's log. What that service does
+  with what it receives is your choice and your responsibility.
+
+Apart from Hariku cloud, it connects only when you press Download in
+Preferences, Voice Control:
 
 - The whisper.cpp program (the official `whisper-bin-x64.zip`, release
   b5130) from GitHub (`github.com` and its download server,
@@ -631,9 +684,11 @@ SHA-256 doesn't match the one built into the extension.
 Everything is stored in `%APPDATA%\Hariku2\voice_control`: the program in
 `runtime`, the models in `models`, the wake phrase listener in `wake`, and
 `server.log`, the messages the whisper.cpp program printed the last time it
-ran (it holds no recognised text). Remove the program, a model or the wake
-phrase listener on the Voice Control page, or delete that folder to remove
-everything.
+ran (it holds no recognised text). The choice of Hariku cloud, the address
+of a service you run yourself and its encrypted access key are kept with
+Voice Control's other settings in `%APPDATA%\Hariku2`. Remove the program, a
+model or the wake phrase listener on the Voice Control page, or delete that
+folder to remove everything.
 
 ## When you ask for it
 
@@ -660,6 +715,6 @@ keeps them on your computer, in `%APPDATA%\Hariku2` (`account_manager`), until
 you sign out. When Hariku starts and the sign-in has fewer than 30 days left,
 it sends infiartt.com the refresh token and receives a new pair; nothing else
 is sent. Tokens are never written to Hariku's log. The Account Manager gives
-your access token only to extensions that use your account (Ask Hariku, see
-above). The [infiartt.com privacy policy](https://infiartt.com/privacy) covers
-that data.
+your access token only to extensions that use your account (Ask Hariku, and
+Voice Control's Hariku cloud, see above). The
+[infiartt.com privacy policy](https://infiartt.com/privacy) covers that data.

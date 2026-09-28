@@ -398,7 +398,7 @@
         "onb_ext_desc_weather": "Cuaca sekarang dan 7 hari ke depan di kotamu. Tanya Aruna: cuaca.",
         "onb_ext_desc_briefing": "Briefing singkat tiap pagi: sapaan, tanggal, pengingat hari ini, dan kabar dari ekstensimu yang lain. Tekan B.",
         "onb_ext_desc_timer_alarm": "Alarm dan timer lewat Aruna, diketik atau diucapkan: alarm besok jam 5 pagi, timer mie 3 menit.",
-        "onb_ext_desc_voice_control": "Bicara ke Aruna lewat mikrofon, dalam bahasa Indonesia atau Inggris. Suaramu dikenali di komputer ini saja; model suaranya diunduh di Pengaturan, Voice Control.",
+        "onb_ext_desc_voice_control": "Bicara ke Aruna lewat mikrofon, dalam bahasa Indonesia atau Inggris. Secara bawaan suaramu dikenali di komputer ini; model suaranya diunduh di Pengaturan, Voice Control.",
         "onb_ext_desc_world_trip": "Terbang ke mana saja lewat Aruna: bawa aku ke Tokyo. Jam, cuaca, sapaan dalam bahasa setempat, dan radio lokal.",
         "onb_ext_desc_earthquake": "Gempa terbaru dari BMKG, daftar gempa di Indonesia, dan peringatan tsunami.",
         "onb_ext_desc_world_clock": "Jam sekarang di kota-kota lain di dunia.",
