@@ -19,8 +19,11 @@ import hashlib
 import wx
 import core.constants
 import core.endpoints
+import core.i18n
+from core.i18n import get_translator
 from core.speech import speak
 
+_ = get_translator("core")
 logger = logging.getLogger(__name__)
 
 # Nuitka defines __compiled__ in every module it compiles. Without it we are
@@ -35,6 +38,11 @@ MAX_SNOOZE_COUNT = 3
 
 # Snooze state (in-memory, resets on app restart — intentional)
 _snooze_count = 0
+
+# The update window's "What's new" box (core 2.12.1): version.json carries the
+# version's What's New entry (tools/release_notes.py) as release_notes, in
+# English, and as release_notes_<language> for the other languages.
+MAX_NOTES_CHARS = 8000
 
 # ---------------------------------------------------------------------------
 # [SEC CRIT-4] Update integrity / trust configuration
@@ -96,6 +104,20 @@ def _is_below_minimum(local_ver_str, min_ver_str):
     return _parse_version(local_ver_str) < _parse_version(min_ver_str)
 
 
+def release_notes_for(info, language=None):
+    """The release notes of version.json `info` in `language` (by default
+    Hariku's): release_notes_<language>, else release_notes, else a line
+    naming the version."""
+    if language is None:
+        language = core.i18n.get_current_language()
+    code = str(language or "").split("-")[0].split("_")[0].lower()
+    for key in (f"release_notes_{code}", "release_notes"):
+        value = info.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()[:MAX_NOTES_CHARS]
+    return _("upd_no_notes", version=info.get("latest_version", ""))
+
+
 # ---------------------------------------------------------------------------
 # Update Dialogs — one per severity
 # ---------------------------------------------------------------------------
@@ -104,7 +126,7 @@ class _BaseUpdateDialog(wx.Dialog):
     """Shared base for all update dialogs."""
 
     def __init__(self, parent, title, version, notes, accent_colour,
-                 can_snooze=True, snooze_label="Remind Me Later"):
+                 can_snooze=True, snooze_label=None):
         super().__init__(parent, title=title,
                          size=(520, 420),
                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
@@ -118,7 +140,7 @@ class _BaseUpdateDialog(wx.Dialog):
         vbox.Add(banner, 0, wx.EXPAND)
 
         # Version label
-        lbl_ver = wx.StaticText(panel, label=f"Version {version} is available")
+        lbl_ver = wx.StaticText(panel, label=_("upd_version_available", version=version))
         font = lbl_ver.GetFont()
         font.SetPointSize(13)
         font.MakeBold()
@@ -126,7 +148,7 @@ class _BaseUpdateDialog(wx.Dialog):
         vbox.Add(lbl_ver, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 15)
 
         # Release notes
-        lbl_notes_title = wx.StaticText(panel, label="What's new:")
+        lbl_notes_title = wx.StaticText(panel, label=_("upd_lbl_notes"))
         vbox.Add(lbl_notes_title, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
         self.tc_notes = wx.TextCtrl(panel, value=notes,
@@ -135,13 +157,13 @@ class _BaseUpdateDialog(wx.Dialog):
 
         # Buttons
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.btn_install = wx.Button(panel, label="Download & Install Now")
+        self.btn_install = wx.Button(panel, label=_("upd_btn_install"))
         self.btn_install.SetDefault()
         self.btn_install.Bind(wx.EVT_BUTTON, self._on_install)
         hbox.Add(self.btn_install, 0, wx.RIGHT, 10)
 
         if can_snooze:
-            self.btn_snooze = wx.Button(panel, label=snooze_label)
+            self.btn_snooze = wx.Button(panel, label=snooze_label or _("upd_btn_later"))
             self.btn_snooze.Bind(wx.EVT_BUTTON, self._on_snooze)
             hbox.Add(self.btn_snooze, 0)
 
@@ -163,7 +185,7 @@ class CriticalUpdateDialog(_BaseUpdateDialog):
     """
     def __init__(self, parent, version, notes, force=False):
         super().__init__(parent,
-                         title="⚠ Critical Update Required" if force else "⚠ Critical Update",
+                         title=_("upd_title_critical_forced") if force else _("upd_title_critical"),
                          version=version,
                          notes=notes,
                          accent_colour=wx.Colour(200, 40, 40),
@@ -176,9 +198,9 @@ class CriticalUpdateDialog(_BaseUpdateDialog):
 class RecommendedUpdateDialog(_BaseUpdateDialog):
     """Yellow banner. Snooze allowed up to MAX_SNOOZE_COUNT times."""
     def __init__(self, parent, version, notes, snooze_remaining):
-        snooze_label = f"Remind Me Later ({snooze_remaining} skips left)"
+        snooze_label = _("upd_btn_later_n", n=snooze_remaining)
         super().__init__(parent,
-                         title="Update Recommended",
+                         title=_("upd_title_recommended"),
                          version=version,
                          notes=notes,
                          accent_colour=wx.Colour(210, 140, 0),
@@ -190,12 +212,12 @@ class OptionalUpdateDialog(_BaseUpdateDialog):
     """Subtle blue banner. Free to skip."""
     def __init__(self, parent, version, notes):
         super().__init__(parent,
-                         title="Update Available",
+                         title=_("upd_title_optional"),
                          version=version,
                          notes=notes,
                          accent_colour=wx.Colour(30, 120, 210),
                          can_snooze=True,
-                         snooze_label="Skip This Version")
+                         snooze_label=_("upd_btn_skip"))
 
 
 # ---------------------------------------------------------------------------
@@ -232,16 +254,15 @@ def check_for_updates(interactive=True):
     if not info:
         if interactive:
             def _err():
-                speak("Failed to check for updates. Please check your internet connection.")
-                wx.MessageBox("Failed to check for updates.\nPlease check your internet connection.",
-                              "Update Error", wx.ICON_ERROR)
+                speak(_("upd_check_failed"))
+                wx.MessageBox(_("upd_check_failed"), _("upd_check_failed_title"), wx.ICON_ERROR)
             wx.CallAfter(_err)
         return False
 
     latest_version  = info.get("latest_version", "0.0.0")
     update_type     = info.get("update_type", "optional").lower()
     download_url    = info.get("download_url", core.endpoints.DEFAULT_INSTALLER_URL)
-    release_notes   = info.get("release_notes", "")
+    release_notes   = release_notes_for(info)
     min_version     = info.get("min_version_required", "0.0.0")
     force_update    = info.get("force_update", False)
     # [SEC CRIT-3] Read expected SHA256 from server manifest.
@@ -259,8 +280,8 @@ def check_for_updates(interactive=True):
     if not _is_newer(latest_version, local_version):
         if interactive:
             def _ok():
-                speak("You are already using the latest version of Hariku.")
-                wx.MessageBox("Hariku is up to date!", "No Updates", wx.ICON_INFORMATION)
+                speak(_("upd_up_to_date_say"))
+                wx.MessageBox(_("upd_up_to_date"), _("upd_up_to_date_title"), wx.ICON_INFORMATION)
             wx.CallAfter(_ok)
         return False
 
@@ -271,21 +292,21 @@ def check_for_updates(interactive=True):
         global _snooze_count
 
         if update_type == "critical":
-            speak("A critical update for Hariku is available.")
+            speak(_("upd_say_critical"))
             dlg = CriticalUpdateDialog(None, latest_version, release_notes, force=force_update)
 
         elif update_type == "recommended":
             # If user has snoozed too many times, treat as critical
             if _snooze_count >= MAX_SNOOZE_COUNT:
-                speak("An important update for Hariku is available. You have skipped it too many times.")
+                speak(_("upd_say_forced"))
                 dlg = CriticalUpdateDialog(None, latest_version, release_notes, force=False)
             else:
                 remaining = MAX_SNOOZE_COUNT - _snooze_count
-                speak("A recommended update for Hariku is available.")
+                speak(_("upd_say_recommended"))
                 dlg = RecommendedUpdateDialog(None, latest_version, release_notes, snooze_remaining=remaining)
 
         else:  # optional
-            speak("A new version of Hariku is available.")
+            speak(_("upd_say_optional"))
             dlg = OptionalUpdateDialog(None, latest_version, release_notes)
 
         result = dlg.ShowModal()
@@ -544,7 +565,7 @@ def _verify_installer_trust(installer_path, expected_sha256):
 
 def perform_update(download_url, expected_sha256=""):
     """Download the installer, verify its integrity, then run it silently."""
-    wx.CallAfter(speak, "Downloading update. Please wait.")
+    wx.CallAfter(speak, _("upd_downloading"))
     logger.info(f"Downloading update from: {download_url}")
 
     installer_path = None
@@ -573,7 +594,7 @@ def perform_update(download_url, expected_sha256=""):
         _verify_installer_trust(installer_path, expected_sha256)
 
         logger.info("Download complete. Launching installer...")
-        wx.CallAfter(speak, "Download complete. Hariku will now close to install the update.")
+        wx.CallAfter(speak, _("upd_installing"))
 
         import time
         time.sleep(3)
@@ -602,7 +623,5 @@ def perform_update(download_url, expected_sha256=""):
                 pass
         # [SEC LOW-2] Log full exception detail privately; show generic message to user.
         logger.error(f"Update failed (details): {e}")
-        wx.CallAfter(speak, "Update failed. Please try again later.")
-        wx.CallAfter(wx.MessageBox,
-            "Update failed. Please check your internet connection and try again.",
-            "Error", wx.ICON_ERROR)
+        wx.CallAfter(speak, _("upd_failed_say"))
+        wx.CallAfter(wx.MessageBox, _("upd_failed"), _("upd_failed_title"), wx.ICON_ERROR)
