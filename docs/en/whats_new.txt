@@ -25,8 +25,11 @@ Version 2.11.0 (Core Update)
   The new Ask Hariku extension does this with Hariku's AI, only if you turn
   it on; it can also answer how-to questions from Hariku's guides ("tanya
   hariku gimana cara pasang Orbit", "how do I set a repeating alarm").
-  Both are off until you turn them on in Preferences, Ask Hariku, and
-  PRIVACY.md says exactly what they send.
+  Both are off until you turn them on in Preferences, Ask Hariku, and need
+  you to sign in with your InfiArtt account (the Account Manager extension,
+  which now stays signed in by renewing the sign-in before it runs out).
+  Each account can ask 50 times a day. PRIVACY.md says exactly what is
+  sent.
 - What Hariku says reaches your screen reader in the order it was said.
   Two lines that came at the same moment (a game's reply and the note
   after it) could be read the other way round; now they queue up.
@@ -42,7 +45,8 @@ Version 2.11.0 (Core Update)
   guides from your code. core.commands.add_intent takes a matcher for
   sentences with no fixed words, and core.commands.add_fallback lets your
   extension propose what a sentence Aruna didn't understand meant (Aruna
-  asks the user before doing it). See DEVELOPERS.md.
+  asks the user before doing it). core.accounts gives your extension the
+  signed-in InfiArtt account. See DEVELOPERS.md.
 
 
 Version 2.10.0 (Core Update - September 25, 2026)

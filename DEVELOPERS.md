@@ -36,6 +36,7 @@ extension released under any license (see the
   - [Reminders](#reminders)
   - [Reminders from a Sentence](#reminders-from-a-sentence)
   - [Personal Profile](#personal-profile)
+  - [The InfiArtt Account](#the-infiartt-account)
   - [Placeholders from Extensions](#placeholders-from-extensions)
   - [Quiet Hours](#quiet-hours)
   - [Places](#places)
@@ -837,6 +838,44 @@ result = core.quick_reminder.parse_text("bayar listrik tiap bulan tanggal 5 jam 
 if result.ok and not result.needs_fallback:
     core.quick_reminder.save_result(result)   # monthly on the 5th, 09:00
 ```
+
+---
+
+### The InfiArtt Account
+
+*(Core 2.11.)* The InfiArtt account Hariku is signed in to, for extensions with
+online features. The Hariku Account Manager extension signs in (OAuth with PKCE
+at infiartt.com), keeps the tokens and renews them, and provides the account
+here; your extension asks here, never by reading the Account Manager's data.
+
+```python
+import core.accounts
+
+session = core.accounts.current()        # a Session while signed in, else None
+if session is None:
+    if core.accounts.available():
+        core.accounts.open_sign_in()     # the Account Manager's page, to sign in
+    # else: the Account Manager isn't installed; say how to get it from the store
+else:
+    headers = {"Authorization": f"Bearer {session.token}"}   # for InfiArtt's own services
+```
+
+| Function | Returns | Description |
+|---|---|---|
+| `core.accounts.available()` | `bool` | Whether an account provider (the Account Manager) is loaded. |
+| `core.accounts.current()` | `Session` or `None` | `.token` (the access token) and `.username` while signed in; `None` when not signed in, the sign-in ran out, or there's no provider. Quick: from memory. |
+| `core.accounts.open_sign_in()` | `bool` | Opens the Account Manager's page in Preferences; `False` without a provider. |
+| `core.accounts.register_provider(session, sign_in=None, name="")` | `True` | For the Account Manager: `session()` returns a `Session` or `None`. |
+| `core.accounts.unregister_provider(session=None)` | `bool` | In its `teardown()`. |
+
+**Rules:** the token is a credential. Send it only to InfiArtt's own services,
+over HTTPS, to an exact host (not a pattern a lookalike could match), never
+along a redirect, and never write it to the log (a `Session`'s repr hides it).
+Say on your Preferences page and in your guide that you send it, and to whom.
+A 401 or 403 from an InfiArtt service means the sign-in ran out or was
+revoked: ask the user to sign in again (`open_sign_in()`). On older cores,
+check `hasattr(core, "accounts")` after `import core`, or listen to the
+Account Manager's `on_user_login` / `on_user_logout` events.
 
 ---
 

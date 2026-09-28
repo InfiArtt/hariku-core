@@ -221,40 +221,68 @@ same kind of help; the official ones that go online say so on this page.
 
 The Ask Hariku extension has two features, both off until you turn them on
 in Preferences, Ask Hariku. While they are off, it sends nothing at all.
+Both need you to be signed in with your InfiArtt account (the Account Manager
+extension, see Accounts below); without a sign-in, nothing is sent either.
 
 - **Answering how-to questions** ("Answer how-to questions with Hariku's AI
   (online)"): a question you ask Aruna ("tanya hariku ...", "gimana cara
-  ...", "how do I ...") goes to Hariku's AI service: only the question and
-  its language (Indonesian or English).
+  ...", "how do I ...") goes to Hariku's AI service: the question, its
+  language (Indonesian or English) and your InfiArtt sign-in.
 - **Aruna's AI help** ("Let Aruna ask Hariku's AI when it doesn't understand
   (online)"): a sentence Aruna didn't understand goes there with its
-  language and the names, other names and patterns of the commands of
-  Hariku and its official extensions, so the AI can say which one you
-  meant. The commands of other extensions are never sent, since their names
-  could be your own words. Aruna asks you before doing what the AI suggests:
-  nothing runs without your yes.
+  language, your InfiArtt sign-in, and the names, other names and patterns
+  of the commands of Hariku and its official extensions, so the AI can say
+  which one you meant. The commands of other extensions are never sent,
+  since their names could be your own words. Aruna asks you before doing
+  what the AI suggests: nothing runs without your yes.
 
 Nothing else is ever sent: not your reminders, diary, finances, places,
-profile or name, nothing else from your computer, and no identifier or
-account.
+profile or name, and nothing else from your computer.
+
+**Your InfiArtt sign-in.** Each request carries the access token the Account
+Manager keeps (`Authorization: Bearer ...`). Hariku sends it only to Hariku's
+own AI service, over HTTPS to `ai.infiartt.com`, never to another address,
+and never along a redirect. The service asks infiartt.com
+(`infiartt.com/api/user`) which account the token belongs to, only to count
+how often each account uses the AI: a few requests a minute, and a daily
+limit (50 a day for now, questions and Aruna's help together; a question the
+guides don't cover doesn't count). It keeps only the account's number from
+that answer, for ten minutes, filed under a scrambled form (SHA-256) of the
+token, never the token itself, and never your user name, email or anything
+else infiartt.com has. The daily limit is counted in a small store that holds,
+per account, only today's date and a number; the account is filed there under
+a scrambled form of its number, and yesterday's count is deleted when the
+account next asks. infiartt.com's own
+[privacy policy](https://infiartt.com/privacy) covers your InfiArtt account.
 
 Hariku's AI service is a small program of Hariku's own (its code is in
 Hariku's repository, `servers/hariku-ai`) that runs on Cloudflare Workers and
 answers with Cloudflare Workers AI, from Hariku's guides. It keeps no logs of
-questions or sentences and stores nothing; Cloudflare's request logs are
-turned off for it. Cloudflare does not use Workers AI inputs to train AI
-models (see [Workers AI data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/)).
-Like every web request, a request carries your IP address: the service uses
-it only to count requests for a minute, so that no one can overload it, and
-doesn't store it. The connection itself is covered by the
+questions or sentences, of tokens or accounts, and stores nothing but the
+daily counts above; Cloudflare's request logs are turned off for it.
+Cloudflare does not use Workers AI inputs to train AI models (see
+[Workers AI data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/)).
+Like every web request, a request carries your IP address: the service
+doesn't store it or use it for anything but the connection. The connection
+itself is covered by the
 [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/).
 
+**A service you run yourself.** The service's address can be changed on the
+Ask Hariku page, to a copy of the service you run on your own Cloudflare
+account (see the Ask Hariku guide). Hariku then sends your questions and
+sentences there, as above, over HTTPS to a Cloudflare Workers address
+(`workers.dev`) or infiartt.com, or to your own computer; the page warns that
+Hariku's promises for `ai.infiartt.com` don't cover it. Such a service never
+gets your InfiArtt sign-in: only the access key you gave for it, if any. That
+key is saved on your computer encrypted with Windows' Data Protection API,
+so only your Windows account on this computer can read it, and it is never
+written to Hariku's log. What that service does with what it receives is your
+choice and your responsibility.
+
 "Test connection" on the Ask Hariku page only asks the service whether it is
-running; it sends no question. The service's address can be changed on that
-page (for a copy of the service you run yourself); Hariku sends only over
-HTTPS to infiartt.com or a Cloudflare Workers address (`workers.dev`), or to
-your own computer. The two settings and the address are saved on your
-computer, in `%APPDATA%\Hariku2` (`AskHariku`).
+running; it sends no question, no sign-in and no key. The two settings, the
+address and the encrypted key are saved on your computer, in
+`%APPDATA%\Hariku2` (`AskHariku`).
 
 ## Clipboard History
 
@@ -624,8 +652,14 @@ choose to always send reports or to never send them.
 
 ## Accounts
 
-The Account Manager extension connects to infiartt.com only when you sign in.
-You enter your password on infiartt.com in your browser, never in Hariku. Hariku
-then receives an access token and your profile (user name and roles) and keeps
-them on your computer. The
-[infiartt.com privacy policy](https://infiartt.com/privacy) covers that data.
+The Account Manager extension connects to infiartt.com when you sign in, and to
+renew your sign-in. You enter your password on infiartt.com in your browser,
+never in Hariku. Hariku then receives an access token and a refresh token,
+which run out together (after 180 days), and your user name and roles, and
+keeps them on your computer, in `%APPDATA%\Hariku2` (`account_manager`), until
+you sign out. When Hariku starts and the sign-in has fewer than 30 days left,
+it sends infiartt.com the refresh token and receives a new pair; nothing else
+is sent. Tokens are never written to Hariku's log. The Account Manager gives
+your access token only to extensions that use your account (Ask Hariku, see
+above). The [infiartt.com privacy policy](https://infiartt.com/privacy) covers
+that data.

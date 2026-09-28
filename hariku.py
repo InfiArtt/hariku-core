@@ -49,6 +49,9 @@ import core.stdlib_includes
 # telemetry.is_enabled() (always False) for extensions, and Nuitka only
 # compiles modules the core imports.
 import core.telemetry
+# The signed-in InfiArtt account, for extensions (core 2.11): the Account
+# Manager provides it and Ask Hariku uses it; the core itself doesn't.
+import core.accounts
 
 import os
 import sys
