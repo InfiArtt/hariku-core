@@ -1228,8 +1228,8 @@ class TestCallSites:
         shown = []
 
         class FakeDialog:
-            def __init__(self, parent, data, voiced=False):
-                shown.append((dict(data), voiced))
+            def __init__(self, parent, data, voiced=False, message=None):
+                shown.append((dict(data), voiced, message))
 
             def Raise(self):
                 pass
@@ -1250,15 +1250,19 @@ class TestCallSites:
         enable(voice, "reminder")
         shown = self._fire_reminder(voice, monkeypatch)
         assert wait_until(lambda: voice.windows.calls)
-        assert voice.windows.calls[0][0] == "Reminder: Take <medicine> & water"
+        said = voice.windows.calls[0][0]
+        assert ": Take <medicine> & water." in said        # a firing line
         assert voice.said["speak"] == []
-        assert voice.said["braille"] == [("Reminder: Take <medicine> & water", True)]
+        assert voice.said["braille"] == [(said, True)]
         assert shown[0][1] is True        # the dialog keeps the text out of its announcement
+        assert shown[0][2] == said        # and shows what was said
 
     def test_reminder_without_the_voice_is_as_before(self, voice, monkeypatch):
         shown = self._fire_reminder(voice, monkeypatch)
-        assert voice.said["speak"] == [("Reminder: Take <medicine> & water", True)]
+        [(said, interrupt)] = voice.said["speak"]
+        assert ": Take <medicine> & water." in said and interrupt is True
         assert shown[0][1] is False and voice.windows.calls == []
+        assert shown[0][2] == said
 
     def test_briefing_announces_as_a_briefing(self):
         with open(os.path.join(ROOT, "extensions", "briefing", "main.py"), encoding="utf-8") as f:

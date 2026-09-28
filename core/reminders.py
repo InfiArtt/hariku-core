@@ -10,15 +10,20 @@ import wx
 import wx.adv
 import json
 import os
+import random
+import re
 import uuid
 import datetime
 import threading
 import time
 import logging
 import core.api
+import core.i18n
 import core.personal
 from core.events import bus
+from core.i18n import get_translator
 
+_ = get_translator("core")
 logger = logging.getLogger(__name__)
 
 REMINDERS_DIR = core.api.get_storage_dir("CoreReminders")
@@ -31,6 +36,85 @@ _daemon_running = False
 # still fired when it next runs, as long as they are no older than this window.
 # Older overdue reminders are marked seen silently to avoid a flood of dialogs.
 CATCHUP_WINDOW = datetime.timedelta(hours=24)
+
+# What a reminder says when it fires (core 2.12): in the persona Hariku talks
+# in (core.persona: "rem_fire_1@bro" and so on), with the user's nickname, and
+# a different one of FIRE_VARIANTS each time. One that fires LATE_MINUTES or
+# more after its time (Hariku was closed, or the computer asleep) says so.
+FIRE_VARIANTS = 4
+DONE_VARIANTS = 2
+LATE_MINUTES = 10
+_TITLE = "\x00"            # where the title goes, filled in after tidy()
+_last_variant = {}
+
+
+def tidy(text):
+    """A text whose {name} was empty, put right: "Hei , ada" -> "Hei, ada",
+    "Psst, !" -> "Psst!", "Ampun, , sudah" -> "Ampun, sudah"."""
+    text = re.sub(r"\s+([,.!?:~])", r"\1", text)
+    text = re.sub(r",+([,.!?:])", r"\1", text)
+    return " ".join(text.split())
+
+
+def _nickname():
+    """What Hariku calls the user ("" when it doesn't know)."""
+    try:
+        import core.persona
+        return core.persona.current_nickname()
+    except Exception:
+        return ""
+
+
+def _variant(prefix, count, rng=random):
+    """One of prefix_1 .. prefix_count, not the one picked last time."""
+    choices = list(range(1, count + 1))
+    if len(choices) > 1 and _last_variant.get(prefix) in choices:
+        choices.remove(_last_variant[prefix])
+    picked = rng.choice(choices)
+    _last_variant[prefix] = picked
+    return f"{prefix}_{picked}"
+
+
+# Plain words for when the language files aren't loaded (never in Hariku itself).
+_PLAIN = {"rem_fire": "Reminder: {title}.", "rem_done": "Done: {title}.",
+          "rem_snoozed": "Snoozed for {minutes} minutes: {title}."}
+
+
+def _say(key, title, **values):
+    """The text `key`, with the nickname and the (expanded) title."""
+    text = _(key, name=_nickname(), title=_TITLE, **values)
+    if text == key:
+        plain = next(v for k, v in _PLAIN.items() if key.startswith(k))
+        text = plain.format(title=_TITLE, **values)
+    return tidy(text).replace(_TITLE, str(title or ""))
+
+
+def due_time(time_str):
+    """A reminder's "08:30" as it is said: "08.30" in Indonesian, "8:30 AM"
+    in English."""
+    try:
+        moment = datetime.datetime.strptime(time_str, "%H:%M")
+    except (TypeError, ValueError):
+        return str(time_str or "")
+    if core.i18n.get_current_language() == "en":
+        return moment.strftime("%I:%M %p").lstrip("0")
+    return moment.strftime("%H.%M")
+
+
+def fire_text(title, late_minutes=0, due="", rng=random):
+    """What a firing reminder says and shows."""
+    if late_minutes >= LATE_MINUTES and due:
+        return _say("rem_fire_late", title, due=due_time(due))
+    return _say(_variant("rem_fire", FIRE_VARIANTS, rng), title)
+
+
+def minutes_late(r, now):
+    """How many whole minutes after its time a reminder is firing."""
+    try:
+        due = datetime.datetime.strptime(f"{r['date']} {r['time']}", "%Y-%m-%d %H:%M")
+    except (ValueError, KeyError, TypeError):
+        return 0
+    return max(0, int((now - due).total_seconds() // 60))
 
 def load_reminders():
     """[Stability] Load reminders. Only if the main file EXISTS but is corrupt
@@ -166,7 +250,8 @@ def mark_as_done(rem_id):
             save_reminders(reminders)
             
             from core.speech import speak
-            speak(f"Reminder '{core.personal.expand(r['title'])}' marked as done.", interrupt=True)
+            speak(_say(_variant("rem_done", DONE_VARIANTS), core.personal.expand(r["title"])),
+                  interrupt=True)
             break
 
 def delete_reminder(rem_id):
@@ -179,7 +264,7 @@ def delete_reminder(rem_id):
     bus.emit("on_agenda_item_deleted", rem_id)
     
     from core.speech import speak
-    speak("Reminder deleted.", interrupt=True)
+    speak(_("rem_deleted"), interrupt=True)
 
 def snooze_reminder(rem_id, minutes=5):
     import datetime
@@ -198,22 +283,25 @@ def snooze_reminder(rem_id, minutes=5):
             save_reminders(reminders)
             
             from core.speech import speak
-            speak(f"Reminder '{core.personal.expand(r['title'])}' snoozed for {minutes} minutes.", interrupt=True)
+            speak(_say("rem_snoozed", core.personal.expand(r["title"]), minutes=minutes),
+                  interrupt=True)
             break
 
 class ReminderDialog(wx.Dialog):
-    def __init__(self, parent, reminder_data, voiced=False):
+    def __init__(self, parent, reminder_data, voiced=False, message=None):
         """`voiced`: Hariku Voice is reading the reminder aloud. The screen
         reader reads a dialog's static text when the dialog opens, so the text
         then sits in a read-only field after the buttons instead: the screen
         reader says only the title and the focused button, the voice says the
-        reminder, and the text stays on screen and one Tab away (for braille)."""
-        super().__init__(parent, title="Hariku Reminder", size=(350, 150))
+        reminder, and the text stays on screen and one Tab away (for braille).
+        `message`: what the reminder said (fire_text); by default one is made."""
+        super().__init__(parent, title=_("rem_dialog_title"), size=(350, 150))
         self.reminder_data = reminder_data
 
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        message = f"Reminder: {reminder_data['title']}"
+        if message is None:
+            message = fire_text(reminder_data["title"])
         if voiced:
             lbl = wx.TextCtrl(self, value=message, size=(300, -1),
                               style=wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_NO_VSCROLL
@@ -235,8 +323,8 @@ class ReminderDialog(wx.Dialog):
         vbox.Add(lbl, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 20)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        btn_snooze = wx.Button(self, label="Snooze (5 min)")
-        btn_done = wx.Button(self, label="Mark as Done")
+        btn_snooze = wx.Button(self, label=_("rem_btn_snooze"))
+        btn_done = wx.Button(self, label=_("rem_btn_done"))
         btn_done.SetDefault()
 
         hbox.Add(btn_snooze, 0, wx.RIGHT, 10)
@@ -260,11 +348,12 @@ class ReminderDialog(wx.Dialog):
     def OnDone(self, event):
         self.EndModal(2)
 
-def show_notification(r):
+def show_notification(r, late_minutes=0):
     # Speak and show the text with the profile's %placeholders% filled in; the
-    # event and the stored reminder keep the raw text.
+    # event and the stored reminder keep the raw text. `late_minutes`: how
+    # late it fires (catch-up after Hariku was closed): said when it's a lot.
     shown = expanded_copy(r)
-    message = f"Reminder: {shown['title']}"
+    message = fire_text(shown["title"], late_minutes, shown.get("time", ""))
 
     # Let extensions (e.g. Routines) react to a reminder firing.
     try:
@@ -285,7 +374,7 @@ def show_notification(r):
 
     # With the voice reading it, the dialog keeps the text out of what the
     # screen reader announces when it opens, so it isn't read twice.
-    dlg = ReminderDialog(top_window, shown, voiced=True) if voiced else ReminderDialog(top_window, shown)
+    dlg = ReminderDialog(top_window, shown, voiced=bool(voiced), message=message)
     dlg.Raise()
     result = dlg.ShowModal()
     
@@ -427,7 +516,8 @@ def _reminder_loop():
             if state not in ("fire", "stale"):
                 continue
             if state == "fire":
-                wx.CallAfter(show_notification, r)
+                # A copy: a repeating reminder moves on to its next time just below.
+                wx.CallAfter(show_notification, dict(r), minutes_late(r, now))
             else:
                 logger.info(f"Skipping stale reminder '{r.get('title', '')}' due {r.get('date')} {r.get('time')}")
 

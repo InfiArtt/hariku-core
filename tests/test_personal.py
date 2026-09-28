@@ -402,6 +402,11 @@ def reminders(tmp_data_dir, monkeypatch):
                         os.path.join(tmp_data_dir, "reminders_personal.json"))
     _save_core({"user_name": "Rafli", "user_nickname": "Bro",
                 "user_fields": [{"key": "kantor", "value": "Jl. Sudirman 1"}]})
+    # What a reminder says comes from the core language files (English here).
+    from core import i18n
+    if not i18n._language_cache.get("core"):
+        i18n._load_domain("core", i18n.CORE_LOCALES_DIR)
+    monkeypatch.setattr(i18n, "_current_language", "en")
     return core.reminders
 
 
@@ -428,11 +433,12 @@ def test_fired_reminder_is_announced_expanded_and_stored_raw(reminders, monkeypa
     import core.speech
     from core.events import bus
     r = _raw_reminder(reminders)
-    spoken, shown, fired = [], [], []
+    spoken, shown, fired, messages = [], [], [], []
 
     class FakeDialog:
-        def __init__(self, parent, data):
+        def __init__(self, parent, data, voiced=False, message=None):
             shown.append(dict(data))
+            messages.append(message)
 
         def Raise(self):
             pass
@@ -456,9 +462,11 @@ def test_fired_reminder_is_announced_expanded_and_stored_raw(reminders, monkeypa
         bus.unsubscribe("on_reminder_fired", on_fired)
 
     expected = "Bro, meeting at Jl. Sudirman 1 (100% sure)"
-    assert spoken[0] == f"Reminder: {expected}"
+    # One of the firing lines (tests/test_reminder_texts.py).
+    assert f": {expected}." in spoken[0]
+    assert messages == [spoken[0]]                     # the dialog shows what was said
     assert shown[0]["title"] == expected and shown[0]["notes"] == "Ask Rafli about %unknown%"
-    assert spoken[1] == f"Reminder '{expected}' marked as done."
+    assert expected in spoken[1]                       # done
     # The event and the file keep what the user typed.
     assert fired[0]["title"] == "%mynickname%, meeting at %kantor% (100% sure)"
     stored = reminders.load_reminders()[0]
@@ -475,7 +483,8 @@ def test_snooze_announces_expanded(reminders, monkeypatch):
     spoken = []
     monkeypatch.setattr(core.speech, "speak", lambda text, interrupt=False: spoken.append(text))
     reminders.snooze_reminder(r["id"], 5)
-    assert spoken == ["Reminder 'Bro, meeting at Jl. Sudirman 1 (100% sure)' snoozed for 5 minutes."]
+    assert spoken == ["Okay, I'll poke you again in 5 minutes: "
+                      "Bro, meeting at Jl. Sudirman 1 (100% sure)."]
     assert reminders.load_reminders()[0]["title"].startswith("%mynickname%")
 
 
