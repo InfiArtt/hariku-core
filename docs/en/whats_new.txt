@@ -1,4 +1,4 @@
-Version 2.12.0 (Core Update)
+Version 2.12.0 (Core Update - September 28, 2026)
 ================================================================================
 - Reminders talk like Hariku does. When a reminder comes, Hariku no longer
   says "Reminder: take medicine" but tells you in the way it talks to you,
@@ -13,6 +13,12 @@ Version 2.12.0 (Core Update)
   minum obat."
 - The Reminder dialog and what reminders say are in your language now; they
   were in English only.
+- Updated in the Extension Store since 2.11: Voice Control 1.4 can
+  recognise what you say with Hariku cloud, for computers too old for
+  speech recognition on the computer (off until you choose it; it needs
+  your InfiArtt account). World Clock 1.1 answers "time in Tokyo" or "jam
+  berapa di Mekah" in Aruna, for any city, and Timer & Alarm no longer
+  mistakes that for a timer.
 
 Version 2.11.0 (Core Update - September 28, 2026)
 ================================================================================
