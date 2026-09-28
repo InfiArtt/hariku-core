@@ -1,4 +1,4 @@
-Versi 2.12.0 (Pembaruan Inti)
+Versi 2.12.0 (Pembaruan Inti - 28 September 2026)
 ================================================================================
 - Pengingat sekarang ngomong seperti Hariku. Waktu pengingat datang, Hariku
   tidak lagi bilang "Reminder: minum obat", tapi memberitahumu dengan gaya
@@ -14,6 +14,12 @@ Versi 2.12.0 (Pembaruan Inti)
   08.00 ada pengingat: minum obat."
 - Dialog Pengingat dan yang diucapkan pengingat sekarang memakai bahasamu;
   sebelumnya hanya bahasa Inggris.
+- Diperbarui di Toko Ekstensi sejak 2.11: Voice Control 1.4 bisa mengenali
+  ucapanmu lewat Hariku cloud, untuk komputer yang terlalu lama untuk
+  pengenalan suara di komputer sendiri (mati sampai kamu memilihnya; butuh
+  akun InfiArtt). World Clock 1.1 menjawab "jam berapa di Mekah" atau "time
+  in Tokyo" di Aruna, untuk kota mana saja, dan Timer & Alarm tidak lagi
+  mengira itu timer.
 
 Versi 2.11.0 (Pembaruan Inti - 28 September 2026)
 ================================================================================
