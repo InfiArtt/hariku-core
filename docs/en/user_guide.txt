@@ -190,11 +190,20 @@ HOW REMINDERS FIRE
 Hariku runs a background daemon that checks for due reminders every 30 seconds.
 When a reminder's date and time match the current moment, a dialog appears:
 
-  - The reminder title is announced aloud.
-  - A Windows notification sound plays.
-  - The Reminder dialog offers two options:
-      Snooze (5 min)  — Delays the reminder by 5 minutes.
-      Mark as Done    — Dismisses the reminder permanently.
+  - Hariku tells you about it in its own words, in the way it talks to you
+    (Preferences, Profile, "How Hariku talks"), calling you by your nickname:
+    "Psst, Rafli! Ada pengingat nih: minum obat." or, talking like a bro,
+    "Yo Rafli! Udah waktunya nih: minum obat. Gas!". The words change from
+    one reminder to the next.
+  - If the reminder comes 10 minutes or more after its time (Hariku was
+    closed, or the computer was asleep), Hariku says it's late and when the
+    reminder was for.
+  - The reminder sound plays.
+  - The Reminder dialog shows the same words and offers two buttons:
+      Snooze 5 minutes  — Delays the reminder by 5 minutes.
+      Done              — Dismisses the reminder permanently.
+    Their names follow the way Hariku talks too, such as "Later (5 minutes)"
+    and "Done, bro".
 
 A reminder will only fire once per minute slot. If you have already marked it
 as done, it will never fire again.

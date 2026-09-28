@@ -286,10 +286,12 @@ def test_locale_wording():
     assert id_["rem_lbl_sentence"] == "Atau ketik dalam satu kalimat:"
     assert en["rem_every_day_n"].format(n=2) == "every 2 days"
     assert id_["rem_every_day_n"].format(n=2) == "setiap 2 hari"
-    # The spoken read-back talks like a person ("kamu"/"aku", the user's choice);
-    # the rest of the core's new strings keep the core's "Anda".
+    # The spoken read-back talks like a person ("kamu"/"aku", the user's choice),
+    # and so does what a reminder says when it fires (core 2.12, in the persona
+    # Hariku talks in); the rest of the core's new strings keep the core's "Anda".
     assert id_["qr_rb_time_assumed"].startswith("Kamu tidak menyebut jam, jadi aku pakai")
-    spoken = ("qr_rb_", "qr_lbl_readback", "qr_readback_hint")
+    spoken = ("qr_rb_", "qr_lbl_readback", "qr_readback_hint", "rem_fire_", "rem_done_",
+              "rem_snoozed", "rem_deleted", "rem_btn_snooze", "rem_btn_done")
     for key, value in id_.items():
         words = value.lower().replace(",", " ").replace(".", " ").split()
         if key.startswith(spoken):

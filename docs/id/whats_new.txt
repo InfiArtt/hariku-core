@@ -1,3 +1,20 @@
+Versi 2.12.0 (Pembaruan Inti)
+================================================================================
+- Pengingat sekarang ngomong seperti Hariku. Waktu pengingat datang, Hariku
+  tidak lagi bilang "Reminder: minum obat", tapi memberitahumu dengan gaya
+  bicaranya dan nama panggilanmu: "Psst, Rafli! Ada pengingat nih: minum
+  obat.", "Tok tok, Rafli! Sekarang saatnya: minum obat." atau, dengan gaya
+  santai ala bro, "Yo Rafli! Udah waktunya nih: minum obat. Gas!".
+  Kalimatnya berganti-ganti dari satu pengingat ke pengingat berikutnya.
+  Menunda dan menandai pengingat selesai juga dijawab dengan gaya yang sama,
+  dan tombol-tombol di dialog Pengingat ikut menyesuaikan. Pilih gaya
+  bicara Hariku di Pengaturan, Profil.
+- Pengingat yang datang terlambat, karena Hariku tadi tertutup atau
+  komputernya tidur, sekarang bilang begitu: "Maaf telat, Rafli! Tadi jam
+  08.00 ada pengingat: minum obat."
+- Dialog Pengingat dan yang diucapkan pengingat sekarang memakai bahasamu;
+  sebelumnya hanya bahasa Inggris.
+
 Versi 2.11.0 (Pembaruan Inti - 28 September 2026)
 ================================================================================
 - Setiap ekstensi sekarang punya panduannya sendiri. Cara main Orbit, cara
