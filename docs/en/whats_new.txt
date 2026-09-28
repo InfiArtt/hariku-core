@@ -1,4 +1,4 @@
-Version 2.11.0 (Core Update)
+Version 2.11.0 (Core Update - September 28, 2026)
 ================================================================================
 - Every extension has its own guide now. How to play Orbit, how to use
   Dropbox, the Calculator & Converter, Timer & Alarm and the others used to

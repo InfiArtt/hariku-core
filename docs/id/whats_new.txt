@@ -1,4 +1,4 @@
-Versi 2.11.0 (Pembaruan Inti)
+Versi 2.11.0 (Pembaruan Inti - 28 September 2026)
 ================================================================================
 - Setiap ekstensi sekarang punya panduannya sendiri. Cara main Orbit, cara
   memakai Dropbox, Kalkulator & Konversi, Timer & Alarm, dan lainnya dulu
