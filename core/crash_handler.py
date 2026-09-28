@@ -41,7 +41,8 @@ def _send_report_silently(exc_type, exc_value, exc_traceback):
         }
 
         data = json.dumps(payload).encode('utf-8')
-        req = urllib.request.Request(API_URL, data=data, headers={'Content-Type': 'application/json'})
+        req = urllib.request.Request(API_URL, data=data, headers={
+            'Content-Type': 'application/json', 'User-Agent': core.endpoints.HTTP_USER_AGENT})
 
         with urllib.request.urlopen(req, timeout=5) as response:
             pass
