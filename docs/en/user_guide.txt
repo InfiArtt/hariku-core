@@ -177,7 +177,7 @@ QUICK REMINDER
 ---------------
 Press N anywhere in the main window (or choose Reminders, Quick reminder)
 and type one sentence, such as "take medicine tomorrow at 8 am, every day",
-"call Budi in 30 minutes" or "minum obat besok jam 8 pagi, tiap hari".
+"call Budi in 30 minutes" or "water the plants every 2 days at 7 am".
 Press Enter: Hariku reads back what it understood, for example "Take
 medicine, Friday 25 September 2026, at 08:00, every day. Save?". Press Enter
 again or Save to save it, or "Edit in full reminder dialog" to check it in
@@ -192,8 +192,8 @@ When a reminder's date and time match the current moment, a dialog appears:
 
   - Hariku tells you about it in its own words, in the way it talks to you
     (Preferences, Profile, "How Hariku talks"), calling you by your nickname:
-    "Psst, Rafli! Ada pengingat nih: minum obat." or, talking like a bro,
-    "Yo Rafli! Udah waktunya nih: minum obat. Gas!". The words change from
+    "Psst, Rafli! Reminder time: take medicine." or, talking like a bro,
+    "Bro Rafli, heads up: take medicine. Let's go!". The words change from
     one reminder to the next.
   - If the reminder comes 10 minutes or more after its time (Hariku was
     closed, or the computer was asleep), Hariku says it's late and when the
@@ -413,10 +413,9 @@ in English. Three ways to open one:
     the next one, and Escape closes it.
   - The Extension Manager (Ctrl+X), Installed tab: select the extension and
     press Guide. The button works when that extension has a guide.
-  - Aruna: "panduan orbit", "cara pakai dropbox", "bantuan kalkulator",
-    "guide for orbit" or "how to use dropbox". When Aruna isn't sure which
-    extension you mean, it asks first. "panduan ekstensi" or "extension
-    guides" opens the list.
+  - Aruna: "guide for orbit", "how to use dropbox" or "help with the
+    calculator". When Aruna isn't sure which extension you mean, it asks
+    first. "extension guides" or "list of guides" opens the list.
 
 A guide opens as a page in your web browser, and so does this User Guide
 (Help, User Guide). With NVDA, the page is in browse mode: H and Shift+H go
@@ -424,8 +423,8 @@ from heading to heading, 1, 2 and 3 go by level, and NVDA+F7 lists every
 heading. Close the page with Ctrl+W, or Alt+F4. If the browser can't be
 opened, the guide shows as text in a window instead.
 
-Orbit's in-game help is different: in the game, or with "orbit bantuan" in
-Aruna, "bantuan" and "help" list the game's help topics.
+Orbit's in-game help is different: in the game, or with "orbit help" in
+Aruna, "help" lists the game's help topics.
 
 Writing an extension? DEVELOPERS.md says how to add a guide to yours.
 

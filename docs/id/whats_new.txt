@@ -17,9 +17,9 @@ Versi 2.12.0 (Pembaruan Inti - 28 September 2026)
 - Diperbarui di Toko Ekstensi sejak 2.11: Voice Control 1.4 bisa mengenali
   ucapanmu lewat Hariku cloud, untuk komputer yang terlalu lama untuk
   pengenalan suara di komputer sendiri (mati sampai kamu memilihnya; butuh
-  akun InfiArtt). World Clock 1.1 menjawab "jam berapa di Mekah" atau "time
-  in Tokyo" di Aruna, untuk kota mana saja, dan Timer & Alarm tidak lagi
-  mengira itu timer.
+  akun InfiArtt). World Clock 1.1 menjawab "jam berapa di Mekah" atau "di
+  Jepang jam berapa" di Aruna, untuk kota mana saja, dan Timer & Alarm tidak
+  lagi mengira itu timer.
 
 Versi 2.11.0 (Pembaruan Inti - 28 September 2026)
 ================================================================================
@@ -31,17 +31,17 @@ Versi 2.11.0 (Pembaruan Inti - 28 September 2026)
   ekstensi... (daftar ekstensi terpasang yang punya panduan; Enter membuka
   yang dipilih), lewat tombol Panduan yang baru di tab Terpasang pada
   Pengelola Ekstensi, atau minta ke Aruna: "panduan orbit", "cara pakai
-  dropbox", "bantuan kalkulator", "guide for orbit", atau "how to use
-  dropbox". Kalau Aruna ragu ekstensi mana yang kamu maksud, dia bertanya
-  dulu. "orbit bantuan" tetap bantuan milik Orbit di dalam game.
+  dropbox", atau "bantuan kalkulator". Kalau Aruna ragu ekstensi mana yang
+  kamu maksud, dia bertanya dulu. "orbit help" tetap bantuan milik Orbit di
+  dalam game.
 - Panduan terbuka sebagai halaman di browser web-mu, begitu juga Panduan
   Pengguna (Bantuan, Panduan Pengguna). Dengan NVDA, halamannya dalam mode
   jelajah: H dan Shift+H lompat dari judul ke judul, 1, 2, dan 3 menurut
   tingkatnya, dan NVDA+F7 menampilkan semua judul. Kalau browser tidak bisa
   dibuka, panduannya tampil sebagai teks di sebuah jendela.
 - Aruna mengerti kalimat yang tidak diawali kata tertentu. Kalkulator &
-  Konversi yang pertama memakainya: "25 x 4", "5 km ke mil", "2 foot in
-  inches", dan, tepat setelah sebuah jawaban, "tambah 5" langsung dijawab,
+  Konversi yang pertama memakainya: "25 x 4", "5 km ke mil", "3 jam ke
+  menit", dan, tepat setelah sebuah jawaban, "tambah 5" langsung dijawab,
   tanpa "berapa" atau "hitung" di depannya.
 - Kalau Aruna tidak mengerti sebuah kalimat, atau cuma menebak, sebuah
   ekstensi bisa mengusulkan apa maksudmu, dan Aruna bertanya dulu:
@@ -93,7 +93,7 @@ Versi 2.10.0 (Pembaruan Inti - 25 September 2026)
   menyala semuanya mengikutinya; ekstensi juga bisa memberi tiap persona
   kata-katanya sendiri (teks "kunci@sweet" di file bahasanya).
 - Sambutan ini mengenalkan Aruna (Ctrl+Alt+Backspace, atau tombol yang kamu
-  pilih): ketik "jam berapa" atau "what time is it" di situ juga, dan Aruna
+  pilih): ketik "jam berapa" atau "tanggal berapa" di situ juga, dan Aruna
   menjawab.
 - Hariku menyarankan beberapa ekstensi dari Toko, masing-masing dengan satu
   kalimat penjelasan: Weather, Morning Briefing, Timer & Alarm, Voice
@@ -139,21 +139,21 @@ Versi 2.9.0 (Pembaruan Inti - 25 September 2026)
 - Baru di Toko Ekstensi: Timer & Alarm, ekstensi pertama yang memakai perintah
   dengan isi. Bilang ke Aruna, diketik atau diucapkan, dalam bahasa Indonesia
   atau Inggris: "alarm besok jam 5 pagi", "bangunkan aku jam 4.30", "alarm
-  setiap hari jam 5 sholat subuh", "wake me up at 6". Aruna membacakan tiap
-  alarm dengan hari, tanggal, dan jamnya (dini hari, pagi, siang, sore, atau
-  malam) lalu memasangnya kalau kamu jawab ya; kalau jamnya salah, jawab
+  setiap hari jam 5 sholat subuh", "alarm Senin jam 7 malam". Aruna membacakan
+  tiap alarm dengan hari, tanggal, dan jamnya (dini hari, pagi, siang, sore,
+  atau malam) lalu memasangnya kalau kamu jawab ya; kalau jamnya salah, jawab
   "tidak", lalu sebutkan jamnya lagi ("jam 2 siang"). Timer langsung mulai:
   "timer 10 menit", "timer mie 3 menit", "timer setengah jam". Bisa juga
-  "batalkan timer mie", "sisa timer", "daftar alarm". Alarm dan timer
-  berbunyi dengan suara alarm Windows dan menyebutkan namanya, tiap 10 detik,
-  walaupun Hariku di tray dan saat jam tenang, tanpa membuka jendela; tekan
-  tombol apa saja untuk mematikannya, atau bilang ke Aruna "stop" atau
-  "tunda". Semuanya tetap ada setelah Hariku dibuka lagi, dan alarm yang
-  lewat selama Hariku tertutup disebutkan sekali saat Hariku mulai. Briefing
-  Pagi menyebutkan alarm hari ini. Suara, lama berbunyi, dan lama tunda ada
-  di Pengaturan, Timer & Alarm. Semuanya tetap di komputermu.
-- Aruna: kalau Aruna bertanya "..., Pasang?" atau "..., Set it?", jawaban
-  "pasang" dan "set it" juga berarti ya.
+  "batalkan timer mie", "sisa timer", "daftar alarm". Alarm dan timer berbunyi
+  dengan suara alarm Windows dan menyebutkan namanya, tiap 10 detik, walaupun
+  Hariku di tray dan saat jam tenang, tanpa membuka jendela; tekan tombol apa
+  saja untuk mematikannya, atau bilang ke Aruna "berhenti" atau "tunda".
+  Semuanya tetap ada setelah Hariku dibuka lagi, dan alarm yang lewat selama
+  Hariku tertutup disebutkan sekali saat Hariku mulai. Briefing Pagi
+  menyebutkan alarm hari ini. Suara, lama berbunyi, dan lama tunda ada di
+  Pengaturan, Timer & Alarm. Semuanya tetap di komputermu.
+- Aruna: kalau Aruna bertanya "..., Pasang?", jawaban "pasang" juga berarti
+  ya.
 - Voice Control 1.2: pilih apa yang dilakukan frasa pemanggil, di Pengaturan,
   Voice Control, "Saat kamu mengucapkan frasa pemanggil": "Buka Aruna", seperti
   dulu, atau "Dengarkan tanpa membuka jendela". Dengan pilihan kedua, jendela
@@ -307,15 +307,15 @@ Versi 2.7.0 (Pembaruan Inti - 24 September 2026)
   atau ruangannya terlalu bising. Tekan OK atau Terapkan untuk menyimpannya.
 - Pengingat cepat: tekan N lalu ketik pengingatnya dalam satu kalimat,
   misalnya "minum obat besok jam 8 pagi, tiap hari", "telepon Budi 30 menit
-  lagi", atau "take medicine tomorrow at 8 am". Tekan Enter untuk mendengar
-  apa yang ditangkap Hariku ("Minum obat, Jumat 25 September 2026, jam 08:00,
-  setiap hari. Simpan?"), lalu Enter lagi atau Simpan. Tidak ada yang
-  disimpan sebelum kamu mendengarnya. Ia juga paham "setiap Senin", "setiap
-  tanggal 5", "2 hari sekali", "setengah 9", "nanti malam", "minggu depan",
-  dan dalam bahasa Inggris "every other week" atau "half past eight". "Edit
+  lagi", atau "siram tanaman tiap 2 hari jam 7 pagi". Tekan Enter untuk
+  mendengar apa yang ditangkap Hariku ("Minum obat, Jumat 25 September 2026,
+  jam 08:00, setiap hari. Simpan?"), lalu Enter lagi atau Simpan. Tidak ada
+  yang disimpan sebelum kamu mendengarnya. Ia juga paham "setiap Senin",
+  "setiap tanggal 5", "2 hari sekali", "setengah 9", "nanti malam", "minggu
+  depan", "2 minggu sekali", dan hal yang sama dalam bahasa Inggris. "Edit
   di dialog pengingat lengkap" membuka dialog pengingat dengan semuanya sudah
-  terisi. Pengingat cepat juga ada di menu Pengingat yang baru, lengkap
-  dengan tombolnya.
+  terisi. Pengingat cepat juga ada di menu Pengingat yang baru, lengkap dengan
+  tombolnya.
 - Bahasa campur dan bahasa Jerman: satu kalimat boleh mencampur bahasa
   Indonesia dan Inggris, misalnya "meeting besok jam 3". Nyalakan bahasa
   Jerman di Pengaturan, Pengingat, dan "morgen halb neun Zahnarzt" juga
