@@ -2,22 +2,22 @@ Version 2.12.0 (Core Update - September 28, 2026)
 ================================================================================
 - Reminders talk like Hariku does. When a reminder comes, Hariku no longer
   says "Reminder: take medicine" but tells you in the way it talks to you,
-  with your nickname: "Psst, Rafli! Ada pengingat nih: minum obat.", "Tok
-  tok, Rafli! Sekarang saatnya: minum obat." or, talking like a bro, "Yo
-  Rafli! Udah waktunya nih: minum obat. Gas!". The words change from one
+  with your nickname: "Psst, Rafli! Reminder time: take medicine.", "Knock
+  knock, Rafli! Now's the time: take medicine." or, talking like a bro, "Bro
+  Rafli, heads up: take medicine. Let's go!". The words change from one
   reminder to the next. Snoozing and marking a reminder done answer the
   same way, and the Reminder dialog's buttons follow along. Choose how
   Hariku talks in Preferences, Profile.
 - A reminder that comes late, because Hariku was closed or the computer was
-  asleep, now says so: "Maaf telat, Rafli! Tadi jam 08.00 ada pengingat:
-  minum obat."
+  asleep, now says so: "Sorry I'm late, Rafli! This was for 8:00 AM: take
+  medicine."
 - The Reminder dialog and what reminders say are in your language now; they
   were in English only.
 - Updated in the Extension Store since 2.11: Voice Control 1.4 can
   recognise what you say with Hariku cloud, for computers too old for
   speech recognition on the computer (off until you choose it; it needs
-  your InfiArtt account). World Clock 1.1 answers "time in Tokyo" or "jam
-  berapa di Mekah" in Aruna, for any city, and Timer & Alarm no longer
+  your InfiArtt account). World Clock 1.1 answers "time in Tokyo" or "what
+  time is it in Mecca" in Aruna, for any city, and Timer & Alarm no longer
   mistakes that for a timer.
 
 Version 2.11.0 (Core Update - September 28, 2026)
@@ -28,25 +28,25 @@ Version 2.11.0 (Core Update - September 28, 2026)
   updated with it, in English and Indonesian for every official extension.
   Open one from Help, Extension guides... (the installed extensions that
   have a guide; Enter opens the one selected), with the new Guide button on
-  the Extension Manager's Installed tab, or by asking Aruna: "panduan orbit",
-  "cara pakai dropbox", "bantuan kalkulator", "guide for orbit" or "how to
-  use dropbox". When Aruna isn't sure which extension you mean, it asks
-  first. "orbit bantuan" is still Orbit's own help in the game.
+  the Extension Manager's Installed tab, or by asking Aruna: "guide for
+  orbit", "how to use dropbox" or "help with the calculator". When Aruna
+  isn't sure which extension you mean, it asks first. "orbit help" is still
+  Orbit's own help in the game.
 - A guide opens as a page in your web browser, and so does the User Guide
   (Help, User Guide). With NVDA, the page is in browse mode: H and Shift+H
   jump from heading to heading, 1, 2 and 3 go by level, and NVDA+F7 lists
   every heading. If the browser can't be opened, the guide shows as text in
   a window.
 - Aruna understands sentences that don't start with a fixed word. The
-  Calculator & Converter is the first to use it: "25 x 4", "5 km ke mil",
-  "2 foot in inches" and, right after an answer, "tambah 5" are answered as
-  they are, without "berapa" or "what's" in front.
+  Calculator & Converter is the first to use it: "25 x 4", "5 km to miles",
+  "2 foot in inches" and, right after an answer, "plus 5" are answered as
+  they are, without "what's" or "calculate" in front.
 - When Aruna doesn't understand a sentence, or is only guessing, an
   extension can suggest what you meant, and Aruna asks you first: "Did you
   mean: Weather forecast?", Enter for yes. Nothing runs without your yes.
   The new Ask Hariku extension does this with Hariku's AI, only if you turn
-  it on; it can also answer how-to questions from Hariku's guides ("tanya
-  hariku gimana cara pasang Orbit", "how do I set a repeating alarm").
+  it on; it can also answer how-to questions from Hariku's guides ("ask
+  hariku how do I install Orbit", "how do I set a repeating alarm").
   Both are off until you turn them on in Preferences, Ask Hariku, and need
   you to sign in with your InfiArtt account (the Account Manager extension,
   which now stays signed in by renewing the sign-in before it runs out).
@@ -90,7 +90,7 @@ Version 2.10.0 (Core Update - September 25, 2026)
   Hariku starts all follow it; extensions can give each persona their own
   words too (a text "key@sweet" in their language files).
 - The welcome introduces Aruna (Ctrl+Alt+Backspace, or the key you gave it):
-  type "what time is it" or "jam berapa" right there, and Aruna answers.
+  type "what time is it" or "what's the date" right there, and Aruna answers.
 - It suggests a few extensions from the store, with a line about each:
   Weather, Morning Briefing, Timer & Alarm, Voice Control, World Trip,
   Earthquakes & Tsunami and more; only those this Hariku can run that you
@@ -123,46 +123,44 @@ Version 2.10.0 (Core Update - September 25, 2026)
 Version 2.9.0 (Core Update - September 25, 2026)
 ================================================================================
 - For extension developers: commands with content. An extension can now teach
-  Aruna commands that carry words of their own, such as "catat beli gula",
-  "timer mie 3 menit" or "tambahkan kopi ke daftar belanja": Aruna hands the
-  words to the extension, which answers, asks you to confirm first, answers a
-  little later, or does something once Aruna has closed (such as typing into
-  the window you were in). See core.commands.add_intent in DEVELOPERS.md.
-  Extensions built on it need Hariku 2.9; the Extension Manager says so.
+  Aruna commands that carry words of their own, such as "note buy sugar",
+  "timer noodles 3 minutes" or "add coffee to the shopping list": Aruna hands
+  the words to the extension, which answers, asks you to confirm first,
+  answers a little later, or does something once Aruna has closed (such as
+  typing into the window you were in). See core.commands.add_intent in
+  DEVELOPERS.md. Extensions built on it need Hariku 2.9; the Extension
+  Manager says so.
 - New in the Extension Store: Timer & Alarm, the first extension built on
   commands with content. Tell Aruna, typed or spoken, in English or
-  Indonesian: "alarm tomorrow at 6 AM", "wake me up at 5", "alarm besok jam 5
-  pagi", "alarm setiap hari jam 5 sholat subuh". Aruna reads each alarm back
-  with its day, date and time (AM or PM; dini hari, pagi, siang, sore or
-  malam) and sets it when you say yes; if the time is wrong, say "no", then
-  the time again ("at 2 PM", "jam 2 siang"). Timers start at once: "timer 10
-  minutes", "timer mie 3 menit", "set a timer for an hour and a half". Also
-  "cancel the tea timer", "how long is left", "list my alarms". Alarms and
-  timers ring with a Windows alarm sound and say what they are, every 10
-  seconds, even when Hariku is in the tray and during quiet hours, without
-  opening a window; press any key to stop, or tell Aruna "stop" or "snooze".
-  They survive a restart, and an alarm that came due while Hariku was closed
-  is mentioned once when it starts. The Morning Briefing says today's alarms.
-  Sounds, the ring length and the snooze length are in Preferences, Timer &
-  Alarm. Everything stays on your computer.
-- Aruna: when it asks "..., Set it?" or "..., Pasang?", "set it" and "pasang"
-  are yes too.
+  Indonesian: "alarm tomorrow at 6 AM", "wake me up at 5", "alarm on Monday at
+  7:30 PM", "alarm every day at 5 AM for the gym". Aruna reads each alarm back
+  with its day, date and time, with AM or PM, and sets it when you say yes; if
+  the time is wrong, say "no", then the time again ("at 2 PM" or "at 14:00").
+  Timers start at once: "timer 10 minutes", "timer noodles 3 minutes", "set a
+  timer for an hour and a half". Also "cancel the tea timer", "how long is
+  left", "list my alarms". Alarms and timers ring with a Windows alarm sound
+  and say what they are, every 10 seconds, even when Hariku is in the tray and
+  during quiet hours, without opening a window; press any key to stop, or tell
+  Aruna "stop" or "snooze". They survive a restart, and an alarm that came due
+  while Hariku was closed is mentioned once when it starts. The Morning
+  Briefing says today's alarms. Sounds, the ring length and the snooze length
+  are in Preferences, Timer & Alarm. Everything stays on your computer.
+- Aruna: when it asks "..., Set it?", saying "set it" is a yes too.
 - Voice Control 1.2: choose what the wake phrase does, in Preferences, Voice
   Control, "When you say the wake phrase": "Open Aruna", as before, or
   "Listen without opening a window". Then the window you're in keeps the
   focus and your screen reader stays there: you speak, Aruna answers aloud
   (and asks and hears "yes" or "no" by voice), and it closes by itself when
   it's done. Needs Hariku 2.9; on 2.8 Aruna opens as before.
-- New in the Extension Store: World Trip ("Keliling Dunia"). Ask Aruna "take
-  me to Tokyo", "fly to Paris", "bawa aku ke Jepang" (a country lands in its
-  capital or best-known city) or "take me anywhere". A cabin chime and the
-  captain's announcement give the distance and flight time from your main
-  place, the engines roar (any key, or "skip", skips the flight), then you
-  arrive: the local time, how far ahead of or behind home it is, and the
-  weather. A greeting for the time of day and "welcome to Tokyo" are spoken
-  in the local language by a native voice (Edge Voices has one for nearly
-  every language) and then explained, and live local radio plays quietly,
-  turning itself down while Hariku speaks.
+- New in the Extension Store: World Trip. Ask Aruna "take me to Tokyo", "fly
+  to Paris", "take me to Japan" (a country lands in its capital or best-known
+  city) or "take me anywhere". A cabin chime and the captain's announcement
+  give the distance and flight time from your main place, the engines roar
+  (any key, or "skip", skips the flight), then you arrive: the local time, how
+  far ahead of or behind home it is, and the weather. A greeting for the time
+  of day and "welcome to Tokyo" are spoken in the local language by a native
+  voice (Edge Voices has one for nearly every language) and then explained,
+  and live local radio plays quietly, turning itself down while Hariku speaks.
 - World Trip: during a trip, ask "tell me about this city" (from Wikipedia),
   "teach me a phrase" (eight everyday phrases in each of 31 languages, with
   how to say them and what they mean), "next station", "radio louder",
@@ -287,19 +285,19 @@ Version 2.7.0 (Core Update - September 24, 2026)
   tells you, or says how to help a voice that is too quiet or a room that is
   too noisy. Press OK or Apply to keep it.
 - Quick reminder: press N and type a reminder in one sentence, such as "take
-  medicine tomorrow at 8 am, every day", "call Budi in 30 minutes" or "minum
-  obat besok jam 8 pagi, tiap hari". Press Enter to hear what Hariku
+  medicine tomorrow at 8 am, every day", "call Budi in 30 minutes" or "water
+  the plants every 2 days at 7 am". Press Enter to hear what Hariku
   understood ("Take medicine, Friday 25 September 2026, at 08:00, every day.
   Save?"), then Enter again or Save. Nothing is saved before you've heard it.
   It also knows "every Monday", "every other week", "on the 5th", "tonight",
-  "next week", "half past eight", and in Indonesian "setiap tanggal 5",
-  "2 hari sekali", "setengah 9" or "nanti malam". "Edit in full reminder
-  dialog" opens the reminder dialog with everything filled in. The quick
-  reminder is also in the new Reminders menu, which shows its key.
+  "next week" and "half past eight", and the same in Indonesian. "Edit in
+  full reminder dialog" opens the reminder dialog with everything filled in.
+  The quick reminder is also in the new Reminders menu, which shows its key.
 - Mixed languages and German: one sentence can mix English and Indonesian,
-  such as "meeting besok jam 3". Turn on German in Preferences, Reminders,
-  and "morgen halb neun Zahnarzt" works too. Hariku reads your sentences on
-  your computer with rules, not AI, and sends nothing anywhere.
+  such as "meeting besok jam 3" (meeting tomorrow at 3). Turn on German in
+  Preferences, Reminders, and "morgen halb neun Zahnarzt" (dentist tomorrow
+  at half past eight) works too. Hariku reads your sentences on your
+  computer with rules, not AI, and sends nothing anywhere.
 - The reminder dialog (Enter on a date) has a new field at the top: "Or type
   it in one sentence". Type the reminder there, press Enter or Fill in, and
   Hariku fills in the fields and tells you what it understood, including the
