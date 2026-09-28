@@ -68,11 +68,9 @@ CRASH_REPORT_URL = f"{INFIARTT_API_BASE}/api/crash-report"
 # here; the Worker reaches Workers AI through its own binding, so there is no
 # key in Hariku. Ask Hariku sends nothing unless the user turns it on.
 #
-# TODO(owner): replace <subdomain> with the account's workers.dev subdomain
-# once the Worker is deployed (servers/hariku-ai/README.md). Until then the
-# address isn't valid and Ask Hariku says it isn't set up yet. Later:
-# "https://ai.infiartt.com" on the infiartt account.
-HARIKU_AI_URL = "https://hariku-ai.<subdomain>.workers.dev"
+# It runs on the infiartt Cloudflare account at its own subdomain, apart from
+# the website (which it never touches).
+HARIKU_AI_URL = "https://ai.infiartt.com"
 
 # Where Ask Hariku may send a question (the address can be changed on its
 # Preferences page, for a self-hosted copy of the Worker): HTTPS on
