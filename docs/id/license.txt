@@ -133,9 +133,11 @@ DATAMU TETAP DI KOMPUTERMU
   tidak bisa melihatnya. Apa yang kamu ketik untuk pengingat cepat atau
   kepada Aruna, bilah perintah Hariku, dipahami di komputermu dengan aturan
   yang tertanam di Hariku, tanpa AI dan tanpa layanan online, dan tidak
-  disimpan. Satu-satunya pengecualian adalah ekstensi Tanya Hariku, dan
-  hanya kalau kamu menyalakannya (lihat di bawah). Hariku Voice dengan
-  suara bawaan Windows juga berbicara di komputermu.
+  disimpan; apa yang kamu ucapkan ke Aruna lewat Voice Control juga diubah
+  menjadi teks di komputermu. Pengecualiannya hanya ekstensi Tanya Hariku
+  dan pilihan Hariku cloud di Voice Control, dan hanya kalau kamu
+  menyalakannya (lihat di bawah). Hariku Voice dengan suara bawaan Windows
+  juga berbicara di komputermu.
 
 YANG DIHUBUNGI HARIKU DENGAN SENDIRINYA
   Saat menyala, Hariku mengunduh beberapa berkas kecil dari situs GitHub
@@ -199,6 +201,17 @@ EKSTENSI DAN INTERNET
       ucapannya dari GitHub dan Hugging Face hanya saat kamu mengurusnya di
       Pengaturan; setelah itu, bicara dan pengenalan ucapan berjalan di
       komputermu.
+    - Hariku cloud di Voice Control, untuk komputer lama, mati kecuali kamu
+      memilihnya di Pengaturan, Voice Control, dan kamu perlu masuk dengan
+      akun InfiArtt-mu (Hariku Account Manager). Setelah itu, setiap
+      rekaman yang dibuat Voice Control saat mendengarkan perintah dikirim
+      satu kali ke layanan AI Hariku (ai.infiartt.com), bersama bahasanya,
+      nama perintah Hariku sendiri, dan data masuk InfiArtt-mu, untuk
+      diubah menjadi teks. Layanan itu tidak menyimpan rekaman maupun
+      teksnya; yang dihitungnya hanya berapa detik yang dipakai tiap akun
+      hari ini. Frasa pemanggil selalu didengar di komputermu, dan data
+      masukmu hanya dikirim ke layanan Hariku sendiri, sama seperti Tanya
+      Hariku di bawah.
     - Orbit, sebuah game multipemain, terhubung ke server game-nya (bawaannya
       di infiartt.com) saat kamu bermain, atau saat Hariku menyala kalau kamu
       menyalakan pilihan itu.
