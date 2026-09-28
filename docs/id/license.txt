@@ -204,15 +204,24 @@ EKSTENSI DAN INTERNET
       menyalakan pilihan itu.
     - Dropbox berhubungan dengan Dropbox hanya setelah kamu menyambungkan
       akunmu, dan Hariku Account Manager berhubungan dengan infiartt.com
-      hanya saat kamu masuk.
+      hanya saat kamu masuk, dan untuk memperbarui data masukmu kalau
+      tinggal kurang dari 30 hari.
     - Tanya Hariku tidak mengirim apa pun sampai kamu menyalakan salah satu
-      dari dua fiturnya di Pengaturan, Tanya Hariku. Setelah itu, pertanyaan
-      cara pakai yang kamu ajukan ke Aruna, atau kalimat yang tidak dipahami
-      Aruna (beserta nama perintah Hariku sendiri), dikirim ke layanan AI
-      Hariku di Cloudflare Workers. Yang dikirim hanya kata-katanya dan
-      bahasanya, tidak pernah pengingat, diary, keuangan, tempat, atau
-      namamu, dan layanannya tidak menyimpan catatan. Aruna selalu bertanya
-      dulu sebelum menjalankan saran dari AI.
+      dari dua fiturnya di Pengaturan, Tanya Hariku, dan kamu perlu masuk
+      dengan akun InfiArtt-mu (Hariku Account Manager). Setelah itu,
+      pertanyaan cara pakai yang kamu ajukan ke Aruna, atau kalimat yang
+      tidak dipahami Aruna (beserta nama perintah Hariku sendiri), dikirim
+      ke layanan AI Hariku di Cloudflare Workers, bersama data masuk
+      InfiArtt-mu. Yang dikirim hanya kata-katanya, bahasanya, dan data
+      masuk itu, tidak pernah pengingat, diary, keuangan, tempat, atau
+      namamu. Layanan itu bertanya ke infiartt.com akun siapa data masuk
+      itu, hanya untuk menghitung batas harian tiap akun; yang disimpannya
+      hanya hitungan harian itu, tanpa pertanyaan dan tanpa catatan. Aruna
+      selalu bertanya dulu sebelum menjalankan saran dari AI. Data masukmu
+      hanya dikirim ke layanan Hariku sendiri (ai.infiartt.com); salinan
+      layanan yang kamu jalankan sendiri, kalau kamu memilihnya, hanya
+      menerima kunci aksesnya sendiri, dan itu pilihan serta tanggung
+      jawabmu.
     - Riwayat Clipboard, Timer & Alarm, dan Pola Tidur tidak mengirim apa pun.
   Ekstensi pihak ketiga bisa membuat sambungannya sendiri, dan pembuatnya
   yang bertanggung jawab atasnya.

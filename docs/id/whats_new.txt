@@ -27,8 +27,10 @@ Versi 2.11.0 (Pembaruan Inti)
   Hariku, hanya kalau kamu menyalakannya; dia juga bisa menjawab pertanyaan
   cara pakai dari panduan Hariku ("tanya hariku gimana cara pasang Orbit",
   "bagaimana cara bikin alarm berulang"). Keduanya mati sampai kamu
-  menyalakannya di Pengaturan, Tanya Hariku, dan PRIVACY.md menjelaskan
-  persis apa yang dikirim.
+  menyalakannya di Pengaturan, Tanya Hariku, dan butuh kamu masuk dengan
+  akun InfiArtt (ekstensi Account Manager, yang sekarang tetap masuk karena
+  memperbarui data masuknya sebelum habis). Tiap akun bisa bertanya 50 kali
+  sehari. PRIVACY.md menjelaskan persis apa yang dikirim.
 - Apa yang Hariku ucapkan sampai ke pembaca layarmu sesuai urutan
   ucapannya. Dua baris yang datang bersamaan (balasan sebuah game dan
   catatan sesudahnya) dulu bisa terbaca terbalik; sekarang keduanya antre.
@@ -45,7 +47,8 @@ Versi 2.11.0 (Pembaruan Inti)
   membuka panduan dari kodemu. core.commands.add_intent menerima matcher
   untuk kalimat tanpa kata tetap, dan core.commands.add_fallback membuat
   ekstensimu bisa mengusulkan maksud kalimat yang tidak dimengerti Aruna
-  (Aruna bertanya ke pengguna sebelum menjalankannya). Lihat DEVELOPERS.md.
+  (Aruna bertanya ke pengguna sebelum menjalankannya). core.accounts
+  memberi ekstensimu akun InfiArtt yang sedang masuk. Lihat DEVELOPERS.md.
 
 
 Versi 2.10.0 (Pembaruan Inti - 25 September 2026)

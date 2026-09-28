@@ -117,6 +117,34 @@ def is_allowed_ai_url(url):
         return False
 
 
+def ai_host(url):
+    """The host of an allowed AI address ("ai.infiartt.com"), or ""."""
+    if not is_allowed_ai_url(url):
+        return ""
+    return (urlparse(url.strip()).hostname or "").lower()
+
+
+# The official service's host. The InfiArtt sign-in token goes only there,
+# over HTTPS, matched exactly: never to a self-hosted copy (workers.dev), to
+# this computer, or to a lookalike ("ai.infiartt.com.example.com",
+# "evilai.infiartt.com"), whatever the Ask Hariku page says.
+HARIKU_AI_TOKEN_HOSTS = frozenset([urlparse(HARIKU_AI_URL).hostname or ""]) - {""}
+
+
+def is_official_ai_url(url):
+    """Whether `url` is Hariku's own AI service (HTTPS, exactly its host)."""
+    if not is_allowed_ai_url(url):
+        return False
+    parsed = urlparse(url.strip())
+    return parsed.scheme.lower() == "https" and (parsed.hostname or "").lower() in HARIKU_AI_TOKEN_HOSTS
+
+
+def may_send_account_token(url):
+    """Whether a request to `url` may carry the InfiArtt sign-in token: only
+    to the official service."""
+    return is_official_ai_url(url)
+
+
 # --- Download URL security policy --------------------------------------------
 # Pages host is exclusively YOUR content, so a host match there is already
 # tight. github.com is shared by everyone, so a Release URL must additionally

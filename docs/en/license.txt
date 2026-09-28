@@ -193,14 +193,22 @@ EXTENSIONS AND THE INTERNET
       infiartt.com) when you play, or when Hariku starts if you turn that
       on.
     - Dropbox talks to Dropbox only after you connect your account, and
-      Hariku Account Manager talks to infiartt.com only when you sign in.
+      Hariku Account Manager talks to infiartt.com only when you sign in,
+      and to renew your sign-in when it has fewer than 30 days left.
     - Ask Hariku sends nothing until you turn on one of its two features in
-      Preferences, Ask Hariku. Then a how-to question you ask Aruna, or a
-      sentence Aruna didn't understand (with the names of Hariku's own
-      commands), goes to Hariku's AI service on Cloudflare Workers. Only
-      the words and their language are sent, never your reminders, diary,
-      finances, places or name, and the service keeps no logs. Aruna asks
-      you before doing anything the AI suggests.
+      Preferences, Ask Hariku, and it needs you to sign in with your
+      InfiArtt account (Hariku Account Manager). Then a how-to question you
+      ask Aruna, or a sentence Aruna didn't understand (with the names of
+      Hariku's own commands), goes to Hariku's AI service on Cloudflare
+      Workers, with your InfiArtt sign-in. Only the words, their language
+      and the sign-in are sent, never your reminders, diary, finances,
+      places or name. The service asks infiartt.com which account the
+      sign-in belongs to, only to count a daily limit per account; it keeps
+      only that daily count, no questions and no logs. Aruna asks you
+      before doing anything the AI suggests. Your sign-in goes only to
+      Hariku's own service (ai.infiartt.com); a copy of the service you run
+      yourself, if you choose one, gets only its own access key, and is your
+      choice and responsibility.
     - Clipboard History, Timer & Alarm and Sleep Pattern send nothing.
   Third-party extensions can make their own connections, which their
   authors are responsible for.

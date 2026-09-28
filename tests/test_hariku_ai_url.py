@@ -53,6 +53,26 @@ def test_refused(url):
         endpoints.assert_ai_url(url)
 
 
+def test_the_sign_in_token_goes_only_to_hariku_s_own_service():
+    assert endpoints.may_send_account_token(endpoints.HARIKU_AI_URL)
+    assert endpoints.may_send_account_token(endpoints.HARIKU_AI_URL + "/v1/ask")
+    for url in ("https://hariku-ai.someone.workers.dev/v1/ask",   # a self-hosted copy
+                "http://127.0.0.1:8787/v1/ask",                   # this computer
+                "https://infiartt.com/v1/ask", "https://other.infiartt.com/v1/ask",
+                "http://ai.infiartt.com/v1/ask",                  # not HTTPS
+                "https://ai.infiartt.com.evil.example/v1/ask",
+                "https://ai.infiartt.com.evil.workers.dev",       # lookalikes that are allowed
+                "https://evilai.infiartt.com",                    #   addresses, but not official
+                "https://ai.infiartt.com.infiartt.com",
+                "https://user:pw@ai.infiartt.com/v1/ask", "", None):
+        assert not endpoints.may_send_account_token(url), url
+        assert not endpoints.is_official_ai_url(url), url
+    assert endpoints.HARIKU_AI_TOKEN_HOSTS == {"ai.infiartt.com"}
+    assert endpoints.is_official_ai_url("https://AI.infiartt.com/")
+    assert endpoints.ai_host("https://hariku-ai.someone.workers.dev/x") == "hariku-ai.someone.workers.dev"
+    assert endpoints.ai_host("http://evil.example") == ""
+
+
 def test_the_default_is_https_on_workers_dev_or_infiartt():
     url = endpoints.HARIKU_AI_URL
     assert url.startswith("https://")
