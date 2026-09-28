@@ -1,5 +1,27 @@
+Version 2.12.1 (Core Update - September 28, 2026)
+================================================================================
+This small update fixes Hariku's English guides and What's New, which gave
+Indonesian examples in many places, and makes the update window tell you
+what an update brings.
+
+- The English What's New, User Guide and extension guides now give English
+  examples, such as "what time is it in Tokyo" or "set a timer for 10
+  minutes", and the Indonesian ones give Indonesian examples. Every
+  example was checked to really work with Aruna. The extensions' guides
+  come as small updates in the Extension Store.
+- The update window's "What's new" box now shows what the new version
+  brings, in your language, starting with why it was released; it used to
+  show only the version number. The update window itself is in your
+  language too.
+- During a World Trip, World Clock no longer answers the Indonesian
+  question for the local time ("what time is it there") with "I don't
+  know the time zone"; World Trip answers it again.
+
 Version 2.12.0 (Core Update - September 28, 2026)
 ================================================================================
+This update makes reminders friendlier: they talk the way Hariku talks to
+you, instead of a plain "Reminder:" line.
+
 - Reminders talk like Hariku does. When a reminder comes, Hariku no longer
   says "Reminder: take medicine" but tells you in the way it talks to you,
   with your nickname: "Psst, Rafli! Reminder time: take medicine.", "Knock
