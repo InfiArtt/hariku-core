@@ -124,9 +124,11 @@ YOUR DATA STAYS ON YOUR COMPUTER
   data are kept on your computer, in %APPDATA%\Hariku2. Hariku's developer
   can't see them. What you type for a quick reminder or to Aruna, the command
   bar, is understood on your computer by rules built into Hariku, with no AI
-  and no online service, and it is not stored. The only exception is the
-  Ask Hariku extension, and only if you turn it on (see below). Hariku Voice
-  with the Windows voices also speaks on your computer.
+  and no online service, and it is not stored; what you say to Aruna with
+  Voice Control is also turned into text on your computer. The only
+  exceptions are the Ask Hariku extension and Voice Control's Hariku cloud
+  option, and only if you turn them on (see below). Hariku Voice with the
+  Windows voices also speaks on your computer.
 
 WHAT HARIKU CONNECTS TO BY ITSELF
   When Hariku starts, it downloads a few small files from its GitHub Pages
@@ -189,6 +191,16 @@ EXTENSIONS AND THE INTERNET
       speech models from GitHub and Hugging Face only when you work with
       them in Preferences; speaking and speech recognition then run on your
       computer.
+    - Voice Control's Hariku cloud, for older computers, is off unless you
+      choose it in Preferences, Voice Control, and it needs you to sign in
+      with your InfiArtt account (Hariku Account Manager). Then each
+      recording Voice Control makes when it listens to a command goes once
+      to Hariku's AI service (ai.infiartt.com), with its language, the names
+      of Hariku's own commands and your InfiArtt sign-in, to be turned into
+      text. The service doesn't store the recording or the text; it counts
+      only the seconds each account used today. The wake phrase is always
+      heard on your computer, and your sign-in goes only to Hariku's own
+      service, as for Ask Hariku below.
     - Orbit, a multiplayer game, connects to its game server (by default at
       infiartt.com) when you play, or when Hariku starts if you turn that
       on.
