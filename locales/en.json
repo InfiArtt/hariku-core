@@ -399,7 +399,7 @@
         "onb_ext_desc_weather": "The weather now and for the next 7 days where you live. Ask Aruna: weather.",
         "onb_ext_desc_briefing": "A short spoken briefing every morning: a greeting, the date, today's reminders and news from your other extensions. Press B.",
         "onb_ext_desc_timer_alarm": "Alarms and timers, typed or spoken to Aruna: alarm tomorrow at 6 AM, timer 10 minutes.",
-        "onb_ext_desc_voice_control": "Talk to Aruna with your microphone, in English or Indonesian. Your voice is recognised on this computer only; you download the speech model in Preferences, Voice Control.",
+        "onb_ext_desc_voice_control": "Talk to Aruna with your microphone, in English or Indonesian. By default your voice is recognised on this computer; you download the speech model in Preferences, Voice Control.",
         "onb_ext_desc_world_trip": "Fly anywhere from Aruna: take me to Tokyo. The local time, the weather, a greeting in the local language and live local radio.",
         "onb_ext_desc_earthquake": "The latest earthquake from BMKG, recent earthquakes in Indonesia, and tsunami warnings.",
         "onb_ext_desc_world_clock": "The time now in cities around the world.",
