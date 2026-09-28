@@ -61,6 +61,10 @@ INFIARTT_API_BASE = "https://infiartt.com"
 # POST {app_version, os_info, language, error_type, error_message, traceback} -> 201
 # Sent only when the user agrees in the crash dialog (or chose "always send").
 CRASH_REPORT_URL = f"{INFIARTT_API_BASE}/api/crash-report"
+# infiartt.com sits behind Cloudflare, whose browser check refuses requests
+# without a real User-Agent (Python's default gets "403, error code 1010"),
+# so everything Hariku sends there names itself.
+HTTP_USER_AGENT = "HarikuV2/2.0"
 
 # --- Hariku AI (core 2.11) ----------------------------------------------------
 # The Cloudflare Worker behind the Ask Hariku extension: "Tanya Hariku"
