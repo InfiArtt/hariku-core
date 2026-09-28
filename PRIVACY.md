@@ -247,9 +247,11 @@ and never along a redirect. The service asks infiartt.com
 how often each account uses the AI: a few requests a minute, and a daily
 limit (50 a day for now, questions and Aruna's help together; a question the
 guides don't cover doesn't count). It keeps only the account's number from
-that answer, for ten minutes, filed under a scrambled form (SHA-256) of the
-token, never the token itself, and never your user name, email or anything
-else infiartt.com has. The daily limit is counted in a small store that holds,
+that answer, and a yes or no: whether the account is an InfiArtt
+administrator, since administrators have no daily limit. It keeps them for
+ten minutes, filed under a scrambled form (SHA-256) of the token, never the
+token itself, and never your user name, email, roles or anything else
+infiartt.com has. The daily limit is counted in a small store that holds,
 per account, only today's date and a number; the account is filed there under
 a scrambled form of its number, and yesterday's count is deleted when the
 account next asks. infiartt.com's own
