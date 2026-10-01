@@ -221,6 +221,11 @@ EXTENSIONS AND THE INTERNET
       Hariku's own service (ai.infiartt.com); a copy of the service you run
       yourself, if you choose one, gets only its own access key, and is your
       choice and responsibility.
+    - Trivia plays its questions offline. Only if you turn on fresh online
+      questions does it ask the Open Trivia Database (opentdb.com) for new
+      ones, sending the number of questions and a category and difficulty;
+      its optional IndoMMLU question pack comes from GitHub, only when you
+      ask for it.
     - Clipboard History, Timer & Alarm and Sleep Pattern send nothing.
   Third-party extensions can make their own connections, which their
   authors are responsible for.

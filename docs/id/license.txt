@@ -235,6 +235,11 @@ EKSTENSI DAN INTERNET
       layanan yang kamu jalankan sendiri, kalau kamu memilihnya, hanya
       menerima kunci aksesnya sendiri, dan itu pilihan serta tanggung
       jawabmu.
+    - Kuis memainkan soalnya tanpa internet. Hanya kalau kamu menyalakan
+      soal baru dari internet, Kuis meminta soal ke Open Trivia Database
+      (opentdb.com) dengan mengirim jumlah soal serta kategori dan tingkat
+      kesulitannya; paket soal IndoMMLU yang opsional diambil dari GitHub,
+      hanya kalau kamu memintanya.
     - Riwayat Clipboard, Timer & Alarm, dan Pola Tidur tidak mengirim apa pun.
   Ekstensi pihak ketiga bisa membuat sambungannya sendiri, dan pembuatnya
   yang bertanggung jawab atasnya.
