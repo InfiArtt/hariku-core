@@ -15,8 +15,12 @@ Output-update/
 scratchpad/
 extensions/.cache/
 data/
+# ...but Trivia's question files (extensions/trivia/data) are part of the extension.
+!/extensions/trivia/data/
 mock_store/
 store_release/
+# Trivia data builds (tools/build_trivia_*.py): partial downloads, the IndoMMLU pack
+/build/
 
 # ── Secrets & old-backend copy (NEVER publish) ──────────
 # Full copy of the retired novarealm backend: DB dumps, connect.php creds, etc.

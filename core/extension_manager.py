@@ -82,6 +82,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "dropbox",
     "calculator",
     "ask_hariku",
+    "trivia",
 ])
 
 
