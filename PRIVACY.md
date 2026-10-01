@@ -505,6 +505,35 @@ time they were fetched, so they can still answer for up to a week when you are
 offline. Your settings (home currency, decimals, data sizes, copying) are
 saved there too (`Calculator`).
 
+## Trivia
+
+The Trivia extension plays the questions that come with it, on your computer,
+and sends nothing over the internet unless you ask for it:
+- With "Get fresh English questions online from the Open Trivia Database" on
+  (Preferences, Trivia; it is off by default), starting a game that has English
+  questions from the Open Trivia Database asks the Open Trivia Database
+  (`opentdb.com`) for that many new ones. The request carries the number of
+  questions, the category number and the difficulty when the game has them,
+  and, once the service has given one out, a session token that keeps it from
+  sending the same questions twice (kept in memory until Hariku closes). It
+  carries nothing about you, only what every web request carries, such as your
+  IP address and a Hariku user agent. Requests are at least 5.5 seconds apart,
+  as the service asks. See the [Open Trivia Database](https://opentdb.com).
+  Offline, or when the request fails, the questions that come with the
+  extension are played.
+- The optional IndoMMLU question pack is downloaded only when you ask for it
+  (Preferences, Trivia, or when you start one of its categories), after Hariku
+  shows its size and licence. It comes from Hariku's releases on GitHub
+  (`github.com/InfiArtt/hariku`), like an extension, is checked against the
+  fingerprint built into the extension, and is kept in `%APPDATA%\Hariku2` until
+  you remove it.
+
+Your answers, your records (games played, best scores per category, the daily
+quiz's streak and scores, and the questions you played lately, so they don't
+come back too soon) and your settings stay in `%APPDATA%\Hariku2` (`TriviaRecords`
+and `Trivia`). The daily quiz is picked on your computer from the date: nothing
+is sent to play it. Its sounds are generated and come with the extension.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
