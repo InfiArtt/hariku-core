@@ -10,7 +10,7 @@
 # Tests for core.place_search (core 2.8): pasted coordinates and map links,
 # Google Maps short links, the Nominatim address search (pacing, memory, the
 # User-Agent) and the Open-Meteo city search. Most of them moved here from
-# tests/test_flight_radar.py with the code (flight_radar_location.py).
+# the Flight Radar extension's tests with the code (flight_radar_location.py).
 # Nothing touches the network: the fetch functions are replaced.
 
 import urllib.error

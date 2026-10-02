@@ -68,7 +68,8 @@ HTTP_USER_AGENT = "HarikuV2/2.0"
 
 # --- Hariku AI (core 2.11) ----------------------------------------------------
 # The Cloudflare Worker behind the Ask Hariku extension: "Tanya Hariku"
-# answers and Aruna's AI fallback (servers/hariku-ai). Only the address is
+# answers and Aruna's AI fallback (hariku-ai, among the servers InfiArtt
+# maintains privately). Only the address is
 # here; the Worker reaches Workers AI through its own binding, so there is no
 # key in Hariku. Ask Hariku sends nothing unless the user turns it on.
 #

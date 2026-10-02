@@ -141,7 +141,7 @@ Each core also has an oldest extension API it still runs, `core.constants.EXTENS
 (its `last_tested_core_version`, or its `minimum_core_version` when it has none) is incompatible: Hariku
 doesn't load it and lists it on the Extension Manager's Incompatible tab, as NVDA does for old add-ons.
 When a core release does break older extensions, it raises that version; set `last_tested_core_version`
-after testing with a new core so your extension keeps running. `tools/publish_extensions.py` copies both
+after testing with a new core so your extension keeps running. The store's publishing tool copies both
 fields into the store's registry (core 2.8+ reads them).
 
 ---
@@ -1280,7 +1280,7 @@ def teardown():
 
 A handler that raises makes Aruna say "That command didn't work" (and it is logged). Everything your handler and `confirm()` speak with `core.speech.speak()` comes in Hariku Voice, like an action's answer.
 
-The Timer & Alarm extension (`extensions/timer_alarm`) is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead. The Calculator & Converter extension (`extensions/calculator`) uses a matcher with no patterns where the core has one ("25 x 4", "5 km ke mil", "berapa 25 kali 4"), and a short list of lead-word patterns ("berapa {text}", "hitung {text}") on cores 2.9 and 2.10, so it runs on both. Keep patterns few and their words distinctive: every pattern's words also go into Voice Control's vocabulary prompt, where short words push out other commands' names.
+The Timer & Alarm extension is built on this: "alarm besok jam 5 pagi olahraga" is read back and set on "ya", "timer mie 3 menit" starts at once, and a handler that finds no alarm in the words ("alarm list") returns `None` so Aruna runs the command instead. The Calculator & Converter extension uses a matcher with no patterns where the core has one ("25 x 4", "5 km ke mil", "berapa 25 kali 4"), and a short list of lead-word patterns ("berapa {text}", "hitung {text}") on cores 2.9 and 2.10, so it runs on both. Keep patterns few and their words distinctive: every pattern's words also go into Voice Control's vocabulary prompt, where short words push out other commands' names.
 
 **Answers told in steps** *(core 2.9)*. Aruna's Last result collects what is spoken within a moment of the answer's last line. An answer with pauses between its steps (World Trip: the captain's announcement, the engines, the arrival, a phrase in another voice) keeps it open:
 
@@ -1861,7 +1861,7 @@ def teardown():
 If your extension needs a library that is **not** part of the Python standard library and **not** bundled with Hariku core, you must include it yourself.
 
 ### What's already available (no need to bundle):
-- Python standard library (`json`, `os`, `datetime`, `zoneinfo`, `urllib`, `sqlite3`, `socket`, `ssl`, `html`, `csv`, `re`, `math`, `collections`, `threading`, `subprocess`, `hashlib`, `xml`, `http`, etc.). *(core 2.8)* `tarfile` and `bz2` too; a compiled Hariku older than 2.8 may lack them, so import them guarded (`try: import tarfile` / `except ImportError:`) if your extension also runs there. The compiled Hariku only contains the modules the core imports (`core/stdlib_includes.py` lists the extra ones), and `tests/test_extension_stdlib.py` fails for an extension that imports anything else.
+- Python standard library (`json`, `os`, `datetime`, `zoneinfo`, `urllib`, `sqlite3`, `socket`, `ssl`, `html`, `csv`, `re`, `math`, `collections`, `threading`, `subprocess`, `hashlib`, `xml`, `http`, etc.). *(core 2.8)* `tarfile` and `bz2` too; a compiled Hariku older than 2.8 may lack them, so import them guarded (`try: import tarfile` / `except ImportError:`) if your extension also runs there. The compiled Hariku only contains the modules the core imports (`core/stdlib_includes.py` lists the extra ones), so an extension that imports anything else fails there.
 - `wx` (wxPython) — UI framework
 - `cytolk` / `tolk` — Screen reader speech
 - `cryptography` — Encryption (Fernet, etc.)

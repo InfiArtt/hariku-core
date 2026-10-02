@@ -20,16 +20,13 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCE_DIRS = ("core", "ui", "extensions", "tests")
-SKIP_PARTS = ("window_teleporter" + os.sep + "lib",)
+SOURCE_DIRS = ("core", "ui", "tests")
 
 
 def _python_files():
     yield os.path.join(ROOT, "hariku.py")
     for d in SOURCE_DIRS:
         for dirpath, _dirs, files in os.walk(os.path.join(ROOT, d)):
-            if any(p in dirpath for p in SKIP_PARTS):
-                continue
             for f in files:
                 if f.endswith(".py"):
                     yield os.path.join(dirpath, f)
@@ -90,8 +87,6 @@ def test_main_window_starts_and_saves_settings(tmp_path):
     )
     output = result.stdout + result.stderr
     for stage in ("OK main_window", "OK apply_settings", "OK preferences_appearance",
-                  "OK routines_manage_dialog",
-                  "OK routines_log_dialog", "OK routines_type_browse",
-                  "OK routines_insert_placeholder", "OK startup_greeting", "OK shutdown"):
+                  "OK startup_greeting", "OK shutdown"):
         assert stage in result.stdout, f"startup stage failed: {stage}\n{output}"
     assert result.returncode == 0, output

@@ -1264,35 +1264,11 @@ class TestCallSites:
         assert shown[0][1] is False and voice.windows.calls == []
         assert shown[0][2] == said
 
-    def test_briefing_announces_as_a_briefing(self):
-        with open(os.path.join(ROOT, "extensions", "briefing", "main.py"), encoding="utf-8") as f:
-            source = f.read()
-        assert "from core.speech import speak" not in source
-        assert source.count('"briefing", interrupt=') == 2
-        assert source.count('"briefing",\n             interrupt=False)') == 1
-
     def test_stop_hotkey(self):
         with open(os.path.join(ROOT, "ui", "main_window.py"), encoding="utf-8") as f:
             source = f.read()
         assert ('register_action("Hariku Core", "stop_voice", _("nav_stop_voice"), ord(\'S\'), '
                 'False, core.voice.stop)') in source
-
-    def test_no_bundled_extension_takes_plain_s(self):
-        import re
-        found = []
-        ext_root = os.path.join(ROOT, "extensions")
-        for ext in os.listdir(ext_root):
-            main = os.path.join(ext_root, ext, "main.py")
-            if not os.path.isfile(main):
-                continue
-            with open(main, encoding="utf-8") as f:
-                source = f.read()
-            for match in re.finditer(r"register_action\((.*?)\)\n", source, re.S):
-                call = match.group(1)
-                if re.search(r"ord\(['\"]S['\"]\)", call) and "default_shift=True" not in call \
-                        and not re.search(r"ord\(['\"]S['\"]\),\s*True", call):
-                    found.append(ext)
-        assert found == []
 
     def test_voice_page_creates_each_label_before_its_control(self):
         # Screen readers name a control after the static text created right

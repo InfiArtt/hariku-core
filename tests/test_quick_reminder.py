@@ -19,7 +19,6 @@ import ast
 import datetime
 import json
 import os
-import zipfile
 
 import pytest
 
@@ -27,7 +26,6 @@ import core.quick_reminder as quick
 from core import when
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXT_ROOT = os.path.join(ROOT, "extensions")
 
 THU = datetime.datetime(2026, 9, 24, 10, 40)      # Thursday 24 September 2026, 10:40
 
@@ -345,34 +343,6 @@ def _default_bindings(source, origin):
 def _main_window_source():
     with open(os.path.join(ROOT, "ui", "main_window.py"), encoding="utf-8") as f:
         return f.read()
-
-
-PLAIN_N = (ord("N"), False, False, False, False)
-
-
-def test_n_is_free_in_the_extensions_and_store_packages():
-    core_bindings = [combo for combo, origin in _default_bindings(_main_window_source(), "core")]
-    assert core_bindings.count(PLAIN_N) == 1
-    bindings = []
-    hrk = [os.path.join(EXT_ROOT, e) for e in os.listdir(EXT_ROOT) if e.endswith(".hrk")]
-    store = os.path.join(ROOT, "tools", "hrk_store")
-    if os.path.isdir(store):
-        hrk += [os.path.join(store, e) for e in os.listdir(store) if e.endswith(".hrk")]
-    for entry in sorted(os.listdir(EXT_ROOT)):
-        path = os.path.join(EXT_ROOT, entry)
-        if os.path.isdir(path):
-            for name in os.listdir(path):
-                if name.endswith(".py"):
-                    with open(os.path.join(path, name), encoding="utf-8") as f:
-                        bindings += _default_bindings(f.read(), entry)
-    for path in hrk:
-        with zipfile.ZipFile(path) as z:
-            for name in z.namelist():
-                if name.endswith(".py") and "lib/" not in name:
-                    bindings += _default_bindings(z.read(name).decode("utf-8", "replace"),
-                                                  os.path.basename(path)[:-4])
-    clashes = [origin for combo, origin in bindings if combo == PLAIN_N]
-    assert not clashes, clashes
 
 
 def test_main_window_registers_the_quick_reminder():

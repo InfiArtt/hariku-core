@@ -11,15 +11,19 @@ Output/
 Output-update/
 *.spec
 
+# ── The official extensions and the servers ─────────────
+# Their own repositories (hariku-extensions, hariku-servers), maintained
+# privately by InfiArtt, checked out here for development. The extensions
+# come to users from the Extension Store.
+/extensions/
+/servers/
+
 # ── Local runtime / scratch / caches ────────────────────
 scratchpad/
-extensions/.cache/
 data/
-# ...but Trivia's question files (extensions/trivia/data) are part of the extension.
-!/extensions/trivia/data/
 mock_store/
 store_release/
-# Trivia data builds (tools/build_trivia_*.py): partial downloads, the IndoMMLU pack
+# Trivia data builds (extensions/_tools/build_trivia_*.py): partial downloads, the IndoMMLU pack
 /build/
 
 # ── Secrets & old-backend copy (NEVER publish) ──────────
@@ -28,8 +32,6 @@ hariku.novarealm.cloud/
 .env
 *.env
 settings/*.local.json
-# Orbit's hunt: the real seasons (riddles, clue places, answers) stay on the server only.
-servers/orbit/private/
 
 # ── Misc build artifacts ────────────────────────────────
 Hariku_V2_Developer_SDK.zip

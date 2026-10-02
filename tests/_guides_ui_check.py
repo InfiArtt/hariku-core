@@ -10,7 +10,8 @@
 Build Help, Extension guides... (ui/guides_dialog.py) with real wxPython: the
 label comes right before the list, Enter and Open open the selected guide and
 the list stays open, Escape closes it, an empty list says so, and the real
-list shows this repo's extensions with a guide, in the Hariku language.
+list shows the installed extensions with a guide (made-up ones, in a system
+folder in the temporary APPDATA), in the Hariku language.
 
 Opening a guide is a fake: no browser opens. Speech is captured through
 on_before_speak and urlopen is blocked, so nothing leaves the machine and
@@ -102,7 +103,32 @@ bus.subscribe("on_before_speak", _capture_speech)
 # Never a browser: opening a guide is recorded instead.
 browsed = []
 core.guides._startfile = lambda path: browsed.append(path)
-manager.SYSTEM_EXTENSIONS_DIR = os.path.join(ROOT, "extensions")
+
+# Installed extensions, made up: three with a guide (Calculator & Converter
+# and World Trip in English and Indonesian, Orbit and Weather in English only)
+# and one without.
+SYSTEM = os.path.join(os.environ["APPDATA"], "system_extensions")
+FAKES = {
+    "orbit": ("Orbit", {"en": "# Orbit\n\n## Getting started\n\nType **look**.\n"}),
+    "weather": ("Weather", {"en": "# Weather\n\n## Today\n\nPress the key.\n"}),
+    "calculator": ("Calculator & Converter",
+                   {"en": "# Calculator & Converter\n\n## Sums\n\nType 2 + 2.\n",
+                    "id": "# Kalkulator & Konversi\n\n## Hitungan\n\nKetik 2 + 2.\n"}),
+    "world_trip": ("World Trip", {"en": "# World Trip\n\n## Going\n\nPick a city.\n",
+                                  "id": "# Keliling Dunia\n\n## Berangkat\n\nPilih kota.\n"}),
+    "notes": ("Notes", {}),
+}
+for ext_id, (name, guides) in FAKES.items():
+    folder = os.path.join(SYSTEM, ext_id)
+    os.makedirs(folder)
+    with open(os.path.join(folder, "manifest.json"), "w", encoding="utf-8") as f:
+        f.write('{"name": "%s", "version": "1.0", "author": "Rafli", "description": "x", '
+                '"main": "main.py"}' % name)
+    for lang, text in guides.items():
+        os.makedirs(os.path.join(folder, "docs", lang))
+        with open(os.path.join(folder, "docs", lang, "guide.md"), "w", encoding="utf-8") as f:
+            f.write(text)
+manager.SYSTEM_EXTENSIONS_DIR = SYSTEM
 
 
 def pump(condition, timeout=5.0):
@@ -199,12 +225,12 @@ assert len(opened) == count
 dlg.Destroy()
 print("OK empty")
 
-# --- The real list: this repo's guides, and a real (fake-browser) open -----------------------
+# --- The real list: the installed guides, and a real (fake-browser) open ----------------------
 dlg = GuidesDialog(frame)
 dlg.Show()
 pump(lambda: dlg.IsShown(), 2)
 names = [dlg.list.GetString(i) for i in range(dlg.list.GetCount())]
-assert len(names) >= 30 and "Orbit" in names and "Weather" in names, names
+assert names == ["Calculator & Converter", "Orbit", "Weather", "World Trip"], names
 assert names == sorted(names, key=str.casefold), names
 dlg.list.SetSelection(names.index("Orbit"))
 press(dlg.btn_open)
@@ -224,7 +250,7 @@ pump(lambda: dlg.IsShown(), 2)
 children = list(dlg.GetChildren())
 assert children[children.index(dlg.list) - 1].GetLabel() == "Ekstensi yang punya panduan:"
 names = [dlg.list.GetString(i) for i in range(dlg.list.GetCount())]
-assert "Kalkulator & Konversi" in names and "Keliling Dunia" in names, names
+assert names == ["Kalkulator & Konversi", "Keliling Dunia", "Orbit", "Weather"], names
 dlg.Destroy()
 print("OK indonesian")
 

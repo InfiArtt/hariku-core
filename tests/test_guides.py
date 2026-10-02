@@ -10,10 +10,12 @@
 # Guides (core 2.11): the Markdown and text converters (headings, lists,
 # escaping, no scripts, the language), finding, listing and opening guides
 # with fake extension folders and .hrk files (the English fallback, links and
-# paths that lead outside refused, the size limit), every official extension's
-# own guides, Aruna's "panduan orbit" next to the other commands with content,
-# the Extension Manager's Guide button, and packaging. No browser is opened:
-# the page is checked as a string, and opening is a fake.
+# paths that lead outside refused, the size limit), the template extension's
+# guide, Aruna's "panduan" patterns, the Extension Manager's Guide button, and
+# packaging. No browser is opened: the page is checked as a string, and
+# opening is a fake. Every official extension's own guides, and Aruna's
+# "panduan orbit" next to their commands with content, are checked with the
+# extensions.
 
 import ast
 import os
@@ -24,7 +26,6 @@ import zipfile
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXT_ROOT = os.path.join(ROOT, "extensions")
 
 
 @pytest.fixture
@@ -547,14 +548,8 @@ def test_the_installed_tab_has_the_guide_button():
 
 
 # ------------------------------------------------------------
-# Every official extension has its guides
+# The template extension's guide
 # ------------------------------------------------------------
-
-def _official_in_repo():
-    import core.extension_manager as manager
-    return sorted(ext_id for ext_id in manager._OFFICIAL_EXTENSION_IDS
-                  if os.path.isfile(os.path.join(EXT_ROOT, ext_id, "manifest.json")))
-
 
 def test_the_template_extension_shows_how():
     import core.guides
@@ -564,240 +559,9 @@ def test_the_template_extension_shows_how():
     assert title == "Hello World" and "<h2>" in body
 
 
-def test_most_official_extensions_are_in_this_repo():
-    assert len(_official_in_repo()) >= 30
-
-
-@pytest.mark.parametrize("ext_id", _official_in_repo())
-@pytest.mark.parametrize("lang", ["en", "id"])
-def test_every_official_extension_has_its_guides(g, ext_id, lang):
-    path = os.path.join(EXT_ROOT, ext_id, "docs", lang, "guide.md")
-    assert os.path.isfile(path), f"{ext_id} has no {lang} guide"
-    assert os.path.getsize(path) < g.MAX_GUIDE_BYTES
-    with open(path, encoding="utf-8") as f:
-        text = f.read()
-    first = text.split("\n", 1)[0]
-    assert re.match(r"^# \S", first), f"{path}: the first line must be the # title"
-    body, title = g.markdown_body(text)
-    assert title and body.count("<h1>") == 1, path
-    assert "<h2>" in body, f"{path} has no ## sections"
-
-
-@pytest.mark.parametrize("ext_id", _official_in_repo())
-@pytest.mark.parametrize("lang", ["en", "id"])
-def test_guides_use_only_what_the_converter_knows(ext_id, lang):
-    path = os.path.join(EXT_ROOT, ext_id, "docs", lang, "guide.md")
-    if not os.path.isfile(path):
-        pytest.skip("no guide (the test above says so)")
-    with open(path, encoding="utf-8") as f:
-        text = f.read()
-    outside_code = re.sub(r"`[^`\n]*`", "", re.sub(r"```.*?```", "", text, flags=re.S))
-    problems = []
-    for number, line in enumerate(outside_code.split("\n"), 1):
-        if line.lstrip().startswith("|"):
-            problems.append(f"{number}: a table")
-        if re.search(r"\]\((?:https?|mailto|file)?:?", line):
-            problems.append(f"{number}: a link")
-        if re.search(r"</?[a-zA-Z][^>]*>", line):
-            problems.append(f"{number}: an HTML tag")
-        if line.startswith(">"):
-            problems.append(f"{number}: a block quote")
-        if re.match(r"^ {2,}[-*] ", line):
-            problems.append(f"{number}: a nested list")
-    assert not problems, f"{path}: " + "; ".join(problems)
-
-
-@pytest.mark.parametrize("ext_id", _official_in_repo())
-def test_indonesian_guides_say_kamu(ext_id):
-    path = os.path.join(EXT_ROOT, ext_id, "docs", "id", "guide.md")
-    if not os.path.isfile(path):
-        pytest.skip("no guide (the test above says so)")
-    with open(path, encoding="utf-8") as f:
-        text = f.read()
-    # Labels quoted as the window shows them may say "Anda"; the guide itself doesn't.
-    prose = re.sub(r"\"[^\"]*\"|“[^”]*”|`[^`]*`", "", text)
-    assert not re.search(r"\bAnda\b", prose), f"{path}: use \"kamu\", not \"Anda\""
-
-
 # ------------------------------------------------------------
-# Aruna: "panduan orbit", and nothing else taken
+# Aruna: the guide patterns
 # ------------------------------------------------------------
-
-@pytest.fixture
-def repo(g, monkeypatch, tmp_path):
-    """The extensions in this repo, installed as system folders, and Hariku
-    in Indonesian."""
-    import core.extension_manager as manager
-    from core import i18n
-    monkeypatch.setattr(manager, "SYSTEM_EXTENSIONS_DIR", EXT_ROOT)
-    monkeypatch.setattr(manager, "USER_EXTENSIONS_DIR", str(tmp_path))
-    monkeypatch.setattr(manager, "LOADED_EXTENSIONS", {})
-    monkeypatch.setattr(g, "_scratchpad_dir", lambda: None)
-    monkeypatch.setattr(i18n, "_current_language", "id")
-    i18n._load_domain("core", i18n.CORE_LOCALES_DIR)
-    import json
-    folders = {}
-    for ext_id in os.listdir(EXT_ROOT):
-        manifest = os.path.join(EXT_ROOT, ext_id, "manifest.json")
-        if os.path.isfile(manifest):
-            with open(manifest, encoding="utf-8") as f:
-                folders[ext_id] = json.load(f).get("name") or ext_id
-    monkeypatch.setattr(g, "installed_extensions", lambda: dict(folders))
-    g._titles.clear()
-    g._archive_titles.clear()
-    return g
-
-
-def _literal_patterns(ext, name):
-    with open(os.path.join(EXT_ROOT, ext, "main.py"), encoding="utf-8") as f:
-        tree = ast.parse(f.read())
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == name:
-            return list(ast.literal_eval(node.value))
-    raise AssertionError(f"{ext}: {name} not found")
-
-
-class Aruna:
-    """What ui/command_bar.py does with a text, without the window: the
-    commands with content in turn (the guides' real handler; the others
-    answer "<their id>"), then Hariku's own commands."""
-
-    def __init__(self, g):
-        import core.commands as c
-        for folder in ("timer_alarm", "calculator"):
-            path = os.path.join(EXT_ROOT, folder)
-            if path not in sys.path:
-                sys.path.insert(0, path)
-        import calculator_intents
-        import timer_alarm_intents
-        self.c = c
-
-        def owner(intent_id):
-            return lambda request: f"<{intent_id}>"
-
-        self.guide = c.Intent(g.GUIDE_INTENT, g.GUIDE_PATTERNS, g.on_guide_request)
-        self.intents = [self.guide]
-        for name, patterns in timer_alarm_intents.PATTERNS.items():
-            if name != "fix":
-                self.intents.append(c.Intent(f"Timer and Alarm.{name}", patterns,
-                                             owner(f"Timer and Alarm.{name}")))
-        for ext, names in (("orbit", ["PLAY_PATTERNS"]), ("dropbox", ["LINK_PATTERNS"]),
-                           ("world_trip", ["TRIP_PATTERNS", "ABOUT_PATTERNS", "WHERE_PATTERNS"])):
-            for name in names:
-                intent_id = f"{ext}.{name[:-9].lower()}"
-                self.intents.append(c.Intent(intent_id, _literal_patterns(ext, name),
-                                             owner(intent_id)))
-        calculator = calculator_intents.Calculator(language=lambda: "id")
-        self.intents.append(c.Intent("Calculator.calculate", [], owner("Calculator.calculate"),
-                                     matcher=calculator.matcher))
-        self.commands = [c.Command(aid, aid, aliases) for aid, aliases in c.BUILTIN_ALIASES.items()]
-
-    def send(self, text):
-        """(who answered, the Reply or None)."""
-        c = self.c
-        for found in c.match_intents(text, self.intents):
-            reply = c.Reply.of(found.intent.handler(c.Request(found.text, text, "typed",
-                                                              found.intent.id)))
-            if reply is not None:
-                return found.intent.id, reply
-        decided = c._decide_without_intents(text, None, self.commands)
-        return (decided.action_id if decided.kind == "run" else decided.kind), None
-
-
-@pytest.fixture
-def aruna(repo):
-    return Aruna(repo)
-
-
-@pytest.mark.parametrize("text, ext_id", [
-    ("panduan orbit", "orbit"), ("cara pakai dropbox", "dropbox"),
-    ("bantuan kalkulator", "calculator"), ("guide for orbit", "orbit"),
-    ("how to use dropbox", "dropbox"), ("Panduan Orbit.", "orbit"),
-    ("tolong panduan orbit", "orbit"), ("buka panduan orbit", "orbit"),
-    ("bantuan orbit", "orbit"), ("panduan timer", "timer_alarm"),
-    ("cara menggunakan alarm", "timer_alarm"), ("help with the calculator", "calculator"),
-    ("how do i use voice control", "voice_control"), ("guide to world trip", "world_trip"),
-    ("panduan flight radar", "flight_radar"), ("panduan clipboard history", "clipboard_history"),
-    ("bantuan untuk dropbox", "dropbox"), ("panduan kalkulator dan konversi", "calculator"),
-])
-def test_aruna_opens_guides(aruna, text, ext_id):
-    opened = []
-    aruna.c  # noqa
-    import core.guides
-    core.guides._opener = opened.append
-    try:
-        who, reply = aruna.send(text)
-        assert who == "Hariku Core.guide", (text, who)
-        if reply.confirm is not None:        # a close match is asked about first
-            reply = reply.confirm()
-        assert reply.then is not None, (text, reply)
-        reply.then()
-        assert opened == [ext_id], (text, opened)
-    finally:
-        core.guides._opener = None
-
-
-@pytest.mark.parametrize("text", ["panduan hariku", "panduan pengguna", "how to use hariku",
-                                  "cara pakai aplikasi ini"])
-def test_aruna_opens_the_user_guide(aruna, text):
-    import core.guides
-    opened = []
-    core.guides._opener = opened.append
-    try:
-        who, reply = aruna.send(text)
-        assert who == "Hariku Core.guide" and reply.confirm is None
-        reply.then()
-        assert opened == [core.guides.CORE_ID]
-    finally:
-        core.guides._opener = None
-
-
-def test_aruna_says_when_there_is_no_guide(aruna, repo, monkeypatch):
-    monkeypatch.setattr(repo, "guide_titles", lambda ext_id: {})
-    who, reply = aruna.send("panduan orbit")
-    assert who == "Hariku Core.guide"
-    assert reply.then is None and reply.confirm is None and "Orbit" in reply.say
-
-
-@pytest.mark.parametrize("text", [
-    # Orbit's own in-game help, through Aruna
-    "orbit bantuan", "orbit help casino", "orbit help", "orbit help moving",
-    "orbit panduan", "orbit cara pakai kapal",
-    # not a guide of anything installed
-    "bantuan bergerak", "bantuan kerja", "cara pakai sumpit", "help with my homework",
-    "panduan memasak", "how to use chopsticks",
-    # the others' commands with content
-    "timer 10 menit", "alarm besok jam 5 pagi", "take me to Tokyo", "bawa aku ke Paris",
-    "tell me about Jakarta", "di mana aku", "salin link laporan", "copy link",
-    "orbit go to the cantina", "open orbit", "25 x 4", "berapa 25 kali 4", "5 km ke mil",
-    "2 foot in inches", "lempar koin",
-    # Hariku's own
-    "jam berapa", "what time is it", "cuaca", "gempa terbaru", "buka pengaturan",
-    "tambah pengingat", "panduan ekstensi", "extension guides", "kelola ekstensi",
-])
-def test_aruna_leaves_other_sentences_alone(aruna, text):
-    who, _reply = aruna.send(text)
-    assert who != "Hariku Core.guide", (text, who)
-
-
-@pytest.mark.parametrize("text, owner", [
-    ("orbit bantuan", "orbit.play"), ("orbit help", "orbit.play"),
-    ("timer 10 menit", "Timer and Alarm.timer"), ("take me to Tokyo", "world_trip.trip"),
-    ("salin link laporan", "dropbox.link"), ("25 x 4", "Calculator.calculate"),
-    ("panduan ekstensi", "Hariku Core.extension_guides"),
-    ("extension guides", "Hariku Core.extension_guides"),
-    ("panduan pengguna", "Hariku Core.guide"), ("user guide", "Hariku Core.user_guide"),
-    ("jam berapa", "Hariku Core.speak_time"),
-])
-def test_aruna_still_finds_their_owners(aruna, text, owner):
-    assert aruna.send(text)[0] == owner
-
-
-def test_orbit_s_help_never_matches_the_guide_patterns(aruna):
-    found = aruna.c.match_intents("orbit bantuan", aruna.intents)
-    assert [m.intent.id for m in found] == ["orbit.play"]
-    assert found[0].text == "bantuan"
-
 
 def test_the_guide_patterns_are_valid(g):
     import core.commands

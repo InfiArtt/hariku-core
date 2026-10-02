@@ -21,7 +21,7 @@ signing policy below for how releases are built and signed.
 - **Calendar and reminders.** Move around dates quickly and set reminders that
   repeat daily, weekly, monthly, or yearly. Anything you missed while the app was
   closed is caught up the next time you open it.
-- **Extensions.** A plugin system with an in-app store. The bundled ones include
+- **Extensions.** A plugin system with an in-app store. The official ones include
   World Clock, a Markdown reader, and Routines, an automation builder modeled on
   iOS Shortcuts that pairs a trigger with actions and can pass variables between
   them.
@@ -30,6 +30,14 @@ signing policy below for how releases are built and signed.
 - **Hard to break.** Saves are atomic, a crash handler catches failures,
   extensions load only after a SHA-256 trust check and your consent, and the
   auto-updater verifies what it downloads.
+
+## What's in this repository
+
+This repository holds Hariku's core: the app (`hariku.py`, `core/`, `ui/`), its
+guides and languages (`docs/`, `locales/`), its sounds, the extension template,
+and the core's tests and tools. The official extensions reach users through the
+Extension Store. Their sources, and Hariku's servers (the Orbit game server and
+the Hariku AI service), are maintained privately by InfiArtt.
 
 ## Running from source
 

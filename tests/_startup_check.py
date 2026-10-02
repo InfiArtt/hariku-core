@@ -7,8 +7,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Build the real main window, save General settings, and open the Routines
-dialogs through their hotkey actions, using real wxPython.
+Build the real main window, save General settings, check that Preferences
+honours them, and schedule the startup greeting, using real wxPython. (The
+Routines extension's dialogs are checked with the official extensions.)
 
 Run by tests/test_startup.py in a separate process, because conftest.py mocks
 wx inside the pytest process. The caller points APPDATA at a temporary folder so
@@ -63,137 +64,9 @@ for w in texts:
 prefs.Destroy()
 print("OK preferences_appearance")
 
-# Load Routines through the real loader and run its hotkey actions, which open
-# modal dialogs. A timer closes each dialog so the check doesn't block.
-import core.extension_manager as em
-em.load_unpacked_extension(os.path.join(ROOT, "extensions", "routines"))
-assert "routines" in em.LOADED_EXTENSIONS, "Routines extension did not load"
-
-
-def _run_and_close(action_id, label):
-    opened = []
-
-    def close_modal():
-        for w in wx.GetTopLevelWindows():
-            if isinstance(w, wx.Dialog) and w.IsModal():
-                opened.append(type(w).__name__)
-                w.EndModal(wx.ID_CANCEL)
-
-    wx.CallLater(1500, close_modal)
-    core.hotkeys.actions[action_id].callback()
-    assert opened, f"{action_id} did not open a dialog"
-    print(f"OK {label} ({opened[0]})")
-
-
-_run_and_close("Routines.manage_routines", "routines_manage_dialog")
-_run_and_close("Routines.view_routines_log", "routines_log_dialog")
-
-# Browsing the Type list with arrow keys fires EVT_CHOICE on every step. Each
-# step must rebuild the settings for that type without taking focus away.
-routines_ui = sys.modules["routines_ui"]
-focus_checked = True
-for kind in ("condition", "action"):
-    dlg = routines_ui.ItemDialog(frame, kind)
-    dlg.Show()
-    dlg.choice.SetFocus()
-    wx.Yield()
-    can_observe_focus = wx.Window.FindFocus() is dlg.choice
-    focus_checked = focus_checked and can_observe_focus
-    for i in range(dlg.choice.GetCount()):
-        dlg.choice.SetSelection(i)
-        evt = wx.CommandEvent(wx.EVT_CHOICE.typeId, dlg.choice.GetId())
-        evt.SetEventObject(dlg.choice)
-        dlg.choice.GetEventHandler().ProcessEvent(evt)
-        wx.Yield()
-        name = dlg.choice.GetString(i)
-        assert dlg._settings_box.GetLabel() == f"Settings for {name}", name
-        if can_observe_focus:
-            assert wx.Window.FindFocus() is dlg.choice, f"focus left the Type list at {name}"
-    dlg.Destroy()
-print(f"OK routines_type_browse (focus {'checked' if focus_checked else 'not observable here'})")
-
-# "Insert placeholder…" in the action editor: enabled only for types with a
-# text field, lists the profile, and puts the chosen token at the caret of the
-# text field last focused, then returns focus there. The popup menu is replaced
-# by one that picks an entry, so no real menu opens.
+# The profile the startup greeting below uses.
 import core.personal
 core.personal.set_profile("Rafli", "Bro", [("kantor", "Jl. Sudirman 1")])
-engine = routines_ui.engine
-dlg = routines_ui.ItemDialog(frame, "action",
-                             existing={"type": "notification",
-                                       "params": {"title": "Hi", "message": "Hello "}},
-                             variables=["greeting"])
-dlg.Show()
-wx.Yield()
-assert dlg.btn_insert is not None and dlg.btn_insert.IsEnabled()
-labels = dict(dlg.placeholder_entries())
-assert labels["%myname%"] == "%myname%: your name (Rafli)", labels
-assert labels["%mynickname%"] == "%mynickname%: what Hariku calls you (Bro)", labels
-assert "%kantor%" in labels and "%time%" in labels and "%var:greeting%" in labels, labels
-
-menus = []
-
-
-def _pick(token_label):
-    def show(menu):
-        items = menu.GetMenuItems()
-        menus.append([item.GetItemLabelText() for item in items])
-        for item in items:
-            if item.GetItemLabelText().startswith(token_label):
-                evt = wx.CommandEvent(wx.EVT_MENU.typeId, item.GetId())
-                evt.SetEventObject(menu)
-                menu.ProcessEvent(evt)
-                return
-        raise AssertionError(f"no menu entry for {token_label}")
-    return show
-
-
-def _press(button):
-    evt = wx.CommandEvent(wx.EVT_BUTTON.typeId, button.GetId())
-    evt.SetEventObject(button)
-    button.GetEventHandler().ProcessEvent(evt)
-    wx.Yield()
-
-
-title_ctrl = dlg._field_ctrls["title"][0]
-message_ctrl = dlg._field_ctrls["message"][0]
-message_ctrl.SetFocus()
-wx.Yield()
-message_ctrl.SetInsertionPointEnd()
-if wx.Window.FindFocus() is not message_ctrl:
-    dlg._last_text_key = "message"   # focus can't be observed here; as if it were
-dlg._show_menu = _pick("%myname%:")
-_press(dlg.btn_insert)
-assert menus and menus[-1][0] == "%myname%: your name (Rafli)", menus
-assert message_ctrl.GetValue() == "Hello %myname%", message_ctrl.GetValue()
-assert title_ctrl.GetValue() == "Hi", title_ctrl.GetValue()
-assert message_ctrl.GetInsertionPoint() == len("Hello %myname%")
-insert_focus = wx.Window.FindFocus() is message_ctrl
-
-dlg._show_menu = _pick("%time%:")
-_press(dlg.btn_insert)
-assert message_ctrl.GetValue() == "Hello %myname%%time%", message_ctrl.GetValue()
-
-# A type without text fields disables the button; focus stays on the Type list.
-dlg.choice.SetFocus()
-wx.Yield()
-lock = [t for t, _label in engine.ACTION_LABELS].index("lock_screen")
-dlg.choice.SetSelection(lock)
-evt = wx.CommandEvent(wx.EVT_CHOICE.typeId, dlg.choice.GetId())
-evt.SetEventObject(dlg.choice)
-dlg.choice.GetEventHandler().ProcessEvent(evt)
-wx.Yield()
-assert not dlg.btn_insert.IsEnabled()
-assert dlg.target_text_field() is None
-item = dlg.get_item()
-assert item["type"] == "lock_screen", item
-dlg.Destroy()
-
-# Conditions have no placeholders, so no button.
-dlg = routines_ui.ItemDialog(frame, "condition")
-assert dlg.btn_insert is None
-dlg.Destroy()
-print(f"OK routines_insert_placeholder (focus {'checked' if insert_focus else 'not observable here'})")
 
 # Hariku's startup greeting, scheduled the way hariku.py does once the window
 # is shown: the call returns at once, focus doesn't move, and the greeting and
