@@ -260,8 +260,8 @@ a scrambled form of its number, and yesterday's count is deleted when the
 account next asks. infiartt.com's own
 [privacy policy](https://infiartt.com/privacy) covers your InfiArtt account.
 
-Hariku's AI service is a small program of Hariku's own (its code is in
-Hariku's repository, `servers/hariku-ai`) that runs on Cloudflare Workers and
+Hariku's AI service is a small program of Hariku's own (maintained by
+InfiArtt) that runs on Cloudflare Workers and
 answers with Cloudflare Workers AI, from Hariku's guides. It keeps no logs of
 questions or sentences, of tokens or accounts, and stores nothing but the
 daily counts above; Cloudflare's request logs are turned off for it.
