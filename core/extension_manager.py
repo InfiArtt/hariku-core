@@ -40,8 +40,9 @@ LOAD_ERRORS = {}
 #
 # HOW TO ADD A NEW OFFICIAL EXTENSION:
 #   1. Add the extension folder ID (folder name / .hrk name without extension) here.
-#   2. Also add the same ID to OFFICIAL_EXTENSION_IDS in:
-#      tools/server/generate_trusted_hashes.py
+#   2. Also add the same ID to OFFICIAL_EXTENSION_IDS in
+#      _tools/generate_trusted_hashes.py of the official extensions'
+#      repository (maintained privately by InfiArtt).
 #   3. Re-run generate_trusted_hashes.py and publish the new
 #      trusted_extensions.json to the GitHub Pages path in core.endpoints
 #      (TRUSTED_HASHES_URL, i.e. <pages>/security/trusted_extensions.json).

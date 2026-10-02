@@ -69,5 +69,6 @@ try:
 except ImportError:
     pass
 
-# tests/test_extension_stdlib.py fails when an extension imports a module that
-# neither the core nor this file brings into the build.
+# The official extensions' tests (test_extension_stdlib.py) fail when an
+# extension imports a module that neither the core nor this file brings into
+# the build.

@@ -11,8 +11,9 @@
 # so the bar's logic runs on fakes. Focus changes, key state, speech routing,
 # saving and the microphone are all replaced; nothing is shown, spoken or
 # recorded. The real window is checked in CI by tests/_command_bar_ui_check.py.
-# Also: the global hotkey goes through RegisterHotKey (mocked here), no bundled
-# extension takes Ctrl+Alt+Backspace, and no new code installs a keyboard hook.
+# Also: the global hotkey goes through RegisterHotKey (mocked here), and no new
+# code installs a keyboard hook. (That no official extension takes
+# Ctrl+Alt+Backspace or installs a hook is checked with the extensions.)
 
 import logging
 import os
@@ -1001,28 +1002,6 @@ def test_main_window_registers_the_command_bar():
             '                                 default_alt=True, default_global=True)') in bar
 
 
-def test_no_bundled_extension_takes_ctrl_alt_backspace():
-    import ast
-    found = []
-    for folder in sorted(os.listdir(os.path.join(ROOT, "extensions"))):
-        path = os.path.join(ROOT, "extensions", folder)
-        if not os.path.isdir(path) or folder == "voice_control":
-            continue
-        for dirpath, dirs, files in os.walk(path):
-            dirs[:] = [d for d in dirs if d not in ("lib", "__pycache__")]
-            for name in files:
-                if not name.endswith(".py"):
-                    continue
-                with open(os.path.join(dirpath, name), encoding="utf-8") as f:
-                    tree = ast.parse(f.read())
-                for node in ast.walk(tree):
-                    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                            and node.func.attr == "register_action"):
-                        if "WXK_BACK" in ast.dump(node) and "alt" in ast.unparse(node).lower():
-                            found.append(f"{folder}/{name}")
-    assert found == []
-
-
 def test_no_other_core_default_is_ctrl_alt_backspace():
     with open(os.path.join(ROOT, "ui", "main_window.py"), encoding="utf-8") as f:
         source = f.read()
@@ -1032,9 +1011,6 @@ def test_no_other_core_default_is_ctrl_alt_backspace():
 NEW_CODE = [os.path.join("core", "commands.py"), os.path.join("core", "voice.py"),
             os.path.join("core", "speech.py"), os.path.join("core", "hotkeys.py"),
             os.path.join("ui", "command_bar.py"), os.path.join("ui", "main_window.py")]
-NEW_CODE += [os.path.join("extensions", "voice_control", name)
-             for name in sorted(os.listdir(os.path.join(ROOT, "extensions", "voice_control")))
-             if name.endswith(".py")]
 
 
 @pytest.mark.parametrize("path", NEW_CODE)
@@ -1044,14 +1020,6 @@ def test_no_keyboard_hook(path):
     for forbidden in ("SetWindowsHookEx", "WH_KEYBOARD", "WH_KEYBOARD_LL", "keyboard.hook",
                       "pynput"):
         assert forbidden not in source, f"{path} mentions {forbidden}"
-
-
-def test_voice_control_is_official():
-    import core.extension_manager
-    assert "voice_control" in core.extension_manager._OFFICIAL_EXTENSION_IDS
-    with open(os.path.join(ROOT, "tools", "server", "generate_trusted_hashes.py"),
-              encoding="utf-8") as f:
-        assert '"voice_control",' in f.read()
 
 
 def test_the_old_default_key_moves_to_the_new_one(hotkeys):

@@ -501,22 +501,6 @@ def test_windows_variable_names_are_rejected(personal, monkeypatch):
     assert e.value.code == "key_windows" and e.value.field == "key"
 
 
-def test_routines_open_actions_fill_in_windows_variables(personal, monkeypatch):
-    import sys
-    routines_dir = os.path.join(ROOT, "extensions", "routines")
-    monkeypatch.syspath_prepend(routines_dir)
-    for name in ("routines_actions", "routines_engine"):
-        sys.modules.pop(name, None)
-    import routines_actions
-    opened = []
-    monkeypatch.setenv("HARIKUTESTDIR", r"C:\Data")
-    monkeypatch.setattr(routines_actions.os, "startfile", opened.append, raising=False)
-    routines_actions._a_open_file({"path": r"%HARIKUTESTDIR%\%myname%.txt"}, {}, {})
-    _save_core({"user_name": "Rafli"})
-    routines_actions._a_open_file({"path": r"%HARIKUTESTDIR%\%myname%.txt"}, {}, {})
-    assert opened == [r"C:\Data\.txt", r"C:\Data\Rafli.txt"]
-
-
 # ------------------------------------------------------------
 # Birthday
 # ------------------------------------------------------------

@@ -247,13 +247,12 @@ def test_no_telemetry_endpoint_is_left():
 
 def _locale_files():
     import glob
-    return sorted(glob.glob(os.path.join(ROOT, "locales", "*.json"))
-                  + glob.glob(os.path.join(ROOT, "extensions", "*", "locales", "*.json")))
+    return sorted(glob.glob(os.path.join(ROOT, "locales", "*.json")))
 
 
 def test_no_locale_mentions_novarealm():
     files = _locale_files()
-    assert len(files) > 10
+    assert len(files) >= 2
     bad = [os.path.relpath(p, ROOT) for p in files
            if "novarealm" in open(p, encoding="utf-8").read().lower()]
     assert not bad, bad

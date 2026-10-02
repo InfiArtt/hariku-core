@@ -19,19 +19,19 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKIP_DIRS = {"venv", ".git", "__pycache__", "build", "dist", "scratchpad", ".cache", "lib"}
 
 
-def _python_files():
-    for folder in ("core", "ui", "extensions"):
+def _python_files(folders=("core", "ui")):
+    for folder in folders:
         for root, dirs, files in os.walk(os.path.join(ROOT, folder)):
             dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
             for name in files:
                 if name.endswith(".py"):
                     yield os.path.join(root, name)
-    yield os.path.join(ROOT, "hariku.py")
 
 
-def test_no_translator_call_passes_a_value_named_key():
+def key_problems(paths):
+    """ "file:line" of every _(..., key=...) call in these files."""
     problems = []
-    for path in _python_files():
+    for path in paths:
         with open(path, encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=path)
         for node in ast.walk(tree):
@@ -39,4 +39,9 @@ def test_no_translator_call_passes_a_value_named_key():
                     and node.func.id == "_"
                     and any(k.arg == "key" for k in node.keywords)):
                 problems.append(f"{os.path.relpath(path, ROOT)}:{node.lineno}")
+    return problems
+
+
+def test_no_translator_call_passes_a_value_named_key():
+    problems = key_problems([*_python_files(), os.path.join(ROOT, "hariku.py")])
     assert not problems, "_(…, key=…) collides with the message key: " + ", ".join(problems)

@@ -93,13 +93,12 @@ def test_too_old_uses_last_tested_then_minimum(core_28):
 
 def test_every_extension_made_so_far_still_runs():
     # No 2.x change broke extensions: key_notifier's manifest even says 1.0.
+    # (The official extensions' own manifests are checked with them.)
     assert core.constants.EXTENSION_API_BACK_COMPAT == "1.0"
-    root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "extensions")
-    for ext_id in os.listdir(root):
-        path = os.path.join(root, ext_id, "manifest.json")
-        if os.path.isfile(path):
-            with open(path, encoding="utf-8") as f:
-                assert not manager.too_old_for_core(json.load(f)), ext_id
+    for manifest in ({"minimum_core_version": "1.0"}, {"minimum_core_version": "2.0"},
+                     {"minimum_core_version": "1.0", "last_tested_core_version": "1.5"},
+                     {"minimum_core_version": "2.9", "last_tested_core_version": "2.11"}, {}):
+        assert not manager.too_old_for_core(manifest), manifest
 
 
 def _write_extension(folder, ext_id, main_source, **manifest):

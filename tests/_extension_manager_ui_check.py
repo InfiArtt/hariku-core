@@ -106,9 +106,16 @@ bus.subscribe("on_before_speak", _capture_speech)
 # --- Fakes --------------------------------------------------------------------------------------
 core.constants.EXTENSION_API_BACK_COMPAT = "2.0"
 core.constants.CORE_VERSION = "2.8.0"        # the fake store's "needs 2.9" and "needs 3.0" entries rely on it
-SYSTEM = os.path.join(ROOT, "extensions")
+SYSTEM = os.path.join(os.environ["APPDATA"], "system_extensions")
 USER = os.path.join(os.environ["APPDATA"], "Hariku2", "extensions")
 manager.SYSTEM_EXTENSIONS_DIR = SYSTEM
+# Weather is installed as a system folder with a guide (the Guide button).
+os.makedirs(os.path.join(SYSTEM, "weather", "docs", "en"))
+with open(os.path.join(SYSTEM, "weather", "manifest.json"), "w", encoding="utf-8") as f:
+    f.write('{"name": "Weather", "version": "1.1", "author": "Rafli", "description": "x", '
+            '"main": "main.py"}')
+with open(os.path.join(SYSTEM, "weather", "docs", "en", "guide.md"), "w", encoding="utf-8") as f:
+    f.write("# Weather\n\n## Today\n\nPress the key.\n")
 
 
 def _info(ext_id, name, version, *, user=False, packed=False, minimum="2.0", enabled=True):
@@ -312,7 +319,7 @@ guides_opened = []
 guides_dialog.show_guide = lambda parent, ext_id, **kw: guides_opened.append(ext_id) or True
 select(installed_tab, "Crashy")                           # a .hrk that isn't there: no guide
 assert not installed_tab.buttons["guide"].IsEnabled()
-select(installed_tab, "Weather")                          # extensions/weather/docs has one
+select(installed_tab, "Weather")                          # its docs/ (made up above) has one
 assert installed_tab.buttons["guide"].IsEnabled()
 assert installed_tab.buttons["guide"].GetLabel() == "&Guide"
 assert list(installed_tab.buttons).index("guide") == list(installed_tab.buttons).index("update") + 1

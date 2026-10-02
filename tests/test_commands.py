@@ -8,9 +8,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # core/commands.py: what the command bar makes of a typed or spoken command.
-# The commands are the real actions, named as the core and the official
-# extensions name them in English and Indonesian (read from their locale
-# files), so a renamed action breaks these tests rather than the command bar.
+# The commands are the real actions, named as the core (read from its locale
+# files) and the official extensions (EXTENSION_ACTIONS, below) name them in
+# English and Indonesian, so a renamed action breaks these tests rather than
+# the command bar.
 # The misrecognitions are real: whisper.cpp's tiny model on the user's laptop.
 
 import datetime
@@ -23,36 +24,65 @@ import pytest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NOW = datetime.datetime(2026, 9, 24, 10, 40)      # a Thursday
 
-# action id -> (extension folder, message key); the ids are the extensions' own
-# (EXT_NAME + action name, fixed in every language).
+# action id -> (its English name, its Indonesian name), as the official
+# extensions name their actions in their locale files. The ids are the
+# extensions' own (EXT_NAME + action name, fixed in every language). The
+# extensions' own tests check that these are still their ids and names.
 EXTENSION_ACTIONS = {
-    "Earthquakes.speak_latest": ("earthquake", "action_latest"),
-    "Earthquakes.show_recent": ("earthquake", "action_recent"),
-    "Flight Radar.speak_nearby": ("flight_radar", "action_nearby"),
-    "Flight Radar.show_list": ("flight_radar", "action_list"),
-    "Flight Radar.listen_atc": ("flight_radar", "action_listen_atc"),
-    "Flight Radar.speak_tracked": ("flight_radar", "action_speak_tracked"),
-    "Flight Radar.track_flight": ("flight_radar", "action_track"),
-    "Morning Briefing.play_briefing": ("briefing", "action_play"),
-    "Morning Briefing.evening_summary": ("briefing", "action_evening"),
-    "Weather.speak_current_weather": ("weather", "action_speak"),
-    "Weather.show_forecast": ("weather", "action_forecast"),
-    "Sea Conditions.speak_sea": ("marine", "action_speak"),
-    "Sea Conditions.show_forecast": ("marine", "action_forecast"),
-    "Air Quality.speak_air": ("air_quality", "action_speak"),
-    "Air Quality.show_forecast": ("air_quality", "action_forecast"),
-    "Space.where_is_iss": ("space", "action_iss"),
-    "Space.show_launches": ("space", "action_launches"),
-    "Space.sun_and_moon": ("space", "action_sun_moon"),
-    "Sleep Pattern.last_night": ("sleep_tracker", "action_last_night"),
-    "Sleep Pattern.history": ("sleep_tracker", "action_history"),
-    "Clipboard History.open_history": ("clipboard_history", "action_open"),
-    "Clipboard History.speak_last": ("clipboard_history", "action_speak_last"),
-    "Finance.open_finance": ("finance", "action_open"),
-    "Finance.quick_add_expense": ("finance", "action_quick_add"),
-    "Cockpit.pilot_weather": ("cockpit", "action_pilot"),
-    "Cockpit.airport_weather": ("cockpit", "action_airports"),
-    "Sound Themes.next_theme": ("sound_themes", "action_next_theme"),
+    "Earthquakes.speak_latest": ("Speak the latest earthquake from BMKG",
+                                 "Ucapkan gempa terkini dari BMKG"),
+    "Earthquakes.show_recent": ("Open the list of recent earthquakes",
+                                "Buka daftar gempa terbaru"),
+    "Flight Radar.speak_nearby": ("What's flying nearby? Speak the nearest aircraft",
+                                  "Pesawat apa di dekat sini? Ucapkan pesawat terdekat"),
+    "Flight Radar.show_list": ("Open the flight radar list",
+                               "Buka daftar radar pesawat"),
+    "Flight Radar.listen_atc": ("Listen to air traffic control (opens LiveATC in your browser)",
+                                "Dengarkan pengatur lalu lintas udara (membuka LiveATC di peramban Anda)"),
+    "Flight Radar.speak_tracked": ("Where are my tracked flights? Speak their positions",
+                                   "Di mana penerbangan yang saya lacak? Ucapkan posisinya"),
+    "Flight Radar.track_flight": ("Track a flight",
+                                  "Lacak penerbangan"),
+    "Morning Briefing.play_briefing": ("Play the morning briefing",
+                                       "Putar briefing pagi"),
+    "Morning Briefing.evening_summary": ("Play the evening summary",
+                                         "Putar ringkasan malam"),
+    "Weather.speak_current_weather": ("Speak the current weather",
+                                      "Ucapkan cuaca saat ini"),
+    "Weather.show_forecast": ("Open the weather forecast",
+                              "Buka prakiraan cuaca"),
+    "Sea Conditions.speak_sea": ("Speak the sea conditions",
+                                 "Ucapkan kondisi laut"),
+    "Sea Conditions.show_forecast": ("Open the sea forecast",
+                                     "Buka prakiraan laut"),
+    "Air Quality.speak_air": ("Speak the air quality",
+                              "Ucapkan kualitas udara"),
+    "Air Quality.show_forecast": ("Open the air quality forecast",
+                                  "Buka prakiraan kualitas udara"),
+    "Space.where_is_iss": ("Where is the ISS?",
+                           "Di mana ISS?"),
+    "Space.show_launches": ("Upcoming rocket launches",
+                            "Peluncuran roket mendatang"),
+    "Space.sun_and_moon": ("Sun and Moon",
+                           "Matahari dan Bulan"),
+    "Sleep Pattern.last_night": ("Speak last night's sleep",
+                                 "Ucapkan tidurmu semalam"),
+    "Sleep Pattern.history": ("Open the sleep history",
+                              "Buka riwayat tidur"),
+    "Clipboard History.open_history": ("Open the clipboard history",
+                                       "Buka riwayat clipboard"),
+    "Clipboard History.speak_last": ("Speak the last copied text",
+                                     "Ucapkan teks yang terakhir disalin"),
+    "Finance.open_finance": ("Open Finance (balance, history, budgets, recurring)",
+                             "Buka Keuangan (saldo, riwayat, anggaran, transaksi berulang)"),
+    "Finance.quick_add_expense": ("Quick add an expense",
+                                  "Catat pengeluaran cepat"),
+    "Cockpit.pilot_weather": ("Pilot weather: speak the decoded METAR of your default airport",
+                              "Cuaca pilot: ucapkan METAR bandara utamamu"),
+    "Cockpit.airport_weather": ("Airport weather: open your airports with their METAR and TAF",
+                                "Cuaca bandara: buka daftar bandaramu beserta METAR dan TAF-nya"),
+    "Sound Themes.next_theme": ("Switch to the next sound theme",
+                                "Beralih ke tema suara berikutnya"),
 }
 CORE_ACTIONS = {
     "Calendar Navigation.prev_day": "nav_prev_day",
@@ -104,8 +134,8 @@ def real_actions(language):
     """{action id: an object with .description}, as Hariku registers them."""
     core = _messages("locales", language)
     found = {aid: core[key] for aid, key in CORE_ACTIONS.items()}
-    for aid, (ext, key) in EXTENSION_ACTIONS.items():
-        found[aid] = _messages(os.path.join("extensions", ext, "locales"), language)[key]
+    for aid, (english, indonesian) in EXTENSION_ACTIONS.items():
+        found[aid] = english if language == "en" else indonesian
     found.update(ENGLISH_ONLY)
     return {aid: types.SimpleNamespace(description=name, callback=lambda: None,
                                        wants_tap_count=False)
@@ -131,31 +161,6 @@ def parse_reminder(text, packs=("id", "en")):
 # ------------------------------------------------------------
 # The action ids and names these tests rely on exist
 # ------------------------------------------------------------
-
-def _registered_ids(folder):
-    """ "EXT.action" ids the extension registers (read from its main.py)."""
-    import ast
-    import re
-    path = os.path.join(ROOT, "extensions", folder, "main.py")
-    with open(path, encoding="utf-8") as f:
-        source = f.read()
-    ext_name = re.search(r'^EXT_NAME = "([^"]+)"', source, re.M)
-    ids = set()
-    for node in ast.walk(ast.parse(source)):
-        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                and node.func.attr == "register_action" and len(node.args) >= 2):
-            first, second = node.args[0], node.args[1]
-            ext = (ext_name.group(1) if isinstance(first, ast.Name) and ext_name
-                   else getattr(first, "value", None))
-            if isinstance(second, ast.Constant):
-                ids.add(f"{ext}.{second.value}")
-    return ids
-
-
-def test_the_extension_action_ids_are_real():
-    for action_id, (folder, _key) in EXTENSION_ACTIONS.items():
-        assert action_id in _registered_ids(folder), action_id
-
 
 def test_builtin_aliases_name_real_actions():
     import core.commands

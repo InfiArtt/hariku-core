@@ -7,9 +7,10 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Build the real Preferences dialog with the core pages and every bundled
-extension's page, and check that each input control on each page comes right
-after the label that names it.
+Build the real Preferences dialog with the core pages and the page of every
+extension in extensions/ (the official extensions, when they are checked out
+inside the core; the core alone has none), and check that each input control
+on each page comes right after the label that names it.
 
 Screen readers (through oleacc) name a native control after the static text
 created just before it; SetName() does not change what they say. A control
@@ -85,7 +86,7 @@ core.core_panels.register()
 
 import core.extension_manager as em
 ext_root = os.path.join(ROOT, "extensions")
-for name in sorted(os.listdir(ext_root)):
+for name in sorted(os.listdir(ext_root)) if os.path.isdir(ext_root) else ():
     path = os.path.join(ext_root, name)
     if name.startswith(".") or not os.path.isfile(os.path.join(path, "manifest.json")):
         continue
