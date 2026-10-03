@@ -29,8 +29,8 @@ NOW = datetime.datetime(2026, 9, 24, 10, 40)      # a Thursday
 # extensions' own (EXT_NAME + action name, fixed in every language). The
 # extensions' own tests check that these are still their ids and names.
 EXTENSION_ACTIONS = {
-    "Earthquakes.speak_latest": ("Speak the latest earthquake from BMKG",
-                                 "Ucapkan gempa terkini dari BMKG"),
+    "Earthquakes.speak_latest": ("Speak the latest earthquake",
+                                 "Ucapkan gempa terkini"),
     "Earthquakes.show_recent": ("Open the list of recent earthquakes",
                                 "Buka daftar gempa terbaru"),
     "Flight Radar.speak_nearby": ("What's flying nearby? Speak the nearest aircraft",
@@ -300,10 +300,10 @@ def test_the_command_bar_is_not_a_command(commands):
 def test_names_in_the_user_language_match_too():
     import core.commands
     candidates = core.commands.commands(real_actions("id"))
-    found = core.commands.match("Ucapkan gempa terkini dari BMKG", candidates)
+    found = core.commands.match("Ucapkan gempa terkini", candidates)
     assert (found.best.id, found.kind) == ("Earthquakes.speak_latest", "run")
     candidates = core.commands.commands(real_actions("en"))
-    found = core.commands.match("Speak the latest earthquake from BMKG", candidates)
+    found = core.commands.match("Speak the latest earthquake", candidates)
     assert (found.best.id, found.kind) == ("Earthquakes.speak_latest", "run")
 
 
@@ -341,7 +341,7 @@ def test_extensions_add_aliases_with_a_title():
 def test_vocabulary_holds_names_and_aliases():
     import core.commands as c
     words = c.vocabulary(real_actions("id"))
-    assert "Ucapkan gempa terkini dari BMKG" in words and "gempa terbaru" in words
+    assert "Ucapkan gempa terkini" in words and "gempa terbaru" in words
     assert "jam berapa" in words
     assert "Buka bilah perintah: ketik atau ucapkan perintah" not in words
 

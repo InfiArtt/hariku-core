@@ -532,7 +532,7 @@ def test_no_answer_in_time_says_it_ran(cb):
     bar = make_bar(cb, keep_open=True)
     type_and_enter(bar, "gempa terbaru")
     bar._answer_timeout(bar._awaiting)
-    assert bar.txt_result.value == "Selesai: Ucapkan gempa terkini dari BMKG."
+    assert bar.txt_result.value == "Selesai: Ucapkan gempa terkini."
     assert bar._awaiting is None and not bar._closed
     bar.close()
 

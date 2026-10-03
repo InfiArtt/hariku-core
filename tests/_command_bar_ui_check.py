@@ -166,7 +166,7 @@ def show_recent():
 
 import core.speech
 core.hotkeys.register_action("Earthquakes", "speak_latest",
-                             "Speak the latest earthquake from BMKG", None, False, speak_latest)
+                             "Speak the latest earthquake", None, False, speak_latest)
 core.hotkeys.register_action("Earthquakes", "show_recent",
                              "Open the list of recent earthquakes", None, False, show_recent)
 core.hotkeys.register_action("Weather", "speak_current_weather", "Speak the current weather",
