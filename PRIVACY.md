@@ -376,7 +376,9 @@ which, like any web host, sees your IP address; see the
   write, credits, things, where it is, its progress (XP and level, the daily
   streak, what it mined and harvested, its farm plots, the rooms it has
   visited, its friends list and its beacon), cooldowns and missions, the
-  voice number you chose for others to hear, its pet (a name, a kind, and
+  voice number you chose for others to hear, how others' lines speak of
+  your character (he, she or they), once you chose it with `gender` (an
+  admin can set it too, and you're told), its pet (a name, a kind, and
   how fed, played with and rested it is, how grown, and its tricks),
   its ship (model, name, where it's docked or flying, fuel and cargo), the
   events it took part in (and how much it helped), its achievements, its
@@ -414,6 +416,22 @@ which, like any web host, sees your IP address; see the
   mention it for a week. A coming wedding (the two names, the hall, the
   time) is in the wedding schedule, which any player can read; an
   invitation is told only to the guest.
+- Adult content is optional, for players 18 or older only, and off unless
+  you turn it on. If you agree (you type `consent I am 18 or older`), the
+  server keeps that you declared you are 18 or older, and when (the date and
+  time). If you withdraw (`consent off`), it keeps that you withdrew and
+  when, and to turn it on again you have to declare it again. If an admin
+  turns it off for you, the server keeps when, and the admins' log keeps
+  which admin did it, for whom and when (as for every admin action). The
+  players you block (`block Sam`) are kept with your character, by name.
+  Invitations, their answers and who said no lately are kept only in the
+  server's memory, until they are answered or run out. The scenes
+  themselves are never kept: nothing of them is written to the database or
+  to the log, which says only that a scene began and ended, with no names.
+  A scene reaches only the two players in it, is never announced, is no
+  part of a wedding's memory and earns no achievement. Nobody else is told
+  whether you agreed: someone whose invitation can't reach you hears only
+  that you aren't available, the same line whatever the reason.
 - Moving your character to another computer: the server keeps only a keyed
   hash of the transfer code, for 10 minutes or until it is used. After a
   move, the hash of the old computer's secret is kept so that computer can be
@@ -425,12 +443,13 @@ which, like any web host, sees your IP address; see the
   place, a whisper to one player, a shout to everyone online, crew chat to
   your crew's members online, and then it is gone: the server writes no
   chat, secrets, codes or IP addresses to its log (only names, and who
-  joined, left or was muted). Other players see your character's name, job
+  joined, left or was muted, and, of adult content, only that a scene began
+  or ended, with no names). Other players see your character's name, job
   and rank, where it is, what you say and do, what it wears, its pet, its
   public progress (level, what it mined and harvested, its achievements, and
   its place on the leaderboards: credits, level, ore, crops, the daily
-  streak, casino winnings and duels won), its crew, its partner, its title
-  and its description; the residents may mention the richest player, the
+  streak, casino winnings and duels won), its crew, its partner, its title,
+  its pronouns if you chose them, and its description; the residents may mention the richest player, the
   top miner, the leading crew and recent weddings. Big casino
   wins, the lottery's winner, new arcade high scores (the tables show
   everyone's best), how far players got in the hunt (and its board) and some
