@@ -534,6 +534,49 @@ come back too soon) and your settings stay in `%APPDATA%\Hariku2` (`TriviaRecord
 and `Trivia`). The daily quiz is picked on your computer from the date: nothing
 is sent to play it. Its sounds are generated and come with the extension.
 
+## Wild Encounters
+
+The Wild Encounters fan extension sends nothing until you use it: its gentle
+announcements are off until you turn them on (Preferences, Wild Encounters;
+turning them on also fetches the list of species names once), and otherwise it
+only connects when an encounter happens, when you ask Aruna for one, or when
+you ask for facts about a Pokémon (in Aruna, or with Enter in its Field
+Journal). Then:
+- It asks Open-Meteo (`api.open-meteo.com`) for the current weather, sunrise and
+  sunset at your main place (Preferences, Places), rounded to about
+  1 kilometre (2 decimals), never the exact point or your device's location,
+  with "timezone=auto". It asks only when an encounter happens, and keeps the
+  answer in memory for 30 minutes; nothing about the weather is written to
+  disk. Without a main place it asks nothing. Open-Meteo's handling of these
+  requests is covered by its
+  [terms and privacy policy](https://open-meteo.com/en/terms#privacy).
+- It asks PokéAPI (`pokeapi.co`) for the names and facts it needs: a kind of
+  Pokémon (such as `/type/water/`), a species (such as
+  `/pokemon-species/54/`), its types and size, its evolutions, or the list of
+  species names. The requests carry nothing about you: no place, no name, no
+  identifier, only what every web request carries, such as your IP address
+  and a user agent naming Hariku Wild Encounters. Every answer is kept on your
+  computer for 30 days, so PokéAPI is asked as little as possible: at most a
+  few requests per encounter while the cache fills, one at a time, at least
+  0.6 seconds apart and at most 300 a day, with a pause of 5 minutes to an hour
+  after a failure. See [PokéAPI](https://pokeapi.co).
+
+Which Pokémon appears is worked out on your computer, from that weather, the
+time of day at your main place, the Moon's phase (calculated, not fetched) and,
+when it is in your Profile, whether today is your birthday; your birthday is
+never sent anywhere.
+
+What stays on your computer, in `%APPDATA%\Hariku2`: your settings
+(`WildEncounters`), today's plan of encounter times and the Pokémon met today,
+so none comes twice (`WildEncountersState`), your Field Journal: each Pokémon
+you met, when, how many times, the name of your main place's city and the
+weather (`WildEncountersJournal`), and the cached PokéAPI answers, trimmed to
+the facts the extension uses (`data\extensions\wild_encounters\pokeapi`).
+"Clear the journal" in the Field Journal deletes the journal. The sentence that
+"Copy" puts on the clipboard says whom you met, in what weather and when, but
+not where. Its sounds are generated and come with the extension; no pictures,
+sounds or texts from the games are downloaded or used.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
