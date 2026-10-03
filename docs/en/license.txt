@@ -181,8 +181,9 @@ EXTENSIONS AND THE INTERNET
       for your place rounded to about 1 kilometre, never your exact
       location.
     - Earthquakes & Tsunami downloads the same public files for everyone
-      from BMKG (and from the USGS, if you turn on worldwide earthquakes);
-      your location stays on your computer.
+      from the earthquake agency for your place (BMKG, MetMalaysia, TMD,
+      JMA, Geoscience Australia, GeoNet or the USGS); your location stays
+      on your computer.
     - Google Calendar Reader downloads holiday data from GitHub Pages and
       the calendar links you add.
     - Edge Voices sends the text being read to Microsoft's speech service,
