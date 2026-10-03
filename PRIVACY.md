@@ -112,18 +112,31 @@ described for Weather above.
 
 ## Earthquakes and Tsunami
 
-The Earthquakes and Tsunami extension downloads BMKG's public earthquake files
-from `data.bmkg.go.id`. With the tsunami alert on (the default) or any other
-BMKG alert on, it checks the latest-earthquake file about once a minute while
-Hariku runs. It also downloads BMKG's recent lists when you open them. If you
-turn on worldwide alerts, or show worldwide earthquakes in the list, it
-downloads the U.S. Geological Survey's public feeds from
-`earthquake.usgs.gov`.
+The Earthquakes and Tsunami extension downloads public earthquake files from
+the earthquake agency for your place: BMKG (`data.bmkg.go.id`) in Indonesia,
+MetMalaysia through Malaysia's open data portal (`api.data.gov.my`) in
+Malaysia, Brunei and Singapore, the Thai Meteorological Department
+(`earthquake.tmd.go.th`), the Japan Meteorological Agency (`www.jma.go.jp`),
+Geoscience Australia (`earthquakes.ga.gov.au`), GeoNet (`api.geonet.org.nz`)
+in New Zealand, and the U.S. Geological Survey (`earthquake.usgs.gov`) in the
+United States and everywhere else. You can also choose the agency yourself in
+its settings. Without a place, it uses BMKG.
 
-These requests contain none of your data. Your location (your main place,
-another of your places, or a city of its own chosen in its settings) stays on
-your computer: the extension downloads the same files for everyone and works
-out distances itself. Searching for a city sends the text you typed to
+With BMKG's tsunami alert on (the default; it works with BMKG only) or any
+other BMKG alert on, it checks BMKG's latest-earthquake file about once a
+minute while Hariku runs. With nearby alerts on and another agency, it checks
+that agency's file about once a minute (the USGS's about every 5 minutes). It
+also downloads these files when you ask for the latest earthquake or open the
+list. If you turn on worldwide alerts, or show worldwide earthquakes in the
+list, it downloads the USGS's public feeds.
+
+These requests contain none of your data. Each one asks for a fixed file that
+everyone gets the same way. Your location (your main place, another of your
+places, or a city of its own chosen in its settings) stays on your computer:
+the extension picks the agency from your place's coordinates and works out
+distances itself. For the larger files it asks the agency's server whether
+the file has changed since the copy it has, using the date and tag that
+server sent with that copy. Searching for a city sends the text you typed to
 Open-Meteo's city search, as described for Weather above.
 
 ## Space

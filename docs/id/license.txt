@@ -191,8 +191,9 @@ EKSTENSI DAN INTERNET
       Open-Meteo untuk tempatmu yang dibulatkan sampai sekitar 1 kilometer,
       tidak pernah lokasi persismu.
     - Gempa & Tsunami mengunduh berkas publik yang sama untuk semua orang
-      dari BMKG (dan dari USGS, kalau kamu menyalakan gempa seluruh dunia);
-      lokasimu tetap di komputermu.
+      dari lembaga gempa untuk tempatmu (BMKG, MetMalaysia, TMD, JMA,
+      Geoscience Australia, GeoNet, atau USGS); lokasimu tetap di
+      komputermu.
     - Google Calendar Reader mengunduh data hari libur dari GitHub Pages dan
       tautan kalender yang kamu tambahkan.
     - Edge Voices mengirim teks yang dibacakan ke layanan suara Microsoft,
