@@ -405,7 +405,19 @@ which, like any web host, sees your IP address; see the
   who ended it (so the other can be told, and for a short wait before a new
   one). An adopted child is kept with its parents: its name, the voice it
   speaks in, how it's growing and cared for. Others see your partner and the
-  child with you when they look at you.
+  child with you when they look at you. A married couple shares one home:
+  the cabin of the one who came to the station first, which both walk into;
+  nothing more is kept for it, and when a marriage ends each has their own
+  cabin again. A married couple may keep a household fund: the server keeps
+  its balance, its last 20 movements (when, which of the two, in or out, how
+  much, and the balance after), and, for a spouse who is away, the movements
+  to tell them when they come back (at most 10); the fund is split evenly
+  back to both if the marriage ends. It also keeps the day a couple last had
+  a date night, cooked dinner or fell asleep together (once a day each), and
+  the last monthly anniversary each spouse was told of. An engaged or married
+  partner is told when the other comes aboard or leaves, and can always find
+  the other with `where is` (no communicator needed); nobody else is told.
+  Walking hand in hand is kept only in the server's memory.
 - Weddings: the couple, the hall, the kind of ceremony, the time, what was
   paid and given back, the guests invited, their answers and who came.
   Afterwards the memory of the day is kept: who came, the flowers and
@@ -424,6 +436,10 @@ which, like any web host, sees your IP address; see the
   turns it off for you, the server keeps when, and the admins' log keeps
   which admin did it, for whom and when (as for every admin action). The
   players you block (`block Sam`) are kept with your character, by name.
+  If you give your spouse a standing yes (`consent spouse on`), the server
+  keeps that you did, for which marriage, and when; it lapses if that
+  marriage ends, and `consent spouse off`, `consent off` or an admin's lock
+  removes it. Nobody else is told whether it's on.
   Invitations, their answers and who said no lately are kept only in the
   server's memory, until they are answered or run out. The scenes
   themselves are never kept: nothing of them is written to the database or
@@ -432,6 +448,18 @@ which, like any web host, sees your IP address; see the
   part of a wedding's memory and earns no achievement. Nobody else is told
   whether you agreed: someone whose invitation can't reach you hears only
   that you aren't available, the same line whatever the reason.
+- Idle income: the shares your character holds at the Station Exchange (how
+  many of each company, what it paid for them and since when), its ventures
+  (which kind, their tier, what they cost it, the takings waiting and what
+  they have paid out, and a hiccup and when it began), its savings (the
+  balance and the interest earned), the dividends and interest it was last
+  paid (and what came in while you were away, until you are told), and how
+  many minutes of the idle shift it was paid today. A shift under way is
+  kept only in the server's memory. The Exchange's prices of the last two
+  days and its news are about the game's companies, never about players.
+  Other players don't see your shares, ventures or savings, only your place
+  on the investors' leaderboard (what you have invested in all, as one
+  number).
 - Moving your character to another computer: the server keeps only a keyed
   hash of the transfer code, for 10 minutes or until it is used. After a
   move, the hash of the old computer's secret is kept so that computer can be
@@ -448,7 +476,7 @@ which, like any web host, sees your IP address; see the
   and rank, where it is, what you say and do, what it wears, its pet, its
   public progress (level, what it mined and harvested, its achievements, and
   its place on the leaderboards: credits, level, ore, crops, the daily
-  streak, casino winnings and duels won), its crew, its partner, its title,
+  streak, casino winnings, duels won and what it has invested), its crew, its partner, its title,
   its pronouns if you chose them, and its description; the residents may mention the richest player, the
   top miner, the leading crew and recent weddings. Big casino
   wins, the lottery's winner, new arcade high scores (the tables show
@@ -472,7 +500,9 @@ which, like any web host, sees your IP address; see the
   the extension (some synthesized, some made from Kenney's public-domain
   recordings); nothing is downloaded for them. Credits are only for playing:
   they have no real-money value and can't be bought or cashed out, and the
-  casino's games use only these credits.
+  casino's games use only these credits, and so do the Station Exchange's
+  shares, ventures and savings: they are a game with credits, not
+  investments.
 
 ## Dropbox
 
