@@ -378,8 +378,17 @@ which, like any web host, sees your IP address; see the
   visited, its friends list and its beacon), cooldowns and missions, the
   voice number you chose for others to hear, how others' lines speak of
   your character (he, she or they), once you chose it with `gender` (an
-  admin can set it too, and you're told), its pet (a name, a kind, and
-  how fed, played with and rested it is, how grown, and its tricks),
+  admin can set it too, and you're told), its pets (for each, a name, a
+  kind, how fed, played with and rested it is, how grown, its tricks, the
+  options you chose for it, and where it is: with your character, at home
+  and in which room of the quarters, or at the pet hotel, and since when;
+  and how fond it is of the people it lives with, a number for its owner,
+  its owner's husband or wife and their children, which of them it likes
+  best, and which change of that its owner was last told about), its
+  household robots (which ones, the room each works in, and the options
+  you chose, such as a colour), the things it bought with options and the
+  options chosen, the day it last cooked at home, had a shower or took a
+  chef bot's plate, and until when it's fresh from that shower,
   its ship (model, name, where it's docked or flying, fuel and cargo), the
   events it took part in (and how much it helped), its achievements, its
   lottery tickets for the week's draw, its best score and how many games it
@@ -387,6 +396,9 @@ which, like any web host, sees your IP address; see the
   it won and lost, how far it got in each season of the hunt (its riddle,
   how many tries and wrong answers, when it may try again, when it finished
   and in which place; the answers you type are only checked, never kept),
+  how far it got in the story, The Long Watch (the chapter and step it's
+  on and when that step began, the choice it made at the end, when it
+  finished, and which chapters have paid their reward),
   what it won or lost at the casino in all (and its bets of the last hour, a
   minute at a time, for the hourly limit), how many trades it made, when it
   was made and last seen, and whether an admin muted or banned it. There is
@@ -398,14 +410,17 @@ which, like any web host, sees your IP address; see the
   character: for each resident it has met, the server keeps how fond the
   resident is of it (a number), how many times they talked, the gifts and
   favours, when they first and last met, which topics it has asked about,
-  and the favour it's doing. Nothing you type to a resident is kept beyond
+  and the favour it's doing. One resident isn't on the list of residents
+  for a character that hasn't met her yet; the server knows who has from
+  the same record. Nothing you type to a resident is kept beyond
   that: a question is only matched to a topic.
 - Families: a partnership keeps the two characters, whether they are
   partners, engaged or married, since when, and, when one ends, when and
   who ended it (so the other can be told, and for a short wait before a new
   one). An adopted child is kept with its parents: its name, the voice it
-  speaks in, how it's growing and cared for. Others see your partner and the
-  child with you when they look at you. A married couple shares one home:
+  speaks in, how it's growing and cared for, and where it is: with which
+  parent, at home in the kids' room (and whose home), or at the nursery.
+  Others see your partner and the child with you when they look at you. A married couple shares one home:
   the cabin of the one who came to the station first, which both walk into;
   nothing more is kept for it, and when a marriage ends each has their own
   cabin again. A married couple may keep a household fund: the server keeps
@@ -417,7 +432,17 @@ which, like any web host, sees your IP address; see the
   the last monthly anniversary each spouse was told of. An engaged or married
   partner is told when the other comes aboard or leaves, and can always find
   the other with `where is` (no communicator needed); nobody else is told.
-  Walking hand in hand is kept only in the server's memory.
+  Walking hand in hand is kept only in the server's memory. A nanny hired
+  for the children at home is kept with the parent who hired them: which
+  nanny, since when, and the last day paid. The wages, a day at a time, come
+  from the household fund while it has enough or from the credits of the
+  parent who hired; if they can't be paid the nanny leaves, and a note is
+  kept for a parent who is away until they come in. The day the nanny's news
+  and the pet hotel's word were last told is kept too, so each comes at most
+  once a day. The pet hotel's fee, a little game credit a day, is taken when
+  a pet is fetched, or forgiven when it can't be paid. A pet's owner may hand
+  it to their husband or wife (`give Kiki to my wife`, asked first); it then
+  belongs to them, and nothing more is kept about it.
 - Weddings: the couple, the hall, the kind of ceremony, the time, what was
   paid and given back, the guests invited, their answers and who came.
   Afterwards the memory of the day is kept: who came, the flowers and
@@ -469,11 +494,17 @@ which, like any web host, sees your IP address; see the
   address for 15 minutes, in memory only.
 - Chat is not stored. What you say is passed on to the players in the same
   place, a whisper to one player, a shout to everyone online, crew chat to
-  your crew's members online, and then it is gone: the server writes no
+  your crew's members online, and then it is gone. What you type to name a
+  thing, a pet or a person (`give scrap to Hana`, `feed 3`) is only matched
+  against the game's names, never kept; when two fit, the question "Which
+  one?" waits in the server's memory for two minutes at most. The server
+  writes no
   chat, secrets, codes or IP addresses to its log (only names, and who
   joined, left or was muted, and, of adult content, only that a scene began
   or ended, with no names). Other players see your character's name, job
-  and rank, where it is, what you say and do, what it wears, its pet, its
+  and rank, where it is (in its quarters, which room: "at home, in the
+  kitchen", or "visiting"), what you say and do, what it wears, the pet with
+  it, its
   public progress (level, what it mined and harvested, its achievements, and
   its place on the leaderboards: credits, level, ore, crops, the daily
   streak, casino winnings, duels won and what it has invested), its crew, its partner, its title,
