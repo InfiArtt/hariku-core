@@ -764,6 +764,20 @@ anywhere; it stays where you saved it until you move, send or delete it
 yourself. "Open" shows the page in your own browser, and "Copy the text" puts
 its words on the clipboard.
 
+Your own constellations (their names, stories and stars, and who gave one to
+you) are in your Sky Book too. The guided shows you make or open stay on your
+computer (`BintangKecilShows`: their words, steps, dedication and the author's
+name, and a show you were making when the sky closed during its preview). A
+show's share file (`.bkshow`) is written only when you share a show, and only
+where you choose (your Documents folder, under `Bintang Kecil\Shows`, unless
+you pick another folder). It holds that show, the constellations of your own
+it uses and the names of their stars, and never replaces another file.
+Bintang Kecil never sends it anywhere: you share it yourself, however you
+like. A show file is read only when you open one; it is checked, nothing in it
+is run, and a star it names for you as a gift is kept in your Sky Book, on
+your computer, like the ones you named. A show says your name only as Hariku
+calls you, on your own computer.
+
 The last space station track and K-index it fetched stay too, so a new night
 needn't ask them again (`BintangKecilLive`: the station's positions at the
 15-minute moments and the K-index values, nothing about you). The
