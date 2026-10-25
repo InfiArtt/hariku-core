@@ -734,15 +734,40 @@ extension ("HarikuV2/<version> (Bintang Kecil extension)").
 The Planetarium's "the night you were born" reads the birthday in your Profile
 on your computer; your birthday is never sent anywhere.
 
+It calls you by the title and nickname in your Hariku Profile, and talks in
+Hariku's persona; both are read on your computer and never sent anywhere.
+
 What stays on your computer, in `%APPDATA%\Hariku2`: your settings
 (`BintangKecil`), whether you have seen the welcome (`BintangKecilState`), and
-your Sky Book: each constellation and sky object you found, on which day and
-the name of your main place's city that night, and your achievements
-(`BintangKecilSkyBook`), and the last space station track and K-index it
-fetched, so a new night needn't ask them again (`BintangKecilLive`: the
-station's positions at the 15-minute moments and the K-index values, nothing
-about you). The left-and-right versions of its sounds that it
-mixes as you play are kept in `data\extensions\bintang_kecil\sounds`, at most
+your Sky Book (`BintangKecilSkyBook`):
+- each constellation and sky object you found, on which day and the name of
+  your main place's city that night;
+- for a constellation, also the time you first completed it, the name of the
+  star that completed it, and, if it was in the Planetarium, the place and the
+  date you were visiting there;
+- each whole sky culture you completed: the day, the time and its last
+  constellation;
+- your achievements;
+- your Wish Jar: the day you caught each shooting star, the wish you typed for
+  it, and the names you gave stars when a wish came true, with the day, the
+  city (or the Planetarium's place) and where the star stood in that sky.
+
+Your wishes and star names are never sent anywhere, and a wish is said aloud
+only in the Wish Jar's own window, when you open it. A star certificate is
+written only when you save one (after naming a star, or with the Wish Jar's
+Certificate button), and only there: an HTML page and the same words in a .txt
+file in your Documents folder, under `Bintang Kecil`. It holds what you chose:
+the name you gave, the day and the city (or the Planetarium's place) you named
+it in, the real star's catalogue facts and where it stood in that sky, and
+your wish only if you ticked "Include my wish". Nothing on it is sent
+anywhere; it stays where you saved it until you move, send or delete it
+yourself. "Open" shows the page in your own browser, and "Copy the text" puts
+its words on the clipboard.
+
+The last space station track and K-index it fetched stay too, so a new night
+needn't ask them again (`BintangKecilLive`: the station's positions at the
+15-minute moments and the K-index values, nothing about you). The
+left-and-right versions of its sounds that it mixes as you play are kept in `data\extensions\bintang_kecil\sounds`, at most
 200 MB, and can be deleted at any time; they are made again when needed. Its
 sky data (the Yale Bright Star Catalogue and Stellarium's sky cultures), its
 stories, its music and its sounds come with the extension; the night
