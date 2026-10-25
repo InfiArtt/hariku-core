@@ -670,6 +670,85 @@ the facts the extension uses (`data\extensions\wild_encounters\pokeapi`).
 not where. Its sounds are generated and come with the extension; no pictures,
 sounds or texts from the games are downloaded or used.
 
+## Bintang Kecil
+
+The Bintang Kecil stargazing game works the sky out on your computer, from
+your main place's coordinates (Preferences, Places) and the clock: the stars,
+the Sun, the Moon and the planets, the comets, the eclipses, the meteor
+showers, daylight and how dark your sky is are all calculated, not fetched. It
+sends nothing until you open it, and then only these can leave your computer:
+- With "Use the real weather at your place" on (Preferences, Bintang Kecil; on
+  by default), it asks Open-Meteo (`api.open-meteo.com`) for the current
+  weather (temperature, weather code, wind, precipitation, whether it is day),
+  the rain of the last three hours, and today's sunrise and sunset at your main
+  place, rounded to about 1 kilometre (2 decimals), never the exact point or
+  your device's location, with "timezone=auto". It asks only while the night
+  sky is open, at most once every 15 minutes (a failed request waits 15 minutes
+  too), on a background thread, and keeps the answer in memory only; nothing
+  about the weather is written to disk. The weather only sets the clouds and
+  the ambience's rain and wind. In the Planetarium the weather is never asked
+  for the place you visit. Without a main place, or with the setting off, it
+  asks nothing. The requests carry no name, account or key, only what every
+  web request carries, such as your IP address and a user agent naming Hariku's
+  Bintang Kecil extension. Open-Meteo's handling of these requests is covered
+  by its [terms and privacy policy](https://open-meteo.com/en/terms#privacy).
+- When you search for a city in the Planetarium, the name you typed, Hariku's
+  language and the number of results wanted are sent to Open-Meteo's city
+  search (`geocoding-api.open-meteo.com`, the same one Hariku's Places page
+  uses), only when you press Search. Your own place is never part of it, and
+  the city you pick is kept only while the Planetarium is open.
+- With "Follow the International Space Station" on (Preferences, Bintang
+  Kecil; on by default), while the night sky is open in your yard (not in the
+  Planetarium), it asks wheretheiss.at (`api.wheretheiss.at`, no account or
+  key) where the station is. Only two addresses are ever asked:
+  `/v1/satellites/25544` (where it is now) and
+  `/v1/satellites/25544/positions?timestamps=...` (where it will be at up to
+  ten moments, every one a multiple of 15 minutes of Unix time, so they are
+  the same for everybody and say nothing about where you are). When the sky
+  opens, about ten requests over about 100 seconds fetch the next day's track;
+  after that about one request every two and a half hours extends it. Where
+  it is now is asked only while the station could be above your horizon
+  within a minute; otherwise nothing is asked. There is never more than one
+  request every 10 seconds; after a failure it waits 20, 40 and up to 300
+  seconds, and a "too many requests" answer waits as long as the service
+  asks. Your place, a name or an id is never sent: where the station is in
+  your sky, and when it passes over, are worked out on your computer from its
+  track. An answer redirected to another address, or larger than 512 KB, is
+  refused. Turn the setting off and wheretheiss.at is never asked.
+- With "Aurora forecast" on (on by default), it asks NOAA's Space Weather
+  Prediction Center (`services.swpc.noaa.gov`, public domain, no account or
+  key) for the planetary K-index: the fixed file
+  `/products/noaa-planetary-k-index-forecast.json`, with no query string, and
+  only when that fails with a server or format error, the fixed file
+  `/products/noaa-planetary-k-index.json`. It asks at most every 30 minutes
+  (after failures 60, 120 and at most 240), and only for a place far enough
+  from the Equator for an aurora to be possible (30 degrees of geomagnetic
+  latitude or more): from anywhere in Indonesia it is never asked. Whether an
+  aurora can be seen at your place is worked out on your computer; your place
+  is never sent.
+
+Every one of these requests carries only what every web request carries,
+such as your IP address, and a user agent naming Hariku's Bintang Kecil
+extension ("HarikuV2/<version> (Bintang Kecil extension)").
+
+The Planetarium's "the night you were born" reads the birthday in your Profile
+on your computer; your birthday is never sent anywhere.
+
+What stays on your computer, in `%APPDATA%\Hariku2`: your settings
+(`BintangKecil`), whether you have seen the welcome (`BintangKecilState`), and
+your Sky Book: each constellation and sky object you found, on which day and
+the name of your main place's city that night, and your achievements
+(`BintangKecilSkyBook`), and the last space station track and K-index it
+fetched, so a new night needn't ask them again (`BintangKecilLive`: the
+station's positions at the 15-minute moments and the K-index values, nothing
+about you). The left-and-right versions of its sounds that it
+mixes as you play are kept in `data\extensions\bintang_kecil\sounds`, at most
+200 MB, and can be deleted at any time; they are made again when needed. Its
+sky data (the Yale Bright Star Catalogue and Stellarium's sky cultures), its
+stories, its music and its sounds come with the extension; the night
+ambience is made from public-domain (CC0) Freesound recordings that are part of
+the extension too, so nothing is downloaded while you play.
+
 ## Sleep Pattern
 
 The Sleep Pattern extension sends nothing over the internet. Once a minute it
