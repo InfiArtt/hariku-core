@@ -183,10 +183,20 @@ class ShortcutsDialog(wx.Dialog):
     # --- The list -----------------------------------------------------------
 
     def _on_selected(self, event):
-        item = event.GetItem()
-        if item.IsOk() and not self.IsBeingDeleted():
-            self.show(self.tree.GetItemData(item))
-        event.Skip()
+        # The tree can still report a selection while the window goes away
+        # (Escape); the window may be gone already by then.
+        try:
+            if not self or self.IsBeingDeleted() or not event.GetItem().IsOk():
+                return
+            self.show(self.tree.GetItemData(event.GetItem()))
+        except RuntimeError:
+            pass
+
+    def stop_listening(self):
+        """Before the window is destroyed: the tree's events no longer reach it."""
+        for kind in (wx.EVT_TREE_SEL_CHANGED, wx.EVT_TREE_ITEM_EXPANDING):
+            self.tree.Unbind(kind)
+        self.list.Unbind(wx.EVT_LIST_ITEM_ACTIVATED)
 
     def show(self, data):
         kind, value = data or (None, None)
@@ -214,4 +224,5 @@ class ShortcutsDialog(wx.Dialog):
 def show_shortcuts(parent):
     dlg = ShortcutsDialog(parent)
     dlg.ShowModal()
+    dlg.stop_listening()
     dlg.Destroy()

@@ -28,6 +28,7 @@ def test_keyboard_shortcuts_window(tmp_path):
         timeout=180, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK opens_on_core", "OK folders", "OK virtual_list", "OK labels", "OK shutdown"):
+    for stage in ("OK opens_on_core", "OK folders", "OK virtual_list", "OK labels", "OK late_selection",
+                  "OK escape", "OK shutdown"):
         assert stage in result.stdout, f"stage failed: {stage}\n{output}"
     assert result.returncode == 0, output
