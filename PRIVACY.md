@@ -796,6 +796,15 @@ not used, or unknown, for each minute. It never records what you typed, which
 keys you pressed, or which apps or windows you used. The record stays in
 `%APPDATA%\Hariku2` for 90 days, and you can clear it in its settings.
 
+## Period Tracker
+
+The Period Tracker extension sends nothing over the internet. It saves the
+first and last day of each period you log, and its settings, in
+`%APPDATA%\Hariku2` (`PeriodTracker`), until you delete them; nothing about
+your cycle is written to Hariku's log. When you agree, it reads Hariku 1's
+records from `%APPDATA%\Inflinity\Hariku\data\period.json` once, without
+changing that file.
+
 ## Edge Voices
 
 The Edge Voices extension sends nothing until you choose "Microsoft Edge neural

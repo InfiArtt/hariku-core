@@ -86,6 +86,7 @@ _OFFICIAL_EXTENSION_IDS = frozenset([
     "calculator",
     "ask_hariku",
     "trivia",
+    "period_tracker",
 ])
 
 
