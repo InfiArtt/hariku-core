@@ -100,7 +100,39 @@ for win, label in ((dlg.tree, "Groups"), (dlg.list, "Shortcuts")):
     assert accessible and accessible.GetName(wx.ACC_SELF)[1].startswith(label), (label, accessible)
 print("OK labels")
 
+kept_item = dlg.folders["core"]          # an item id the tree gave out
 dlg.Destroy()
+wx.Yield()
+
+# A selection the tree reports after the window is gone (Escape) is ignored:
+# it raised "wrapped C/C++ object of type ShortcutsDialog has been deleted".
+late = type("LateTreeEvent", (), {"GetItem": lambda self: kept_item})()
+sd.ShortcutsDialog._on_selected(dlg, late)
+print("OK late_selection")
+
+# Opened with F1 and closed with a real Escape key: nothing goes wrong.
+errors = []
+sys.excepthook = lambda kind, value, tb: errors.append(value)
+
+
+def press_escape():
+    opened = [w for w in wx.GetTopLevelWindows() if isinstance(w, sd.ShortcutsDialog)]
+    assert opened, "the window did not open"
+    opened[0].tree.SelectItem(opened[0].folders["extensions"])
+    opened[0].tree.SetFocus()
+    wx.UIActionSimulator().Char(wx.WXK_ESCAPE)
+    wx.CallLater(3000, lambda: [w.EndModal(wx.ID_CANCEL) for w in wx.GetTopLevelWindows()
+                               if isinstance(w, sd.ShortcutsDialog) and w.IsModal()])
+
+
+wx.CallLater(700, press_escape)
+sd.show_shortcuts(frame)
+for _ in range(30):
+    wx.Yield()
+assert not errors, errors
+sys.excepthook = sys.__excepthook__
+print("OK escape")
+
 frame.tb_icon.Destroy()
 frame.Destroy()
 wx.CallLater(200, app.ExitMainLoop)
