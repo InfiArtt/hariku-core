@@ -290,7 +290,13 @@ def format_key_name(keycode, ctrl, shift=False, alt=False, win=False):
         wx.WXK_RETURN: "Enter", wx.WXK_SPACE: "Space",
         wx.WXK_ESCAPE: "Escape", wx.WXK_BACK: "Backspace",
         wx.WXK_TAB: "Tab",
+        wx.WXK_DELETE: "Delete", wx.WXK_INSERT: "Insert",
+        wx.WXK_PAUSE: "Pause", wx.WXK_SNAPSHOT: "Print Screen",
+        wx.WXK_MENU: "Applications",
     }
+    # F1 to F24 (core 2.13: they were said as "Key(340)").
+    special_keys.update({getattr(wx, f"WXK_F{n}"): f"F{n}" for n in range(1, 25)})
+    special_keys.update({getattr(wx, f"WXK_NUMPAD{n}"): f"Numpad {n}" for n in range(10)})
     if keycode in special_keys:
         name += special_keys[keycode]
     elif 32 <= keycode <= 126:

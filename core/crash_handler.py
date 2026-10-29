@@ -11,6 +11,8 @@ import threading
 import logging
 import wx
 import json
+import os
+import re
 import traceback
 import platform
 import urllib.request
@@ -24,6 +26,20 @@ logger = logging.getLogger(__name__)
 # Crash reports are sent to the InfiArtt backend (see core.endpoints).
 API_URL = core.endpoints.CRASH_REPORT_URL
 
+_USER_FOLDER_RE = re.compile(r"(?i)([A-Z]:[\\/](?:Users|Documents and Settings)[\\/])[^\\/\r\n\"']+")
+
+
+def scrub(text):
+    """`text` without the Windows user name in paths (core 2.13): a traceback
+    says C:\\Users\\<name>\\AppData\\..., and crash reports may be sent
+    without being shown."""
+    text = str(text)
+    home = os.path.expanduser("~")
+    if home and home != "~":
+        text = text.replace(home, "%USERPROFILE%")
+    return _USER_FOLDER_RE.sub(r"\1<user>", text)
+
+
 def _send_report_silently(exc_type, exc_value, exc_traceback):
     try:
         config = core.api.load_data("Core")
@@ -36,8 +52,8 @@ def _send_report_silently(exc_type, exc_value, exc_traceback):
             "os_info": platform.platform(),
             "language": lang,
             "error_type": exc_type.__name__,
-            "error_message": str(exc_value),
-            "traceback": traceback_text
+            "error_message": scrub(exc_value),
+            "traceback": scrub(traceback_text)
         }
 
         data = json.dumps(payload).encode('utf-8')

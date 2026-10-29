@@ -35,6 +35,19 @@ from ui.main_window import MainWindow
 frame = MainWindow(None, title="startup check")
 print("OK main_window")
 
+# Core 2.13: switching to Hariku, a screen reader gets the selected date from
+# the panel (and the calendar), never the calendar's drawn text, and the
+# calendar has no hidden month box or year spinner and never takes the focus.
+assert len(frame.calendar.GetChildren()) == 0, list(frame.calendar.GetChildren())
+assert not frame.calendar.AcceptsFocus()
+for win in (frame.panel, frame.calendar):
+    status, name = win.GetAccessible().GetName(wx.ACC_SELF)
+    assert status == wx.ACC_OK and name == frame.SpokenDate(), (win, name)
+frame.MoveDate(days=1)
+assert frame.panel.GetAccessible().GetName(wx.ACC_SELF)[1] == frame.SpokenDate()
+frame.GoToToday()
+print("OK main_window_reads_the_date")
+
 import core.core_panels
 panel = core.core_panels.GeneralSettingsPanel(frame)
 panel.chk_high_contrast.SetValue(True)

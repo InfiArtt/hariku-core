@@ -752,17 +752,48 @@ class TestPlayFile:
         assert wait_until(lambda: done)
         assert done == [None]
 
+    def test_a_wav_at_full_volume_opens_as_waveaudio(self, voice, mci, tmp_path):
+        # Core 2.13: waveaudio starts in milliseconds; mpegvideo is for volume.
+        wav = tmp_path / "sentence.wav"
+        wav.write_bytes(b"RIFF")
+        done = []
+        voice.play_file(str(wav), 100, done.append)
+        assert wait_until(lambda: done)
+        assert done == [None]
+        alias = mci.commands[0].split()[-1]
+        assert mci.commands[0] == f'open "{wav}" type waveaudio alias {alias}'
+        assert not any(c.startswith("setaudio") for c in mci.commands)
+        mci.commands.clear()
+        mci.playing_polls = 3
+        quieter = []
+        voice.play_file(str(wav), 70, quieter.append)
+        assert wait_until(lambda: quieter)
+        assert " type mpegvideo " in mci.commands[0]
+        assert any(c.startswith("setaudio") and c.endswith("volume to 700") for c in mci.commands)
+
+    def test_a_wav_waveaudio_cannot_open_plays_as_mpegvideo(self, voice, mci, tmp_path):
+        wav = tmp_path / "float.wav"
+        wav.write_bytes(b"RIFF")
+        mci.fail_on = f'open "{wav}" type waveaudio'
+        done = []
+        voice.play_file(str(wav), 100, done.append)
+        assert wait_until(lambda: done)
+        assert done == [None]
+        opens = [c for c in mci.commands if c.startswith("open")]
+        assert " type waveaudio " in opens[0] and " type mpegvideo " in opens[1]
+
     def test_voice_and_ui_sounds_use_separate_mci_devices(self, voice):
         # core/sounds.py names its waveaudio devices after the file; the voice
-        # uses its own mpegvideo device and its own winmm handle, and never
-        # winsound's single PlaySound slot.
+        # opens its own device under a unique alias with its own winmm handle,
+        # and never winsound's single PlaySound slot.
         import ctypes
         import core.sounds
         assert core.sounds._sound_alias("C:\\x\\start.wav") == "startwav"
         assert voice._winmm() is not ctypes.windll.winmm
         with open(os.path.join(ROOT, "core", "voice.py"), encoding="utf-8") as f:
             source = f.read()
-        assert "PlaySound(" not in source and "type waveaudio" not in source
+        assert "PlaySound(" not in source
+        assert 'alias {self.alias}' in source and "hariku_voice_" in source
 
 
 # ------------------------------------------------------------

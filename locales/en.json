@@ -806,7 +806,19 @@
         "places_choice_main": "The main place ({name})",
         "places_choice_main_none": "The main place (none yet: add one in Preferences, Places)",
         "places_choice_own": "Its own place…",
-        "places_lbl_choice": "Place:"
+        "places_lbl_choice": "Place:",
+        "shortcuts_title": "Keyboard Shortcuts",
+        "shortcuts_lbl_groups": "Groups",
+        "shortcuts_lbl_list": "Shortcuts",
+        "shortcuts_col_name": "Name",
+        "shortcuts_col_keys": "Keys",
+        "shortcuts_folder_core": "Hariku",
+        "shortcuts_folder_extensions": "Extensions",
+        "shortcuts_group_count": "{count} shortcuts",
+        "shortcuts_unassigned": "Unassigned",
+        "shortcuts_global": "{keys} (global)",
+        "shortcuts_close": "Close",
+        "ext_withdrawn": "Hariku's list of verified extensions no longer includes {names}. It keeps running now; Hariku will ask before loading it next time."
     },
     "prefs_btn_apply": "Apply"
 }

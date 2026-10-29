@@ -11,6 +11,7 @@ import urllib.parse
 import json
 import os
 import shutil
+import zipfile
 import logging
 from packaging.version import Version
 
@@ -56,12 +57,20 @@ def fetch_registry():
 
 def _sanitize_ext_id(ext_id):
     """
-    [SEC MED-5] Reduce an extension id to a safe filename component.
-    A registry entry (which could be spoofed if the store were compromised)
-    must never be able to steer the download to '../../Startup/evil' etc.
-    Returns the sanitized id, or "" if nothing safe remains.
+    [SEC MED-5] The extension id as a safe filename component, or "" when it
+    isn't one. A registry entry (which could be spoofed if the store were
+    compromised) must never be able to steer the download to
+    '../../Startup/evil' etc. Core 2.13: an id with anything else in it is
+    refused, not cleaned: "weather." used to become "weather" and replace the
+    official Weather extension.
     """
-    return "".join(c for c in str(ext_id) if c.isalnum() or c in ("-", "_")).strip()
+    import core.extension_manager
+    ext_id = str(ext_id)
+    return ext_id if core.extension_manager.is_valid_extension_id(ext_id) else ""
+
+
+# A store download larger than this is refused (Bintang Kecil is about 75 MB).
+MAX_DOWNLOAD_BYTES = 300 * 1024 * 1024
 
 
 def download_extension(ext_id, download_url):
@@ -91,13 +100,28 @@ def download_extension(ext_id, download_url):
         logger.error(f"download_extension blocked: path escapes extensions dir for {ext_id!r}")
         return False
 
+    # Core 2.13: written beside it first and checked, so a cut-off or oversized
+    # download never replaces the extension that works.
+    partial = target_path + ".part"
     try:
         req = urllib.request.Request(download_url, headers={'User-Agent': 'HarikuV2/2.0'})
-        with urllib.request.urlopen(req, timeout=60) as response, open(target_path, 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
+        with urllib.request.urlopen(req, timeout=60) as response, open(partial, 'wb') as out_file:
+            size = 0
+            for chunk in iter(lambda: response.read(65536), b""):
+                size += len(chunk)
+                if size > MAX_DOWNLOAD_BYTES:
+                    raise ValueError(f"the download is larger than {MAX_DOWNLOAD_BYTES // (1024 * 1024)} MB")
+                out_file.write(chunk)
+        if not zipfile.is_zipfile(partial):
+            raise ValueError("the download is not an extension package")
+        os.replace(partial, target_path)
         return True
     except Exception as e:
         logger.error(f"Failed to download extension {ext_id}: {e}")
+        try:
+            os.remove(partial)
+        except OSError:
+            pass
         return False
 
 def _parse_version(v):

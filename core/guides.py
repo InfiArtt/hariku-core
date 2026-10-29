@@ -457,9 +457,15 @@ def _bold(escaped):
     return _BOLD_RE.sub(lambda m: f"<strong>{m.group(1) or m.group(2)}</strong>", escaped)
 
 
+# A title longer than this is cut before it is read (core 2.13): the bold
+# pattern takes time that grows with the square of the length, and a guide of
+# 512 KB made of "**a " froze the Help list for minutes.
+MAX_TITLE_CHARS = 300
+
+
 def _plain(text):
     """Inline Markdown as plain text (for a title)."""
-    return html.unescape(_TAG_RE.sub("", _inline(text))).strip()
+    return html.unescape(_TAG_RE.sub("", _inline(text[:MAX_TITLE_CHARS]))).strip()
 
 
 def markdown_body(text):

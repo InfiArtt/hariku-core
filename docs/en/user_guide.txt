@@ -242,8 +242,10 @@ Hariku also plays its own subtle sound effects for navigation and events:
 
 ADJUSTING VOLUME
 -----------------
-Hariku's internal sounds have their own volume control, independent of your
-system volume. Two hotkeys let you adjust it without opening any dialog:
+Hariku's sounds have their own volume control, independent of your system
+volume: it is Hariku's slider in Windows' Volume Mixer, and every sound Hariku
+and its extensions play follows it. It stays where you set it when NVDA
+restarts. Two hotkeys let you adjust it without opening any dialog:
 
   F5   — Decrease Hariku's sound volume.
   F6   — Increase Hariku's sound volume.

@@ -20,15 +20,43 @@ def get_global_volume():
     config = core.api.load_data("Core")
     return config.get("volume", 100)
 
+# Core 2.13: Hariku's volume is its own audio session's volume (core/app_volume.py),
+# which NVDA's sound split no longer resets. Re-applied before a sound at most
+# this often, in case something else changed it; setting it takes ~15 ms.
+REAPPLY_SECONDS = 5.0
+_applied = {"volume": None, "at": 0.0}
+
 def apply_system_volume(vol_percent):
-    import ctypes
-    vol = max(0, min(100, vol_percent))
-    # Convert percentage to 16-bit word (0x0000 to 0xFFFF)
-    vol_word = int((vol / 100.0) * 0xFFFF)
-    # Pack left and right channels
-    volume_dword = (vol_word & 0xFFFF) | ((vol_word & 0xFFFF) << 16)
-    # Apply to default wave output device (ID 0)
-    ctypes.windll.winmm.waveOutSetVolume(0, volume_dword)
+    """Set Hariku's own volume (0-100): every sound Hariku and its extensions
+    play follows it. Not Windows' master volume, despite the old name."""
+    import time
+    import core.app_volume
+    vol = max(0, min(100, int(vol_percent)))
+    core.app_volume.set_volume(vol)
+    _applied["volume"], _applied["at"] = vol, time.monotonic()
+
+def _keep_volume():
+    """Before a sound: apply the volume again if it changed or a while has passed."""
+    import time
+    vol = get_global_volume()
+    if vol != _applied["volume"] or time.monotonic() - _applied["at"] >= REAPPLY_SECONDS:
+        apply_system_volume(vol)
+
+# Core.json key: the channel volumes that waveOutSetVolume set before 2.13 have
+# been put back to full (once).
+CHANNEL_RESET_KEY = "volume_channels_reset"
+
+def init_volume(config):
+    """At startup: apply the saved volume and, the first time, undo the old
+    channel volume. Returns True when `config` changed and should be saved."""
+    import core.app_volume
+    changed = False
+    if not config.get(CHANNEL_RESET_KEY):
+        core.app_volume.reset_channel_volume()
+        config[CHANNEL_RESET_KEY] = True
+        changed = True
+    apply_system_volume(config.get("volume", 100))
+    return changed
 
 def set_global_volume(vol_percent):
     vol = max(0, min(100, vol_percent))
@@ -87,8 +115,8 @@ def play_sound(filepath):
         # Stop and close the same file if it is already playing.
         ctypes.windll.winmm.mciSendStringW(f"close {alias}", None, 0, None)
 
-        # Re-apply the volume on every play, just in case.
-        apply_system_volume(get_global_volume())
+        # Keep Hariku's volume, in case something else changed it.
+        _keep_volume()
 
         ctypes.windll.winmm.mciSendStringW(f"open \"{filepath}\" type waveaudio alias {alias}", None, 0, None)
 
@@ -227,6 +255,12 @@ def sound_path(sound_name):
     """The file play_internal_sound(sound_name) plays (core 2.7): the active
     theme's copy when it has one, otherwise Hariku's own. For reading a
     sound's length, say (the command bar's listening tone)."""
+    # Core 2.13: only a plain file name, for the built-in sounds too. A network
+    # path to a .wav on another computer (a routine's %clipboard%) made
+    # Windows contact that computer and offer the user's sign-in; such a
+    # name now names no file (play_sound says it isn't there).
+    if not _is_plain_file_name(sound_name):
+        return os.path.join(get_builtin_sounds_dir(), "(not a sound name).wav")
     return _theme_sound_path(sound_name) or os.path.join(get_builtin_sounds_dir(), sound_name)
 
 

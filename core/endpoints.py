@@ -175,6 +175,9 @@ def assert_download_url(url):
         raise ValueError(f"[Security] Only HTTPS downloads are allowed, got: {scheme!r}")
     if ".." in parsed.path:
         raise ValueError("[Security] Path traversal in download URL rejected.")
+    if "%" in parsed.path or "\\" in parsed.path:
+        # Core 2.13: "%2e%2e" is ".." to a server that decodes it.
+        raise ValueError("[Security] Encoded characters in the download path rejected.")
     # netloc split guards against user-info smuggling like host@evil.com
     host = parsed.netloc.lower().split("@")[-1].split(":")[0]
     if host not in ALLOWED_DOWNLOAD_HOSTS:

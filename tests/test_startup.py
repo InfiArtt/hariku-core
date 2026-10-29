@@ -86,7 +86,8 @@ def test_main_window_starts_and_saves_settings(tmp_path):
         capture_output=True, text=True, timeout=120, env=env,
     )
     output = result.stdout + result.stderr
-    for stage in ("OK main_window", "OK apply_settings", "OK preferences_appearance",
+    for stage in ("OK main_window", "OK main_window_reads_the_date", "OK apply_settings",
+                  "OK preferences_appearance",
                   "OK startup_greeting", "OK shutdown"):
         assert stage in result.stdout, f"startup stage failed: {stage}\n{output}"
     assert result.returncode == 0, output

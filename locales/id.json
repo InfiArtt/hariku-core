@@ -805,7 +805,19 @@
         "places_choice_main": "Tempat utama ({name})",
         "places_choice_main_none": "Tempat utama (belum ada: tambahkan di Pengaturan, Tempat)",
         "places_choice_own": "Tempat sendiri…",
-        "places_lbl_choice": "Tempat:"
+        "places_lbl_choice": "Tempat:",
+        "shortcuts_title": "Pintasan Keyboard",
+        "shortcuts_lbl_groups": "Grup",
+        "shortcuts_lbl_list": "Pintasan",
+        "shortcuts_col_name": "Nama",
+        "shortcuts_col_keys": "Tombol",
+        "shortcuts_folder_core": "Hariku",
+        "shortcuts_folder_extensions": "Ekstensi",
+        "shortcuts_group_count": "{count} pintasan",
+        "shortcuts_unassigned": "Belum ada tombol",
+        "shortcuts_global": "{keys} (global)",
+        "shortcuts_close": "Tutup",
+        "ext_withdrawn": "Daftar ekstensi terverifikasi Hariku tidak lagi memuat {names}. Ekstensi ini tetap jalan sekarang; lain kali Hariku akan bertanya dulu sebelum memuatnya."
     },
     "prefs_btn_apply": "Terapkan"
 }

@@ -22,6 +22,47 @@ import core.voice
 
 _ = get_translator("core")
 
+
+class _QuietCalendar(wx.adv.GenericCalendarCtrl):
+    """The calendar drawn for sighted and low-vision users. It never takes the
+    keyboard focus (the main window's panel does, and Hariku says the dates),
+    and has no month box or year spinner of its own (sequential month
+    selection), so a screen reader never lands on it."""
+
+    # The StaticText override (core/ui_overrides.py) leaves its name alone.
+    hariku_keep_accessible = True
+
+    def AcceptsFocus(self):
+        return False
+
+    def AcceptsFocusFromKeyboard(self):
+        return False
+
+
+class _DateAccessible(wx.Accessible):
+    """What a screen reader gets for the main window's panel and calendar
+    (core 2.13): the selected date, said the way Hariku says it, instead of
+    the calendar's drawn text ("Sun Mon Tue ... 1 2 3 ...")."""
+
+    def __init__(self, win, frame, role=None):
+        super().__init__(win)
+        self.frame = frame
+        self.role = role
+
+    def GetName(self, childId):
+        if childId == wx.ACC_SELF:
+            try:
+                return wx.ACC_OK, self.frame.SpokenDate()
+            except Exception:
+                return wx.ACC_OK, ""
+        return wx.ACC_NOT_IMPLEMENTED, ""
+
+    def GetRole(self, childId):
+        if childId == wx.ACC_SELF and self.role is not None:
+            return wx.ACC_OK, self.role
+        return wx.ACC_NOT_IMPLEMENTED, 0
+
+
 class MainWindow(wx.Frame):
     def __init__(self, parent, title):
         super(MainWindow, self).__init__(parent, title=title, size=(600, 400))
@@ -55,15 +96,22 @@ class MainWindow(wx.Frame):
         # Use GenericCalendarCtrl instead of the native Windows CalendarCtrl so
         # NVDA does not intercept the native "SysMonthCal32" events and instead
         # listens purely to our Tolk output.
-        self.calendar = wx.adv.GenericCalendarCtrl(self.panel, wx.ID_ANY, wx.DateTime.Now())
+        self.calendar = _QuietCalendar(self.panel, wx.ID_ANY, wx.DateTime.Now(),
+                                       style=wx.adv.CAL_SEQUENTIAL_MONTH_SELECTION)
 
-        # Keep the calendar from taking native focus so NVDA does not log the
-        # default (numeric) readings, keeping the log clean.
+        # The panel holds the focus; should a click give it to the calendar,
+        # it goes back to the panel.
         self.calendar.Bind(wx.EVT_SET_FOCUS, lambda e: self.panel.SetFocus())
-        
+
         vbox.Add(self.calendar, 1, wx.EXPAND | wx.ALL, 10)
-        
+
         self.panel.SetSizer(vbox)
+
+        # Switching to Hariku, a screen reader says the window and the selected
+        # date (core 2.13), not the calendar's drawn text.
+        self.panel.SetAccessible(_DateAccessible(self.panel, self))
+        self.calendar.SetAccessible(_DateAccessible(self.calendar, self,
+                                                    role=wx.ROLE_SYSTEM_STATICTEXT))
         
         menubar = wx.MenuBar()
         fileMenu = wx.Menu()
@@ -459,14 +507,16 @@ class MainWindow(wx.Frame):
         if reminders:
             play_internal_sound("penClick.wav")
             
-        import core.api
+        speak(self.SpokenDate(current_date), interrupt=True)
+
+        bus.emit("on_date_changed", date_str)
+
+    def SpokenDate(self, date=None):
+        """`date` (the selected one by default) in the user's date format, as
+        Hariku says it and as the screen reader reads the main window."""
         config = core.api.load_data("Core")
         dt_format = config.get("date_format", "%A, %d %B %Y")
-        
-        spoken_date = format_date(current_date, dt_format)
-        speak(spoken_date, interrupt=True)
-        
-        bus.emit("on_date_changed", date_str)
+        return format_date(date if date is not None else self.calendar.GetDate(), dt_format)
 
     def MinimizeToTray(self):
         """Hide the main window to the system tray."""

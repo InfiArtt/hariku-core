@@ -924,9 +924,10 @@ def is_speaking():
 # The shared audio file player (MCI, not winsound)
 # ------------------------------------------------------------
 # core/sounds.py plays UI sounds through MCI "waveaudio" devices named after
-# the file. Voice audio uses its own "mpegvideo" device (MP3 and WAV, with a
-# volume setting) under a unique alias, so a UI sound never cuts a voice off
-# and neither closes the other. winsound.PlaySound has a single slot and would.
+# the file. Voice audio uses its own device under a unique alias ("mpegvideo"
+# for MP3 and for a volume setting, "waveaudio" for a WAV at full volume), so a
+# UI sound never cuts a voice off and neither closes the other.
+# winsound.PlaySound has a single slot and would.
 
 class MciError(OSError):
     pass
@@ -985,6 +986,21 @@ class _Playback:
     def stop(self):
         self._stop.set()
 
+    def _open(self):
+        """Open the file under this alias; returns the MCI device used. A WAV at
+        full volume opens as "waveaudio" (core 2.13), which starts in a few
+        milliseconds where "mpegvideo" (DirectShow) takes 50 to 300, between
+        every sentence a voice like Piper makes; anything else, or a WAV
+        waveaudio can't read, opens as "mpegvideo", which can set a volume."""
+        if self.volume >= VOLUME_MAX and self.path.lower().endswith(".wav"):
+            try:
+                _mci_send(f'open "{self.path}" type waveaudio alias {self.alias}')
+                return "waveaudio"
+            except MciError as e:
+                logger.debug(f"Hariku Voice: waveaudio can't play {self.path}: {e}")
+        _mci_send(f'open "{self.path}" type mpegvideo alias {self.alias}')
+        return "mpegvideo"
+
     def _run(self):
         # Every MCI command for this alias comes from this thread, which ends
         # with the playback (taking any window MCI made for it along).
@@ -993,14 +1009,15 @@ class _Playback:
         try:
             if not os.path.isfile(self.path):
                 raise FileNotFoundError(self.path)
-            _mci_send(f'open "{self.path}" type mpegvideo alias {self.alias}')
+            device = self._open()
             opened = True
             _mci_send(f"set {self.alias} time format milliseconds")
             length = _as_int(_mci_send(f"status {self.alias} length"))
-            try:
-                _mci_send(f"setaudio {self.alias} volume to {self.volume * 10}")
-            except MciError as e:
-                logger.debug(f"Hariku Voice: could not set the playback volume: {e}")
+            if device == "mpegvideo":
+                try:
+                    _mci_send(f"setaudio {self.alias} volume to {self.volume * 10}")
+                except MciError as e:
+                    logger.debug(f"Hariku Voice: could not set the playback volume: {e}")
             if self._stop.is_set():
                 return
             _mci_send(f"play {self.alias}")
