@@ -1,79 +1,41 @@
 Version 2.13.0 (Core Update - October 30, 2026)
 ================================================================================
-This update makes Hariku quieter and clearer for your screen reader, keeps
-its volume where you set it, and starts it faster.
+A required update: it fixes security problems found in a review of Hariku
+and its extensions, and makes Hariku quieter for your screen reader and
+faster to start.
 
-- Switching to Hariku's window (Alt+Tab) now says the window and the
-  selected date, such as "Friday, 30 October 2026". It used to read the
-  whole drawn calendar: "Hariku V2 - Core SunMonTueWedThu Fri Sat1 2 3 4
-  ...". The calendar has no hidden month box or year field any more, so
-  Tab never lands on them.
-- The Keyboard Shortcuts window (F1) is laid out like File Explorer
-  instead of one long text: a tree of groups on the left (Hariku, with the
-  core and calendar keys, and Extensions, with one branch per extension)
-  and a list on the right of the selected group's shortcuts, with their
-  keys. Tab moves between them; on a folder, the list shows its groups and
-  Enter opens one. Groups and rows are only made when you open or reach
-  them, so it opens at once however many extensions you have.
-- Function keys are named: F1, F5, F6 and so on were said as "Key(340)".
-- In Places (Preferences), the Add and Edit Place window no longer reads
-  "Address search: © OpenStreetMap contributors. City search:
-  Open-Meteo.com..." on the OK button. The note is still in the window;
-  OK, Cancel and the like are now never named after the text above them.
-- Hariku's volume (F5 and F6, or Preferences, General) now stays where you
-  set it. It used to go back to full each time NVDA started, because NVDA's
-  sound split resets the left and right channel volumes Hariku set. Hariku
-  now sets its own slider in Windows' Volume Mixer, which NVDA leaves alone;
-  every sound Hariku and its extensions play still follows it.
-- Hariku starts faster, about 1.5 seconds sooner on an older laptop. It no
-  longer waits for the list of verified extensions to download before
-  opening (the list saved last time is used, and refreshed in the
-  background), and an extension file is checked again only when it changes
-  (Bintang Kecil alone took more than a second each time).
-- Hariku Voice starts speaking sooner. A voice file (a Piper voice, say)
-  starts playing in a few milliseconds instead of up to a third of a
-  second, between every sentence too.
-- New in the Extension Store: Period Tracker 1.0, Hariku 1's Period Tracker
-  brought to Hariku 2. Press J on a date to log that your period started or
-  ended; Shift+J opens the tracker, with your history, your average cycle
-  and period, the next 12 periods and their fertile windows, and Add, Edit
-  and Delete (Hariku 1 couldn't fix a wrong date). The Morning Briefing and
-  the calendar say what matters ("Day 3 of your period."), it can remind you
-  to log the end and before the next one (never in quiet hours), and it
-  brings your Hariku 1 records over. Everything stays on your computer.
-- Updated in the Extension Store: Piper Voices 1.2 loads your voice as soon
-  as Hariku starts, so the first thing it says doesn't wait one to fifteen
-  seconds for it, keeps it loaded for an hour instead of ten minutes, and
-  says the first few words of a long text sooner (about 1.2 seconds instead
-  of 3 on an older laptop). Edge Voices 1.1 speaks again: since October
-  Microsoft's service refused it ("403 Forbidden") until it sent the new
-  version of the token the Edge browser sends.
-- The log (Temp\Hariku2\hariku_debug.log) now says how long Hariku took to
-  start and how long each extension took to load.
-- Security fixes, from a review of Hariku and its extensions:
-  - A file named like an official extension (weather.hrk, say) is now
-    checked against Hariku's list of verified extensions like any other; it
-    used to load unchecked, with the Official badge. Only when no list can be
-    had at all (offline, none saved in the last 14 days) do official
-    extensions still load by their name. An extension taken off the list is
-    no longer trusted once the list is refreshed, and Hariku says so.
-  - An extension file whose name is made of dots ("...hrk") could remove
-    the whole extensions folder; such names are now refused. An extension
-    that would unpack to more than 1 GB is refused, and a store download
-    that stops halfway or isn't an extension no longer replaces the one you
-    had.
-  - A sound name such as a network path (from a routine's %clipboard%) no
-    longer makes Windows contact another computer.
-  - Crash reports no longer carry your Windows user name in file paths.
-  - A guide with a huge title no longer freezes the Help list.
-  - Updated in the Extension Store: Account Manager 1.2 (the sign-in
-    listener keeps its port to itself and answers only on this computer,
-    and your sign-in is saved encrypted and fully removed when you sign
-    out), Routines 1.2 (copied text in %clipboard% can no longer add
-    arguments to a program, open a file on another computer, change a web
-    address or press Enter while typing), Markdown Reader 1.0.2 and Google
-    Calendar Reader 1.0.2 (a file or a calendar invite can no longer run
-    script in the viewer).
+Changed:
+- Alt+Tab to Hariku says the window and the selected date, not the whole
+  drawn calendar ("SunMonTue... 1 2 3...").
+- Hariku's volume (F5, F6) is its own slider in Windows' Volume Mixer, so
+  NVDA no longer puts it back to full when it starts.
+- Keyboard Shortcuts (F1) is a tree of groups and a list of their keys, like
+  File Explorer; function keys are named (F1, not "Key(340)").
+- Hariku starts about 1.5 seconds faster, and a voice starts speaking sooner.
+
+Fixed:
+- Security: a file named like an official extension no longer loads
+  unchecked; a file named "...hrk" can't delete the extensions folder; an
+  unfinished store download can't replace a working extension; a routine
+  can't be tricked by copied text; crash reports leave out your Windows user
+  name.
+- In Places, OK no longer reads the OpenStreetMap note first.
+- Closing Keyboard Shortcuts with Escape no longer shows an error.
+
+Updated extensions (Extension Store):
+- Edge Voices 1.1: speaks again (Microsoft had been refusing it since
+  October).
+- Piper Voices 1.2: your voice loads when Hariku starts; the first words
+  come sooner.
+- Account Manager 1.2: your sign-in is saved encrypted and removed fully
+  when you sign out.
+- Routines 1.2, Markdown Reader 1.0.2, Google Calendar Reader 1.0.2:
+  security fixes.
+
+New extension:
+- Period Tracker 1.0: Hariku 1's Period Tracker is back. J logs a period on
+  the selected date, Shift+J opens your history and predictions. It can bring
+  your Hariku 1 records over, and everything stays on your computer.
 
 Version 2.12.1 (Core Update - September 28, 2026)
 ================================================================================
