@@ -13,6 +13,15 @@ on:
       version:
         description: "Version to release, e.g. 2.3.0 (no leading v)"
         required: true
+      update_type:
+        description: "How Hariku offers it: optional (blue), recommended (yellow) or critical (red)"
+        type: choice
+        options: [optional, recommended, critical]
+        default: optional
+      force_update:
+        description: "Required: the update window can't be closed or snoozed (with critical)"
+        type: boolean
+        default: false
 
 concurrency:
   group: hariku-release
@@ -152,11 +161,16 @@ jobs:
           $sha = (Get-FileHash "${{ env.INSTALLER }}" -Algorithm SHA256).Hash.ToLower()
           Write-Host "SHA256: $sha"
           $notes = Get-Content release_notes.json -Raw -Encoding utf8 | ConvertFrom-Json
+          # A tag push is always optional; a manual run says how Hariku offers it.
+          $updateType = "${{ github.event.inputs.update_type }}"
+          if (-not $updateType) { $updateType = "optional" }
+          $forceUpdate = "${{ github.event.inputs.force_update }}" -eq "true"
+          Write-Host "update_type=$updateType force_update=$forceUpdate"
           $manifest = [ordered]@{
             latest_version       = $v
             min_version_required = "2.0.0"
-            update_type          = "optional"
-            force_update         = $false
+            update_type          = $updateType
+            force_update         = $forceUpdate
             download_url         = "https://github.com/${{ env.DIST_REPO }}/releases/download/v$v/HarikuV2-Setup.exe"
             sha256               = $sha
             release_notes        = $notes.en
