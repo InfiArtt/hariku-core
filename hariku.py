@@ -91,10 +91,30 @@ try:
 except Exception as e:
     logger.error(f"Failed to set log level: {e}")
 
+def _seconds_since_process_start():
+    """How long ago Windows started this process (for the startup log), or None."""
+    try:
+        import ctypes.wintypes as wt
+        times = [wt.FILETIME() for _ in range(4)]
+        kernel32 = ctypes.WinDLL("kernel32")
+        kernel32.GetCurrentProcess.restype = wt.HANDLE
+        kernel32.GetProcessTimes.argtypes = [wt.HANDLE] + [ctypes.POINTER(wt.FILETIME)] * 4
+        if not kernel32.GetProcessTimes(kernel32.GetCurrentProcess(), *[ctypes.byref(t) for t in times]):
+            return None
+        now = wt.FILETIME()
+        kernel32.GetSystemTimeAsFileTime(ctypes.byref(now))
+        as_int = lambda t: (t.dwHighDateTime << 32) | t.dwLowDateTime
+        return (as_int(now) - as_int(times[0])) / 1e7
+    except Exception:
+        return None
+
+
 class HarikuApp(wx.App):
     def OnInit(self):
         import core.constants
-        logger.info(f"Starting Hariku V{core.constants.CORE_VERSION} Core...")
+        since = _seconds_since_process_start()
+        logger.info(f"Starting Hariku V{core.constants.CORE_VERSION} Core..."
+                    + (f" ({since:.1f} s after the process started)" if since is not None else ""))
 
         # Single-instance guard: a second copy would fight over global hotkeys
         # and the tray icon, so refuse to start it.
@@ -112,10 +132,10 @@ class HarikuApp(wx.App):
         # Windows can be told apart (core.api.started_with_windows).
         core.api.migrate_autostart(config)
         
-        # Initialize internal audio/volume setup
+        # Hariku's own volume (its audio session's), from the config.
         import core.sounds
-        # Make sure the system volume matches the config.
-        core.sounds.apply_system_volume(config.get("volume", 100))
+        if core.sounds.init_volume(config):
+            core.api.save_data("Core", config)
 
         # Initialize the translation system (i18n).
         import core.i18n
@@ -210,6 +230,9 @@ class HarikuApp(wx.App):
         self.frame = MainWindow(None, title=_("app_title_safe_mode") if self.is_safe_mode else _("app_title"))
         self.SetTopWindow(self.frame)
         self.frame.Show(True)
+        since = _seconds_since_process_start()
+        if since is not None:
+            logger.info(f"The main window is shown, {since:.1f} s after the process started.")
 
         # "Good morning, Bro. Welcome to Hariku ..." (or the user's own
         # greeting): one announcement, after the screen reader has read the

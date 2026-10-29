@@ -44,6 +44,15 @@ class PrefixAccessible(wx.Accessible):
             return wx.ACC_OK, f"{self.current_prefix()} {label}".strip()
         return wx.ACC_NOT_IMPLEMENTED, ""
 
+_DIALOG_BUTTON_IDS = frozenset([wx.ID_OK, wx.ID_CANCEL, wx.ID_YES, wx.ID_NO, wx.ID_CLOSE,
+                                wx.ID_APPLY, wx.ID_HELP])
+
+
+def _is_dialog_button(win):
+    """A dialog's standard button (OK, Cancel, Yes, No, Close, Apply, Help)."""
+    return isinstance(win, wx.Button) and win.GetId() in _DIALOG_BUTTON_IDS
+
+
 class AccessibleStaticText(_OldStaticText):
     """
     A monkey-patched version of wx.StaticText that dynamically injects its text 
@@ -65,8 +74,14 @@ class AccessibleStaticText(_OldStaticText):
             idx = children.index(self)
             if idx + 1 < len(children):
                 next_child = children[idx + 1]
-                # Skip if the next child is not an interactive control
-                if not isinstance(next_child, (wx.StaticText, wx.StaticBox, wx.StaticBitmap, wx.Panel)):
+                # Skip if the next child is not an interactive control, or
+                # gives a screen reader its own name (the main window's calendar),
+                # or is a dialog's OK, Cancel... button: the text above it is a
+                # note, not its label (core 2.13; Places' "Address search:
+                # © OpenStreetMap contributors..." was read on OK).
+                if (not isinstance(next_child, (wx.StaticText, wx.StaticBox, wx.StaticBitmap, wx.Panel))
+                        and not getattr(next_child, "hariku_keep_accessible", False)
+                        and not _is_dialog_button(next_child)):
                     # Check if it already has an accessible object to avoid overwriting
                     # wxPython doesn't have HasAccessible, but we can just set it
                     prefix = self.GetLabel().replace('&', '').replace('\n', ' ')

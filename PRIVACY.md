@@ -987,7 +987,8 @@ folder to remove everything.
 When Hariku crashes, it asks whether to send a crash report. A report goes to
 infiartt.com and contains the Hariku version, your Windows version, the app
 language, and the error details. The error details include a traceback, which
-can contain file paths from your computer. The crash dialog also lets you
+can contain file paths from your computer; since Hariku 2.13 your Windows user
+name is taken out of them (`C:\Users\<user>\...`). The crash dialog also lets you
 choose to always send reports or to never send them.
 
 ## Accounts
@@ -997,7 +998,9 @@ renew your sign-in. You enter your password on infiartt.com in your browser,
 never in Hariku. Hariku then receives an access token and a refresh token,
 which run out together (after 180 days), and your user name and roles, and
 keeps them on your computer, in `%APPDATA%\Hariku2` (`account_manager`), until
-you sign out. When Hariku starts and the sign-in has fewer than 30 days left,
+you sign out. Since Account Manager 1.2 the two tokens are encrypted there with
+Windows' Data Protection API, so only you, on this computer, can read them, and
+signing out also removes the backup copy of the old sign-in. When Hariku starts and the sign-in has fewer than 30 days left,
 it sends infiartt.com the refresh token and receives a new pair; nothing else
 is sent. Tokens are never written to Hariku's log. The Account Manager gives
 your access token only to extensions that use your account (Ask Hariku, and

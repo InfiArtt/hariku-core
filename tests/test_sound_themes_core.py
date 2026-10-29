@@ -98,6 +98,7 @@ def test_play_result_is_passed_through(monkeypatch, theme):
 @pytest.mark.parametrize("name", [
     "../outside.wav", "..\\outside.wav", "sub/confirm.wav", "sub\\confirm.wav",
     "..", "", " ", "confirm.wav:stream", "C:outside.wav", "/outside.wav", "\\outside.wav",
+    "\\\\attacker.example\\share\\a.wav",
 ])
 def test_names_that_are_not_plain_never_use_the_theme(played, theme, name):
     # Plant files the traversal would reach; none may be played from the theme.
@@ -107,10 +108,11 @@ def test_names_that_are_not_plain_never_use_the_theme(played, theme, name):
     sounds.set_theme_dir(str(theme))
     sounds.play_internal_sound(name)
     assert len(played) == 1
-    # Exactly what the core played before themes existed.
-    assert played[0] == os.path.join(BUILTIN, name)
-    assert not os.path.normcase(os.path.abspath(played[0])).startswith(
-        os.path.normcase(str(theme.parent)))
+    # Core 2.13: nor anything outside Hariku's own sounds (a network path from
+    # a routine's %clipboard% made Windows contact that computer): such a name
+    # plays a file that isn't there.
+    assert os.path.dirname(played[0]) == BUILTIN.rstrip("\/"), played[0]
+    assert not os.path.exists(played[0])
 
 
 def test_a_folder_named_like_a_sound_is_not_played(played, theme):

@@ -1,3 +1,78 @@
+Versi 2.13.0 (Pembaruan Inti - 30 Oktober 2026)
+================================================================================
+Pembaruan ini membuat Hariku tidak lagi cerewet di pembaca layar, menjaga
+volumenya tetap seperti yang kamu atur, dan membuatnya lebih cepat terbuka.
+
+- Saat pindah ke jendela Hariku (Alt+Tab), sekarang yang dibacakan hanya
+  jendelanya dan tanggal yang dipilih, misalnya "Jumat, 30 Oktober 2026".
+  Dulu seluruh gambar kalender ikut dibaca: "Hariku V2 - Core
+  SunMonTueWedThu Fri Sat1 2 3 4 ...". Kalendernya juga tidak lagi punya
+  kotak bulan dan tahun tersembunyi, jadi Tab tidak nyasar ke sana.
+- Jendela Pintasan Keyboard (F1) sekarang tersusun seperti File Explorer,
+  bukan satu teks panjang: pohon grup di kiri (Hariku, berisi tombol inti
+  dan kalender, dan Ekstensi, satu cabang per ekstensi) dan daftar di kanan
+  berisi pintasan grup yang dipilih beserta tombolnya. Tab berpindah di
+  antara keduanya; di sebuah folder, daftarnya menampilkan grup-grupnya
+  dan Enter membukanya. Grup dan baris baru dibuat saat kamu membuka atau
+  sampai di sana, jadi jendelanya langsung terbuka berapa pun ekstensimu.
+- Tombol fungsi sekarang disebut namanya: F1, F5, F6 dan seterusnya dulu
+  dibacakan "Key(340)".
+- Di Tempat (Preferensi), jendela Tambah dan Ubah Tempat tidak lagi
+  membacakan "Address search: © OpenStreetMap contributors. City search:
+  Open-Meteo.com..." di tombol OK. Catatannya tetap ada di jendela; tombol
+  OK, Batal dan sejenisnya sekarang tidak pernah dinamai dengan teks di
+  atasnya.
+- Volume Hariku (F5 dan F6, atau Preferensi, Umum) sekarang tetap seperti
+  yang kamu atur. Dulu volumenya kembali penuh setiap kali NVDA dinyalakan
+  ulang, karena sound split NVDA mengembalikan volume kanal kiri dan kanan
+  yang diatur Hariku. Sekarang Hariku mengatur slider-nya sendiri di Volume
+  Mixer Windows, yang tidak disentuh NVDA; semua suara Hariku dan
+  ekstensinya tetap mengikutinya.
+- Hariku lebih cepat terbuka, sekitar 1,5 detik lebih cepat di laptop
+  lama. Hariku tidak lagi menunggu daftar ekstensi terverifikasi diunduh
+  sebelum terbuka (dipakai daftar yang disimpan terakhir kali, lalu
+  diperbarui di belakang layar), dan file ekstensi hanya diperiksa ulang
+  kalau filenya berubah (Bintang Kecil saja makan lebih dari satu detik
+  setiap kali).
+- Hariku Voice mulai bicara lebih cepat. File suara (misalnya dari suara
+  Piper) mulai diputar dalam beberapa milidetik, bukan sampai sepertiga
+  detik, termasuk di antara kalimat.
+- Diperbarui di Toko Ekstensi: Piper Voices 1.2 memuat suaramu begitu
+  Hariku dibuka, jadi kalimat pertama tidak perlu menunggu satu sampai lima
+  belas detik; suaranya tetap dimuat selama satu jam, bukan sepuluh menit;
+  dan beberapa kata pertama dari teks panjang terdengar lebih cepat (sekitar
+  1,2 detik, bukan 3 detik, di laptop lama). Edge Voices 1.1 bisa bicara
+  lagi: sejak Oktober layanan Microsoft menolaknya ("403 Forbidden"),
+  sampai sekarang ia mengirim token versi baru seperti yang dikirim browser
+  Edge.
+- Log (Temp\Hariku2\hariku_debug.log) sekarang mencatat berapa lama Hariku
+  terbuka dan berapa lama tiap ekstensi dimuat.
+- Perbaikan keamanan, hasil pemeriksaan Hariku dan ekstensinya:
+  - File yang namanya seperti ekstensi resmi (misalnya weather.hrk) sekarang
+    dicek ke daftar ekstensi terverifikasi seperti ekstensi lain; dulu ia
+    dimuat tanpa dicek, dengan lencana Resmi. Hanya kalau daftar itu sama
+    sekali tidak bisa didapat (offline, tidak ada yang tersimpan dalam 14
+    hari terakhir) ekstensi resmi tetap dimuat berdasarkan namanya. Ekstensi
+    yang dicabut dari daftar tidak lagi dipercaya begitu daftarnya
+    diperbarui, dan Hariku memberi tahu.
+  - File ekstensi yang namanya hanya titik ("...hrk") bisa menghapus seluruh
+    folder ekstensi; nama seperti itu sekarang ditolak. Ekstensi yang
+    isinya lebih dari 1 GB ditolak, dan unduhan Toko yang terputus atau
+    bukan ekstensi tidak lagi menimpa ekstensi yang sudah ada.
+  - Nama suara berupa alamat jaringan (dari %clipboard% di sebuah rutinitas)
+    tidak lagi membuat Windows menghubungi komputer lain.
+  - Laporan crash tidak lagi memuat nama pengguna Windows di jalur file.
+  - Panduan dengan judul yang sangat panjang tidak lagi membekukan daftar
+    Bantuan.
+  - Diperbarui di Toko Ekstensi: Account Manager 1.2 (pendengar login
+    memegang port-nya sendiri dan hanya menjawab di komputer ini, login
+    disimpan terenkripsi dan terhapus sepenuhnya saat logout), Routines 1.2
+    (teks yang disalin di %clipboard% tidak bisa lagi menambah argumen
+    program, membuka file di komputer lain, mengubah alamat web atau menekan
+    Enter saat mengetik), Markdown Reader 1.0.2 dan Google Calendar Reader
+    1.0.2 (file atau undangan kalender tidak bisa lagi menjalankan skrip di
+    penampil).
+
 Versi 2.12.1 (Pembaruan Inti - 28 September 2026)
 ================================================================================
 Pembaruan kecil ini merapikan panduan dan Apa yang Baru berbahasa Inggris,

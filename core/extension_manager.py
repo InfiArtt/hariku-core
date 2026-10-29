@@ -16,6 +16,8 @@ import shutil
 import hashlib
 import urllib.request
 import threading
+import time
+import re
 from core.events import bus
 import core.api
 import core.constants
@@ -122,16 +124,56 @@ def too_old_for_core(manifest):
     return made_for if made and oldest and made < oldest else ""
 
 
+# An extension id: what a .hrk file is named and the folder it is extracted to
+# (core 2.13). Before, the id was the file name with every ".hrk" removed, so
+# "...hrk" became "..", whose extraction folder is the extensions folder itself
+# (removed before extracting), and "weather.hrk.hrk" became "weather".
+EXTENSION_ID_RE = re.compile(r"[A-Za-z0-9_-]{1,64}\Z")
+# A .hrk may not unpack to more than this (core 2.13: a 200 KB zip could fill
+# the disk). Bintang Kecil, the largest, unpacks to about 80 MB.
+MAX_EXTRACTED_BYTES = 1024 * 1024 * 1024
+MAX_EXTRACTED_FILES = 20000
+
+
+def is_valid_extension_id(ext_id):
+    return isinstance(ext_id, str) and bool(EXTENSION_ID_RE.match(ext_id))
+
+
+def _hrk_id(file_name):
+    """The extension id of a .hrk file name, or None when it isn't a valid one."""
+    if not file_name.lower().endswith(".hrk"):
+        return None
+    ext_id = file_name[:-4]
+    return ext_id if is_valid_extension_id(ext_id) else None
+
+
+def _extract_dir(ext_id):
+    """The folder a .hrk is extracted to: strictly inside extensions\\.cache."""
+    cache = os.path.realpath(os.path.join(EXTENSIONS_DIR, ".cache"))
+    path = os.path.join(EXTENSIONS_DIR, ".cache", ext_id)
+    if not is_valid_extension_id(ext_id) or not os.path.realpath(path).startswith(cache + os.sep):
+        raise ValueError(f"[Security] Invalid extension id: {ext_id!r}")
+    return path
+
+
 def _safe_extractall(zip_ref, dest_path):
     """
     [SEC CRIT-2] Safe ZIP extraction that prevents Zip Slip path traversal.
 
     A maliciously crafted .hrk could contain entries like '../../evil.bat'
     which would place files outside the intended extraction directory.
-    This function validates every entry before extraction.
+    This function validates every entry before extraction, and (core 2.13)
+    refuses a zip that would unpack to more than MAX_EXTRACTED_BYTES or
+    MAX_EXTRACTED_FILES.
     """
+    members = zip_ref.infolist()
+    if len(members) > MAX_EXTRACTED_FILES:
+        raise ValueError(f"[Security] Too many files in the extension ({len(members)}).")
+    if sum(max(0, m.file_size) for m in members) > MAX_EXTRACTED_BYTES:
+        raise ValueError("[Security] The extension would unpack to more than "
+                         f"{MAX_EXTRACTED_BYTES // (1024 * 1024)} MB.")
     dest_real = os.path.realpath(dest_path)
-    for member in zip_ref.infolist():
+    for member in members:
         member_real = os.path.realpath(os.path.join(dest_path, member.filename))
         if not member_real.startswith(dest_real + os.sep) and member_real != dest_real:
             raise ValueError(
@@ -149,6 +191,16 @@ _TRUSTED_HASHES_URL = core.endpoints.TRUSTED_HASHES_URL
 # In-memory cache for the session (None = not fetched yet, set = fetched)
 _trusted_hash_cache = None
 _trusted_hash_lock = threading.Lock()
+# Core 2.13: whether _trusted_hash_cache is a list Hariku could check against
+# (downloaded, or saved within TRUST_MAX_AGE_SECONDS). Official extensions are
+# checked against it like any other; only when no list could be had at all
+# (offline, nothing recent saved) are they still loaded by their id.
+_trust_list_current = False
+# Hashes the user agreed to load this session (kept across a refresh).
+_consented_hashes = set()
+# A saved list older than this isn't used: an extension taken off the list
+# must not stay trusted forever on a computer that can't reach the server.
+TRUST_MAX_AGE_SECONDS = 14 * 24 * 3600
 
 
 def _sha256_file(path):
@@ -160,31 +212,168 @@ def _sha256_file(path):
     return sha256.hexdigest().lower()
 
 
+def _download_trusted_hashes():
+    """The server's trusted hash list as a set; raises when it can't be had."""
+    req = urllib.request.Request(
+        _TRUSTED_HASHES_URL,
+        headers={"User-Agent": "HarikuV2/2.0"}
+    )
+    with urllib.request.urlopen(req, timeout=8) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    return {h.lower() for h in data.get("trusted", []) if isinstance(h, str)}
+
+
 def _fetch_trusted_hashes():
     """
     [SEC CRIT-1] Fetch the server-hosted trusted extension hash list.
     Returns a set of lowercase SHA256 hex strings, or empty set on failure.
     """
-    global _trusted_hash_cache
+    global _trusted_hash_cache, _trust_list_current
     with _trusted_hash_lock:
         if _trusted_hash_cache is not None:
             return _trusted_hash_cache
         try:
-            req = urllib.request.Request(
-                _TRUSTED_HASHES_URL,
-                headers={"User-Agent": "HarikuV2/2.0"}
-            )
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                hashes = {h.lower() for h in data.get("trusted", [])}
-                _trusted_hash_cache = hashes
-                logger.info(f"[Security] Loaded {len(hashes)} trusted extension hashes from server.")
-                return hashes
+            hashes = _download_trusted_hashes()
+            _trusted_hash_cache = hashes | _consented_hashes
+            _trust_list_current = True
+            _save_trust_cache(trusted=hashes)
+            logger.info(f"[Security] Loaded {len(hashes)} trusted extension hashes from server.")
+            return hashes
         except Exception as e:
             logger.info(f"[Security] Trusted extension hash list not available: {e}. "
                         f"All third-party .hrk extensions will require user consent.")
-            _trusted_hash_cache = set()
-            return set()
+            _trusted_hash_cache = set(_consented_hashes)
+            _trust_list_current = False
+            return _trusted_hash_cache
+
+
+def _is_trusted(ext_id, digest):
+    """Whether a .hrk with this hash may load without asking (core 2.13: an
+    official id is no longer enough while a list can be checked)."""
+    hashes = _fetch_trusted_hashes()
+    if digest in hashes:
+        return True
+    if ext_id in _OFFICIAL_EXTENSION_IDS and not _trust_list_current:
+        logger.warning(f"[Security] '{ext_id}' loads by its official id: no trusted list "
+                       f"could be checked.")
+        return True
+    return False
+
+
+# --- Faster startup (core 2.13) ---
+# Hariku used to download the trusted list and hash every community .hrk twice
+# (Bintang Kecil is 70 MB) before the window appeared: about 1.5 seconds on an
+# older laptop, up to 8 more on a slow network. Now the list saved last time is
+# used at startup and refreshed in the background for the next start, and a
+# file's hash is kept with its size and time and only made again when the file
+# changes. (Whoever can change these can change the extensions themselves, or
+# put an unpacked one beside them, so the saved copy weakens nothing.)
+_TRUST_CACHE_NAME = "Core_extension_trust"   # %APPDATA%\Hariku2\data\Core_extension_trust.json
+_trust_cache_lock = threading.Lock()
+_file_hashes = None     # {path: {"size", "mtime", "sha256"}}, loaded on first use
+
+
+def _load_trust_cache():
+    try:
+        data = core.api.load_data(_TRUST_CACHE_NAME)
+    except Exception:
+        data = {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_trust_cache(trusted=None):
+    """Save the trusted list (when given) and the known file hashes."""
+    with _trust_cache_lock:
+        data = _load_trust_cache()
+        if trusted is not None:
+            data["trusted"] = sorted(trusted)
+            data["fetched_at"] = time.time()
+        if _file_hashes is not None:
+            data["files"] = {p: v for p, v in _file_hashes.items() if os.path.isfile(p)}
+        try:
+            core.api.save_data(_TRUST_CACHE_NAME, data)
+        except Exception as e:
+            logger.debug(f"[Security] Could not save the extension trust cache: {e}")
+
+
+def _file_hash(path):
+    """The SHA256 of `path`, made again only when its size or time changed."""
+    global _file_hashes
+    with _trust_cache_lock:
+        if _file_hashes is None:
+            files = _load_trust_cache().get("files")
+            _file_hashes = dict(files) if isinstance(files, dict) else {}
+        info = os.stat(path)
+        known = _file_hashes.get(path)
+        if (isinstance(known, dict) and known.get("size") == info.st_size
+                and known.get("mtime") == info.st_mtime_ns and isinstance(known.get("sha256"), str)):
+            return known["sha256"]
+    digest = _sha256_file(path)
+    with _trust_cache_lock:
+        _file_hashes[path] = {"size": info.st_size, "mtime": info.st_mtime_ns, "sha256": digest}
+    return digest
+
+
+def _startup_trusted_hashes():
+    """The trusted list for loading extensions at startup: the copy saved last
+    time, refreshed from the server in the background for the next start (and
+    for extensions installed meanwhile). With no saved copy yet, it is
+    downloaded now, as before."""
+    global _trusted_hash_cache, _trust_list_current
+    cache = _load_trust_cache()
+    saved, fetched_at = cache.get("trusted"), cache.get("fetched_at")
+    age = time.time() - fetched_at if isinstance(fetched_at, (int, float)) else None
+    if not isinstance(saved, list) or age is None or not 0 <= age <= TRUST_MAX_AGE_SECONDS:
+        return _fetch_trusted_hashes()      # none saved, or too old: download it now
+    hashes = {h.lower() for h in saved if isinstance(h, str)}
+    with _trusted_hash_lock:
+        if _trusted_hash_cache is None:
+            _trusted_hash_cache = hashes | _consented_hashes
+            _trust_list_current = True
+    logger.info(f"[Security] Using {len(hashes)} trusted extension hashes saved last time; "
+                f"refreshing them in the background.")
+    threading.Thread(target=_refresh_trusted_hashes, daemon=True,
+                     name="trusted-hashes-refresh").start()
+    return _trusted_hash_cache
+
+
+TRUST_REFRESH_DELAY_SECONDS = 10   # after startup, which the download would slow down
+
+
+def _refresh_trusted_hashes():
+    time.sleep(TRUST_REFRESH_DELAY_SECONDS)
+    try:
+        fresh = _download_trusted_hashes()
+    except Exception as e:
+        logger.info(f"[Security] Could not refresh the trusted extension hashes: {e}")
+        return
+    global _trusted_hash_cache, _trust_list_current
+    with _trusted_hash_lock:
+        # Replaced, not added to: a hash taken off the list is no longer trusted.
+        _trusted_hash_cache = fresh | _consented_hashes
+        _trust_list_current = True
+    _save_trust_cache(trusted=fresh)
+    logger.info(f"[Security] Refreshed {len(fresh)} trusted extension hashes for the next start.")
+    withdrawn = [ext_id for ext_id, data in list(LOADED_EXTENSIONS.items())
+                 if data.get("sha256") and data["sha256"] not in fresh
+                 and data["sha256"] not in _consented_hashes]
+    for ext_id in withdrawn:
+        logger.warning(f"[Security] '{ext_id}' is no longer in the trusted list; "
+                       f"Hariku will ask before loading it next time.")
+    if withdrawn:
+        _tell_withdrawn(withdrawn)
+
+
+def _tell_withdrawn(ext_ids):
+    """Say that extensions running now were taken off the trusted list."""
+    try:
+        import wx
+        from core.i18n import get_translator
+        from core.speech import speak
+        _ = get_translator("core")
+        wx.CallAfter(speak, _("ext_withdrawn", names=", ".join(ext_ids)))
+    except Exception as e:
+        logger.debug(f"[Security] Could not announce withdrawn extensions: {e}")
 
 
 def _show_security_dialog(message, title):
@@ -227,20 +416,18 @@ def _check_hrk_trust(hrk_path, ext_id):
     [SEC CRIT-1] Verify that a .hrk file is trusted before loading.
 
     Trust hierarchy:
-      1. If ext_id is in _OFFICIAL_EXTENSION_IDS → always trusted (bundled official).
-      2. If file SHA256 is in server trusted hash list → trusted.
+      1. If file SHA256 is in server trusted hash list → trusted. (Core 2.13:
+         official ids too; a .hrk named "weather.hrk" from anywhere used to
+         load unchecked, with the Official badge.)
+      2. An official id when no trusted list could be checked (offline,
+         nothing recent saved) → trusted, as before.
       3. Otherwise → show warning dialog, require explicit user consent.
 
     Returns True if the extension should be loaded, False to skip it.
     """
-    # Official bundled extensions are always trusted
-    if ext_id in _OFFICIAL_EXTENSION_IDS:
-        return True
+    file_hash = _file_hash(hrk_path)
 
-    file_hash = _sha256_file(hrk_path)
-    trusted_hashes = _fetch_trusted_hashes()
-
-    if file_hash in trusted_hashes:
+    if _is_trusted(ext_id, file_hash):
         logger.info(f"[Security] Extension '{ext_id}' hash verified as trusted.")
         return True
 
@@ -305,8 +492,11 @@ def load_all_extensions():
     # 2. User extensions (.hrk files) - medium priority.
     if os.path.exists(USER_EXTENSIONS_DIR):
         for item in os.listdir(USER_EXTENSIONS_DIR):
-            if item.endswith(".hrk"):
-                ext_id = item.replace(".hrk", "")
+            if item.lower().endswith(".hrk"):
+                ext_id = _hrk_id(item)
+                if ext_id is None:
+                    logger.warning(f"[Security] Skipped {item!r}: not a valid extension file name.")
+                    continue
                 if ext_id in disabled: continue
                 to_load[ext_id] = {"type": "hrk", "path": os.path.join(USER_EXTENSIONS_DIR, item)}
                 
@@ -332,14 +522,31 @@ def load_all_extensions():
                 to_load[item] = {"type": "folder", "path": full_path}
                 
     # --- Batch Security Prompt ---
+    global _trusted_hash_cache
     unverified = []
-    trusted_hashes = _fetch_trusted_hashes()
-    
-    for ext_id, data in to_load.items():
-        if data["type"] == "hrk" and ext_id not in _OFFICIAL_EXTENSION_IDS:
-            fhash = _sha256_file(data["path"])
-            if fhash not in trusted_hashes:
-                unverified.append((ext_id, fhash))
+    packed = [(ext_id, data) for ext_id, data in to_load.items() if data["type"] == "hrk"]
+    if packed:
+        _startup_trusted_hashes()
+    for ext_id, data in packed:
+        try:
+            fhash = _file_hash(data["path"])
+        except OSError as e:
+            logger.error(f"Could not read {data['path']}: {e}")
+            continue
+        if not _is_trusted(ext_id, fhash):
+            unverified.append((ext_id, fhash))
+    if unverified and _trust_list_current:
+        # A list saved last time may predate an update: ask the server once.
+        try:
+            fresh = _download_trusted_hashes()
+            with _trusted_hash_lock:
+                _trusted_hash_cache = fresh | _consented_hashes
+            _save_trust_cache(trusted=fresh)
+            unverified = [(ext_id, fhash) for ext_id, fhash in unverified if fhash not in fresh]
+        except Exception as e:
+            logger.info(f"[Security] Could not check the unverified extensions again: {e}")
+    if packed:
+        _save_trust_cache()
                 
     if unverified:
         msg = f"{len(unverified)} extensions are not recognized by Hariku's security registry:\n\n"
@@ -367,6 +574,7 @@ def load_all_extensions():
         if _ask_batch():
             # User accepted all, temporarily trust them in memory
             for _, fhash in unverified:
+                _consented_hashes.add(fhash)
                 _trusted_hash_cache.add(fhash)
         else:
             # User rejected, remove them from load queue
@@ -403,8 +611,11 @@ def unload_all_extensions(*args, **kwargs):
                 logger.error(f"Error in teardown() of extension '{ext_id}': {e}")
 
 def load_zipped_extension(hrk_path):
-    ext_id = os.path.basename(hrk_path).replace(".hrk", "")
-    extract_path = os.path.join(EXTENSIONS_DIR, ".cache", ext_id)
+    ext_id = _hrk_id(os.path.basename(hrk_path))
+    if ext_id is None:
+        logger.error(f"[Security] Not loaded: {hrk_path!r} is not a valid extension file name.")
+        return
+    extract_path = _extract_dir(ext_id)
     mtime_file = os.path.join(extract_path, ".hrk_mtime")
     
     try:
@@ -437,7 +648,8 @@ def load_zipped_extension(hrk_path):
         else:
             logger.debug(f"Using cached extraction for: {hrk_path}")
             
-        _load_extension_from_dir(extract_path, ext_id)
+        if _load_extension_from_dir(extract_path, ext_id):
+            LOADED_EXTENSIONS[ext_id]["sha256"] = _file_hash(hrk_path)   # known already: no new hashing
     except Exception as e:
         logger.exception(f"Failed to load {hrk_path}: {e}")
         LOAD_ERRORS[ext_id] = f"{type(e).__name__}: {e}"[:300]
@@ -447,6 +659,7 @@ def load_unpacked_extension(folder_path):
     _load_extension_from_dir(folder_path, ext_id)
 
 def _load_extension_from_dir(ext_dir, ext_id):
+    started = time.perf_counter()
     manifest_path = os.path.join(ext_dir, "manifest.json")
     if not os.path.exists(manifest_path):
         logger.error(f"Manifest not found in extension: {ext_id}")
@@ -530,7 +743,8 @@ def _load_extension_from_dir(ext_dir, ext_id):
         LOAD_ERRORS.pop(ext_id, None)
         mode = "UNPACKED" if is_unpacked else "ZIPPED"
         badge = "[Official]" if is_official else "[Community]"
-        logger.info(f"Successfully loaded extension [{mode}] {badge}: {manifest.get('name', ext_id)} v{manifest.get('version', '1.0')}")
+        logger.info(f"Successfully loaded extension [{mode}] {badge}: {manifest.get('name', ext_id)} "
+                    f"v{manifest.get('version', '1.0')} ({(time.perf_counter() - started) * 1000:.0f} ms)")
         return True
     except Exception as e:
         logger.exception(f"Failed to load extension from dir {ext_dir}: {e}")
@@ -549,8 +763,10 @@ def get_installed_extensions_info():
                 continue
                 
             full_path = os.path.join(target_dir, item)
-            ext_id = item.replace(".hrk", "")
             is_unpacked = os.path.isdir(full_path)
+            ext_id = item if is_unpacked else _hrk_id(item)
+            if ext_id is None:
+                continue
             
             manifest = None
             if is_unpacked:
@@ -574,7 +790,8 @@ def get_installed_extensions_info():
                     "name": manifest.get("name", ext_id),
                     "version": manifest.get("version", "1.0"),
                     "author": author,
-                    "is_official": (author.strip().lower() == "rafli"),
+                    # [SEC] The id list decides, never the manifest's author (core 2.13).
+                    "is_official": ext_id in _OFFICIAL_EXTENSION_IDS,
                     "description": manifest.get("description", "No description available."),
                     "is_enabled": ext_id not in disabled,
                     "is_unpacked": is_unpacked,

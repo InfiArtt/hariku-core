@@ -95,6 +95,17 @@ def _no_persona_left_behind():
     i18n.set_persona("")
 
 
+@pytest.fixture(autouse=True)
+def _no_real_app_volume(monkeypatch):
+    """Playing a sound applies Hariku's volume through Windows' Core Audio
+    (core/app_volume.py); tests record it instead."""
+    import core.app_volume
+    calls = []
+    monkeypatch.setattr(core.app_volume, "set_volume", lambda percent: calls.append(percent) or 1)
+    monkeypatch.setattr(core.app_volume, "reset_channel_volume", lambda: calls.append("reset") or True)
+    return calls
+
+
 @pytest.fixture
 def fresh_event_bus():
     """

@@ -114,6 +114,7 @@ class CrashDialog(wx.Dialog):
 
     def _upload_report(self):
         import platform
+        from core.crash_handler import scrub
 
         config = core.api.load_data("Core")
         lang = config.get("language", "en")
@@ -123,8 +124,9 @@ class CrashDialog(wx.Dialog):
             "os_info": platform.platform(),
             "language": lang,
             "error_type": self.exc_type.__name__,
-            "error_message": str(self.exc_value),
-            "traceback": self.traceback_text
+            # Without the Windows user name in paths (core 2.13).
+            "error_message": scrub(self.exc_value),
+            "traceback": scrub(self.traceback_text)
         }
 
         data = json.dumps(payload).encode('utf-8')
