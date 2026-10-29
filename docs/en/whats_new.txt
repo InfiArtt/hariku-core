@@ -33,6 +33,14 @@ its volume where you set it, and starts it faster.
 - Hariku Voice starts speaking sooner. A voice file (a Piper voice, say)
   starts playing in a few milliseconds instead of up to a third of a
   second, between every sentence too.
+- New in the Extension Store: Period Tracker 1.0, Hariku 1's Period Tracker
+  brought to Hariku 2. Press J on a date to log that your period started or
+  ended; Shift+J opens the tracker, with your history, your average cycle
+  and period, the next 12 periods and their fertile windows, and Add, Edit
+  and Delete (Hariku 1 couldn't fix a wrong date). The Morning Briefing and
+  the calendar say what matters ("Day 3 of your period."), it can remind you
+  to log the end and before the next one (never in quiet hours), and it
+  brings your Hariku 1 records over. Everything stays on your computer.
 - Updated in the Extension Store: Piper Voices 1.2 loads your voice as soon
   as Hariku starts, so the first thing it says doesn't wait one to fifteen
   seconds for it, keeps it loaded for an hour instead of ten minutes, and

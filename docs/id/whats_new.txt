@@ -37,6 +37,15 @@ volumenya tetap seperti yang kamu atur, dan membuatnya lebih cepat terbuka.
 - Hariku Voice mulai bicara lebih cepat. File suara (misalnya dari suara
   Piper) mulai diputar dalam beberapa milidetik, bukan sampai sepertiga
   detik, termasuk di antara kalimat.
+- Baru di Toko Ekstensi: Pelacak Haid 1.0, Period Tracker dari Hariku 1 yang
+  dibawa ke Hariku 2. Tekan J pada sebuah tanggal untuk mencatat haid mulai
+  atau selesai; Shift+J membuka pelacak, berisi riwayatmu, rata-rata siklus
+  dan lama haidmu, 12 haid berikutnya beserta masa suburnya, serta Tambah,
+  Ubah dan Hapus (di Hariku 1 tanggal yang salah tidak bisa dibetulkan).
+  Morning Briefing dan kalender menyebut yang penting ("Hari ke-3 haidmu."),
+  ia bisa mengingatkan untuk mencatat tanggal selesai dan sebelum haid
+  berikutnya (tidak pernah saat jam tenang), dan memindahkan catatan Hariku
+  1-mu. Semuanya tetap di komputermu.
 - Diperbarui di Toko Ekstensi: Piper Voices 1.2 memuat suaramu begitu
   Hariku dibuka, jadi kalimat pertama tidak perlu menunggu satu sampai lima
   belas detik; suaranya tetap dimuat selama satu jam, bukan sepuluh menit;
