@@ -794,7 +794,12 @@ The Sleep Pattern extension sends nothing over the internet. Once a minute it
 asks Windows whether the keyboard or mouse was used, and saves only that: used,
 not used, or unknown, for each minute. It never records what you typed, which
 keys you pressed, or which apps or windows you used. The record stays in
-`%APPDATA%\Hariku2` for 90 days, and you can clear it in its settings.
+`%APPDATA%\Hariku2` for 90 days, or for as long as you choose in "Keep sleep
+history" (1, 2 or 5 years, or forever, since Sleep Pattern 1.1), and you can
+clear it in its settings. The advice, the sleep graph and the months and years
+are worked out from that record on your computer. "Export..." saves the nights
+as a CSV file only where you choose; the graph is made again each time as
+`SleepTrackerGraph.wav` in the same folder.
 
 ## Period Tracker
 
