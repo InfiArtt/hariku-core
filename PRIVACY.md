@@ -320,7 +320,9 @@ repeats), with your sound and ring settings, in `%APPDATA%\Hariku2` on your
 computer. To stop a ring when you press a key, it asks Windows when the
 keyboard or mouse was last used, only while something rings or after a ring
 you missed; it never records which keys you press. Its sounds are Windows' own
-alarm sounds on your computer or tones that come with the extension.
+alarm sounds on your computer or tones that come with the extension. Since
+Timer & Alarm 1.0.5 it can also ring with a ringtone you saved in Ringtone
+Maker, read from Ringtone Maker's own folder on your computer.
 
 ## World Trip
 
@@ -827,6 +829,18 @@ temperature) on your computer. Since 1.3 it hears from Bintang Kecil what you fo
 (only its kind and name), keeps it in memory until you close the sky, and saves
 nothing of it. "Adopt a different pet" forgets the old pet and
 its diary.
+
+## Ringtone Maker
+
+The Ringtone Maker extension sends nothing over the internet. Every ringtone is
+composed and made into sound on your computer, from the settings you choose;
+a name you type to make a tune from is used only for that and is saved only
+with the settings of a ringtone you keep. The ringtones you save (WAV files
+with their settings beside them) are in its folder in `%APPDATA%\Hariku2`, and
+your last settings in `RingtoneMaker`. When you use one for reminders, a copy
+goes into a Sound Themes theme on your computer; when you use one for alarms or
+timers, Timer & Alarm keeps its name in its own settings. Export writes a copy
+only where you choose. Delete removes the ringtone and its settings.
 
 ## Edge Voices
 
