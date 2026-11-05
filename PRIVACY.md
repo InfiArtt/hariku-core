@@ -820,8 +820,11 @@ reminders you finish, it reads today's reminders on your computer: whether each
 one is done, and its title to say it. When Sleep Pattern is installed and on, it
 reads how long you slept last night and whether you went to bed late. It notes
 whether the keyboard or mouse was used recently, never what you typed, to say
-welcome back and to remind you to stretch. "Adopt a different pet" forgets the
-old pet.
+welcome back and to remind you to stretch. Since Calendar Pet 1.2 it keeps the
+diary it writes (the last 60 days) with the pet, and, when the Weather extension
+is installed, reads its latest conditions (only the weather code and the
+temperature) on your computer. "Adopt a different pet" forgets the old pet and
+its diary.
 
 ## Edge Voices
 
