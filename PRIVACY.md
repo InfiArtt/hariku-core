@@ -810,6 +810,19 @@ your cycle is written to Hariku's log. When you agree, it reads Hariku 1's
 records from `%APPDATA%\Inflinity\Hariku\data\period.json` once, without
 changing that file.
 
+## Calendar Pet
+
+The Calendar Pet extension sends nothing over the internet. It keeps your pet
+(its kind, name, how full, happy and rested it is, your friendship and its gift
+box), today's record of what it said, and its settings in `%APPDATA%\Hariku2`
+(`CalendarPet`, `CalendarPetDay`, `CalendarPetSettings`). To cheer the
+reminders you finish, it reads today's reminders on your computer: whether each
+one is done, and its title to say it. When Sleep Pattern is installed and on, it
+reads how long you slept last night and whether you went to bed late. It notes
+whether the keyboard or mouse was used recently, never what you typed, to say
+welcome back and to remind you to stretch. "Adopt a different pet" forgets the
+old pet.
+
 ## Edge Voices
 
 The Edge Voices extension sends nothing until you choose "Microsoft Edge neural
