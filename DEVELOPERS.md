@@ -1734,6 +1734,7 @@ These events are emitted by the Hariku core at specific moments. Subscribe to th
 | `on_build_tray_tooltip` | `tooltip_data` | When the tray icon tooltip is being updated. `tooltip_data` is a dict with a `"text"` key — modify `tooltip_data["text"]` to append your own information. |
 | `on_timer_ringing` | `payload` | *(Timer & Alarm 1.0.4)* A timer or alarm is ringing. `payload["text"]` is what it says. React quietly (Calendar Pet waits for a pause). |
 | `on_wild_encounter` | `payload` | *(Wild Encounters 1.3)* A wild Pokémon was just announced. `payload` has `"name"` ("Wingull"), `"type"` and `"ambient"` (it came by itself). |
+| `on_sky_discovery` | `payload` | *(Bintang Kecil 1.0.8)* Something was found in the sky. `payload` has `"what"` ("constellation", "planet", "moon", "nebula", "galaxy" or "cluster"), `"name"`, `"first"` (the first time ever) and `"birthday"` (the Planetarium shows the night the user was born). Don't speak while Bintang Kecil's window is open. |
 | `on_open_preferences` | `tab_name` | When the Preferences dialog is requested to open (optionally to a specific tab). |
 | `on_places_changed` | None | *(Since 2.8)* When the user saved changes to their places (Preferences, Places). Read them again with `core.places`; see [Places](#places). |
 | `on_reminder_fired` | `reminder` | *(Since 2.4)* When a reminder comes due and is announced. `reminder` is the stored dict (`id`, `title`, `date`, `time`, ...), with the raw text; see [Personal Profile](#personal-profile) for filling in its placeholders. |

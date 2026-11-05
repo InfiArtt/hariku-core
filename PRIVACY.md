@@ -823,7 +823,9 @@ whether the keyboard or mouse was used recently, never what you typed, to say
 welcome back and to remind you to stretch. Since Calendar Pet 1.2 it keeps the
 diary it writes (the last 60 days) with the pet, and, when the Weather extension
 is installed, reads its latest conditions (only the weather code and the
-temperature) on your computer. "Adopt a different pet" forgets the old pet and
+temperature) on your computer. Since 1.3 it hears from Bintang Kecil what you found in the sky
+(only its kind and name), keeps it in memory until you close the sky, and saves
+nothing of it. "Adopt a different pet" forgets the old pet and
 its diary.
 
 ## Edge Voices
